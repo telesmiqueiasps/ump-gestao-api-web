@@ -17,13 +17,19 @@ const ORG_LABELS = {
 }
 
 const NAV_ITEMS = [
-  { page: 'dashboard',  label: 'Dashboard',  icon: '⊞', always: true },
-  { page: 'profile',    label: 'Perfil',      icon: '◎', always: true },
-  { page: 'finances',   label: 'Financeiro',  icon: '◈', always: true },
-  { page: 'members',    label: 'Sócios',      icon: '◉', localOnly: true },
-  { page: 'board',      label: 'Diretoria',   icon: '❖', always: true },
-  { page: 'local-umps', label: 'UMPs Locais', icon: '⊟', fedOnly: true },
+  { page: 'dashboard',  label: 'Dashboard',  icon: '⊞', path: '/pages/dashboard.html',  always: true },
+  { page: 'profile',    label: 'Perfil',      icon: '◎', path: '/pages/profile.html',    always: true },
+  { page: 'finances',   label: 'Financeiro',  icon: '◈', path: '/pages/finances.html',   always: true },
+  { page: 'members',    label: 'Sócios',      icon: '◉', path: '/pages/members.html',    localOnly: true },
+  { page: 'board',      label: 'Diretoria',   icon: '❖', path: '/pages/board.html',      always: true },
+  { page: 'local-umps', label: 'UMPs Locais', icon: '⊟', path: '/pages/local-umps.html', fedOnly: true },
 ]
+
+// Expõe navigate globalmente para os onclick do HTML
+window.navigate = function(page) {
+  const item = NAV_ITEMS.find(n => n.page === page)
+  if (item) window.location.href = item.path
+}
 
 export function renderShell() {
   const user = getUser()
