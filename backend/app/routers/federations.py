@@ -120,7 +120,7 @@ def list_my_local_umps(
 ):
     locals_ = db.query(LocalUmp).filter(
         LocalUmp.federation_id == current_user.organization_id
-    ).all()
+    ).limit(500).all()
     return [
         {
             "id": str(l.id),

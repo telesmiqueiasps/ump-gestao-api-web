@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
   <title>UMPs Locais — Gestão UMP</title>
   <link rel="stylesheet" href="../assets/css/main.css" />
   <link rel="stylesheet" href="../assets/css/components.css" />
@@ -92,6 +94,60 @@
   </div>
 </div>
 
+<!-- Modal Usuários -->
+<div class="modal-overlay" id="modal-users">
+  <div class="modal modal-lg" style="max-height:90vh;overflow-y:auto">
+    <div class="modal-header">
+      <h2 id="modal-users-title">Usuários</h2>
+      <button class="modal-close">✕</button>
+    </div>
+
+    <!-- Lista de usuários -->
+    <div style="margin-bottom:1.5rem">
+      <h3 style="font-size:.95rem;font-weight:600;color:var(--slate-600);margin:0 0 .75rem">Usuários cadastrados</h3>
+      <div id="users-list">
+        <div class="loading-center"><div class="spinner spinner-sm"></div></div>
+      </div>
+    </div>
+
+    <hr style="border:none;border-top:1px solid var(--slate-200);margin-bottom:1.5rem" />
+
+    <!-- Formulário novo usuário -->
+    <h3 style="font-size:.95rem;font-weight:600;color:var(--slate-600);margin:0 0 1rem">Criar novo usuário</h3>
+    <div class="field mb-4">
+      <label>Nome completo</label>
+      <input class="input" type="text" id="u-full-name" placeholder="Nome completo" />
+    </div>
+    <div class="grid-2 mb-4">
+      <div class="field">
+        <label>E-mail</label>
+        <input class="input" type="email" id="u-email" placeholder="email@exemplo.com" />
+      </div>
+      <div class="field">
+        <label>Senha</label>
+        <input class="input" type="password" id="u-password" placeholder="Mínimo 6 caracteres" />
+      </div>
+    </div>
+    <div class="field mb-4">
+      <label>Cargo</label>
+      <select class="select" id="u-role">
+        <option value="">Selecione o cargo…</option>
+        <option value="presidente">Presidente</option>
+        <option value="vice_presidente">Vice-Presidente</option>
+        <option value="1_secretario">1º Secretário</option>
+        <option value="2_secretario">2º Secretário</option>
+        <option value="tesoureiro">Tesoureiro</option>
+        <option value="conselheiro">Conselheiro</option>
+      </select>
+    </div>
+    <div id="user-alert" class="hidden mb-4"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary modal-close">Cancelar</button>
+      <button class="btn btn-primary" id="btn-save-user">Criar usuário</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
   import { requireAuth, isFederation } from '../assets/js/auth.js'
   import { renderShell } from '../assets/js/router.js'
@@ -132,6 +188,7 @@
           <div class="local-card-info">Ano vigente: ${l.fiscal_year ?? '—'}</div>
           <div class="local-card-actions">
             <button class="btn btn-secondary btn-sm" onclick="editLocal('${l.id}')">✎ Editar</button>
+            <button class="btn btn-secondary btn-sm" onclick="openUserModal('${l.id}','${l.name.replace(/'/g,"\\'")}')">👤 Usuários</button>
             ${l.is_active ? `<button class="btn btn-ghost btn-sm" style="color:var(--red-600)" onclick="deactivateLocal('${l.id}','${l.name}')">Desativar</button>` : ''}
           </div>
         </div>
@@ -208,6 +265,99 @@
       await api.delete(`/api/local-umps/${id}`)
       loadLocals()
     } catch(err) { showAlert('page-alert', err.message, 'error') }
+  }
+
+  // ── Gerenciamento de usuários ─────────────────────────────────────────────
+
+  let currentLocalId = null
+
+  const ROLE_LABELS = {
+    presidente:     'Presidente',
+    vice_presidente:'Vice-Presidente',
+    '1_secretario': '1º Secretário',
+    '2_secretario': '2º Secretário',
+    tesoureiro:     'Tesoureiro',
+    conselheiro:    'Conselheiro',
+  }
+
+  async function loadUsers() {
+    const list = document.getElementById('users-list')
+    list.innerHTML = '<div class="loading-center"><div class="spinner spinner-sm"></div></div>'
+    try {
+      const users = await api.get(`/api/users/by-org/${currentLocalId}`)
+      if (!users.length) {
+        list.innerHTML = `<p style="color:var(--slate-400);font-size:.875rem;margin:0">Nenhum usuário cadastrado para esta UMP Local.</p>`
+        return
+      }
+      list.innerHTML = users.map(u => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:.6rem .75rem;border:1px solid var(--slate-200);border-radius:var(--radius);margin-bottom:.5rem;background:var(--slate-50)">
+          <div>
+            <div style="font-weight:500;font-size:.9rem">${u.full_name}</div>
+            <div style="font-size:.8rem;color:var(--slate-500)">${u.email} · <span class="badge badge-blue" style="font-size:.72rem">${ROLE_LABELS[u.role] ?? u.role}</span></div>
+          </div>
+          <button class="btn btn-ghost btn-sm" style="color:var(--red-600)" onclick="deactivateUser('${u.id}','${u.full_name.replace(/'/g,"\\'")}')">Desativar</button>
+        </div>
+      `).join('')
+    } catch(err) {
+      list.innerHTML = `<div class="alert alert-error">${err.message}</div>`
+    }
+  }
+
+  window.openUserModal = (localId, localName) => {
+    currentLocalId = localId
+    document.getElementById('modal-users-title').textContent = `Usuários — ${localName}`
+    document.getElementById('u-full-name').value = ''
+    document.getElementById('u-email').value     = ''
+    document.getElementById('u-password').value  = ''
+    document.getElementById('u-role').value      = ''
+    clearAlert('user-alert')
+    openModal('modal-users')
+    loadUsers()
+  }
+
+  document.getElementById('btn-save-user').addEventListener('click', async () => {
+    const btn      = document.getElementById('btn-save-user')
+    const fullName = document.getElementById('u-full-name').value.trim()
+    const email    = document.getElementById('u-email').value.trim()
+    const password = document.getElementById('u-password').value
+    const role     = document.getElementById('u-role').value
+
+    if (!fullName)          { showAlert('user-alert', 'Informe o nome completo.', 'error'); return }
+    if (!email)             { showAlert('user-alert', 'Informe o e-mail.', 'error'); return }
+    if (password.length < 6){ showAlert('user-alert', 'A senha deve ter no mínimo 6 caracteres.', 'error'); return }
+    if (!role)              { showAlert('user-alert', 'Selecione o cargo.', 'error'); return }
+
+    const payload = {
+      full_name:         fullName,
+      email,
+      password,
+      role,
+      organization_id:   currentLocalId,
+      organization_type: 'local_ump',
+    }
+
+    setLoading(btn, true, 'Criar usuário')
+    try {
+      await api.post('/api/users/', payload)
+      showAlert('user-alert', 'Usuário criado com sucesso!', 'success')
+      document.getElementById('u-full-name').value = ''
+      document.getElementById('u-email').value     = ''
+      document.getElementById('u-password').value  = ''
+      document.getElementById('u-role').value      = ''
+      loadUsers()
+    } catch(err) {
+      showAlert('user-alert', err.message, 'error')
+    } finally {
+      setLoading(btn, false, 'Criar usuário')
+    }
+  })
+
+  window.deactivateUser = async (userId, userName) => {
+    if (!confirm(`Desativar o usuário "${userName}"?`)) return
+    try {
+      await api.delete(`/api/users/${userId}`)
+      loadUsers()
+    } catch(err) { showAlert('user-alert', err.message, 'error') }
   }
 
   loadLocals()

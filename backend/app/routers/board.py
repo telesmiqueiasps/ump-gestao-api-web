@@ -49,7 +49,7 @@ def list_board(
         BoardMember.organization_id == current_user.organization_id,
         BoardMember.fiscal_year == year,
         BoardMember.is_active == True,
-    ).all()
+    ).limit(500).all()
     return [_to_out(b) for b in board]
 
 

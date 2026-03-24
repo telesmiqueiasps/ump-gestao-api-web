@@ -47,7 +47,7 @@ def list_members(
     query = db.query(Member).filter(Member.local_ump_id == current_user.organization_id)
     if active_only:
         query = query.filter(Member.is_active == True)
-    members = query.order_by(Member.full_name).all()
+    members = query.order_by(Member.full_name).limit(500).all()
     return [_to_out(m) for m in members]
 
 
@@ -171,7 +171,7 @@ def list_fees(
 
     fees = db.query(MembershipFee).filter(
         MembershipFee.member_id == member_id
-    ).order_by(MembershipFee.reference_month.desc()).all()
+    ).order_by(MembershipFee.reference_month.desc()).limit(500).all()
 
     return [
         {

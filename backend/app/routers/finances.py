@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, case
 from pydantic import BaseModel
 from typing import Optional
 from uuid import UUID
@@ -46,12 +46,17 @@ def _get_period(db, org_id, org_type, year):
 
 
 def _calc_balance(db, period_id, initial_balance):
-    transactions = db.query(FinancialTransaction).filter(
-        FinancialTransaction.period_id == period_id
-    ).all()
-    total_in = sum(t.amount for t in transactions if t.transaction_type in INCOME_TYPES)
-    total_out = sum(t.amount for t in transactions if t.transaction_type in EXPENSE_TYPES)
-    return float(initial_balance) + float(total_in) - float(total_out)
+    row = db.query(
+        func.coalesce(func.sum(case(
+            (FinancialTransaction.transaction_type.in_(INCOME_TYPES), FinancialTransaction.amount),
+            else_=0
+        )), 0).label("total_in"),
+        func.coalesce(func.sum(case(
+            (FinancialTransaction.transaction_type.in_(EXPENSE_TYPES), FinancialTransaction.amount),
+            else_=0
+        )), 0).label("total_out"),
+    ).filter(FinancialTransaction.period_id == period_id).one()
+    return float(initial_balance) + float(row.total_in) - float(row.total_out)
 
 
 # Criar ou abrir período financeiro
@@ -98,7 +103,7 @@ def list_periods(
 ):
     periods = db.query(FinancialPeriod).filter(
         FinancialPeriod.organization_id == current_user.organization_id,
-    ).order_by(FinancialPeriod.fiscal_year.desc()).all()
+    ).order_by(FinancialPeriod.fiscal_year.desc()).limit(500).all()
     return [_period_out(p, db) for p in periods]
 
 
@@ -179,7 +184,7 @@ def list_transactions(
 
     transactions = db.query(FinancialTransaction).filter(
         FinancialTransaction.period_id == period.id,
-    ).order_by(FinancialTransaction.transaction_date).all()
+    ).order_by(FinancialTransaction.transaction_date).limit(500).all()
 
     return {
         "period": _period_out(period, db),

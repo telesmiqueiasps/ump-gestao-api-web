@@ -8,10 +8,21 @@ async function request(method, path, body = null, isFormData = false) {
   if (token) headers['Authorization'] = `Bearer ${token}`
   if (!isFormData) headers['Content-Type'] = 'application/json'
 
-  const options = { method, headers }
+  const controller = new AbortController()
+  const timeoutId  = setTimeout(() => controller.abort(), 15000)
+
+  const options = { method, headers, signal: controller.signal }
   if (body) options.body = isFormData ? body : JSON.stringify(body)
 
-  let res = await fetch(BASE_URL + path, options)
+  let res
+  try {
+    res = await fetch(BASE_URL + path, options)
+  } catch (err) {
+    clearTimeout(timeoutId)
+    if (err.name === 'AbortError') throw new Error('Servidor demorando para responder, aguarde...')
+    throw err
+  }
+  clearTimeout(timeoutId)
 
   // Tenta refresh automático se 401
   if (res.status === 401 && !path.includes('/auth/')) {

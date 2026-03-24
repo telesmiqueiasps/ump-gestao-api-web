@@ -11,17 +11,23 @@ def _get_client():
         endpoint_url=settings.b2_endpoint_url,
         aws_access_key_id=settings.b2_key_id,
         aws_secret_access_key=settings.b2_application_key,
+        region_name="us-west-004",
     )
 
 
 def upload_file(contents: bytes, key: str, content_type: str) -> str:
     client = _get_client()
-    client.put_object(
-        Bucket=settings.b2_bucket_name,
-        Key=key,
-        Body=contents,
-        ContentType=content_type,
-    )
+    try:
+        client.put_object(
+            Bucket=settings.b2_bucket_name,
+            Key=key,
+            Body=contents,
+            ContentType=content_type,
+        )
+    except ClientError as e:
+        code = e.response.get("Error", {}).get("Code", "desconhecido")
+        msg = e.response.get("Error", {}).get("Message", str(e))
+        raise RuntimeError(f"Falha ao enviar arquivo para o Backblaze B2 (código {code}): {msg}") from e
     # Retorna URL pública (bucket público) ou pre-signed (bucket privado)
     url = f"{settings.b2_endpoint_url}/file/{settings.b2_bucket_name}/{key}"
     return url

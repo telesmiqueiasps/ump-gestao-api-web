@@ -109,7 +109,7 @@ def list_users_by_org(
     users = db.query(User).filter(
         User.organization_id == org_id,
         User.is_active == True,
-    ).all()
+    ).limit(500).all()
     return [_to_out(u) for u in users]
 
 
