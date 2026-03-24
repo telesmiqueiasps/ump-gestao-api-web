@@ -19,10 +19,3 @@ class BoardMember(Base):
     is_active = Column(Boolean, default=True)
 
     user = relationship("User")
-    local_ump = relationship(
-        "LocalUmp",
-        back_populates="board_members",
-        primaryjoin="BoardMember.organization_id == LocalUmp.id",
-        foreign_keys=[organization_id],
-        viewonly=True
-    )

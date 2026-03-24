@@ -23,9 +23,3 @@ class LocalUmp(Base):
 
     federation = relationship("Federation", back_populates="local_umps")
     members = relationship("Member", back_populates="local_ump")
-    board_members = relationship(
-        "BoardMember",
-        back_populates="local_ump",
-        foreign_keys="BoardMember.organization_id",
-        viewonly=True
-    )
