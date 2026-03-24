@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UMPs Locais — Gestão UMP</title>
+  <link rel="stylesheet" href="../assets/css/main.css" />
+  <link rel="stylesheet" href="../assets/css/components.css" />
+  <link rel="stylesheet" href="../assets/css/layout.css" />
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><h1>Gestão UMP</h1><p>União de Mocidade Presbiteriana</p></div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer">v1.0.0</div>
+  </aside>
+
+  <div class="main-area">
+    <header class="header">
+      <div class="header-user">
+        <div class="header-user-name" id="header-name"></div>
+        <div class="header-user-role" id="header-role"></div>
+      </div>
+      <div class="header-avatar" id="header-avatar"></div>
+      <button class="btn-logout" id="btn-logout" title="Sair">⏻</button>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header">
+        <div class="page-header-info">
+          <h1>UMPs Locais</h1>
+          <p>Gerencie as sociedades vinculadas a esta Federação</p>
+        </div>
+        <button class="btn btn-primary" id="btn-new-local">+ Nova UMP Local</button>
+      </div>
+
+      <div id="page-alert" class="hidden"></div>
+
+      <div class="local-grid" id="local-grid">
+        <div class="loading-center"><div class="spinner"></div></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal-local">
+  <div class="modal" style="max-height:90vh;overflow-y:auto">
+    <div class="modal-header">
+      <h2 id="modal-local-title">Nova UMP Local</h2>
+      <button class="modal-close">✕</button>
+    </div>
+    <div class="field mb-4">
+      <label>Nome da UMP</label>
+      <input class="input" type="text" id="l-name" placeholder="Ex: UMP da Igreja Central" />
+    </div>
+    <div class="grid-2 mb-4">
+      <div class="field">
+        <label>Igreja</label>
+        <input class="input" type="text" id="l-church" />
+      </div>
+      <div class="field">
+        <label>Pastor</label>
+        <input class="input" type="text" id="l-pastor" />
+      </div>
+    </div>
+    <div class="field mb-4">
+      <label>Presbitério</label>
+      <input class="input" type="text" id="l-presbytery" />
+    </div>
+    <div class="field mb-4">
+      <label>Endereço</label>
+      <input class="input" type="text" id="l-address" />
+    </div>
+    <div class="grid-2 mb-4">
+      <div class="field">
+        <label>Ano vigente</label>
+        <input class="input" type="number" id="l-year" />
+      </div>
+      <div class="field">
+        <label>Saldo inicial (R$)</label>
+        <input class="input" type="number" step="0.01" id="l-balance" placeholder="0,00" />
+      </div>
+    </div>
+    <div id="local-alert" class="hidden mb-4"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary modal-close">Cancelar</button>
+      <button class="btn btn-primary" id="btn-save-local">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { requireAuth, isFederation } from '../assets/js/auth.js'
+  import { renderShell } from '../assets/js/router.js'
+  import { api } from '../assets/js/api.js'
+  import { formatCurrency, showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading } from '../assets/js/utils.js'
+
+  if (!requireAuth()) throw new Error()
+  if (!isFederation()) window.location.href = 'dashboard.html'
+
+  renderShell()
+  document.querySelector('[data-page="local-umps"]')?.classList.add('active')
+  initModalClose()
+
+  let editId = null
+
+  async function loadLocals() {
+    const grid = document.getElementById('local-grid')
+    grid.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>'
+    try {
+      const data = await api.get('/api/federations/me/local-umps')
+      if (!data.length) {
+        grid.innerHTML = `<div class="card" style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--slate-400)">Nenhuma UMP Local cadastrada.</div>`
+        return
+      }
+      grid.innerHTML = data.map(l => `
+        <div class="local-card ${l.is_active ? '' : 'inactive'}">
+          <div class="local-card-header">
+            <div class="flex items-center gap-3">
+              <div class="local-card-icon">⊟</div>
+              <div>
+                <div class="local-card-name">${l.name}</div>
+                <div class="local-card-church">${l.church_name ?? '—'}</div>
+              </div>
+            </div>
+            <span class="badge ${l.is_active ? 'badge-green' : 'badge-slate'}">${l.is_active ? 'Ativa' : 'Inativa'}</span>
+          </div>
+          ${l.pastor_name ? `<div class="local-card-info">Pastor: ${l.pastor_name}</div>` : ''}
+          <div class="local-card-info">Ano vigente: ${l.fiscal_year ?? '—'}</div>
+          <div class="local-card-actions">
+            <button class="btn btn-secondary btn-sm" onclick="editLocal('${l.id}')">✎ Editar</button>
+            ${l.is_active ? `<button class="btn btn-ghost btn-sm" style="color:var(--red-600)" onclick="deactivateLocal('${l.id}','${l.name}')">Desativar</button>` : ''}
+          </div>
+        </div>
+      `).join('')
+    } catch(err) {
+      showAlert('page-alert', err.message, 'error')
+    }
+  }
+
+  document.getElementById('btn-new-local').addEventListener('click', () => {
+    editId = null
+    document.getElementById('modal-local-title').textContent = 'Nova UMP Local'
+    document.getElementById('l-name').value       = ''
+    document.getElementById('l-church').value     = ''
+    document.getElementById('l-pastor').value     = ''
+    document.getElementById('l-presbytery').value = ''
+    document.getElementById('l-address').value    = ''
+    document.getElementById('l-year').value       = new Date().getFullYear()
+    document.getElementById('l-balance').value    = ''
+    clearAlert('local-alert')
+    openModal('modal-local')
+  })
+
+  window.editLocal = async (id) => {
+    try {
+      const data = await api.get(`/api/local-umps/${id}`)
+      editId = id
+      document.getElementById('modal-local-title').textContent = 'Editar UMP Local'
+      document.getElementById('l-name').value       = data.name ?? ''
+      document.getElementById('l-church').value     = data.church_name ?? ''
+      document.getElementById('l-pastor').value     = data.pastor_name ?? ''
+      document.getElementById('l-presbytery').value = data.presbytery_name ?? ''
+      document.getElementById('l-address').value    = data.address ?? ''
+      document.getElementById('l-year').value       = data.fiscal_year ?? ''
+      document.getElementById('l-balance').value    = data.initial_balance ?? ''
+      clearAlert('local-alert')
+      openModal('modal-local')
+    } catch(err) {
+      showAlert('page-alert', err.message, 'error')
+    }
+  }
+
+  document.getElementById('btn-save-local').addEventListener('click', async () => {
+    const btn  = document.getElementById('btn-save-local')
+    const name = document.getElementById('l-name').value.trim()
+    if (!name) { showAlert('local-alert', 'Informe o nome da UMP Local.', 'error'); return }
+
+    const payload = {
+      name,
+      church_name:     document.getElementById('l-church').value     || null,
+      pastor_name:     document.getElementById('l-pastor').value     || null,
+      presbytery_name: document.getElementById('l-presbytery').value || null,
+      address:         document.getElementById('l-address').value    || null,
+      fiscal_year:     Number(document.getElementById('l-year').value),
+      initial_balance: parseFloat(document.getElementById('l-balance').value || 0),
+    }
+
+    setLoading(btn, true, 'Salvar')
+    try {
+      if (editId) await api.put(`/api/local-umps/${editId}`, payload)
+      else        await api.post('/api/local-umps/', payload)
+      closeModal('modal-local')
+      loadLocals()
+    } catch(err) {
+      showAlert('local-alert', err.message, 'error')
+    } finally {
+      setLoading(btn, false, 'Salvar')
+    }
+  })
+
+  window.deactivateLocal = async (id, name) => {
+    if (!confirm(`Desativar ${name}?`)) return
+    try {
+      await api.delete(`/api/local-umps/${id}`)
+      loadLocals()
+    } catch(err) { showAlert('page-alert', err.message, 'error') }
+  }
+
+  loadLocals()
+</script>
+
+</body>
+</html>

@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Financeiro — Gestão UMP</title>
+  <link rel="stylesheet" href="../assets/css/main.css" />
+  <link rel="stylesheet" href="../assets/css/components.css" />
+  <link rel="stylesheet" href="../assets/css/layout.css" />
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><h1>Gestão UMP</h1><p>União de Mocidade Presbiteriana</p></div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer">v1.0.0</div>
+  </aside>
+
+  <div class="main-area">
+    <header class="header">
+      <div class="header-user">
+        <div class="header-user-name" id="header-name"></div>
+        <div class="header-user-role" id="header-role"></div>
+      </div>
+      <div class="header-avatar" id="header-avatar"></div>
+      <button class="btn-logout" id="btn-logout" title="Sair">⏻</button>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header">
+        <div class="page-header-info">
+          <h1>Financeiro</h1>
+          <p>Lançamentos e extrato financeiro</p>
+        </div>
+        <div class="flex gap-3 items-center">
+          <select class="input" id="year-select" style="width:auto"></select>
+          <button class="btn btn-primary" id="btn-new-tx" style="display:none">+ Novo lançamento</button>
+        </div>
+      </div>
+
+      <div id="page-alert" class="hidden"></div>
+
+      <!-- Sem período -->
+      <div id="no-period" style="display:none">
+        <div class="alert alert-warning" style="justify-content:space-between;align-items:center">
+          <span>⚠️ Nenhum período financeiro encontrado para este ano.</span>
+          <button class="btn btn-secondary btn-sm" id="btn-create-period">+ Criar período</button>
+        </div>
+      </div>
+
+      <!-- Resumo -->
+      <div class="card" id="period-summary" style="display:none">
+        <div class="card-header">
+          <div class="flex items-center gap-3">
+            <h2 id="period-title">Período</h2>
+            <span class="badge" id="period-badge"></span>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="btn-close-period" style="display:none">Encerrar período</button>
+        </div>
+        <div class="summary-grid">
+          <div class="summary-item"><div class="label">Saldo Inicial</div><div class="value" id="sum-initial">—</div></div>
+          <div class="summary-item"><div class="label">Entradas</div><div class="value green" id="sum-in">—</div></div>
+          <div class="summary-item"><div class="label">Saídas</div><div class="value red" id="sum-out">—</div></div>
+          <div class="summary-item"><div class="label">Saldo Final</div><div class="value blue" id="sum-final">—</div></div>
+        </div>
+      </div>
+
+      <!-- Tabela -->
+      <div class="card" id="tx-section" style="display:none">
+        <div class="card-header">
+          <h2>Lançamentos</h2>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Tipo</th>
+                <th>Descrição</th>
+                <th class="text-right">Valor</th>
+                <th class="text-center">Comprovante</th>
+                <th id="th-actions"></th>
+              </tr>
+            </thead>
+            <tbody id="tx-body">
+              <tr><td colspan="6" class="table-empty">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Modal Criar Período -->
+<div class="modal-overlay" id="modal-period">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2>Criar Período Financeiro</h2>
+      <button class="modal-close">✕</button>
+    </div>
+    <div class="field mb-4">
+      <label>Ano</label>
+      <input class="input" type="number" id="period-year" />
+    </div>
+    <div class="field">
+      <label>Saldo Inicial (R$)</label>
+      <input class="input" type="number" step="0.01" id="period-balance" placeholder="0,00" />
+    </div>
+    <div id="period-alert" class="hidden mt-4"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary modal-close">Cancelar</button>
+      <button class="btn btn-primary" id="btn-save-period">Criar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Lançamento -->
+<div class="modal-overlay" id="modal-tx">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-tx-title">Novo Lançamento</h2>
+      <button class="modal-close">✕</button>
+    </div>
+    <div class="grid-2 mb-4">
+      <div class="field">
+        <label>Data</label>
+        <input class="input" type="date" id="tx-date" />
+      </div>
+      <div class="field">
+        <label>Tipo</label>
+        <select class="input" id="tx-type">
+          <option value="outras_receitas">Outras Receitas</option>
+          <option value="outras_despesas">Outras Despesas</option>
+          <option value="aci_recebida">ACI Recebida</option>
+          <option value="aci_enviada">ACI Enviada</option>
+        </select>
+      </div>
+    </div>
+    <div class="field mb-4">
+      <label>Descrição</label>
+      <input class="input" type="text" id="tx-desc" placeholder="Descreva o lançamento" />
+    </div>
+    <div class="field mb-4">
+      <label>Valor (R$)</label>
+      <input class="input" type="number" step="0.01" min="0.01" id="tx-amount" placeholder="0,00" />
+    </div>
+    <div class="field" id="tx-receipt-field">
+      <label>Comprovante <span class="text-slate-400" style="font-weight:400">(opcional)</span></label>
+      <input class="input" type="file" id="tx-receipt" accept="image/png,image/jpeg,application/pdf" />
+    </div>
+    <div id="tx-alert" class="hidden mt-4"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary modal-close">Cancelar</button>
+      <button class="btn btn-primary" id="btn-save-tx">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { requireAuth } from '../assets/js/auth.js'
+  import { renderShell } from '../assets/js/router.js'
+  import { api } from '../assets/js/api.js'
+  import { formatCurrency, formatDate, showAlert, openModal, closeModal, initModalClose, setLoading } from '../assets/js/utils.js'
+
+  if (!requireAuth()) throw new Error()
+  renderShell()
+  document.querySelector('[data-page="finances"]')?.classList.add('active')
+
+  const TYPES = {
+    outras_receitas: { label: 'Outras Receitas', nature: 'in' },
+    outras_despesas: { label: 'Outras Despesas', nature: 'out' },
+    aci_recebida:    { label: 'ACI Recebida',    nature: 'in' },
+    aci_enviada:     { label: 'ACI Enviada',      nature: 'out' },
+  }
+
+  let currentPeriod = null
+  let editId = null
+  let currentYear = new Date().getFullYear()
+
+  // Preenche select de anos
+  const yearSelect = document.getElementById('year-select')
+  ;[2023,2024,2025,2026].forEach(y => {
+    const opt = document.createElement('option')
+    opt.value = y; opt.textContent = y
+    if (y === currentYear) opt.selected = true
+    yearSelect.appendChild(opt)
+  })
+  yearSelect.addEventListener('change', () => { currentYear = Number(yearSelect.value); loadPage() })
+
+  initModalClose()
+
+  // Criar período
+  document.getElementById('btn-create-period').addEventListener('click', () => {
+    document.getElementById('period-year').value = currentYear
+    document.getElementById('period-balance').value = ''
+    openModal('modal-period')
+  })
+
+  document.getElementById('btn-save-period').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-save-period')
+    setLoading(btn, true, 'Criar')
+    try {
+      await api.post('/api/finances/periods', {
+        fiscal_year: Number(document.getElementById('period-year').value),
+        initial_balance: parseFloat(document.getElementById('period-balance').value || 0)
+      })
+      closeModal('modal-period')
+      loadPage()
+    } catch(err) {
+      showAlert('period-alert', err.message, 'error')
+    } finally {
+      setLoading(btn, false, 'Criar')
+    }
+  })
+
+  // Novo lançamento
+  document.getElementById('btn-new-tx').addEventListener('click', () => {
+    editId = null
+    document.getElementById('modal-tx-title').textContent = 'Novo Lançamento'
+    document.getElementById('tx-date').value   = new Date().toISOString().split('T')[0]
+    document.getElementById('tx-type').value   = 'outras_receitas'
+    document.getElementById('tx-desc').value   = ''
+    document.getElementById('tx-amount').value = ''
+    document.getElementById('tx-receipt-field').style.display = 'block'
+    openModal('modal-tx')
+  })
+
+  // Salvar lançamento
+  document.getElementById('btn-save-tx').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-save-tx')
+    const payload = {
+      transaction_date: document.getElementById('tx-date').value,
+      transaction_type: document.getElementById('tx-type').value,
+      description:      document.getElementById('tx-desc').value,
+      amount:           parseFloat(document.getElementById('tx-amount').value),
+    }
+    if (!payload.transaction_date || !payload.description || !payload.amount) {
+      showAlert('tx-alert', 'Preencha todos os campos obrigatórios.', 'error'); return
+    }
+    setLoading(btn, true, 'Salvar')
+    try {
+      if (editId) {
+        await api.put(`/api/finances/transactions/${editId}`, payload)
+      } else {
+        const tx = await api.post('/api/finances/transactions', payload)
+        const file = document.getElementById('tx-receipt').files[0]
+        if (file) {
+          const fd = new FormData(); fd.append('file', file)
+          await api.upload(`/api/finances/transactions/${tx.id}/receipt`, fd)
+        }
+      }
+      closeModal('modal-tx')
+      loadPage()
+    } catch(err) {
+      showAlert('tx-alert', err.message, 'error')
+    } finally {
+      setLoading(btn, false, 'Salvar')
+    }
+  })
+
+  // Encerrar período
+  document.getElementById('btn-close-period').addEventListener('click', async () => {
+    if (!confirm('Encerrar o período? Esta ação não pode ser desfeita.')) return
+    try {
+      await api.post(`/api/finances/periods/${currentPeriod.id}/close`)
+      loadPage()
+    } catch(err) { showAlert('page-alert', err.message, 'error') }
+  })
+
+  async function loadPage() {
+    document.getElementById('no-period').style.display = 'none'
+    document.getElementById('period-summary').style.display = 'none'
+    document.getElementById('tx-section').style.display = 'none'
+    document.getElementById('btn-new-tx').style.display = 'none'
+
+    try {
+      const data = await api.get(`/api/finances/transactions?year=${currentYear}`)
+      currentPeriod = data.period
+      const txs = data.transactions ?? []
+
+      const totalIn  = txs.filter(t => TYPES[t.transaction_type]?.nature === 'in').reduce((s,t) => s + Number(t.amount), 0)
+      const totalOut = txs.filter(t => TYPES[t.transaction_type]?.nature === 'out').reduce((s,t) => s + Number(t.amount), 0)
+
+      document.getElementById('period-title').textContent = `Período ${currentPeriod.fiscal_year}`
+      document.getElementById('period-badge').textContent = currentPeriod.is_closed ? 'Encerrado' : 'Aberto'
+      document.getElementById('period-badge').className = `badge ${currentPeriod.is_closed ? 'badge-slate' : 'badge-green'}`
+      document.getElementById('sum-initial').textContent = formatCurrency(currentPeriod.initial_balance)
+      document.getElementById('sum-in').textContent      = formatCurrency(totalIn)
+      document.getElementById('sum-out').textContent     = formatCurrency(totalOut)
+      document.getElementById('sum-final').textContent   = formatCurrency(currentPeriod.final_balance)
+
+      document.getElementById('period-summary').style.display = 'block'
+      document.getElementById('tx-section').style.display = 'block'
+
+      if (!currentPeriod.is_closed) {
+        document.getElementById('btn-new-tx').style.display = 'inline-flex'
+        document.getElementById('btn-close-period').style.display = 'inline-flex'
+        document.getElementById('th-actions').textContent = ''
+      } else {
+        document.getElementById('btn-close-period').style.display = 'none'
+      }
+
+      renderTransactions(txs, !currentPeriod.is_closed)
+    } catch {
+      document.getElementById('no-period').style.display = 'block'
+    }
+  }
+
+  function renderTransactions(txs, canEdit) {
+    const tbody = document.getElementById('tx-body')
+    if (!txs.length) {
+      tbody.innerHTML = `<tr><td colspan="6" class="table-empty">Nenhum lançamento registrado.</td></tr>`
+      return
+    }
+    tbody.innerHTML = txs.map(t => {
+      const nature = TYPES[t.transaction_type]?.nature
+      const label  = TYPES[t.transaction_type]?.label
+      return `
+        <tr>
+          <td>${formatDate(t.transaction_date)}</td>
+          <td><span class="badge ${nature === 'in' ? 'badge-green' : 'badge-red'}">${nature === 'in' ? '+' : '–'} ${label}</span></td>
+          <td>${t.description}</td>
+          <td class="text-right font-medium" style="color:${nature==='in'?'var(--green-600)':'var(--red-600)'}">
+            ${nature === 'in' ? '+' : '–'} ${formatCurrency(t.amount)}
+          </td>
+          <td class="text-center">
+            ${t.receipt_url ? `<a href="${t.receipt_url}" target="_blank" class="text-sm">Ver</a>` : '<span class="text-slate-400">—</span>'}
+          </td>
+          <td>
+            ${canEdit ? `
+              <div class="row-actions">
+                <button class="btn btn-ghost btn-icon" onclick="editTx('${t.id}','${t.transaction_date}','${t.transaction_type}',${JSON.stringify(t.description)},${t.amount})">✎</button>
+                <button class="btn btn-ghost btn-icon danger" onclick="deleteTx('${t.id}')">✕</button>
+              </div>` : ''}
+          </td>
+        </tr>`
+    }).join('')
+  }
+
+  window.editTx = (id, date, type, desc, amount) => {
+    editId = id
+    document.getElementById('modal-tx-title').textContent = 'Editar Lançamento'
+    document.getElementById('tx-date').value   = date
+    document.getElementById('tx-type').value   = type
+    document.getElementById('tx-desc').value   = desc
+    document.getElementById('tx-amount').value = amount
+    document.getElementById('tx-receipt-field').style.display = 'none'
+    openModal('modal-tx')
+  }
+
+  window.deleteTx = async (id) => {
+    if (!confirm('Excluir este lançamento?')) return
+    try {
+      await api.delete(`/api/finances/transactions/${id}`)
+      loadPage()
+    } catch(err) { showAlert('page-alert', err.message, 'error') }
+  }
+
+  loadPage()
+</script>
+
+</body>
+</html>

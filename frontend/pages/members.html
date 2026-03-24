@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sócios — Gestão UMP</title>
+  <link rel="stylesheet" href="../assets/css/main.css" />
+  <link rel="stylesheet" href="../assets/css/components.css" />
+  <link rel="stylesheet" href="../assets/css/layout.css" />
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><h1>Gestão UMP</h1><p>União de Mocidade Presbiteriana</p></div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer">v1.0.0</div>
+  </aside>
+
+  <div class="main-area">
+    <header class="header">
+      <div class="header-user">
+        <div class="header-user-name" id="header-name"></div>
+        <div class="header-user-role" id="header-role"></div>
+      </div>
+      <div class="header-avatar" id="header-avatar"></div>
+      <button class="btn-logout" id="btn-logout" title="Sair">⏻</button>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header">
+        <div class="page-header-info">
+          <h1>Sócios</h1>
+          <p>Gerencie os sócios da sua sociedade</p>
+        </div>
+        <button class="btn btn-primary" id="btn-new-member">+ Novo sócio</button>
+      </div>
+
+      <div id="page-alert" class="hidden"></div>
+
+      <div class="filter-bar">
+        <button class="filter-btn active" id="filter-active" onclick="setFilter(true)">Ativos</button>
+        <button class="filter-btn" id="filter-all" onclick="setFilter(false)">Todos</button>
+        <span class="filter-count" id="member-count"></span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Tipo</th>
+              <th class="hide-mobile">E-mail</th>
+              <th class="hide-mobile">Telefone</th>
+              <th class="hide-mobile">Entrada</th>
+              <th class="text-center">Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="members-body">
+            <tr><td colspan="7" class="table-empty">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Modal Sócio -->
+<div class="modal-overlay" id="modal-member">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-member-title">Novo Sócio</h2>
+      <button class="modal-close">✕</button>
+    </div>
+    <div class="field mb-4">
+      <label>Nome completo</label>
+      <input class="input" type="text" id="m-name" placeholder="Nome do sócio" />
+    </div>
+    <div class="field mb-4">
+      <label>Tipo</label>
+      <select class="input" id="m-type">
+        <option value="ativo">Ativo</option>
+        <option value="cooperador">Cooperador</option>
+      </select>
+    </div>
+    <div class="grid-2 mb-4">
+      <div class="field">
+        <label>E-mail <span class="text-slate-400" style="font-weight:400">(opcional)</span></label>
+        <input class="input" type="email" id="m-email" placeholder="opcional" />
+      </div>
+      <div class="field">
+        <label>Telefone <span class="text-slate-400" style="font-weight:400">(opcional)</span></label>
+        <input class="input" type="text" id="m-phone" placeholder="opcional" />
+      </div>
+    </div>
+    <div class="grid-2 mb-4">
+      <div class="field">
+        <label>Data de nascimento</label>
+        <input class="input" type="date" id="m-birth" />
+      </div>
+      <div class="field">
+        <label>Data de entrada</label>
+        <input class="input" type="date" id="m-join" />
+      </div>
+    </div>
+    <div id="member-alert" class="hidden mb-4"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary modal-close">Cancelar</button>
+      <button class="btn btn-primary" id="btn-save-member">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Mensalidade -->
+<div class="modal-overlay" id="modal-fee">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2>Registrar Mensalidade</h2>
+      <button class="modal-close">✕</button>
+    </div>
+    <div class="field mb-4">
+      <label>Mês de referência</label>
+      <input class="input" type="date" id="fee-month" />
+    </div>
+    <div class="field mb-4">
+      <label>Valor (R$)</label>
+      <input class="input" type="number" step="0.01" id="fee-amount" placeholder="0,00" />
+    </div>
+    <div id="fee-alert" class="hidden mb-4"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary modal-close">Cancelar</button>
+      <button class="btn btn-primary" id="btn-save-fee">Registrar</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { requireAuth, isLocalUmp } from '../assets/js/auth.js'
+  import { renderShell } from '../assets/js/router.js'
+  import { api } from '../assets/js/api.js'
+  import { formatDate, showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading } from '../assets/js/utils.js'
+
+  if (!requireAuth()) throw new Error()
+  if (!isLocalUmp()) window.location.href = 'dashboard.html'
+
+  renderShell()
+  document.querySelector('[data-page="members"]')?.classList.add('active')
+  initModalClose()
+
+  let activeOnly = true
+  let editId = null
+  let feeTargetId = null
+
+  window.setFilter = (active) => {
+    activeOnly = active
+    document.getElementById('filter-active').classList.toggle('active', active)
+    document.getElementById('filter-all').classList.toggle('active', !active)
+    loadMembers()
+  }
+
+  async function loadMembers() {
+    try {
+      const data = await api.get(`/api/members/?active_only=${activeOnly}`)
+      document.getElementById('member-count').textContent = `${data.length} sócio${data.length !== 1 ? 's' : ''}`
+      renderTable(data)
+    } catch(err) {
+      showAlert('page-alert', err.message, 'error')
+    }
+  }
+
+  function renderTable(members) {
+    const tbody = document.getElementById('members-body')
+    if (!members.length) {
+      tbody.innerHTML = `<tr><td colspan="7" class="table-empty">Nenhum sócio encontrado.</td></tr>`
+      return
+    }
+    tbody.innerHTML = members.map(m => `
+      <tr>
+        <td class="font-medium">${m.full_name}</td>
+        <td><span class="badge ${m.member_type === 'ativo' ? 'badge-blue' : 'badge-slate'}">${m.member_type === 'ativo' ? 'Ativo' : 'Cooperador'}</span></td>
+        <td class="hide-mobile">${m.email ?? '—'}</td>
+        <td class="hide-mobile">${m.phone ?? '—'}</td>
+        <td class="hide-mobile">${formatDate(m.join_date)}</td>
+        <td class="text-center"><span class="badge ${m.is_active ? 'badge-green' : 'badge-slate'}">${m.is_active ? 'Ativo' : 'Inativo'}</span></td>
+        <td>
+          <div class="row-actions">
+            <button class="btn btn-ghost btn-icon" title="Mensalidade" onclick="openFee('${m.id}')">✓</button>
+            <button class="btn btn-ghost btn-icon" title="Editar" onclick="editMember('${m.id}','${m.full_name}','${m.member_type}','${m.email??''}','${m.phone??''}','${m.birth_date??''}','${m.join_date??''}')">✎</button>
+            ${m.is_active ? `<button class="btn btn-ghost btn-icon danger" title="Desativar" onclick="deactivate('${m.id}','${m.full_name}')">✕</button>` : ''}
+          </div>
+        </td>
+      </tr>
+    `).join('')
+  }
+
+  // Novo sócio
+  document.getElementById('btn-new-member').addEventListener('click', () => {
+    editId = null
+    document.getElementById('modal-member-title').textContent = 'Novo Sócio'
+    document.getElementById('m-name').value  = ''
+    document.getElementById('m-type').value  = 'ativo'
+    document.getElementById('m-email').value = ''
+    document.getElementById('m-phone').value = ''
+    document.getElementById('m-birth').value = ''
+    document.getElementById('m-join').value  = new Date().toISOString().split('T')[0]
+    clearAlert('member-alert')
+    openModal('modal-member')
+  })
+
+  window.editMember = (id, name, type, email, phone, birth, join) => {
+    editId = id
+    document.getElementById('modal-member-title').textContent = 'Editar Sócio'
+    document.getElementById('m-name').value  = name
+    document.getElementById('m-type').value  = type
+    document.getElementById('m-email').value = email
+    document.getElementById('m-phone').value = phone
+    document.getElementById('m-birth').value = birth
+    document.getElementById('m-join').value  = join
+    clearAlert('member-alert')
+    openModal('modal-member')
+  }
+
+  document.getElementById('btn-save-member').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-save-member')
+    const name = document.getElementById('m-name').value.trim()
+    if (!name) { showAlert('member-alert', 'Informe o nome do sócio.', 'error'); return }
+
+    const payload = {
+      full_name:   name,
+      member_type: document.getElementById('m-type').value,
+      email:       document.getElementById('m-email').value || null,
+      phone:       document.getElementById('m-phone').value || null,
+      birth_date:  document.getElementById('m-birth').value || null,
+      join_date:   document.getElementById('m-join').value  || null,
+    }
+
+    setLoading(btn, true, 'Salvar')
+    try {
+      if (editId) await api.put(`/api/members/${editId}`, payload)
+      else        await api.post('/api/members/', payload)
+      closeModal('modal-member')
+      loadMembers()
+    } catch(err) {
+      showAlert('member-alert', err.message, 'error')
+    } finally {
+      setLoading(btn, false, 'Salvar')
+    }
+  })
+
+  window.deactivate = async (id, name) => {
+    if (!confirm(`Desativar ${name}?`)) return
+    try {
+      await api.delete(`/api/members/${id}`)
+      loadMembers()
+    } catch(err) { showAlert('page-alert', err.message, 'error') }
+  }
+
+  // Mensalidade
+  window.openFee = (id) => {
+    feeTargetId = id
+    document.getElementById('fee-month').value  = new Date().toISOString().split('T')[0]
+    document.getElementById('fee-amount').value = ''
+    clearAlert('fee-alert')
+    openModal('modal-fee')
+  }
+
+  document.getElementById('btn-save-fee').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-save-fee')
+    const month  = document.getElementById('fee-month').value
+    const amount = parseFloat(document.getElementById('fee-amount').value)
+    if (!month || !amount) { showAlert('fee-alert', 'Preencha todos os campos.', 'error'); return }
+
+    setLoading(btn, true, 'Registrar')
+    try {
+      await api.post('/api/members/fees', { member_id: feeTargetId, reference_month: month, amount })
+      closeModal('modal-fee')
+    } catch(err) {
+      showAlert('fee-alert', err.message, 'error')
+    } finally {
+      setLoading(btn, false, 'Registrar')
+    }
+  })
+
+  loadMembers()
+</script>
+
+</body>
+</html>

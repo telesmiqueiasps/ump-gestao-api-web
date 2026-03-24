@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — Gestão UMP</title>
+  <link rel="stylesheet" href="../assets/css/main.css" />
+  <link rel="stylesheet" href="../assets/css/components.css" />
+  <link rel="stylesheet" href="../assets/css/layout.css" />
+</head>
+<body>
+
+<div class="app-shell">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <h1>Gestão UMP</h1>
+      <p>União de Mocidade Presbiteriana</p>
+    </div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer">v1.0.0</div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main-area">
+    <header class="header">
+      <div class="header-user">
+        <div class="header-user-name" id="header-name"></div>
+        <div class="header-user-role" id="header-role"></div>
+      </div>
+      <div class="header-avatar" id="header-avatar"></div>
+      <button class="btn-logout" id="btn-logout" title="Sair">⏻</button>
+    </header>
+
+    <main class="page-content">
+      <!-- Boas vindas -->
+      <div class="page-header">
+        <div class="page-header-info">
+          <h1 id="welcome-title">Olá 👋</h1>
+          <p id="welcome-sub">Resumo do ano vigente</p>
+        </div>
+      </div>
+
+      <!-- Stats financeiros -->
+      <div class="grid-3" id="stats-financial">
+        <div class="stat-card">
+          <div class="stat-icon blue">◈</div>
+          <div>
+            <div class="stat-label">Saldo Atual</div>
+            <div class="stat-value" id="stat-balance">—</div>
+            <div class="stat-sub" id="stat-balance-sub">Nenhum período aberto</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green">↑</div>
+          <div>
+            <div class="stat-label">Total de Entradas</div>
+            <div class="stat-value" id="stat-in">—</div>
+            <div class="stat-sub">Receitas + ACI recebida</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon red">↓</div>
+          <div>
+            <div class="stat-label">Total de Saídas</div>
+            <div class="stat-value" id="stat-out">—</div>
+            <div class="stat-sub">Despesas + ACI enviada</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats organizacionais -->
+      <div class="grid-3" id="stats-org">
+        <div class="stat-card" id="stat-members-card" style="display:none">
+          <div class="stat-icon slate">◉</div>
+          <div>
+            <div class="stat-label">Sócios Ativos</div>
+            <div class="stat-value" id="stat-members">—</div>
+            <div class="stat-sub">Cadastrados na sociedade</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon slate">❖</div>
+          <div>
+            <div class="stat-label">Membros da Diretoria</div>
+            <div class="stat-value" id="stat-board">—</div>
+            <div class="stat-sub" id="stat-board-sub">Diretoria vigente</div>
+          </div>
+        </div>
+        <div class="stat-card" id="stat-locals-card" style="display:none">
+          <div class="stat-icon blue">⊟</div>
+          <div>
+            <div class="stat-label">UMPs Locais</div>
+            <div class="stat-value" id="stat-locals">—</div>
+            <div class="stat-sub">Vinculadas a esta Federação</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Período financeiro -->
+      <div class="card" id="period-card" style="display:none">
+        <div class="card-header">
+          <h2 id="period-title">Período Financeiro</h2>
+          <span class="badge" id="period-badge"></span>
+        </div>
+        <p class="text-sm text-slate-500 mb-4">Saldo calculado em tempo real com base nos lançamentos registrados.</p>
+        <div class="summary-grid">
+          <div class="summary-item">
+            <div class="label">Saldo Inicial</div>
+            <div class="value" id="period-initial">—</div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Entradas</div>
+            <div class="value green" id="period-in">—</div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Saídas</div>
+            <div class="value red" id="period-out">—</div>
+          </div>
+          <div class="summary-item">
+            <div class="label">Saldo Final</div>
+            <div class="value blue" id="period-final">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sem período -->
+      <div id="no-period-alert" style="display:none">
+        <div class="alert alert-warning">
+          ⚠️ Nenhum período financeiro aberto para o ano atual.
+          <a href="finances.html" style="margin-left:.5rem;font-weight:600">Criar período →</a>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script type="module">
+  import { requireAuth, getUser, isFederation, isLocalUmp } from '../assets/js/auth.js'
+  import { renderShell } from '../assets/js/router.js'
+  import { api } from '../assets/js/api.js'
+  import { formatCurrency, currentYear } from '../assets/js/utils.js'
+
+  if (!requireAuth()) throw new Error('not auth')
+
+  renderShell()
+  document.querySelector('[data-page="dashboard"]')?.classList.add('active')
+
+  const user = getUser()
+  const year = currentYear()
+
+  document.getElementById('welcome-title').textContent = `Olá, ${user.full_name.split(' ')[0]} 👋`
+  document.getElementById('welcome-sub').textContent = `Resumo do ano vigente · ${year}`
+  document.getElementById('stat-board-sub').textContent = `Diretoria ${year}`
+
+  // Mostrar cards condicionais
+  if (isLocalUmp()) document.getElementById('stat-members-card').style.display = 'flex'
+  if (isFederation()) document.getElementById('stat-locals-card').style.display = 'flex'
+
+  // Carregar dados
+  async function loadDashboard() {
+    // Período financeiro
+    try {
+      const data = await api.get(`/api/finances/transactions?year=${year}`)
+      const period = data.period
+      const txs = data.transactions ?? []
+
+      const totalIn  = txs.filter(t => ['outras_receitas','aci_recebida'].includes(t.transaction_type)).reduce((s,t) => s + Number(t.amount), 0)
+      const totalOut = txs.filter(t => ['outras_despesas','aci_enviada'].includes(t.transaction_type)).reduce((s,t) => s + Number(t.amount), 0)
+
+      document.getElementById('stat-balance').textContent = formatCurrency(period.final_balance)
+      document.getElementById('stat-balance-sub').textContent = `Saldo inicial: ${formatCurrency(period.initial_balance)}`
+      document.getElementById('stat-in').textContent  = formatCurrency(totalIn)
+      document.getElementById('stat-out').textContent = formatCurrency(totalOut)
+
+      document.getElementById('period-title').textContent = `Período Financeiro ${period.fiscal_year}`
+      document.getElementById('period-badge').textContent = period.is_closed ? 'Encerrado' : 'Aberto'
+      document.getElementById('period-badge').className = `badge ${period.is_closed ? 'badge-slate' : 'badge-green'}`
+      document.getElementById('period-initial').textContent = formatCurrency(period.initial_balance)
+      document.getElementById('period-in').textContent  = formatCurrency(totalIn)
+      document.getElementById('period-out').textContent = formatCurrency(totalOut)
+      document.getElementById('period-final').textContent = formatCurrency(period.final_balance)
+      document.getElementById('period-final').className = `value ${period.final_balance >= 0 ? 'blue' : 'red'}`
+
+      document.getElementById('period-card').style.display = 'block'
+    } catch {
+      document.getElementById('no-period-alert').style.display = 'block'
+      document.getElementById('stat-balance').textContent = '—'
+      document.getElementById('stat-in').textContent  = '—'
+      document.getElementById('stat-out').textContent  = '—'
+    }
+
+    // Diretoria
+    try {
+      const board = await api.get(`/api/board/?fiscal_year=${year}`)
+      document.getElementById('stat-board').textContent = board.length
+    } catch { document.getElementById('stat-board').textContent = '0' }
+
+    // Sócios (local)
+    if (isLocalUmp()) {
+      try {
+        const members = await api.get('/api/members/?active_only=true')
+        document.getElementById('stat-members').textContent = members.length
+      } catch { document.getElementById('stat-members').textContent = '0' }
+    }
+
+    // Locais (federação)
+    if (isFederation()) {
+      try {
+        const locals = await api.get('/api/federations/me/local-umps')
+        document.getElementById('stat-locals').textContent = locals.length
+      } catch { document.getElementById('stat-locals').textContent = '0' }
+    }
+  }
+
+  loadDashboard()
+</script>
+
+</body>
+</html>

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Perfil — Gestão UMP</title>
+  <link rel="stylesheet" href="../assets/css/main.css" />
+  <link rel="stylesheet" href="../assets/css/components.css" />
+  <link rel="stylesheet" href="../assets/css/layout.css" />
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><h1>Gestão UMP</h1><p>União de Mocidade Presbiteriana</p></div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer">v1.0.0</div>
+  </aside>
+
+  <div class="main-area">
+    <header class="header">
+      <div class="header-user">
+        <div class="header-user-name" id="header-name"></div>
+        <div class="header-user-role" id="header-role"></div>
+      </div>
+      <div class="header-avatar" id="header-avatar"></div>
+      <button class="btn-logout" id="btn-logout" title="Sair">⏻</button>
+    </header>
+
+    <main class="page-content" style="max-width:720px">
+      <div class="page-header">
+        <div class="page-header-info">
+          <h1>Perfil da Organização</h1>
+          <p>Gerencie as informações da sua organização</p>
+        </div>
+      </div>
+
+      <div id="page-alert" class="hidden"></div>
+
+      <!-- Logo -->
+      <div class="card">
+        <h2 class="mb-4">Logo</h2>
+        <div class="flex items-center gap-4">
+          <div id="logo-preview" style="width:72px;height:72px;border-radius:var(--radius-lg);border:2px solid var(--slate-200);background:var(--slate-50);display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:700;color:var(--slate-300);overflow:hidden;flex-shrink:0">
+            ?
+          </div>
+          <div>
+            <label class="btn btn-secondary btn-sm" style="cursor:pointer">
+              ↑ Enviar logo
+              <input type="file" id="logo-input" accept="image/png,image/jpeg,image/webp" class="sr-only" />
+            </label>
+            <p class="text-xs text-slate-400 mt-2">PNG, JPG ou WEBP · máx. 5MB</p>
+            <p id="logo-status" class="text-xs mt-1"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dados da organização -->
+      <div class="card">
+        <h2 class="mb-4">Dados da Organização</h2>
+        <div class="grid-2 mb-4">
+          <div class="field">
+            <label>Nome</label>
+            <input class="input" type="text" id="org-name" />
+          </div>
+          <div class="field">
+            <label>Presbitério</label>
+            <input class="input" type="text" id="org-presbytery" />
+          </div>
+        </div>
+
+        <div class="grid-2 mb-4" id="local-fields" style="display:none">
+          <div class="field">
+            <label>Igreja</label>
+            <input class="input" type="text" id="org-church" />
+          </div>
+          <div class="field">
+            <label>Pastor</label>
+            <input class="input" type="text" id="org-pastor" />
+          </div>
+        </div>
+
+        <div class="field mb-4">
+          <label>Endereço</label>
+          <input class="input" type="text" id="org-address" />
+        </div>
+
+        <div class="grid-2 mb-4" id="fiscal-fields" style="display:none">
+          <div class="field">
+            <label>Ano Vigente</label>
+            <input class="input" type="text" id="org-year" readonly />
+          </div>
+          <div class="field">
+            <label>Saldo Inicial</label>
+            <input class="input" type="text" id="org-balance" readonly />
+          </div>
+        </div>
+
+        <div id="profile-alert" class="hidden mb-4"></div>
+
+        <div class="flex items-center gap-3">
+          <button class="btn btn-primary" id="btn-save-profile">Salvar alterações</button>
+          <span id="save-success" class="text-sm text-green" style="display:none">✓ Salvo com sucesso!</span>
+        </div>
+      </div>
+
+      <!-- Alterar senha -->
+      <div class="card">
+        <h2 class="mb-4">🔒 Alterar Senha</h2>
+        <div style="max-width:360px">
+          <div class="field mb-4">
+            <label>Senha atual</label>
+            <input class="input" type="password" id="pw-current" />
+          </div>
+          <div class="field mb-4">
+            <label>Nova senha</label>
+            <input class="input" type="password" id="pw-new" />
+          </div>
+          <div class="field mb-4">
+            <label>Confirmar nova senha</label>
+            <input class="input" type="password" id="pw-confirm" />
+          </div>
+        </div>
+        <div id="pw-alert" class="hidden mb-4"></div>
+        <div class="flex items-center gap-3">
+          <button class="btn btn-secondary" id="btn-save-pw">Alterar senha</button>
+          <span id="pw-success" class="text-sm text-green" style="display:none">✓ Senha alterada!</span>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script type="module">
+  import { requireAuth, isFederation, isLocalUmp } from '../assets/js/auth.js'
+  import { renderShell } from '../assets/js/router.js'
+  import { api } from '../assets/js/api.js'
+  import { formatCurrency, showAlert, clearAlert, setLoading } from '../assets/js/utils.js'
+
+  if (!requireAuth()) throw new Error()
+  renderShell()
+  document.querySelector('[data-page="profile"]')?.classList.add('active')
+
+  const endpoint       = isFederation() ? '/api/federations/me' : '/api/local-umps/me'
+  const updateEndpoint = isFederation() ? '/api/federations/me' : '/api/local-umps/me/update'
+  const logoEndpoint   = isFederation() ? '/api/federations/me/logo' : '/api/local-umps/me/logo'
+
+  // Mostrar campos condicionais
+  if (isLocalUmp()) {
+    document.getElementById('local-fields').style.display = 'grid'
+    document.getElementById('fiscal-fields').style.display = 'grid'
+  }
+
+  // Carregar perfil
+  async function loadProfile() {
+    try {
+      const data = await api.get(endpoint)
+
+      document.getElementById('org-name').value       = data.name ?? ''
+      document.getElementById('org-presbytery').value = data.presbytery_name ?? ''
+      document.getElementById('org-address').value    = data.address ?? ''
+
+      if (isLocalUmp()) {
+        document.getElementById('org-church').value  = data.church_name ?? ''
+        document.getElementById('org-pastor').value  = data.pastor_name ?? ''
+        document.getElementById('org-year').value    = data.fiscal_year ?? ''
+        document.getElementById('org-balance').value = formatCurrency(data.initial_balance)
+      }
+
+      // Logo
+      const preview = document.getElementById('logo-preview')
+      if (data.logo_url) {
+        preview.innerHTML = `<img src="${data.logo_url}" style="width:100%;height:100%;object-fit:cover" />`
+      } else {
+        preview.textContent = data.name?.charAt(0).toUpperCase() ?? '?'
+      }
+    } catch(err) {
+      showAlert('page-alert', err.message, 'error')
+    }
+  }
+
+  loadProfile()
+
+  // Upload logo
+  document.getElementById('logo-input').addEventListener('change', async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    const status = document.getElementById('logo-status')
+    status.textContent = 'Enviando...'
+    status.style.color = 'var(--slate-500)'
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      await api.upload(logoEndpoint, fd)
+      status.textContent = '✓ Logo atualizada!'
+      status.style.color = 'var(--green-600)'
+      loadProfile()
+    } catch(err) {
+      status.textContent = err.message
+      status.style.color = 'var(--red-600)'
+    }
+  })
+
+  // Salvar perfil
+  document.getElementById('btn-save-profile').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-save-profile')
+    clearAlert('profile-alert')
+    setLoading(btn, true, 'Salvar alterações')
+
+    const payload = {
+      name:            document.getElementById('org-name').value,
+      presbytery_name: document.getElementById('org-presbytery').value,
+      address:         document.getElementById('org-address').value,
+    }
+    if (isLocalUmp()) {
+      payload.church_name = document.getElementById('org-church').value
+      payload.pastor_name = document.getElementById('org-pastor').value
+    }
+
+    try {
+      await api.put(updateEndpoint, payload)
+      const ok = document.getElementById('save-success')
+      ok.style.display = 'inline'
+      setTimeout(() => ok.style.display = 'none', 3000)
+    } catch(err) {
+      showAlert('profile-alert', err.message, 'error')
+    } finally {
+      setLoading(btn, false, 'Salvar alterações')
+    }
+  })
+
+  // Alterar senha
+  document.getElementById('btn-save-pw').addEventListener('click', async () => {
+    const btn     = document.getElementById('btn-save-pw')
+    const current = document.getElementById('pw-current').value
+    const newPw   = document.getElementById('pw-new').value
+    const confirm = document.getElementById('pw-confirm').value
+
+    clearAlert('pw-alert')
+
+    if (!current || !newPw || !confirm) {
+      showAlert('pw-alert', 'Preencha todos os campos.', 'error'); return
+    }
+    if (newPw !== confirm) {
+      showAlert('pw-alert', 'As senhas não coincidem.', 'error'); return
+    }
+    if (newPw.length < 6) {
+      showAlert('pw-alert', 'A nova senha deve ter pelo menos 6 caracteres.', 'error'); return
+    }
+
+    setLoading(btn, true, 'Alterar senha')
+    try {
+      await api.post('/api/users/me/change-password', { current_password: current, new_password: newPw })
+      document.getElementById('pw-current').value = ''
+      document.getElementById('pw-new').value = ''
+      document.getElementById('pw-confirm').value = ''
+      const ok = document.getElementById('pw-success')
+      ok.style.display = 'inline'
+      setTimeout(() => ok.style.display = 'none', 3000)
+    } catch(err) {
+      showAlert('pw-alert', err.message, 'error')
+    } finally {
+      setLoading(btn, false, 'Alterar senha')
+    }
+  })
+</script>
+
+</body>
+</html>

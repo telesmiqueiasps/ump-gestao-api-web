@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diretoria — Gestão UMP</title>
+  <link rel="stylesheet" href="../assets/css/main.css" />
+  <link rel="stylesheet" href="../assets/css/components.css" />
+  <link rel="stylesheet" href="../assets/css/layout.css" />
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><h1>Gestão UMP</h1><p>União de Mocidade Presbiteriana</p></div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer">v1.0.0</div>
+  </aside>
+
+  <div class="main-area">
+    <header class="header">
+      <div class="header-user">
+        <div class="header-user-name" id="header-name"></div>
+        <div class="header-user-role" id="header-role"></div>
+      </div>
+      <div class="header-avatar" id="header-avatar"></div>
+      <button class="btn-logout" id="btn-logout" title="Sair">⏻</button>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header">
+        <div class="page-header-info">
+          <h1>Diretoria</h1>
+          <p>Composição da diretoria por ano de mandato</p>
+        </div>
+        <div class="flex gap-3 items-center">
+          <select class="input" id="year-select" style="width:auto"></select>
+          <button class="btn btn-primary" id="btn-new-board">+ Adicionar membro</button>
+        </div>
+      </div>
+
+      <div id="page-alert" class="hidden"></div>
+
+      <div class="board-grid" id="board-grid">
+        <div class="loading-center"><div class="spinner"></div></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal-board">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2 id="modal-board-title">Adicionar Membro</h2>
+      <button class="modal-close">✕</button>
+    </div>
+    <div class="field mb-4">
+      <label>Nome</label>
+      <input class="input" type="text" id="b-name" placeholder="Nome completo" />
+    </div>
+    <div class="field mb-4">
+      <label>Cargo</label>
+      <select class="input" id="b-role"></select>
+    </div>
+    <div class="field mb-4">
+      <label>Ano de mandato</label>
+      <input class="input" type="number" id="b-year" />
+    </div>
+    <div id="board-alert" class="hidden mb-4"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary modal-close">Cancelar</button>
+      <button class="btn btn-primary" id="btn-save-board">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { requireAuth, isFederation, isLocalUmp } from '../assets/js/auth.js'
+  import { renderShell } from '../assets/js/router.js'
+  import { api } from '../assets/js/api.js'
+  import { showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading } from '../assets/js/utils.js'
+
+  if (!requireAuth()) throw new Error()
+  renderShell()
+  document.querySelector('[data-page="board"]')?.classList.add('active')
+  initModalClose()
+
+  const ALL_ROLES = [
+    { value: 'presidente',              label: 'Presidente' },
+    { value: 'vice_presidente',         label: 'Vice-Presidente' },
+    { value: '1_secretario',            label: '1º Secretário' },
+    { value: '2_secretario',            label: '2º Secretário' },
+    { value: 'tesoureiro',              label: 'Tesoureiro' },
+    { value: 'secretario_executivo',    label: 'Secretário Executivo',    fedOnly: true },
+    { value: 'secretario_presbiterial', label: 'Secretário Presbiterial', fedOnly: true },
+    { value: 'conselheiro',             label: 'Conselheiro',             localOnly: true },
+  ]
+
+  const availableRoles = ALL_ROLES.filter(r => {
+    if (r.fedOnly   && !isFederation()) return false
+    if (r.localOnly && !isLocalUmp())   return false
+    return true
+  })
+
+  const roleSelect = document.getElementById('b-role')
+  availableRoles.forEach(r => {
+    const opt = document.createElement('option')
+    opt.value = r.value; opt.textContent = r.label
+    roleSelect.appendChild(opt)
+  })
+
+  const getRoleLabel = (val) => ALL_ROLES.find(r => r.value === val)?.label ?? val
+
+  let currentYear = new Date().getFullYear()
+  let editId = null
+
+  const yearSelect = document.getElementById('year-select')
+  ;[2023,2024,2025,2026].forEach(y => {
+    const opt = document.createElement('option')
+    opt.value = y; opt.textContent = y
+    if (y === currentYear) opt.selected = true
+    yearSelect.appendChild(opt)
+  })
+  yearSelect.addEventListener('change', () => { currentYear = Number(yearSelect.value); loadBoard() })
+
+  async function loadBoard() {
+    const grid = document.getElementById('board-grid')
+    grid.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>'
+    try {
+      const data = await api.get(`/api/board/?fiscal_year=${currentYear}`)
+      if (!data.length) {
+        grid.innerHTML = `<div class="card" style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--slate-400)">Nenhum membro cadastrado para ${currentYear}.</div>`
+        return
+      }
+      grid.innerHTML = data.map(b => `
+        <div class="board-card">
+          <div class="board-card-name">${b.member_name}</div>
+          <div class="board-card-role"><span class="badge badge-blue">${getRoleLabel(b.role)}</span></div>
+          <div class="board-card-year">Mandato ${b.fiscal_year}</div>
+          <div class="board-card-actions">
+            <button class="btn btn-secondary btn-sm" onclick="editBoard('${b.id}','${b.member_name}','${b.role}',${b.fiscal_year})">✎ Editar</button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--red-600)" onclick="removeBoard('${b.id}','${b.member_name}')">✕</button>
+          </div>
+        </div>
+      `).join('')
+    } catch(err) {
+      showAlert('page-alert', err.message, 'error')
+    }
+  }
+
+  document.getElementById('btn-new-board').addEventListener('click', () => {
+    editId = null
+    document.getElementById('modal-board-title').textContent = 'Adicionar Membro'
+    document.getElementById('b-name').value = ''
+    document.getElementById('b-role').value = availableRoles[0]?.value ?? ''
+    document.getElementById('b-year').value = currentYear
+    clearAlert('board-alert')
+    openModal('modal-board')
+  })
+
+  window.editBoard = (id, name, role, year) => {
+    editId = id
+    document.getElementById('modal-board-title').textContent = 'Editar Membro'
+    document.getElementById('b-name').value = name
+    document.getElementById('b-role').value = role
+    document.getElementById('b-year').value = year
+    clearAlert('board-alert')
+    openModal('modal-board')
+  }
+
+  document.getElementById('btn-save-board').addEventListener('click', async () => {
+    const btn  = document.getElementById('btn-save-board')
+    const name = document.getElementById('b-name').value.trim()
+    if (!name) { showAlert('board-alert', 'Informe o nome do membro.', 'error'); return }
+
+    const payload = {
+      member_name: name,
+      role:        document.getElementById('b-role').value,
+      fiscal_year: Number(document.getElementById('b-year').value),
+    }
+
+    setLoading(btn, true, 'Salvar')
+    try {
+      if (editId) await api.put(`/api/board/${editId}`, payload)
+      else        await api.post('/api/board/', payload)
+      closeModal('modal-board')
+      loadBoard()
+    } catch(err) {
+      showAlert('board-alert', err.message, 'error')
+    } finally {
+      setLoading(btn, false, 'Salvar')
+    }
+  })
+
+  window.removeBoard = async (id, name) => {
+    if (!confirm(`Remover ${name} da diretoria?`)) return
+    try {
+      await api.delete(`/api/board/${id}`)
+      loadBoard()
+    } catch(err) { showAlert('page-alert', err.message, 'error') }
+  }
+
+  loadBoard()
+</script>
+
+</body>
+</html>

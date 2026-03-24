@@ -1,0 +1,56 @@
+services:
+  - type: web
+    name: ump-gestao-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 30
+      - key: REFRESH_TOKEN_EXPIRE_DAYS
+        value: 7
+      - key: B2_KEY_ID
+        sync: false
+      - key: B2_APPLICATION_KEY
+        sync: false
+      - key: B2_BUCKET_NAME
+        sync: false
+      - key: B2_ENDPOINT_URL
+        sync: false
+      - key: APP_ENV
+        value: production
+      - key: FRONTEND_URL
+        sync: false
+```
+
+Crie em `render.yaml` na raiz do projeto.
+
+---
+
+### Arquivo 26 — `.gitignore`
+```
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+.venv/
+venv/
+env/
+
+# Alembic
+alembic/versions/*.pyc
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestão UMP — Login</title>
+  <link rel="stylesheet" href="assets/css/main.css" />
+  <link rel="stylesheet" href="assets/css/components.css" />
+</head>
+<body>
+
+<div class="login-page">
+  <div>
+    <div class="login-card">
+      <div class="login-card-top">
+        <h1>Gestão UMP</h1>
+        <p>União de Mocidade Presbiteriana</p>
+      </div>
+      <div class="login-card-body">
+        <h2>Entrar na plataforma</h2>
+
+        <div class="field mb-4">
+          <label for="email">E-mail</label>
+          <input class="input" type="email" id="email" placeholder="seu@email.com" autocomplete="email" />
+        </div>
+
+        <div class="field mb-4">
+          <label for="password">Senha</label>
+          <input class="input" type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
+        </div>
+
+        <div id="login-alert" class="hidden mb-4"></div>
+
+        <button class="btn btn-primary w-full" id="btn-login" style="justify-content:center">
+          Entrar
+        </button>
+      </div>
+    </div>
+
+    <p class="login-footer">Plataforma de Gestão UMP © <span id="year"></span></p>
+  </div>
+</div>
+
+<script type="module">
+  import { login, isLoggedIn } from './assets/js/auth.js'
+  import { showAlert, setLoading } from './assets/js/utils.js'
+
+  // Se já estiver logado, redireciona
+  if (isLoggedIn()) window.location.href = '/pages/dashboard.html'
+
+  document.getElementById('year').textContent = new Date().getFullYear()
+
+  const btnLogin = document.getElementById('btn-login')
+  const emailEl  = document.getElementById('email')
+  const passEl   = document.getElementById('password')
+
+  async function doLogin() {
+    const email    = emailEl.value.trim()
+    const password = passEl.value
+
+    if (!email || !password) {
+      showAlert('login-alert', 'Preencha e-mail e senha.', 'error')
+      return
+    }
+
+    setLoading(btnLogin, true, 'Entrar')
+    try {
+      await login(email, password)
+      window.location.href = '/pages/dashboard.html'
+    } catch (err) {
+      showAlert('login-alert', err.message || 'E-mail ou senha incorretos.', 'error')
+    } finally {
+      setLoading(btnLogin, false, 'Entrar')
+    }
+  }
+
+  btnLogin.addEventListener('click', doLogin)
+  document.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin() })
+</script>
+
+</body>
+</html>
