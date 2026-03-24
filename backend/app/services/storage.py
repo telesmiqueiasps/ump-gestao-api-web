@@ -1,4 +1,5 @@
 import logging
+import re
 import boto3
 from botocore.exceptions import ClientError
 from app.core.config import get_settings
@@ -28,6 +29,19 @@ def _get_client():
     )
 
 
+def _download_base() -> str:
+    """Deriva a base de URL de download público a partir do endpoint S3.
+
+    Exemplos:
+      https://s3.us-east-005.backblazeb2.com  →  https://f005.backblazeb2.com/file/<bucket>
+      https://s3.us-west-004.backblazeb2.com  →  https://f004.backblazeb2.com/file/<bucket>
+      https://s3.eu-central-003.backblazeb2.com → https://f003.backblazeb2.com/file/<bucket>
+    """
+    match = re.search(r'(\w+)-(\w+)-(\d+)', settings.b2_endpoint_url)
+    region_num = match.group(3) if match else "005"
+    return f"https://f{region_num}.backblazeb2.com/file/{settings.b2_bucket_name}"
+
+
 def upload_file(contents: bytes, key: str, content_type: str) -> str:
     client = _get_client()
     try:
@@ -41,9 +55,7 @@ def upload_file(contents: bytes, key: str, content_type: str) -> str:
         code = e.response.get("Error", {}).get("Code", "desconhecido")
         msg = e.response.get("Error", {}).get("Message", str(e))
         raise RuntimeError(f"Falha ao enviar arquivo para o Backblaze B2 (código {code}): {msg}") from e
-    # Retorna URL pública (bucket público) ou pre-signed (bucket privado)
-    url = f"{settings.b2_endpoint_url}/file/{settings.b2_bucket_name}/{key}"
-    return url
+    return f"{_download_base()}/{key}"
 
 
 def get_presigned_url(key: str, expires_in: int = 3600) -> str:
