@@ -5,12 +5,16 @@ from pydantic import BaseModel
 from typing import Optional
 from uuid import UUID
 import datetime
+import re
 from app.db.session import get_db
 from app.models.finance import FinancialPeriod, FinancialTransaction
 from app.models.enums import TransactionType, OrgType
 from app.models.user import User
 from app.core.dependencies import get_current_user
-from app.services.storage import upload_file
+from app.core.config import get_settings
+from app.services.storage import upload_file, get_presigned_url
+
+settings = get_settings()
 
 router = APIRouter()
 
@@ -260,6 +264,32 @@ def close_period(
     period.closed_at = datetime.datetime.now(datetime.timezone.utc)
     db.commit()
     return {"detail": "Período encerrado com sucesso", "final_balance": _calc_balance(db, period.id, period.initial_balance)}
+
+
+# Gerar pre-signed URL para comprovante de uma transação
+@router.get("/transactions/{transaction_id}/receipt-url")
+def get_receipt_url(
+    transaction_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    transaction = db.query(FinancialTransaction).filter(
+        FinancialTransaction.id == transaction_id,
+        FinancialTransaction.organization_id == current_user.organization_id,
+    ).first()
+    if not transaction:
+        raise HTTPException(status_code=404, detail="Lançamento não encontrado")
+    if not transaction.receipt_url:
+        raise HTTPException(status_code=404, detail="Comprovante não encontrado")
+
+    # Extrai a key do arquivo da URL armazenada.
+    # Formato esperado: https://f005.backblazeb2.com/file/BUCKET/KEY
+    stored_url = transaction.receipt_url
+    match = re.search(rf'/file/{re.escape(settings.b2_bucket_name)}/(.+)$', stored_url)
+    key = match.group(1) if match else stored_url
+
+    presigned = get_presigned_url(key, expires_in=3600)
+    return {"url": presigned, "expires_in": 3600}
 
 
 def _period_out(p: FinancialPeriod, db) -> dict:

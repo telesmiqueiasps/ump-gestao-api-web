@@ -331,7 +331,7 @@
             ${nature === 'in' ? '+' : '–'} ${formatCurrency(t.amount)}
           </td>
           <td class="text-center">
-            ${t.receipt_url ? `<a href="${t.receipt_url}" target="_blank" class="text-sm">Ver</a>` : '<span class="text-slate-400">—</span>'}
+            ${t.receipt_url ? `<button class="btn btn-ghost btn-sm" style="padding:.2rem .5rem;font-size:.8rem" onclick="viewReceipt('${t.id}')">Ver</button>` : '<span class="text-slate-400">—</span>'}
           </td>
           <td>
             ${canEdit ? `
@@ -370,6 +370,15 @@
       } catch(err) { showAlert('page-alert', err.message, 'error') }
     }
   })
+
+  window.viewReceipt = async (id) => {
+    try {
+      const data = await api.get(`/api/finances/transactions/${id}/receipt-url`)
+      window.open(data.url, '_blank')
+    } catch(err) {
+      alert('Erro ao obter comprovante: ' + err.message)
+    }
+  }
 
   loadPage()
 </script>
