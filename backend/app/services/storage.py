@@ -1,11 +1,24 @@
+import logging
 import boto3
 from botocore.exceptions import ClientError
 from app.core.config import get_settings
 
 settings = get_settings()
 
+logger = logging.getLogger(__name__)
+
 
 def _get_client():
+    key_id = settings.b2_key_id or ""
+    logger.info(
+        "B2 client init - key_id prefix: %s... | endpoint: %s | bucket: %s",
+        key_id[:8],
+        settings.b2_endpoint_url,
+        settings.b2_bucket_name,
+    )
+    # ATENÇÃO: aws_access_key_id deve ser o "keyID" da Application Key
+    # (começa com "005..."), NÃO o accountId da conta.
+    # aws_secret_access_key deve ser a "applicationKey" (chave longa gerada).
     return boto3.client(
         "s3",
         endpoint_url=settings.b2_endpoint_url,

@@ -180,6 +180,7 @@
   let currentPeriod = null
   let editId = null
   let currentYear = new Date().getFullYear()
+  let txMap = {}
 
   // Preenche select de anos
   const yearSelect = document.getElementById('year-select')
@@ -316,7 +317,9 @@
       tbody.innerHTML = `<tr><td colspan="6" class="table-empty">Nenhum lançamento registrado.</td></tr>`
       return
     }
+    txMap = {}
     tbody.innerHTML = txs.map(t => {
+      txMap[t.id] = t
       const nature = TYPES[t.transaction_type]?.nature
       const label  = TYPES[t.transaction_type]?.label
       return `
@@ -333,32 +336,40 @@
           <td>
             ${canEdit ? `
               <div class="row-actions">
-                <button class="btn btn-ghost btn-icon" onclick="editTx('${t.id}','${t.transaction_date}','${t.transaction_type}',${JSON.stringify(t.description)},${t.amount})">✎</button>
-                <button class="btn btn-ghost btn-icon danger" onclick="deleteTx('${t.id}')">✕</button>
+                <button class="btn btn-ghost btn-icon" data-action="edit" data-id="${t.id}">✎</button>
+                <button class="btn btn-ghost btn-icon danger" data-action="delete" data-id="${t.id}">✕</button>
               </div>` : ''}
           </td>
         </tr>`
     }).join('')
   }
 
-  window.editTx = (id, date, type, desc, amount) => {
-    editId = id
-    document.getElementById('modal-tx-title').textContent = 'Editar Lançamento'
-    document.getElementById('tx-date').value   = date
-    document.getElementById('tx-type').value   = type
-    document.getElementById('tx-desc').value   = desc
-    document.getElementById('tx-amount').value = amount
-    document.getElementById('tx-receipt-field').style.display = 'none'
-    openModal('modal-tx')
-  }
+  document.getElementById('tx-body').addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-action]')
+    if (!btn) return
+    const action = btn.dataset.action
+    const id     = btn.dataset.id
 
-  window.deleteTx = async (id) => {
-    if (!confirm('Excluir este lançamento?')) return
-    try {
-      await api.delete(`/api/finances/transactions/${id}`)
-      loadPage()
-    } catch(err) { showAlert('page-alert', err.message, 'error') }
-  }
+    if (action === 'edit') {
+      const t = txMap[id]
+      editId = id
+      document.getElementById('modal-tx-title').textContent = 'Editar Lançamento'
+      document.getElementById('tx-date').value   = t.transaction_date
+      document.getElementById('tx-type').value   = t.transaction_type
+      document.getElementById('tx-desc').value   = t.description
+      document.getElementById('tx-amount').value = t.amount
+      document.getElementById('tx-receipt-field').style.display = 'none'
+      openModal('modal-tx')
+    }
+
+    if (action === 'delete') {
+      if (!confirm('Excluir este lançamento?')) return
+      try {
+        await api.delete(`/api/finances/transactions/${id}`)
+        loadPage()
+      } catch(err) { showAlert('page-alert', err.message, 'error') }
+    }
+  })
 
   loadPage()
 </script>
