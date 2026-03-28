@@ -7,11 +7,34 @@
   <meta name="theme-color" content="#1a2a6c" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" type="image/png" href="/assets/img/logo.png" />
+  <link rel="apple-touch-icon" href="/assets/img/logo.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <title>Financeiro — UMP POPB</title>
   <link rel="stylesheet" href="../assets/css/main.css" />
   <link rel="stylesheet" href="../assets/css/components.css" />
   <link rel="stylesheet" href="../assets/css/layout.css" />
+  <style>
+    .month-tabs-wrap { overflow-x: auto; padding-bottom: .25rem; margin-bottom: .75rem; }
+    .month-tabs { display: flex; gap: .5rem; min-width: max-content; }
+    .month-tab {
+      padding: .5rem 1.1rem; border-radius: var(--radius); font-size: .825rem; font-weight: 500;
+      border: 1.5px solid var(--slate-200); background: #fff; color: var(--slate-600);
+      cursor: pointer; transition: all var(--transition); white-space: nowrap;
+      display: flex; flex-direction: column; align-items: center; gap: .15rem;
+    }
+    .month-tab:hover { border-color: var(--blue-500); color: var(--blue-600); }
+    .month-tab.active { background: var(--blue-600); border-color: var(--blue-600); color: #fff; }
+    .month-tab .tab-balance { font-size: .68rem; opacity: .8; }
+    .month-tab.active .tab-balance { opacity: .9; }
+    .month-summary {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: .75rem; margin-bottom: 1rem;
+    }
+    .month-summary-item { background: var(--slate-50); border-radius: var(--radius); padding: .6rem .75rem; text-align: center; }
+    .month-summary-item .label { font-size: .72rem; color: var(--slate-400); margin-bottom: .15rem; }
+    .month-summary-item .value { font-size: .95rem; font-weight: 700; }
+    @media (max-width: 600px) { .month-summary { grid-template-columns: 1fr 1fr; } }
+  </style>
 </head>
 <body>
 
@@ -78,27 +101,38 @@
         </div>
       </div>
 
-      <!-- Tabela -->
-      <div class="card" id="tx-section" style="display:none">
-        <div class="card-header">
-          <h2>Lançamentos</h2>
+      <!-- Abas de mês -->
+      <div id="months-section" style="display:none">
+        <div class="month-tabs-wrap">
+          <div class="month-tabs" id="month-tabs"></div>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Data</th>
-                <th>Tipo</th>
-                <th>Descrição</th>
-                <th class="text-right">Valor</th>
-                <th class="text-center">Comprovante</th>
-                <th id="th-actions"></th>
-              </tr>
-            </thead>
-            <tbody id="tx-body">
-              <tr><td colspan="6" class="table-empty">Carregando...</td></tr>
-            </tbody>
-          </table>
+
+        <div class="card" id="month-content">
+          <div class="month-summary" id="month-summary"></div>
+          <hr style="border:none;border-top:1px solid var(--slate-100);margin:.25rem 0 1rem" />
+          <div class="table-wrap" style="border:none">
+            <table>
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Tipo</th>
+                  <th>Descrição</th>
+                  <th class="text-right">Valor</th>
+                  <th class="text-center">Comprovante</th>
+                  <th id="th-actions-month"></th>
+                </tr>
+              </thead>
+              <tbody id="month-tx-body">
+                <tr><td colspan="6" class="table-empty">Selecione um mês</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="month-empty" style="display:none">
+          <div class="card" style="text-align:center;padding:3rem;color:var(--slate-400)">
+            Nenhum lançamento neste mês.
+          </div>
         </div>
       </div>
     </main>
@@ -160,7 +194,7 @@
       <input class="input" type="number" step="0.01" min="0.01" id="tx-amount" placeholder="0,00" />
     </div>
     <div class="field" id="tx-receipt-field">
-      <label>Comprovante <span class="text-slate-400" style="font-weight:400">(opcional)</span></label>
+      <label>Comprovante <span class="text-slate-400" style="font-weight:400">(opcional — PNG, JPG ou PDF · máx. 10MB)</span></label>
       <input class="input" type="file" id="tx-receipt" accept="image/png,image/jpeg,application/pdf" />
     </div>
     <div id="tx-alert" class="hidden mt-4"></div>
@@ -191,7 +225,9 @@
   let currentPeriod = null
   let editId = null
   let currentYear = new Date().getFullYear()
-  let txMap = {}
+  let monthsData = []
+  let currentMonthKey = null
+  let txMapMonth = {}
 
   // Preenche select de anos
   const yearSelect = document.getElementById('year-select')
@@ -286,51 +322,104 @@
   async function loadPage() {
     document.getElementById('no-period').style.display = 'none'
     document.getElementById('period-summary').style.display = 'none'
-    document.getElementById('tx-section').style.display = 'none'
+    document.getElementById('months-section').style.display = 'none'
     document.getElementById('btn-new-tx').style.display = 'none'
 
     try {
-      const data = await api.get(`/api/finances/transactions?year=${currentYear}`)
+      const data = await api.get(`/api/finances/transactions/by-month?year=${currentYear}`)
       currentPeriod = data.period
-      const txs = data.transactions ?? []
-
-      const totalIn  = txs.filter(t => TYPES[t.transaction_type]?.nature === 'in').reduce((s,t) => s + Number(t.amount), 0)
-      const totalOut = txs.filter(t => TYPES[t.transaction_type]?.nature === 'out').reduce((s,t) => s + Number(t.amount), 0)
+      monthsData = data.months
 
       document.getElementById('period-title').textContent = `Período ${currentPeriod.fiscal_year}`
       document.getElementById('period-badge').textContent = currentPeriod.is_closed ? 'Encerrado' : 'Aberto'
       document.getElementById('period-badge').className = `badge ${currentPeriod.is_closed ? 'badge-slate' : 'badge-green'}`
       document.getElementById('sum-initial').textContent = formatCurrency(currentPeriod.initial_balance)
-      document.getElementById('sum-in').textContent      = formatCurrency(totalIn)
-      document.getElementById('sum-out').textContent     = formatCurrency(totalOut)
+      document.getElementById('sum-in').textContent      = formatCurrency(data.total_in)
+      document.getElementById('sum-out').textContent     = formatCurrency(data.total_out)
       document.getElementById('sum-final').textContent   = formatCurrency(currentPeriod.final_balance)
-
       document.getElementById('period-summary').style.display = 'block'
-      document.getElementById('tx-section').style.display = 'block'
 
       if (!currentPeriod.is_closed) {
         document.getElementById('btn-new-tx').style.display = 'inline-flex'
         document.getElementById('btn-close-period').style.display = 'inline-flex'
-        document.getElementById('th-actions').textContent = ''
+        document.getElementById('th-actions-month').textContent = ''
       } else {
         document.getElementById('btn-close-period').style.display = 'none'
       }
 
-      renderTransactions(txs, !currentPeriod.is_closed)
+      renderMonthTabs()
+      document.getElementById('months-section').style.display = 'block'
+
+      const today = new Date()
+      const todayKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`
+      const found = monthsData.find(m => m.month_key === todayKey)
+      const target = found || monthsData[monthsData.length - 1]
+      if (target) selectMonth(target.month_key)
+
     } catch {
       document.getElementById('no-period').style.display = 'block'
     }
   }
 
-  function renderTransactions(txs, canEdit) {
-    const tbody = document.getElementById('tx-body')
-    if (!txs.length) {
-      tbody.innerHTML = `<tr><td colspan="6" class="table-empty">Nenhum lançamento registrado.</td></tr>`
+  function renderMonthTabs() {
+    const tabs = document.getElementById('month-tabs')
+    if (!monthsData.length) {
+      tabs.innerHTML = '<span style="color:var(--slate-400);font-size:.875rem;padding:.5rem">Nenhum lançamento ainda</span>'
       return
     }
-    txMap = {}
-    tbody.innerHTML = txs.map(t => {
-      txMap[t.id] = t
+    tabs.innerHTML = monthsData.map(m => `
+      <button class="month-tab ${m.month_key === currentMonthKey ? 'active' : ''}"
+        data-month="${m.month_key}" onclick="selectMonth('${m.month_key}')">
+        <span>${m.month_label}</span>
+        <span class="tab-balance">${formatCurrency(m.closing_balance)}</span>
+      </button>
+    `).join('')
+  }
+
+  window.selectMonth = (monthKey) => {
+    currentMonthKey = monthKey
+    const month = monthsData.find(m => m.month_key === monthKey)
+    if (!month) return
+
+    document.querySelectorAll('.month-tab').forEach(t => {
+      t.classList.toggle('active', t.dataset.month === monthKey)
+    })
+
+    document.getElementById('month-summary').innerHTML = `
+      <div class="month-summary-item">
+        <div class="label">Saldo Anterior</div>
+        <div class="value">${formatCurrency(month.opening_balance)}</div>
+      </div>
+      <div class="month-summary-item">
+        <div class="label">Entradas</div>
+        <div class="value" style="color:var(--green-600)">${formatCurrency(month.total_in)}</div>
+      </div>
+      <div class="month-summary-item">
+        <div class="label">Saídas</div>
+        <div class="value" style="color:var(--red-600)">${formatCurrency(month.total_out)}</div>
+      </div>
+      <div class="month-summary-item">
+        <div class="label">Saldo do Mês</div>
+        <div class="value" style="color:${month.closing_balance >= 0 ? 'var(--blue-600)' : 'var(--red-600)'}">
+          ${formatCurrency(month.closing_balance)}
+        </div>
+      </div>
+    `
+
+    if (!month.transactions.length) {
+      document.getElementById('month-content').style.display = 'none'
+      document.getElementById('month-empty').style.display = 'block'
+      return
+    }
+
+    document.getElementById('month-content').style.display = 'block'
+    document.getElementById('month-empty').style.display = 'none'
+
+    txMapMonth = {}
+    const canEdit = !currentPeriod.is_closed
+    const tbody = document.getElementById('month-tx-body')
+    tbody.innerHTML = month.transactions.map(t => {
+      txMapMonth[t.id] = t
       const nature = TYPES[t.transaction_type]?.nature
       const label  = TYPES[t.transaction_type]?.label
       return `
@@ -342,7 +431,9 @@
             ${nature === 'in' ? '+' : '–'} ${formatCurrency(t.amount)}
           </td>
           <td class="text-center">
-            ${t.receipt_url ? `<button class="btn btn-ghost btn-sm" style="padding:.2rem .5rem;font-size:.8rem" onclick="viewReceipt('${t.id}')">Ver</button>` : '<span class="text-slate-400">—</span>'}
+            ${t.receipt_url
+              ? `<button class="btn btn-ghost btn-sm" style="padding:.2rem .5rem;font-size:.8rem" data-action="receipt" data-id="${t.id}">Ver</button>`
+              : '<span class="text-slate-400">—</span>'}
           </td>
           <td>
             ${canEdit ? `
@@ -355,14 +446,21 @@
     }).join('')
   }
 
-  document.getElementById('tx-body').addEventListener('click', async (e) => {
+  document.getElementById('month-tx-body').addEventListener('click', async (e) => {
     const btn = e.target.closest('[data-action]')
     if (!btn) return
     const action = btn.dataset.action
-    const id     = btn.dataset.id
+    const id = btn.dataset.id
+    const t = txMapMonth[id]
 
-    if (action === 'edit') {
-      const t = txMap[id]
+    if (action === 'receipt') {
+      try {
+        const data = await api.get(`/api/finances/transactions/${id}/receipt-url`)
+        window.open(data.url, '_blank')
+      } catch(err) { alert('Erro ao obter comprovante: ' + err.message) }
+    }
+
+    if (action === 'edit' && t) {
       editId = id
       document.getElementById('modal-tx-title').textContent = 'Editar Lançamento'
       document.getElementById('tx-date').value   = t.transaction_date
@@ -381,15 +479,6 @@
       } catch(err) { showAlert('page-alert', err.message, 'error') }
     }
   })
-
-  window.viewReceipt = async (id) => {
-    try {
-      const data = await api.get(`/api/finances/transactions/${id}/receipt-url`)
-      window.open(data.url, '_blank')
-    } catch(err) {
-      alert('Erro ao obter comprovante: ' + err.message)
-    }
-  }
 
   loadPage()
 </script>

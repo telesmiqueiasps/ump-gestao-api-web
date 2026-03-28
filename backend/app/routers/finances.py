@@ -49,6 +49,12 @@ def _get_period(db, org_id, org_type, year):
     ).first()
 
 
+def _month_label(month: int) -> str:
+    labels = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+              "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
+    return labels[month - 1]
+
+
 def _calc_balance(db, period_id, initial_balance):
     row = db.query(
         func.coalesce(func.sum(case(
@@ -193,6 +199,57 @@ def list_transactions(
     return {
         "period": _period_out(period, db),
         "transactions": [_transaction_out(t) for t in transactions],
+    }
+
+
+# Lançamentos agrupados por mês com saldos acumulados
+@router.get("/transactions/by-month")
+def get_transactions_by_month(
+    year: Optional[int] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    year = year or datetime.date.today().year
+    period = _get_period(db, current_user.organization_id, current_user.organization_type, year)
+    if not period:
+        raise HTTPException(status_code=404, detail="Período não encontrado")
+
+    transactions = db.query(FinancialTransaction).filter(
+        FinancialTransaction.period_id == period.id,
+    ).order_by(FinancialTransaction.transaction_date).limit(500).all()
+
+    months: dict = {}
+    for t in transactions:
+        month_key = t.transaction_date.strftime("%Y-%m")
+        if month_key not in months:
+            months[month_key] = {
+                "month_key": month_key,
+                "month_label": _month_label(t.transaction_date.month),
+                "transactions": [],
+                "total_in": 0.0,
+                "total_out": 0.0,
+            }
+        months[month_key]["transactions"].append(_transaction_out(t))
+        if t.transaction_type in INCOME_TYPES:
+            months[month_key]["total_in"] += float(t.amount)
+        else:
+            months[month_key]["total_out"] += float(t.amount)
+
+    running_balance = float(period.initial_balance)
+    months_list = []
+    for month_key in sorted(months.keys()):
+        m = months[month_key]
+        opening = running_balance
+        running_balance += m["total_in"] - m["total_out"]
+        m["opening_balance"] = opening
+        m["closing_balance"] = running_balance
+        months_list.append(m)
+
+    return {
+        "period": _period_out(period, db),
+        "months": months_list,
+        "total_in": sum(m["total_in"] for m in months_list),
+        "total_out": sum(m["total_out"] for m in months_list),
     }
 
 
