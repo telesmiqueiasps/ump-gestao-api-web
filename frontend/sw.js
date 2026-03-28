@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ump-gestao-v1';
+const CACHE_NAME = 'ump-gestao-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
