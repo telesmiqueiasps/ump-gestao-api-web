@@ -1,13 +1,7 @@
-const CACHE_NAME = 'ump-gestao-v2';
+const CACHE_NAME = 'ump-gestao-v3';
+
+// Apenas assets estáticos que mudam raramente
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/pages/dashboard.html',
-  '/pages/finances.html',
-  '/pages/profile.html',
-  '/pages/board.html',
-  '/pages/members.html',
-  '/pages/local-umps.html',
   '/assets/css/main.css',
   '/assets/css/components.css',
   '/assets/css/layout.css',
@@ -16,6 +10,7 @@ const STATIC_ASSETS = [
   '/assets/js/router.js',
   '/assets/js/utils.js',
   '/assets/img/logo.png',
+  '/assets/img/ump_logo.png',
 ];
 
 self.addEventListener('install', (event) => {
@@ -35,17 +30,38 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
   // Nunca faz cache de chamadas à API
-  if (event.request.url.includes('/api/')) {
-    event.respondWith(fetch(event.request));
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(fetch(request));
     return;
   }
-  // Cache first para assets estáticos
+
+  // Network-first para páginas HTML — sempre busca versão mais recente
+  // e só usa o cache como fallback offline
+  if (request.destination === 'document' || url.pathname.endsWith('.html') || url.pathname === '/') {
+    event.respondWith(
+      fetch(request)
+        .then(response => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request))
+    );
+    return;
+  }
+
+  // Cache-first para assets estáticos (CSS, JS, imagens)
   event.respondWith(
-    caches.match(event.request).then(cached => cached || fetch(event.request).then(response => {
+    caches.match(request).then(cached => cached || fetch(request).then(response => {
       if (response.ok) {
         const clone = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+        caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
       }
       return response;
     }))
