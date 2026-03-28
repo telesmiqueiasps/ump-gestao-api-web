@@ -16,8 +16,8 @@ class TransactionType(str, enum.Enum):
 class BoardRole(str, enum.Enum):
     presidente              = "presidente"
     vice_presidente         = "vice_presidente"
-    secretario_1            = "1_secretario"
-    secretario_2            = "2_secretario"
+    primeiro_secretario     = "1_secretario"
+    segundo_secretario      = "2_secretario"
     tesoureiro              = "tesoureiro"
     secretario_executivo    = "secretario_executivo"
     secretario_presbiterial = "secretario_presbiterial"

@@ -67,7 +67,7 @@ def add_board_member(
     # Verificar se o cargo já está ocupado no ano
     existing = db.query(BoardMember).filter(
         BoardMember.organization_id == current_user.organization_id,
-        BoardMember.role == payload.role,
+        BoardMember.role == payload.role.value,
         BoardMember.fiscal_year == year,
         BoardMember.is_active == True,
     ).first()
@@ -79,9 +79,9 @@ def add_board_member(
 
     board_member = BoardMember(
         organization_id=current_user.organization_id,
-        organization_type=current_user.organization_type,
+        organization_type=current_user.organization_type.value,
         member_name=payload.member_name,
-        role=payload.role,
+        role=payload.role.value,
         fiscal_year=year,
         user_id=payload.user_id,
     )
@@ -91,13 +91,13 @@ def add_board_member(
     if payload.user_id:
         existing_role = db.query(UserRole).filter(
             UserRole.user_id == payload.user_id,
-            UserRole.role == payload.role,
+            UserRole.role == payload.role.value,
             UserRole.fiscal_year == year,
         ).first()
         if not existing_role:
             user_role = UserRole(
                 user_id=payload.user_id,
-                role=payload.role,
+                role=payload.role.value,
                 fiscal_year=year,
             )
             db.add(user_role)

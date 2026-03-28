@@ -11,7 +11,7 @@ class FinancialPeriod(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
     organization_id = Column(UUID(as_uuid=True), nullable=False)
-    organization_type = Column(SAEnum(OrgType, name="org_type"), nullable=False)
+    organization_type = Column(SAEnum(OrgType, name="org_type", values_callable=lambda x: [e.value for e in x]), nullable=False)
     fiscal_year = Column(Integer, nullable=False)
     initial_balance = Column(Numeric(12, 2), default=0)
     is_closed = Column(Boolean, default=False)
@@ -31,7 +31,7 @@ class FinancialTransaction(Base):
     period_id = Column(UUID(as_uuid=True), ForeignKey("financial_periods.id"), nullable=False)
     organization_id = Column(UUID(as_uuid=True), nullable=False)
     transaction_date = Column(Date, nullable=False)
-    transaction_type = Column(SAEnum(TransactionType, name="transaction_type"), nullable=False)
+    transaction_type = Column(SAEnum(TransactionType, name="transaction_type", values_callable=lambda x: [e.value for e in x]), nullable=False)
     description = Column(Text, nullable=False)
     amount = Column(Numeric(12, 2), nullable=False)
     receipt_url = Column(Text, nullable=True)

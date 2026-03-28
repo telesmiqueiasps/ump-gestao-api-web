@@ -11,7 +11,7 @@ class User(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
     organization_id = Column(UUID(as_uuid=True), nullable=False)
-    organization_type = Column(SAEnum(OrgType, name="org_type"), nullable=False)
+    organization_type = Column(SAEnum(OrgType, name="org_type", values_callable=lambda x: [e.value for e in x]), nullable=False)
     full_name = Column(String(200), nullable=False)
     email = Column(String(255), unique=True, nullable=False)
     password_hash = Column(String, nullable=False)
@@ -26,7 +26,7 @@ class UserRole(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    role = Column(SAEnum(BoardRole, name="board_role"), nullable=False)
+    role = Column(SAEnum(BoardRole, name="board_role", values_callable=lambda x: [e.value for e in x]), nullable=False)
     fiscal_year = Column(Integer, nullable=False)
     is_active = Column(Boolean, default=True)
 
