@@ -11,10 +11,10 @@ class BoardMember(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
     organization_id = Column(UUID(as_uuid=True), nullable=False)
-    organization_type = Column(SAEnum(OrgType, name="org_type"), nullable=False)
+    organization_type = Column(SAEnum(OrgType, name="org_type", native_enum=False), nullable=False)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     member_name = Column(String(200), nullable=False)
-    role = Column(SAEnum(BoardRole, name="board_role"), nullable=False)
+    role = Column(SAEnum(BoardRole, name="board_role", native_enum=False), nullable=False)
     fiscal_year = Column(Integer, nullable=False)
     is_active = Column(Boolean, default=True)
 

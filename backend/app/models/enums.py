@@ -23,6 +23,9 @@ class BoardRole(str, enum.Enum):
     secretario_presbiterial = "secretario_presbiterial"
     conselheiro = "conselheiro"
 
+    def __str__(self):
+        return self.value
+
 
 class MemberType(str, enum.Enum):
     ativo = "ativo"
