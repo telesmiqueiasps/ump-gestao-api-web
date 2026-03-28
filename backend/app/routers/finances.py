@@ -12,7 +12,7 @@ from app.models.enums import TransactionType, OrgType
 from app.models.user import User
 from app.core.dependencies import get_current_user
 from app.core.config import get_settings
-from app.services.storage import upload_file, get_presigned_url
+from app.services.storage import upload_file, get_presigned_url, delete_file
 
 settings = get_settings()
 
@@ -218,32 +218,36 @@ def get_transactions_by_month(
         FinancialTransaction.period_id == period.id,
     ).order_by(FinancialTransaction.transaction_date).limit(500).all()
 
-    months: dict = {}
+    # Agrupa transações por mês
+    tx_by_month: dict = {}
     for t in transactions:
         month_key = t.transaction_date.strftime("%Y-%m")
-        if month_key not in months:
-            months[month_key] = {
-                "month_key": month_key,
-                "month_label": _month_label(t.transaction_date.month),
-                "transactions": [],
-                "total_in": 0.0,
-                "total_out": 0.0,
-            }
-        months[month_key]["transactions"].append(_transaction_out(t))
-        if t.transaction_type in INCOME_TYPES:
-            months[month_key]["total_in"] += float(t.amount)
-        else:
-            months[month_key]["total_out"] += float(t.amount)
+        tx_by_month.setdefault(month_key, []).append(t)
 
+    # Sempre gera os 12 meses, com ou sem lançamentos
     running_balance = float(period.initial_balance)
     months_list = []
-    for month_key in sorted(months.keys()):
-        m = months[month_key]
+    for month_num in range(1, 13):
+        month_key = f"{year}-{str(month_num).zfill(2)}"
+        txs = tx_by_month.get(month_key, [])
+
+        total_in  = sum(float(t.amount) for t in txs if t.transaction_type in INCOME_TYPES)
+        total_out = sum(float(t.amount) for t in txs if t.transaction_type in EXPENSE_TYPES)
+
         opening = running_balance
-        running_balance += m["total_in"] - m["total_out"]
-        m["opening_balance"] = opening
-        m["closing_balance"] = running_balance
-        months_list.append(m)
+        running_balance += total_in - total_out
+
+        months_list.append({
+            "month_key": month_key,
+            "month_num": month_num,
+            "month_label": _month_label(month_num),
+            "transactions": [_transaction_out(t) for t in txs],
+            "total_in": total_in,
+            "total_out": total_out,
+            "opening_balance": opening,
+            "closing_balance": running_balance,
+            "has_transactions": len(txs) > 0,
+        })
 
     return {
         "period": _period_out(period, db),
@@ -296,6 +300,12 @@ def delete_transaction(
     period = db.query(FinancialPeriod).filter(FinancialPeriod.id == transaction.period_id).first()
     if period and period.is_closed:
         raise HTTPException(status_code=400, detail="Período encerrado — lançamento não pode ser excluído")
+
+    # Exclui comprovante do Backblaze B2 se existir
+    if transaction.receipt_url:
+        match = re.search(rf'/file/{re.escape(settings.b2_bucket_name)}/(.+)$', transaction.receipt_url)
+        if match:
+            delete_file(match.group(1))
 
     db.delete(transaction)
     db.commit()
