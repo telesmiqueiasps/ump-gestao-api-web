@@ -12,7 +12,7 @@ class Member(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
     local_ump_id = Column(UUID(as_uuid=True), ForeignKey("local_umps.id"), nullable=False)
     full_name = Column(String(200), nullable=False)
-    member_type = Column(SAEnum(MemberType, name="member_type", native_enum=False), nullable=False, default=MemberType.ativo)
+    member_type = Column(SAEnum(MemberType, name="member_type"), nullable=False, default=MemberType.ativo)
     email = Column(String(255), nullable=True)
     phone = Column(String(20), nullable=True)
     birth_date = Column(Date, nullable=True)
