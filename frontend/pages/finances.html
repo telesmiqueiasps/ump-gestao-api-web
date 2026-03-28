@@ -14,6 +14,8 @@
   <link rel="stylesheet" href="../assets/css/main.css" />
   <link rel="stylesheet" href="../assets/css/components.css" />
   <link rel="stylesheet" href="../assets/css/layout.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <style>
     .month-tabs-wrap { overflow-x: auto; padding-bottom: .25rem; margin-bottom: .75rem; }
     .month-tabs { display: flex; gap: .5rem; min-width: max-content; }
@@ -74,6 +76,7 @@
         </div>
         <div class="flex gap-3 items-center">
           <select class="input" id="year-select" style="width:auto"></select>
+          <button class="btn btn-secondary" id="btn-report" style="display:none">📄 Relatório PDF</button>
           <button class="btn btn-primary" id="btn-new-tx" style="display:none">+ Novo lançamento</button>
         </div>
       </div>
@@ -210,7 +213,7 @@
 </div>
 
 <script type="module">
-  import { requireAuth } from '../assets/js/auth.js'
+  import { requireAuth, isFederation } from '../assets/js/auth.js'
   import { renderShell } from '../assets/js/router.js'
   import { api } from '../assets/js/api.js'
   import { formatCurrency, formatDate, showAlert, openModal, closeModal, initModalClose, setLoading } from '../assets/js/utils.js'
@@ -328,6 +331,7 @@
     document.getElementById('period-summary').style.display = 'none'
     document.getElementById('months-section').style.display = 'none'
     document.getElementById('btn-new-tx').style.display = 'none'
+    document.getElementById('btn-report').style.display = 'none'
 
     try {
       const data = await api.get(`/api/finances/transactions/by-month?year=${currentYear}`)
@@ -343,6 +347,7 @@
       document.getElementById('sum-final').textContent   = formatCurrency(currentPeriod.final_balance)
       document.getElementById('period-summary').style.display = 'block'
 
+      document.getElementById('btn-report').style.display = 'inline-flex'
       if (!currentPeriod.is_closed) {
         document.getElementById('btn-new-tx').style.display = 'inline-flex'
         document.getElementById('btn-close-period').style.display = 'inline-flex'
@@ -505,6 +510,293 @@
       } catch(err) { showAlert('page-alert', err.message, 'error') }
     }
   })
+
+  // ── Relatório PDF ───────────────────────────────────────────────────────────
+
+  document.getElementById('btn-report').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-report')
+    setLoading(btn, true, '📄 Relatório PDF')
+    try {
+      await generatePDF()
+    } catch(err) {
+      showAlert('page-alert', 'Erro ao gerar relatório: ' + err.message, 'error')
+    } finally {
+      setLoading(btn, false, '📄 Relatório PDF')
+    }
+  })
+
+  async function imageToBase64(url) {
+    try {
+      const response = await fetch(url)
+      const blob = await response.blob()
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onloadend = () => resolve(reader.result)
+        reader.onerror = reject
+        reader.readAsDataURL(blob)
+      })
+    } catch { return null }
+  }
+
+  async function generatePDF() {
+    if (!window.jspdf) throw new Error('Biblioteca PDF não carregada. Verifique sua conexão.')
+    const { jsPDF } = window.jspdf
+
+    // 1. Buscar dados da organização e diretoria em paralelo
+    const orgEndpoint = isFederation() ? '/api/federations/me' : '/api/local-umps/me'
+    const [org, boardData] = await Promise.all([
+      api.get(orgEndpoint),
+      api.get(`/api/board/?fiscal_year=${currentYear}`).catch(() => [])
+    ])
+    const presidente = boardData.find(b => b.role === 'presidente')
+    const tesoureiro  = boardData.find(b => b.role === 'tesoureiro')
+
+    // 2. Converter logos para base64
+    const [ipbLogo, orgLogo] = await Promise.all([
+      imageToBase64('/assets/img/ipb_logo.png'),
+      org.logo_url ? imageToBase64(org.logo_url) : Promise.resolve(null)
+    ])
+
+    // 3. Buscar URLs de comprovantes em lotes de 5
+    const txsWithReceipt = monthsData.flatMap(m => m.transactions.filter(t => t.receipt_url))
+    const receiptUrlMap = {}
+    for (let i = 0; i < txsWithReceipt.length; i += 5) {
+      const batch = txsWithReceipt.slice(i, i + 5)
+      const results = await Promise.all(
+        batch.map(t =>
+          api.get(`/api/finances/transactions/${t.id}/receipt-url`)
+             .then(d => ({ id: t.id, url: d.url }))
+             .catch(() => null)
+        )
+      )
+      results.forEach(r => { if (r) receiptUrlMap[r.id] = r.url })
+    }
+
+    // 4. Criar PDF
+    const doc  = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    const PW   = 210, PH = 297, M = 15, CW = 180
+
+    const NAVY  = [26, 42, 108]
+    const GREEN = [22, 163, 74]
+    const RED   = [220, 38, 38]
+    const DARK  = [30, 30, 30]
+    const LIGHT = [241, 245, 249]
+    const GRAY  = [248, 249, 250]
+
+    const fmtVal = v => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v ?? 0)
+    const slugify = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '')
+    const getImgFmt = b => b && (b.includes('jpeg') || b.includes('jpg')) ? 'JPEG' : 'PNG'
+
+    const totalPages = 1 + monthsData.length
+    const footerLabel = `${org.name ?? ''} • Relatório Financeiro ${currentYear}`
+    const addFooter = (pageN) => {
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(8)
+      doc.setTextColor(150, 150, 150)
+      doc.text(footerLabel, M, PH - 8)
+      doc.text(`Página ${pageN} de ${totalPages}`, PW - M, PH - 8, { align: 'right' })
+    }
+
+    // ── CAPA ────────────────────────────────────────────────────────────────
+    let y = M
+    const logoSz = 28
+
+    if (ipbLogo && orgLogo) {
+      const totalW = logoSz * 2 + 10
+      const startX = (PW - totalW) / 2
+      try { doc.addImage(ipbLogo, getImgFmt(ipbLogo), startX, y, logoSz, logoSz) } catch {}
+      try { doc.addImage(orgLogo, getImgFmt(orgLogo), startX + logoSz + 10, y, logoSz, logoSz) } catch {}
+    } else if (ipbLogo) {
+      try { doc.addImage(ipbLogo, getImgFmt(ipbLogo), (PW - logoSz) / 2, y, logoSz, logoSz) } catch {}
+    } else if (orgLogo) {
+      try { doc.addImage(orgLogo, getImgFmt(orgLogo), (PW - logoSz) / 2, y, logoSz, logoSz) } catch {}
+    }
+    y += logoSz + 8
+
+    // Título
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(18)
+    doc.setTextColor(...NAVY)
+    doc.text('RELATÓRIO FINANCEIRO', PW / 2, y, { align: 'center' })
+    y += 8
+    doc.setFontSize(14)
+    doc.text((org.name ?? '').toUpperCase(), PW / 2, y, { align: 'center' })
+    y += 7
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(11)
+    doc.setTextColor(...DARK)
+    doc.text(`Ano ${currentYear}`, PW / 2, y, { align: 'center' })
+    y += 8
+
+    // Linha separadora principal
+    doc.setDrawColor(...NAVY)
+    doc.setLineWidth(0.8)
+    doc.line(M, y, PW - M, y)
+    y += 6
+
+    // Bloco de informações
+    const infoLines = [['Organização:', org.name ?? '—'], ['Presbitério:', org.presbytery_name ?? '—']]
+    if (!isFederation()) {
+      if (org.church_name) infoLines.push(['Igreja:', org.church_name])
+      if (org.pastor_name) infoLines.push(['Pastor:', org.pastor_name])
+    }
+    infoLines.push(['Ano vigente:', String(currentYear)])
+    infoLines.push(['Saldo inicial:', fmtVal(currentPeriod.initial_balance)])
+
+    const infoBoxH = infoLines.length * 7 + 6
+    doc.setFillColor(...GRAY)
+    doc.roundedRect(M, y, CW, infoBoxH, 2, 2, 'F')
+    y += 5
+    infoLines.forEach(([lbl, val]) => {
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(...NAVY)
+      doc.text(lbl, M + 4, y)
+      doc.setFont('helvetica', 'normal'); doc.setTextColor(...DARK)
+      doc.text(val, M + 48, y)
+      y += 7
+    })
+    y += 3
+
+    // Linha leve
+    doc.setDrawColor(...LIGHT)
+    doc.setLineWidth(0.4)
+    doc.line(M, y, PW - M, y)
+    y += 6
+
+    // Resumo financeiro em 4 caixas
+    const boxW4 = (CW - 9) / 4
+    const sumItems = [
+      { label: 'Saldo Inicial',  value: fmtVal(currentPeriod.initial_balance),                          color: NAVY  },
+      { label: 'Total Entradas', value: fmtVal(monthsData.reduce((s, m) => s + m.total_in,  0)),        color: GREEN },
+      { label: 'Total Saídas',   value: fmtVal(monthsData.reduce((s, m) => s + m.total_out, 0)),        color: RED   },
+      { label: 'Saldo Final',    value: fmtVal(currentPeriod.final_balance),                            color: NAVY  },
+    ]
+    sumItems.forEach((item, i) => {
+      const bx = M + i * (boxW4 + 3)
+      doc.setFillColor(...LIGHT)
+      doc.roundedRect(bx, y, boxW4, 18, 2, 2, 'F')
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...item.color)
+      doc.text(item.label, bx + boxW4 / 2, y + 5.5, { align: 'center' })
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9)
+      doc.text(item.value, bx + boxW4 / 2, y + 13, { align: 'center' })
+    })
+    y += 26
+
+    // Linha separadora
+    doc.setDrawColor(...NAVY)
+    doc.setLineWidth(0.4)
+    doc.line(M, y, PW - M, y)
+    y += 8
+
+    // Assinaturas
+    const halfW = (CW - 10) / 2
+    const sigY  = y + 14
+    doc.setDrawColor(...DARK)
+    doc.setLineWidth(0.4)
+
+    doc.line(M, sigY, M + halfW, sigY)
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...NAVY)
+    doc.text('Presidente', M + halfW / 2, sigY + 5, { align: 'center' })
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...DARK)
+    doc.text(presidente?.member_name ?? '________________________', M + halfW / 2, sigY + 11, { align: 'center' })
+
+    const sigX2 = M + halfW + 10
+    doc.line(sigX2, sigY, sigX2 + halfW, sigY)
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...NAVY)
+    doc.text('Tesoureiro(a)', sigX2 + halfW / 2, sigY + 5, { align: 'center' })
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...DARK)
+    doc.text(tesoureiro?.member_name ?? '________________________', sigX2 + halfW / 2, sigY + 11, { align: 'center' })
+
+    // Rodapé da capa
+    const genDate = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(150, 150, 150)
+    doc.text(`Gerado em ${genDate}  •  Plataforma de Gestão UMP POPB`, PW / 2, PH - 13, { align: 'center' })
+    addFooter(1)
+
+    // ── PÁGINAS DE MESES ───────────────────────────────────────────────────
+    const typeLabels = {
+      outras_receitas: 'Outras Receitas',
+      outras_despesas: 'Outras Despesas',
+      aci_recebida:    'ACI Recebida',
+      aci_enviada:     'ACI Enviada',
+    }
+    let pageNum = 1
+
+    for (const month of monthsData) {
+      doc.addPage()
+      pageNum++
+      let my = M
+
+      // Cabeçalho azul
+      doc.setFillColor(...NAVY)
+      doc.rect(M, my, CW, 12, 'F')
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(255, 255, 255)
+      doc.text(`${month.month_label} ${currentYear}`, M + 5, my + 8)
+      my += 18
+
+      // Mini resumo horizontal
+      const mBoxW = (CW - 9) / 4
+      const miniItems = [
+        { label: 'Saldo Anterior', value: fmtVal(month.opening_balance), color: DARK  },
+        { label: 'Entradas',       value: fmtVal(month.total_in),        color: GREEN },
+        { label: 'Saídas',         value: fmtVal(month.total_out),       color: RED   },
+        { label: 'Saldo do Mês',   value: fmtVal(month.closing_balance), color: month.closing_balance >= 0 ? NAVY : RED },
+      ]
+      miniItems.forEach((item, i) => {
+        const bx = M + i * (mBoxW + 3)
+        doc.setFillColor(...LIGHT)
+        doc.roundedRect(bx, my, mBoxW, 14, 1.5, 1.5, 'F')
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(100, 100, 100)
+        doc.text(item.label, bx + mBoxW / 2, my + 5, { align: 'center' })
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(...item.color)
+        doc.text(item.value, bx + mBoxW / 2, my + 11, { align: 'center' })
+      })
+      my += 20
+
+      if (!month.transactions.length) {
+        doc.setFont('helvetica', 'italic'); doc.setFontSize(9.5); doc.setTextColor(150, 150, 150)
+        doc.text('Nenhum lançamento registrado neste mês.', M, my + 6)
+      } else {
+        const tableRows = month.transactions.map(t => {
+          const nature  = ['outras_receitas', 'aci_recebida'].includes(t.transaction_type) ? 'in' : 'out'
+          const dateStr = t.transaction_date.split('-').reverse().join('/')
+          const amtStr  = (nature === 'in' ? '+ ' : '– ') + fmtVal(t.amount)
+          return [dateStr, typeLabels[t.transaction_type] ?? t.transaction_type, t.description, amtStr, t.receipt_url ? 'Ver comprovante' : '—']
+        })
+        doc.autoTable({
+          startY: my,
+          head: [['Data', 'Tipo', 'Descrição', 'Valor', 'Comprovante']],
+          body: tableRows,
+          margin: { left: M, right: M },
+          styles: { fontSize: 8.5, cellPadding: 2.5, font: 'helvetica', overflow: 'linebreak' },
+          headStyles: { fillColor: NAVY, textColor: [255, 255, 255], fontStyle: 'bold' },
+          columnStyles: {
+            0: { cellWidth: 22 },
+            1: { cellWidth: 32 },
+            2: { cellWidth: 'auto' },
+            3: { cellWidth: 30, halign: 'right' },
+            4: { cellWidth: 30, halign: 'center' },
+          },
+          didParseCell: (data) => {
+            if (data.section === 'body' && data.column.index === 3) {
+              data.cell.styles.textColor = String(data.cell.raw).startsWith('+') ? GREEN : RED
+            }
+          },
+          didDrawCell: (data) => {
+            if (data.section === 'body' && data.column.index === 4 && data.cell.raw === 'Ver comprovante') {
+              const txId = month.transactions[data.row.index]?.id
+              const url  = receiptUrlMap[txId]
+              if (url) doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url })
+            }
+          },
+        })
+      }
+
+      addFooter(pageNum)
+    }
+
+    // Salvar arquivo
+    doc.save(`Relatorio_Financeiro_${currentYear}_${slugify(org.name ?? 'org')}.pdf`)
+  }
 
   loadPage()
 </script>
