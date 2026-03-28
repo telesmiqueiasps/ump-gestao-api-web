@@ -4,8 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Cache-Control" content="no-cache" />
+  <meta name="theme-color" content="#1a2a6c" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="/manifest.json" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <title>Perfil — Gestão UMP</title>
+  <title>Perfil — UMP POPB</title>
   <link rel="stylesheet" href="../assets/css/main.css" />
   <link rel="stylesheet" href="../assets/css/components.css" />
   <link rel="stylesheet" href="../assets/css/layout.css" />
@@ -14,13 +17,20 @@
 
 <div class="app-shell">
   <aside class="sidebar">
-    <div class="sidebar-brand"><h1>Gestão UMP</h1><p>União de Mocidade Presbiteriana</p></div>
+    <div class="sidebar-brand">
+      <img src="/assets/img/logo.png" class="sidebar-brand-logo" alt="Logo UMP" onerror="this.style.display='none'" />
+      <div class="sidebar-brand-text">
+        <h1>UMP POPB</h1>
+        <p>Plataforma de Gestão</p>
+      </div>
+    </div>
     <nav class="sidebar-nav" id="sidebar-nav"></nav>
     <div class="sidebar-footer">v1.0.0</div>
   </aside>
 
   <div class="main-area">
     <header class="header">
+      <button class="btn-menu" id="btn-menu">☰</button>
       <div class="header-user">
         <div class="header-user-name" id="header-name"></div>
         <div class="header-user-role" id="header-role"></div>
@@ -132,6 +142,7 @@
 
     </main>
   </div>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
 </div>
 
 <script type="module">
@@ -264,6 +275,29 @@
       showAlert('pw-alert', err.message, 'error')
     } finally {
       setLoading(btn, false, 'Alterar senha')
+    }
+  })
+</script>
+
+<script>
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(console.error)
+
+  const btnMenu = document.getElementById('btn-menu')
+  const sidebar = document.querySelector('.sidebar')
+  const overlay = document.getElementById('sidebar-overlay')
+
+  btnMenu?.addEventListener('click', () => {
+    sidebar.classList.toggle('open')
+    overlay.classList.toggle('open')
+  })
+  overlay?.addEventListener('click', () => {
+    sidebar.classList.remove('open')
+    overlay.classList.remove('open')
+  })
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) {
+      sidebar.classList.remove('open')
+      overlay.classList.remove('open')
     }
   })
 </script>

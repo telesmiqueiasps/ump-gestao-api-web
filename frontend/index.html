@@ -4,10 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Cache-Control" content="no-cache" />
+  <meta name="theme-color" content="#1a2a6c" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/assets/img/192-maskable.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <title>Gestão UMP — Login</title>
+  <title>UMP POPB — Login</title>
   <link rel="stylesheet" href="assets/css/main.css" />
   <link rel="stylesheet" href="assets/css/components.css" />
+  <link rel="stylesheet" href="assets/css/layout.css" />
 </head>
 <body>
 
@@ -15,8 +21,9 @@
   <div>
     <div class="login-card">
       <div class="login-card-top">
-        <h1>Gestão UMP</h1>
-        <p>União de Mocidade Presbiteriana</p>
+        <img src="/assets/img/logo.png" class="login-logo" alt="Logo UMP POPB" onerror="this.style.display='none'" />
+        <h1>UMP POPB</h1>
+        <p>Plataforma de Gestão</p>
       </div>
       <div class="login-card-body">
         <h2>Entrar na plataforma</h2>
@@ -40,6 +47,20 @@
     </div>
 
     <p class="login-footer">Plataforma de Gestão UMP © <span id="year"></span></p>
+    <p class="login-credit">Desenvolvido por Miquéias Teles</p>
+  </div>
+</div>
+
+<!-- PWA Install Banner -->
+<div class="pwa-banner hidden" id="pwa-banner">
+  <img src="/assets/img/logo.png" class="pwa-banner-logo" alt="Logo" onerror="this.style.display='none'" />
+  <div class="pwa-banner-text">
+    <strong>Instalar UMP POPB</strong>
+    <span>Adicione à tela inicial do seu celular</span>
+  </div>
+  <div class="pwa-banner-actions">
+    <button class="btn btn-primary btn-sm" id="btn-install">Instalar</button>
+    <button class="btn btn-ghost btn-sm" id="btn-dismiss">Agora não</button>
   </div>
 </div>
 
@@ -78,6 +99,35 @@
 
   btnLogin.addEventListener('click', doLogin)
   document.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin() })
+
+  // Registra Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(console.error)
+  }
+
+  // PWA Install prompt
+  let deferredPrompt = null
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault()
+    deferredPrompt = e
+    const dismissed = localStorage.getItem('pwa-dismissed')
+    if (!dismissed) {
+      setTimeout(() => document.getElementById('pwa-banner').classList.remove('hidden'), 2000)
+    }
+  })
+
+  document.getElementById('btn-install')?.addEventListener('click', async () => {
+    if (!deferredPrompt) return
+    deferredPrompt.prompt()
+    const { outcome } = await deferredPrompt.userChoice
+    deferredPrompt = null
+    document.getElementById('pwa-banner').classList.add('hidden')
+  })
+
+  document.getElementById('btn-dismiss')?.addEventListener('click', () => {
+    localStorage.setItem('pwa-dismissed', '1')
+    document.getElementById('pwa-banner').classList.add('hidden')
+  })
 </script>
 
 </body>
