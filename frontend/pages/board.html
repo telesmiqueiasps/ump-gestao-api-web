@@ -46,6 +46,33 @@
       <div class="board-grid" id="board-grid">
         <div class="loading-center"><div class="spinner"></div></div>
       </div>
+
+      <!-- Seção de usuários — só para presidente/vice da federação -->
+      <div id="users-section" style="display:none">
+        <div class="page-header mt-6">
+          <div class="page-header-info">
+            <h2>Usuários do Sistema</h2>
+            <p>Gerencie os acessos da Federação</p>
+          </div>
+          <button class="btn btn-primary" id="btn-new-fed-user">+ Novo usuário</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>E-mail</th>
+                <th>Cargo</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="fed-users-body">
+              <tr><td colspan="5" class="table-empty">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </main>
   </div>
 </div>
@@ -77,8 +104,48 @@
   </div>
 </div>
 
+<!-- Modal Usuário da Federação -->
+<div class="modal-overlay" id="modal-fed-user">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2>Novo Usuário</h2>
+      <button class="modal-close">✕</button>
+    </div>
+    <div class="field mb-4">
+      <label>Nome completo</label>
+      <input class="input" type="text" id="fu-full-name" placeholder="Nome completo" />
+    </div>
+    <div class="field mb-4">
+      <label>E-mail</label>
+      <input class="input" type="email" id="fu-email" placeholder="email@exemplo.com" />
+    </div>
+    <div class="field mb-4">
+      <label>Senha</label>
+      <input class="input" type="password" id="fu-password" placeholder="Mínimo 6 caracteres" />
+    </div>
+    <div class="field mb-4">
+      <label>Cargo</label>
+      <select class="input" id="fu-role">
+        <option value="">Selecione o cargo…</option>
+        <option value="presidente">Presidente</option>
+        <option value="vice_presidente">Vice-Presidente</option>
+        <option value="1_secretario">1º Secretário</option>
+        <option value="2_secretario">2º Secretário</option>
+        <option value="tesoureiro">Tesoureiro</option>
+        <option value="secretario_executivo">Secretário Executivo</option>
+        <option value="secretario_presbiterial">Secretário Presbiterial</option>
+      </select>
+    </div>
+    <div id="fed-user-alert" class="hidden mb-4"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary modal-close">Cancelar</button>
+      <button class="btn btn-primary" id="btn-save-fed-user">Criar usuário</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
-  import { requireAuth, isFederation, isLocalUmp } from '../assets/js/auth.js'
+  import { requireAuth, isFederation, isLocalUmp, hasRole, getUser } from '../assets/js/auth.js'
   import { renderShell } from '../assets/js/router.js'
   import { api } from '../assets/js/api.js'
   import { showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading } from '../assets/js/utils.js'
@@ -87,6 +154,22 @@
   renderShell()
   document.querySelector('[data-page="board"]')?.classList.add('active')
   initModalClose()
+
+  const ROLE_LABELS = {
+    presidente:              'Presidente',
+    vice_presidente:         'Vice-Presidente',
+    '1_secretario':          '1º Secretário',
+    '2_secretario':          '2º Secretário',
+    tesoureiro:              'Tesoureiro',
+    secretario_executivo:    'Secretário Executivo',
+    secretario_presbiterial: 'Secretário Presbiterial',
+    conselheiro:             'Conselheiro',
+  }
+
+  if (isFederation() && hasRole('presidente', 'vice_presidente')) {
+    document.getElementById('users-section').style.display = 'block'
+    loadFedUsers()
+  }
 
   const ALL_ROLES = [
     { value: 'presidente',              label: 'Presidente' },
@@ -200,6 +283,83 @@
     try {
       await api.delete(`/api/board/${id}`)
       loadBoard()
+    } catch(err) { showAlert('page-alert', err.message, 'error') }
+  }
+
+  // ── Usuários da Federação ────────────────────────────────────────────────────
+
+  async function loadFedUsers() {
+    const tbody = document.getElementById('fed-users-body')
+    tbody.innerHTML = '<tr><td colspan="5" class="table-empty">Carregando...</td></tr>'
+    try {
+      const orgId = getUser().organization_id
+      const users = await api.get(`/api/users/by-org/${orgId}`)
+      if (!users.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="table-empty">Nenhum usuário cadastrado.</td></tr>'
+        return
+      }
+      tbody.innerHTML = users.map(u => `
+        <tr>
+          <td>${u.full_name}</td>
+          <td>${u.email}</td>
+          <td><span class="badge badge-blue">${ROLE_LABELS[u.role] ?? u.role}</span></td>
+          <td><span class="badge ${u.is_active ? 'badge-green' : 'badge-slate'}">${u.is_active ? 'Ativo' : 'Inativo'}</span></td>
+          <td>
+            ${u.is_active ? `<button class="btn btn-ghost btn-sm" style="color:var(--red-600)" onclick="deactivateFedUser('${u.id}','${u.full_name.replace(/'/g, "\\'")}')">Desativar</button>` : ''}
+          </td>
+        </tr>
+      `).join('')
+    } catch(err) {
+      document.getElementById('fed-users-body').innerHTML =
+        `<tr><td colspan="5" class="table-empty" style="color:var(--red-600)">${err.message}</td></tr>`
+    }
+  }
+
+  document.getElementById('btn-new-fed-user')?.addEventListener('click', () => {
+    document.getElementById('fu-full-name').value = ''
+    document.getElementById('fu-email').value     = ''
+    document.getElementById('fu-password').value  = ''
+    document.getElementById('fu-role').value      = ''
+    clearAlert('fed-user-alert')
+    openModal('modal-fed-user')
+  })
+
+  document.getElementById('btn-save-fed-user')?.addEventListener('click', async () => {
+    const btn      = document.getElementById('btn-save-fed-user')
+    const fullName = document.getElementById('fu-full-name').value.trim()
+    const email    = document.getElementById('fu-email').value.trim()
+    const password = document.getElementById('fu-password').value
+    const role     = document.getElementById('fu-role').value
+
+    if (!fullName)           { showAlert('fed-user-alert', 'Informe o nome completo.', 'error'); return }
+    if (!email)              { showAlert('fed-user-alert', 'Informe o e-mail.', 'error'); return }
+    if (password.length < 6) { showAlert('fed-user-alert', 'A senha deve ter no mínimo 6 caracteres.', 'error'); return }
+    if (!role)               { showAlert('fed-user-alert', 'Selecione o cargo.', 'error'); return }
+
+    setLoading(btn, true, 'Criar usuário')
+    try {
+      await api.post('/api/users/', {
+        full_name:         fullName,
+        email,
+        password,
+        role,
+        organization_id:   getUser().organization_id,
+        organization_type: 'federation',
+      })
+      closeModal('modal-fed-user')
+      loadFedUsers()
+    } catch(err) {
+      showAlert('fed-user-alert', err.message, 'error')
+    } finally {
+      setLoading(btn, false, 'Criar usuário')
+    }
+  })
+
+  window.deactivateFedUser = async (id, name) => {
+    if (!confirm(`Desativar o usuário "${name}"?`)) return
+    try {
+      await api.delete(`/api/users/${id}`)
+      loadFedUsers()
     } catch(err) { showAlert('page-alert', err.message, 'error') }
   }
 
