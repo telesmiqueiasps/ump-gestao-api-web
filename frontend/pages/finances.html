@@ -551,10 +551,14 @@
     const presidente = boardData.find(b => b.role === 'presidente')
     const tesoureiro  = boardData.find(b => b.role === 'tesoureiro')
 
-    // 2. Converter logos para base64
-    const [ipbLogo, orgLogo] = await Promise.all([
+    // 2. Converter logos para base64 + buscar estatísticas
+    const [ipbLogo, umpLogo, orgLogo, statsData] = await Promise.all([
       imageToBase64('/assets/img/ipb_logo.png'),
-      org.logo_url ? imageToBase64(org.logo_url) : Promise.resolve(null)
+      imageToBase64('/assets/img/ump_logo.png'),
+      org.logo_url ? imageToBase64(org.logo_url) : Promise.resolve(null),
+      isFederation()
+        ? api.get('/api/local-umps/').catch(() => [])
+        : api.get('/api/members/?active_only=false').catch(() => [])
     ])
 
     // 3. Buscar URLs de comprovantes em lotes de 5
@@ -599,17 +603,15 @@
 
     // ── CAPA ────────────────────────────────────────────────────────────────
     let y = M
-    const logoSz = 28
-
-    if (ipbLogo && orgLogo) {
-      const totalW = logoSz * 2 + 10
-      const startX = (PW - totalW) / 2
-      try { doc.addImage(ipbLogo, getImgFmt(ipbLogo), startX, y, logoSz, logoSz) } catch {}
-      try { doc.addImage(orgLogo, getImgFmt(orgLogo), startX + logoSz + 10, y, logoSz, logoSz) } catch {}
-    } else if (ipbLogo) {
-      try { doc.addImage(ipbLogo, getImgFmt(ipbLogo), (PW - logoSz) / 2, y, logoSz, logoSz) } catch {}
-    } else if (orgLogo) {
-      try { doc.addImage(orgLogo, getImgFmt(orgLogo), (PW - logoSz) / 2, y, logoSz, logoSz) } catch {}
+    const logoSz  = 26
+    const logoGap = 8
+    const logoList = [ipbLogo, umpLogo, orgLogo].filter(Boolean)
+    if (logoList.length) {
+      const totalLogoW = logoList.length * logoSz + (logoList.length - 1) * logoGap
+      const logoX0 = (PW - totalLogoW) / 2
+      logoList.forEach((logo, i) => {
+        try { doc.addImage(logo, getImgFmt(logo), logoX0 + i * (logoSz + logoGap), y, logoSz, logoSz) } catch {}
+      })
     }
     y += logoSz + 8
 
@@ -642,6 +644,14 @@
     }
     infoLines.push(['Ano vigente:', String(currentYear)])
     infoLines.push(['Saldo inicial:', fmtVal(currentPeriod.initial_balance)])
+    if (isFederation()) {
+      infoLines.push(['UMPs Locais:', `${Array.isArray(statsData) ? statsData.length : 0} cadastradas`])
+    } else {
+      const ativos = Array.isArray(statsData) ? statsData.filter(m => m.member_type === 'ativo'       && m.is_active).length : 0
+      const coops  = Array.isArray(statsData) ? statsData.filter(m => m.member_type === 'cooperador'  && m.is_active).length : 0
+      infoLines.push(['Sócios Ativos:', String(ativos)])
+      infoLines.push(['Cooperadores:', String(coops)])
+    }
 
     const infoBoxH = infoLines.length * 7 + 6
     doc.setFillColor(...GRAY)
