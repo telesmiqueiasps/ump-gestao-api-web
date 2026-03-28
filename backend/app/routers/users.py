@@ -91,13 +91,25 @@ def change_password(
     db.commit()
 
 
-# Federação lista usuários de uma Local sua
+# Lista usuários de uma organização
 @router.get("/by-org/{org_id}")
 def list_users_by_org(
     org_id: UUID,
-    current_user: User = Depends(require_federation),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    # Permite acessar a própria organização
+    if str(org_id) == str(current_user.organization_id):
+        users = db.query(User).filter(
+            User.organization_id == org_id,
+            User.is_active == True,
+        ).limit(500).all()
+        return [_to_out(u) for u in users]
+
+    # Federação acessando uma Local sua
+    if current_user.organization_type.value != "federation":
+        raise HTTPException(status_code=403, detail="Acesso negado")
+
     from app.models.local_ump import LocalUmp
     local = db.query(LocalUmp).filter(
         LocalUmp.id == org_id,
@@ -140,6 +152,7 @@ def deactivate_user(
 
 
 def _to_out(u: User) -> dict:
+    latest_role = max(u.roles, key=lambda r: r.fiscal_year, default=None) if u.roles else None
     return {
         "id": str(u.id),
         "full_name": u.full_name,
@@ -147,4 +160,5 @@ def _to_out(u: User) -> dict:
         "organization_id": str(u.organization_id),
         "organization_type": u.organization_type.value,
         "is_active": u.is_active,
+        "role": latest_role.role.value if latest_role else None,
     }
