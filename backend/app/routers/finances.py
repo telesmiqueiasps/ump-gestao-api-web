@@ -351,6 +351,62 @@ def delete_transaction(
         logger.info("Sem comprovante para excluir do B2")
 
 
+# Excluir todos os comprovantes de um ano
+@router.delete("/receipts/year/{year}", status_code=status.HTTP_200_OK)
+def delete_receipts_by_year(
+    year: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    import re
+    from app.services.storage import delete_folder
+    from app.core.config import get_settings
+    settings_obj = get_settings()
+    bucket_name = settings_obj.b2_bucket_name
+
+    period = _get_period(db, current_user.organization_id, current_user.organization_type, year)
+    if not period:
+        raise HTTPException(status_code=404, detail=f"Período financeiro {year} não encontrado")
+
+    transactions = db.query(FinancialTransaction).filter(
+        FinancialTransaction.period_id == period.id,
+        FinancialTransaction.receipt_url.isnot(None),
+    ).all()
+
+    deleted_count = 0
+    failed_count = 0
+
+    for transaction in transactions:
+        receipt_url = str(transaction.receipt_url)
+
+        key = None
+        match1 = re.search(rf'/file/{re.escape(bucket_name)}/(.+)$', receipt_url)
+        if match1:
+            key = match1.group(1)
+        if not key:
+            match2 = re.search(rf'/{re.escape(bucket_name)}/(.+)$', receipt_url)
+            if match2:
+                key = match2.group(1)
+
+        if key:
+            folder_prefix = '/'.join(key.split('/')[:-1]) + '/'
+            success = delete_folder(folder_prefix)
+            if success:
+                transaction.receipt_url = None
+                deleted_count += 1
+            else:
+                failed_count += 1
+
+    db.commit()
+
+    return {
+        "year": year,
+        "deleted": deleted_count,
+        "failed": failed_count,
+        "message": f"{deleted_count} comprovante(s) excluído(s) com sucesso."
+    }
+
+
 # Encerrar período
 @router.post("/periods/{period_id}/close")
 def close_period(
