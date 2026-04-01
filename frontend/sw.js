@@ -1,10 +1,10 @@
-const CACHE_NAME = 'ump-gestao-v4';
+const CACHE_NAME = 'ump-gestao-v5';
 
 // Apenas assets estáticos que mudam raramente
 const STATIC_ASSETS = [
   '/assets/css/main.css',
   '/assets/css/components.css',
-  '/assets/css/layout.css',
+  '/assets/css/layout.v2.css',
   '/assets/js/api.js',
   '/assets/js/auth.js',
   '/assets/js/router.v2.js',
