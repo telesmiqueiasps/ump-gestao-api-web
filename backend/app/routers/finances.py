@@ -319,7 +319,7 @@ def delete_transaction(
 
     # Depois tenta excluir do Backblaze
     if receipt_url:
-        from app.services.storage import delete_file
+        from app.services.storage import delete_file, delete_folder
         from app.core.config import get_settings
         settings = get_settings()
         bucket_name = settings.b2_bucket_name
@@ -339,12 +339,14 @@ def delete_transaction(
                 key = match2.group(1)
                 logger.info(f"Key extraída (formato S3): {key}")
 
-        if not key:
-            key = receipt_url
-            logger.info(f"Usando URL completa como key: {key}")
-
-        result = delete_file(key)
-        logger.info(f"Resultado exclusão B2: {result}")
+        if key:
+            # Exclui o arquivo e toda a pasta da transação
+            folder_prefix = '/'.join(key.split('/')[:-1]) + '/'
+            logger.info(f"Excluindo pasta completa: {folder_prefix}")
+            result = delete_folder(folder_prefix)
+            logger.info(f"Resultado exclusão pasta B2: {result}")
+        else:
+            logger.info(f"Não foi possível extrair key da URL: {receipt_url}")
     else:
         logger.info("Sem comprovante para excluir do B2")
 
