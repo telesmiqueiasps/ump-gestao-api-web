@@ -18,49 +18,49 @@ const ORG_LABELS = {
 
 const NAV_ITEMS = [
   {
-    page: 'dashboard', label: 'Dashboard', icon: '⊞',
+    page: 'dashboard', label: 'Dashboard', icon: '/assets/img/dashboard.png',
     path: '/pages/dashboard.html',
     roles: null
   },
   {
-    page: 'profile', label: 'Perfil', icon: '◎',
+    page: 'profile', label: 'Perfil', icon: '/assets/img/perfil.png',
     path: '/pages/profile.html',
     roles: null
   },
   {
-    page: 'finances', label: 'Financeiro', icon: '◈',
+    page: 'finances', label: 'Financeiro', icon: '/assets/img/financeiro.png',
     path: '/pages/finances.html',
     roles: ['presidente','vice_presidente','tesoureiro','conselheiro','secretario_presbiterial']
   },
   {
-    page: 'members', label: 'Sócios', icon: '◉',
+    page: 'members', label: 'Sócios', icon: '/assets/img/socios.png',
     path: '/pages/members.html',
     localOnly: true,
     roles: ['presidente','vice_presidente','tesoureiro','conselheiro','secretario_presbiterial']
   },
   {
-    page: 'board', label: 'Diretoria', icon: '❖',
+    page: 'board', label: 'Diretoria', icon: '/assets/img/diretoria.png',
     path: '/pages/board.html',
     roles: ['presidente','vice_presidente','conselheiro','secretario_presbiterial']
   },
   {
-    page: 'local-umps', label: 'UMPs Locais', icon: '⊟',
+    page: 'local-umps', label: 'UMPs Locais', icon: '/assets/img/umps_locais.png',
     path: '/pages/local-umps.html',
     fedOnly: true,
     roles: ['presidente','vice_presidente','conselheiro','secretario_presbiterial']
   },
   {
-    page: 'secretary', label: 'Secretaria', icon: '📋',
+    page: 'secretary', label: 'Secretaria', icon: '/assets/img/secretaria.png',
     path: '/pages/secretary.html',
     roles: ['presidente','vice_presidente','1_secretario','2_secretario','secretario_executivo','conselheiro','secretario_presbiterial']
   },
   {
-    page: 'president', label: 'Presidência', icon: '👑',
+    page: 'president', label: 'Presidência', icon: '/assets/img/presidente.png',
     path: '/pages/president.html',
     roles: ['presidente','vice_presidente','conselheiro','secretario_presbiterial']
   },
   {
-    page: 'notices', label: 'Avisos', icon: '📢',
+    page: 'notices', label: 'Avisos', icon: '/assets/img/aviso.png',
     path: '/pages/notices.html',
     roles: null
   },
@@ -101,7 +101,7 @@ export function renderShell() {
     })
     .map(item => `
       <button class="nav-item" data-page="${item.page}" onclick="navigate('${item.page}')">
-        <span class="nav-icon">${item.icon}</span>
+        <img class="nav-icon" src="${item.icon}" alt="" />
         ${item.label}
       </button>
     `).join('')

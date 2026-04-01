@@ -72,7 +72,8 @@
 .nav-item.active { background: var(--brand-orange); color: #fff; }
 .nav-item.active:hover { background: #d4570a; }
 
-.nav-item .nav-icon { font-size: 1rem; width: 18px; text-align: center; flex-shrink: 0; }
+.nav-item .nav-icon { width: 18px; height: 18px; object-fit: contain; flex-shrink: 0; opacity: .65; }
+.nav-item:hover .nav-icon, .nav-item.active .nav-icon { opacity: 1; }
 
 .sidebar-footer {
   padding: .75rem 1.25rem;
