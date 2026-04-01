@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ump-gestao-v3';
+const CACHE_NAME = 'ump-gestao-v4';
 
 // Apenas assets estáticos que mudam raramente
 const STATIC_ASSETS = [
@@ -7,7 +7,7 @@ const STATIC_ASSETS = [
   '/assets/css/layout.css',
   '/assets/js/api.js',
   '/assets/js/auth.js',
-  '/assets/js/router.js',
+  '/assets/js/router.v2.js',
   '/assets/js/utils.js',
   '/assets/img/logo.png',
   '/assets/img/ump_logo.png',
