@@ -71,24 +71,31 @@ def get_presigned_url(key: str, expires_in: int = 3600) -> str:
 def delete_file(key: str) -> bool:
     client = _get_client()
     try:
-        # Exclui o arquivo principal
-        logger.info(f"Deletando arquivo do B2 - bucket: {settings.b2_bucket_name}, key: {key}")
-        client.delete_object(Bucket=settings.b2_bucket_name, Key=key)
-        logger.info(f"Arquivo deletado com sucesso: {key}")
+        # Lista todas as versões do arquivo
+        response = client.list_object_versions(
+            Bucket=settings.b2_bucket_name,
+            Prefix=key
+        )
 
-        # Tenta excluir o objeto de pasta pai (Backblaze cria objetos vazios para pastas)
-        folder_key = '/'.join(key.split('/')[:-1]) + '/'
-        try:
-            client.delete_object(Bucket=settings.b2_bucket_name, Key=folder_key)
-        except Exception:
-            pass  # Ignora se a pasta não existir como objeto
+        # Exclui todas as versões (Versions) e markers de exclusão (DeleteMarkers)
+        versions = response.get('Versions', [])
+        delete_markers = response.get('DeleteMarkers', [])
 
-        # Tenta também sem a barra final
-        folder_key_no_slash = '/'.join(key.split('/')[:-1])
-        try:
-            client.delete_object(Bucket=settings.b2_bucket_name, Key=folder_key_no_slash)
-        except Exception:
-            pass
+        all_objects = [
+            {'Key': v['Key'], 'VersionId': v['VersionId']}
+            for v in versions
+        ] + [
+            {'Key': d['Key'], 'VersionId': d['VersionId']}
+            for d in delete_markers
+        ]
+
+        logger.info(f"Deletando arquivo do B2 - key: {key} - {len(all_objects)} versão(ões)")
+
+        if all_objects:
+            client.delete_objects(
+                Bucket=settings.b2_bucket_name,
+                Delete={'Objects': all_objects}
+            )
 
         return True
     except Exception as e:
@@ -99,23 +106,34 @@ def delete_file(key: str) -> bool:
 def delete_folder(prefix: str) -> bool:
     client = _get_client()
     try:
-        # Lista todos os objetos com esse prefixo
-        response = client.list_objects_v2(
+        # Lista todas as versões de todos os objetos com esse prefixo
+        response = client.list_object_versions(
             Bucket=settings.b2_bucket_name,
             Prefix=prefix
         )
-        objects = response.get('Contents', [])
 
-        if not objects:
-            logger.info(f"Nenhum objeto encontrado no prefixo: {prefix}")
+        versions = response.get('Versions', [])
+        delete_markers = response.get('DeleteMarkers', [])
+
+        all_objects = [
+            {'Key': v['Key'], 'VersionId': v['VersionId']}
+            for v in versions
+        ] + [
+            {'Key': d['Key'], 'VersionId': d['VersionId']}
+            for d in delete_markers
+        ]
+
+        logger.info(f"Deletando pasta do B2 - prefix: {prefix} - {len(all_objects)} objeto(s)")
+
+        if not all_objects:
             return True
 
-        # Exclui todos os objetos encontrados
-        for obj in objects:
-            logger.info(f"Excluindo objeto da pasta: {obj['Key']}")
-            client.delete_object(Bucket=settings.b2_bucket_name, Key=obj['Key'])
+        # Exclui tudo de uma vez
+        client.delete_objects(
+            Bucket=settings.b2_bucket_name,
+            Delete={'Objects': all_objects}
+        )
 
-        logger.info(f"Pasta excluída com sucesso: {prefix} ({len(objects)} objeto(s))")
         return True
     except Exception as e:
         logger.error(f"Erro ao deletar pasta do B2: {e}")
