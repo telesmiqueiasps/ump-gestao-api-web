@@ -290,53 +290,63 @@ def delete_transaction(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    import logging
+    import re
+    logger = logging.getLogger(__name__)
+
     transaction = db.query(FinancialTransaction).filter(
         FinancialTransaction.id == transaction_id,
         FinancialTransaction.organization_id == current_user.organization_id,
     ).first()
+
     if not transaction:
         raise HTTPException(status_code=404, detail="Lançamento não encontrado")
 
-    period = db.query(FinancialPeriod).filter(FinancialPeriod.id == transaction.period_id).first()
+    period = db.query(FinancialPeriod).filter(
+        FinancialPeriod.id == transaction.period_id
+    ).first()
     if period and period.is_closed:
         raise HTTPException(status_code=400, detail="Período encerrado — lançamento não pode ser excluído")
 
-    # Exclui comprovante do Backblaze B2 se existir
-    if transaction.receipt_url:
-        import logging
-        logger = logging.getLogger(__name__)
+    # Captura receipt_url ANTES de qualquer operação de delete
+    receipt_url = str(transaction.receipt_url) if transaction.receipt_url else None
+    logger.info(f"DELETE transaction {transaction_id} - receipt_url capturado: {receipt_url}")
 
+    # Deleta o registro do banco primeiro
+    db.delete(transaction)
+    db.commit()
+    logger.info(f"Transação {transaction_id} deletada do banco")
+
+    # Depois tenta excluir do Backblaze
+    if receipt_url:
+        from app.services.storage import delete_file
+        from app.core.config import get_settings
+        settings = get_settings()
         bucket_name = settings.b2_bucket_name
-        stored_url = transaction.receipt_url
 
-        logger.info(f"Tentando excluir comprovante. URL: {stored_url}")
-        logger.info(f"Bucket name: {bucket_name}")
+        logger.info(f"Tentando excluir comprovante - URL: {receipt_url} - Bucket: {bucket_name}")
 
         key = None
 
-        # Formato 1: https://f005.backblazeb2.com/file/BUCKET/KEY
-        match1 = re.search(rf'/file/{re.escape(bucket_name)}/(.+)$', stored_url)
+        match1 = re.search(rf'/file/{re.escape(bucket_name)}/(.+)$', receipt_url)
         if match1:
             key = match1.group(1)
-            logger.info(f"Key extraída (formato 1): {key}")
+            logger.info(f"Key extraída (formato f005): {key}")
 
-        # Formato 2: https://s3.us-east-005.backblazeb2.com/BUCKET/KEY
         if not key:
-            match2 = re.search(rf'/{re.escape(bucket_name)}/(.+)$', stored_url)
+            match2 = re.search(rf'/{re.escape(bucket_name)}/(.+)$', receipt_url)
             if match2:
                 key = match2.group(1)
-                logger.info(f"Key extraída (formato 2): {key}")
+                logger.info(f"Key extraída (formato S3): {key}")
 
-        # Se não conseguiu extrair, usa a URL inteira como key
         if not key:
-            key = stored_url
+            key = receipt_url
             logger.info(f"Usando URL completa como key: {key}")
 
         result = delete_file(key)
-        logger.info(f"Resultado da exclusão no B2: {result}")
-
-    db.delete(transaction)
-    db.commit()
+        logger.info(f"Resultado exclusão B2: {result}")
+    else:
+        logger.info("Sem comprovante para excluir do B2")
 
 
 # Encerrar período
