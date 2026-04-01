@@ -82,6 +82,29 @@
   text-align: center;
 }
 
+/* ── Sidebar password button ──────────────────────────── */
+.sidebar-pw-btn {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .55rem .85rem;
+  margin: 0 .6rem .5rem;
+  border-radius: var(--radius);
+  font-size: .8rem;
+  font-weight: 500;
+  color: var(--slate-400);
+  background: none;
+  border: 1px solid rgba(255,255,255,.1);
+  cursor: pointer;
+  width: calc(100% - 1.2rem);
+  transition: all var(--transition);
+}
+.sidebar-pw-btn:hover {
+  background: rgba(255,255,255,.06);
+  color: #fff;
+  border-color: rgba(255,255,255,.2);
+}
+
 /* ── Sidebar overlay (mobile) ─────────────────────────── */
 .sidebar-overlay {
   display: none;

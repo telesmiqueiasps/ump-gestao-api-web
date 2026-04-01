@@ -152,12 +152,12 @@
 
 <script type="module">
   import { requireAuth, isLocalUmp } from '../assets/js/auth.js'
-  import { renderShell } from '../assets/js/router.js'
+  import { renderShell, canAccessPage } from '../assets/js/router.js'
   import { api } from '../assets/js/api.js'
   import { formatDate, showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading } from '../assets/js/utils.js'
 
   if (!requireAuth()) throw new Error()
-  if (!isLocalUmp()) window.location.href = 'dashboard.html'
+  if (!canAccessPage('members')) window.location.href = '/pages/dashboard.html'
 
   renderShell()
   document.querySelector('[data-page="members"]')?.classList.add('active')

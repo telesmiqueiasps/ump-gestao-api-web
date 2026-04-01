@@ -53,7 +53,7 @@
       </div>
 
       <!-- Stats financeiros -->
-      <div class="grid-3" id="stats-financial">
+      <div id="stats-financial" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem">
         <div class="stat-card">
           <div class="stat-icon blue">◈</div>
           <div>
@@ -76,6 +76,22 @@
             <div class="stat-label">Total de Saídas</div>
             <div class="stat-value" id="stat-out">—</div>
             <div class="stat-sub">Despesas + ACI enviada</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#fff3e0;color:#e8630a">↙</div>
+          <div>
+            <div class="stat-label">ACI Recebida</div>
+            <div class="stat-value" id="stat-aci-in">—</div>
+            <div class="stat-sub">Recursos recebidos</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#fce4ec;color:#c0392b">↗</div>
+          <div>
+            <div class="stat-label">ACI Enviada</div>
+            <div class="stat-value" id="stat-aci-out">—</div>
+            <div class="stat-sub">Recursos enviados</div>
           </div>
         </div>
       </div>
@@ -150,11 +166,12 @@
 
 <script type="module">
   import { requireAuth, getUser, isFederation, isLocalUmp } from '../assets/js/auth.js'
-  import { renderShell } from '../assets/js/router.js'
+  import { renderShell, canAccessPage } from '../assets/js/router.js'
   import { api } from '../assets/js/api.js'
   import { formatCurrency, currentYear } from '../assets/js/utils.js'
 
   if (!requireAuth()) throw new Error('not auth')
+  if (!canAccessPage('dashboard')) window.location.href = '/pages/dashboard.html'
 
   renderShell()
   document.querySelector('[data-page="dashboard"]')?.classList.add('active')
@@ -181,10 +198,15 @@
       const totalIn  = txs.filter(t => ['outras_receitas','aci_recebida'].includes(t.transaction_type)).reduce((s,t) => s + Number(t.amount), 0)
       const totalOut = txs.filter(t => ['outras_despesas','aci_enviada'].includes(t.transaction_type)).reduce((s,t) => s + Number(t.amount), 0)
 
+      const aciIn  = txs.filter(t => t.transaction_type === 'aci_recebida').reduce((s,t) => s + Number(t.amount), 0)
+      const aciOut = txs.filter(t => t.transaction_type === 'aci_enviada').reduce((s,t) => s + Number(t.amount), 0)
+
       document.getElementById('stat-balance').textContent = formatCurrency(period.final_balance)
       document.getElementById('stat-balance-sub').textContent = `Saldo inicial: ${formatCurrency(period.initial_balance)}`
-      document.getElementById('stat-in').textContent  = formatCurrency(totalIn)
-      document.getElementById('stat-out').textContent = formatCurrency(totalOut)
+      document.getElementById('stat-in').textContent    = formatCurrency(totalIn)
+      document.getElementById('stat-out').textContent   = formatCurrency(totalOut)
+      document.getElementById('stat-aci-in').textContent  = formatCurrency(aciIn)
+      document.getElementById('stat-aci-out').textContent = formatCurrency(aciOut)
 
       document.getElementById('period-title').textContent = `Período Financeiro ${period.fiscal_year}`
       document.getElementById('period-badge').textContent = period.is_closed ? 'Encerrado' : 'Aberto'
@@ -198,9 +220,11 @@
       document.getElementById('period-card').style.display = 'block'
     } catch {
       document.getElementById('no-period-alert').style.display = 'block'
-      document.getElementById('stat-balance').textContent = '—'
-      document.getElementById('stat-in').textContent  = '—'
-      document.getElementById('stat-out').textContent  = '—'
+      document.getElementById('stat-balance').textContent    = '—'
+      document.getElementById('stat-in').textContent      = '—'
+      document.getElementById('stat-out').textContent     = '—'
+      document.getElementById('stat-aci-in').textContent  = '—'
+      document.getElementById('stat-aci-out').textContent = '—'
     }
 
     // Diretoria

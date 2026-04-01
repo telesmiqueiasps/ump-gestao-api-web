@@ -163,12 +163,12 @@
 
 <script type="module">
   import { requireAuth, isFederation } from '../assets/js/auth.js'
-  import { renderShell } from '../assets/js/router.js'
+  import { renderShell, canAccessPage } from '../assets/js/router.js'
   import { api } from '../assets/js/api.js'
   import { formatCurrency, showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading } from '../assets/js/utils.js'
 
   if (!requireAuth()) throw new Error()
-  if (!isFederation()) window.location.href = 'dashboard.html'
+  if (!canAccessPage('local-umps')) window.location.href = '/pages/dashboard.html'
 
   renderShell()
   document.querySelector('[data-page="local-umps"]')?.classList.add('active')

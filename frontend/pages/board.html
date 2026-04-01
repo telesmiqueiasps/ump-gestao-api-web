@@ -159,11 +159,12 @@
 
 <script type="module">
   import { requireAuth, isFederation, isLocalUmp, hasRole, getUser } from '../assets/js/auth.js'
-  import { renderShell } from '../assets/js/router.js'
+  import { renderShell, canAccessPage } from '../assets/js/router.js'
   import { api } from '../assets/js/api.js'
   import { showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading } from '../assets/js/utils.js'
 
   if (!requireAuth()) throw new Error()
+  if (!canAccessPage('board')) window.location.href = '/pages/dashboard.html'
   renderShell()
   document.querySelector('[data-page="board"]')?.classList.add('active')
   initModalClose()
