@@ -71,7 +71,10 @@ def get_presigned_url(key: str, expires_in: int = 3600) -> str:
 def delete_file(key: str) -> bool:
     client = _get_client()
     try:
+        logger.info(f"Deletando arquivo do B2 - bucket: {settings.b2_bucket_name}, key: {key}")
         client.delete_object(Bucket=settings.b2_bucket_name, Key=key)
+        logger.info(f"Arquivo deletado com sucesso: {key}")
         return True
-    except ClientError:
+    except Exception as e:
+        logger.error(f"Erro ao deletar arquivo do B2: {e}")
         return False

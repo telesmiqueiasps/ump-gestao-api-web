@@ -303,9 +303,37 @@ def delete_transaction(
 
     # Exclui comprovante do Backblaze B2 se existir
     if transaction.receipt_url:
-        match = re.search(rf'/file/{re.escape(settings.b2_bucket_name)}/(.+)$', transaction.receipt_url)
-        if match:
-            delete_file(match.group(1))
+        import logging
+        logger = logging.getLogger(__name__)
+
+        bucket_name = settings.b2_bucket_name
+        stored_url = transaction.receipt_url
+
+        logger.info(f"Tentando excluir comprovante. URL: {stored_url}")
+        logger.info(f"Bucket name: {bucket_name}")
+
+        key = None
+
+        # Formato 1: https://f005.backblazeb2.com/file/BUCKET/KEY
+        match1 = re.search(rf'/file/{re.escape(bucket_name)}/(.+)$', stored_url)
+        if match1:
+            key = match1.group(1)
+            logger.info(f"Key extraída (formato 1): {key}")
+
+        # Formato 2: https://s3.us-east-005.backblazeb2.com/BUCKET/KEY
+        if not key:
+            match2 = re.search(rf'/{re.escape(bucket_name)}/(.+)$', stored_url)
+            if match2:
+                key = match2.group(1)
+                logger.info(f"Key extraída (formato 2): {key}")
+
+        # Se não conseguiu extrair, usa a URL inteira como key
+        if not key:
+            key = stored_url
+            logger.info(f"Usando URL completa como key: {key}")
+
+        result = delete_file(key)
+        logger.info(f"Resultado da exclusão no B2: {result}")
 
     db.delete(transaction)
     db.commit()
