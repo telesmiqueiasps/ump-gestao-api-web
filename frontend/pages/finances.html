@@ -635,9 +635,12 @@
     const isFedera = isFederation()
     const orgEndpoint = isFedera ? '/api/federations/me' : '/api/local-umps/me'
 
-    const [orgData, boardData] = await Promise.all([
+    const [orgData, boardData, statsData] = await Promise.all([
       api.get(orgEndpoint),
-      api.get(`/api/board/?fiscal_year=${currentYear}`).catch(() => [])
+      api.get(`/api/board/?fiscal_year=${currentYear}`).catch(() => []),
+      isFedera
+        ? api.get('/api/local-umps/').catch(() => [])
+        : api.get('/api/members/?active_only=false').catch(() => [])
     ])
 
     // Busca pre-signed URLs dos comprovantes em lotes de 5
@@ -794,7 +797,15 @@
       y = drawRow('IGREJA', (orgData.church_name || '').toUpperCase(), y, false)
       y = drawRow('PASTOR', (orgData.pastor_name || '').toUpperCase(), y, true)
     }
-    y = drawRow2Col('ANO VIGENTE', currentYear, 'DATA DO RELATÓRIO', new Date().toLocaleDateString('pt-BR'), y, false)
+    const statsLabel = isFedera ? 'UMPS LOCAIS' : 'SÓCIOS ATIVOS / COOPERADORES'
+    const statsValue = isFedera
+      ? `${Array.isArray(statsData) ? statsData.length : 0} cadastradas`
+      : (() => {
+          const ativos = Array.isArray(statsData) ? statsData.filter(m => m.member_type === 'ativo' && m.is_active).length : 0
+          const coops  = Array.isArray(statsData) ? statsData.filter(m => m.member_type === 'cooperador' && m.is_active).length : 0
+          return `${ativos} ativos / ${coops} cooperadores`
+        })()
+    y = drawRow2Col('ANO VIGENTE', currentYear, statsLabel, statsValue, y, false)
     y = drawRow('PRESIDENTE', (presidente?.member_name || '-').toUpperCase(), y, true)
     y = drawRow('TESOUREIRO RESPONSÁVEL', (tesoureiro?.member_name || '-').toUpperCase(), y, false)
 
