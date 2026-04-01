@@ -623,273 +623,413 @@
   }
 
   async function generatePDF() {
-    if (!window.jspdf) throw new Error('Biblioteca PDF não carregada. Verifique sua conexão.')
     const { jsPDF } = window.jspdf
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
 
-    // 1. Buscar dados da organização e diretoria em paralelo
-    const orgEndpoint = isFederation() ? '/api/federations/me' : '/api/local-umps/me'
-    const [org, boardData] = await Promise.all([
+    const pageW = 210
+    const pageH = 297
+    const margin = 14
+    const contentW = pageW - margin * 2
+
+    // Busca dados necessários
+    const isFedera = isFederation()
+    const orgEndpoint = isFedera ? '/api/federations/me' : '/api/local-umps/me'
+
+    const [orgData, boardData] = await Promise.all([
       api.get(orgEndpoint),
       api.get(`/api/board/?fiscal_year=${currentYear}`).catch(() => [])
     ])
-    const presidente = boardData.find(b => b.role === 'presidente')
-    const tesoureiro  = boardData.find(b => b.role === 'tesoureiro')
 
-    // 2. Converter logos para base64 + buscar estatísticas
-    const [ipbLogo, umpLogo, orgLogo, statsData] = await Promise.all([
-      imageToBase64('/assets/img/ipb_logo.png'),
-      imageToBase64('/assets/img/ump_logo.png'),
-      org.logo_url ? imageToBase64(org.logo_url) : Promise.resolve(null),
-      isFederation()
-        ? api.get('/api/local-umps/').catch(() => [])
-        : api.get('/api/members/?active_only=false').catch(() => [])
-    ])
-
-    // 3. Buscar URLs de comprovantes em lotes de 5
-    const txsWithReceipt = monthsData.flatMap(m => m.transactions.filter(t => t.receipt_url))
-    const receiptUrlMap = {}
+    // Busca pre-signed URLs dos comprovantes em lotes de 5
+    const allTxs = monthsData.flatMap(m => m.transactions)
+    const txsWithReceipt = allTxs.filter(t => t.receipt_url)
+    const receiptUrls = {}
     for (let i = 0; i < txsWithReceipt.length; i += 5) {
       const batch = txsWithReceipt.slice(i, i + 5)
       const results = await Promise.all(
-        batch.map(t =>
-          api.get(`/api/finances/transactions/${t.id}/receipt-url`)
-             .then(d => ({ id: t.id, url: d.url }))
-             .catch(() => null)
-        )
+        batch.map(async t => {
+          try {
+            const data = await api.get(`/api/finances/transactions/${t.id}/receipt-url`)
+            return { id: t.id, url: data.url }
+          } catch { return { id: t.id, url: null } }
+        })
       )
-      results.forEach(r => { if (r) receiptUrlMap[r.id] = r.url })
+      results.forEach(r => { if (r.url) receiptUrls[r.id] = r.url })
     }
 
-    // 4. Criar PDF
-    const doc  = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-    const PW   = 210, PH = 297, M = 15, CW = 180
+    // Pega presidente e tesoureiro do board
+    const presidente = boardData.find(b => b.role === 'presidente')
+    const tesoureiro = boardData.find(b => b.role === 'tesoureiro')
 
-    const NAVY  = [26, 42, 108]
-    const GREEN = [22, 163, 74]
-    const RED   = [220, 38, 38]
-    const DARK  = [30, 30, 30]
-    const LIGHT = [241, 245, 249]
-    const GRAY  = [248, 249, 250]
+    // Converte logos para base64
+    const ipbLogoB64 = await imageToBase64('/assets/img/ipb_logo.png').catch(() => null)
+    const orgLogoB64 = orgData.logo_url ? await imageToBase64(orgData.logo_url).catch(() => null) : null
 
-    const fmtVal = v => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v ?? 0)
-    const slugify = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '')
-    const getImgFmt = b => b && (b.includes('jpeg') || b.includes('jpg')) ? 'JPEG' : 'PNG'
+    // Totais gerais
+    const totalIn  = monthsData.reduce((s, m) => s + m.total_in, 0)
+    const totalOut = monthsData.reduce((s, m) => s + m.total_out, 0)
+    const finalBalance = currentPeriod.final_balance
 
-    const totalPages = 1 + monthsData.length
-    const footerLabel = `${org.name ?? ''} • Relatório Financeiro ${currentYear}`
-    const addFooter = (pageN) => {
-      doc.setFont('helvetica', 'normal')
-      doc.setFontSize(8)
-      doc.setTextColor(150, 150, 150)
-      doc.text(footerLabel, M, PH - 8)
-      doc.text(`Página ${pageN} de ${totalPages}`, PW - M, PH - 8, { align: 'right' })
+    const slugify = s => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '')
+
+    // ════════════════════════════════════════
+    // PÁGINA 1 — CAPA
+    // ════════════════════════════════════════
+
+    let y = margin
+
+    // ── Cabeçalho com logo e título ──
+    const headerH = 35
+
+    // Logo IPB à esquerda
+    if (ipbLogoB64) {
+      doc.addImage(ipbLogoB64, 'PNG', margin, y, 28, 28)
     }
 
-    // ── CAPA ────────────────────────────────────────────────────────────────
-    let y = M
-    const logoSz  = 26
-    const logoGap = 8
-    const logoList = [ipbLogo, umpLogo, orgLogo].filter(Boolean)
-    if (logoList.length) {
-      const totalLogoW = logoList.length * logoSz + (logoList.length - 1) * logoGap
-      const logoX0 = (PW - totalLogoW) / 2
-      logoList.forEach((logo, i) => {
-        try { doc.addImage(logo, getImgFmt(logo), logoX0 + i * (logoSz + logoGap), y, logoSz, logoSz) } catch {}
-      })
+    // Logo da org à direita (se existir)
+    if (orgLogoB64) {
+      doc.addImage(orgLogoB64, 'PNG', pageW - margin - 28, y, 28, 28)
     }
-    y += logoSz + 8
 
-    // Título
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(18)
-    doc.setTextColor(...NAVY)
-    doc.text('RELATÓRIO FINANCEIRO', PW / 2, y, { align: 'center' })
-    y += 8
-    doc.setFontSize(14)
-    doc.text((org.name ?? '').toUpperCase(), PW / 2, y, { align: 'center' })
-    y += 7
+    // Bloco de título centralizado
+    const titleX = margin + 32
+    const titleW = contentW - (orgLogoB64 ? 64 : 32)
+
+    // Fundo azul no bloco de título
+    doc.setFillColor(26, 42, 108)
+    doc.rect(titleX, y, titleW, headerH, 'F')
+
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(9)
     doc.setFont('helvetica', 'normal')
-    doc.setFontSize(11)
-    doc.setTextColor(...DARK)
-    doc.text(`Ano ${currentYear}`, PW / 2, y, { align: 'center' })
-    y += 8
+    doc.text('RELATÓRIO FINANCEIRO DA', titleX + titleW / 2, y + 10, { align: 'center' })
 
-    // Linha separadora principal
-    doc.setDrawColor(...NAVY)
-    doc.setLineWidth(0.8)
-    doc.line(M, y, PW - M, y)
+    doc.setFontSize(13)
+    doc.setFont('helvetica', 'bold')
+    const orgName = (orgData.name || '').toUpperCase()
+    const orgNameLines = doc.splitTextToSize(orgName, titleW - 8)
+    doc.text(orgNameLines, titleX + titleW / 2, y + 18, { align: 'center' })
+
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`Ano ${currentYear}`, titleX + titleW / 2, y + 30, { align: 'center' })
+
+    // Texto abaixo da logo IPB
+    if (ipbLogoB64) {
+      doc.setTextColor(80, 80, 80)
+      doc.setFontSize(6)
+      doc.setFont('helvetica', 'normal')
+      doc.text('Sinodal Paraíba', margin + 14, y + 30, { align: 'center' })
+      doc.text('de Mocidades', margin + 14, y + 33, { align: 'center' })
+    }
+
+    y += headerH + 6
+
+    // ── Faixa "INFORMAÇÕES GERAIS" ──
+    doc.setFillColor(26, 42, 108)
+    doc.rect(margin, y, contentW, 7, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'bold')
+    doc.text('INFORMAÇÕES GERAIS', pageW / 2, y + 5, { align: 'center' })
+    y += 10
+
+    // ── Tabela IDENTIFICAÇÃO ──
+    doc.setFillColor(26, 42, 108)
+    doc.rect(margin, y, contentW, 6, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'bold')
+    doc.text('IDENTIFICAÇÃO DA ORGANIZAÇÃO', pageW / 2, y + 4, { align: 'center' })
     y += 6
 
-    // Bloco de informações
-    const infoLines = [['Organização:', org.name ?? '—'], ['Presbitério:', org.presbytery_name ?? '—']]
-    if (!isFederation()) {
-      if (org.church_name) infoLines.push(['Igreja:', org.church_name])
-      if (org.pastor_name) infoLines.push(['Pastor:', org.pastor_name])
-    }
-    infoLines.push(['Ano vigente:', String(currentYear)])
-    infoLines.push(['Saldo inicial:', fmtVal(currentPeriod.initial_balance)])
-    if (isFederation()) {
-      infoLines.push(['UMPs Locais:', `${Array.isArray(statsData) ? statsData.length : 0} cadastradas`])
-    } else {
-      const ativos = Array.isArray(statsData) ? statsData.filter(m => m.member_type === 'ativo'       && m.is_active).length : 0
-      const coops  = Array.isArray(statsData) ? statsData.filter(m => m.member_type === 'cooperador'  && m.is_active).length : 0
-      infoLines.push(['Sócios Ativos:', String(ativos)])
-      infoLines.push(['Cooperadores:', String(coops)])
+    const labelW = 45
+
+    function drawRow(label, value, rowY, shade = false) {
+      const rH = 6
+      if (shade) {
+        doc.setFillColor(240, 240, 240)
+        doc.rect(margin, rowY, contentW, rH, 'F')
+      }
+      doc.setDrawColor(200, 200, 200)
+      doc.rect(margin, rowY, contentW, rH)
+      doc.rect(margin, rowY, labelW, rH)
+      doc.setTextColor(80, 80, 80)
+      doc.setFontSize(7)
+      doc.setFont('helvetica', 'bold')
+      doc.text(label.toUpperCase(), margin + labelW - 2, rowY + 4, { align: 'right' })
+      doc.setTextColor(20, 20, 20)
+      doc.setFont('helvetica', 'normal')
+      doc.text(String(value || '-'), margin + labelW + 2, rowY + 4)
+      return rowY + rH
     }
 
-    const infoBoxH = infoLines.length * 7 + 6
-    doc.setFillColor(...GRAY)
-    doc.roundedRect(M, y, CW, infoBoxH, 2, 2, 'F')
-    y += 5
-    infoLines.forEach(([lbl, val]) => {
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(...NAVY)
-      doc.text(lbl, M + 4, y)
-      doc.setFont('helvetica', 'normal'); doc.setTextColor(...DARK)
-      doc.text(val, M + 48, y)
-      y += 7
-    })
-    y += 3
+    function drawRow2Col(label1, val1, label2, val2, rowY, shade = false) {
+      const rH = 6
+      const half = contentW / 2
+      if (shade) {
+        doc.setFillColor(240, 240, 240)
+        doc.rect(margin, rowY, contentW, rH, 'F')
+      }
+      doc.setDrawColor(200, 200, 200)
+      doc.rect(margin, rowY, contentW, rH)
+      doc.rect(margin, rowY, labelW, rH)
+      doc.rect(margin + half, rowY, labelW, rH)
+      doc.setTextColor(80, 80, 80)
+      doc.setFontSize(7)
+      doc.setFont('helvetica', 'bold')
+      doc.text(label1.toUpperCase(), margin + labelW - 2, rowY + 4, { align: 'right' })
+      doc.text(label2.toUpperCase(), margin + half + labelW - 2, rowY + 4, { align: 'right' })
+      doc.setTextColor(20, 20, 20)
+      doc.setFont('helvetica', 'normal')
+      doc.text(String(val1 || '-'), margin + labelW + 2, rowY + 4)
+      doc.text(String(val2 || '-'), margin + half + labelW + 2, rowY + 4)
+      return rowY + rH
+    }
 
-    // Linha leve
-    doc.setDrawColor(...LIGHT)
-    doc.setLineWidth(0.4)
-    doc.line(M, y, PW - M, y)
+    const orgLabel = isFedera ? 'FEDERAÇÃO' : 'UMP LOCAL'
+    y = drawRow(orgLabel, (orgData.name || '').toUpperCase(), y, false)
+    y = drawRow('PRESBITÉRIO', (orgData.presbytery_name || '').toUpperCase(), y, true)
+    if (!isFedera) {
+      y = drawRow('IGREJA', (orgData.church_name || '').toUpperCase(), y, false)
+      y = drawRow('PASTOR', (orgData.pastor_name || '').toUpperCase(), y, true)
+    }
+    y = drawRow2Col('ANO VIGENTE', currentYear, 'DATA DO RELATÓRIO', new Date().toLocaleDateString('pt-BR'), y, false)
+    y = drawRow('PRESIDENTE', (presidente?.member_name || '-').toUpperCase(), y, true)
+    y = drawRow('TESOUREIRO RESPONSÁVEL', (tesoureiro?.member_name || '-').toUpperCase(), y, false)
+
     y += 6
 
-    // Resumo financeiro em 4 caixas
-    const boxW4 = (CW - 9) / 4
-    const sumItems = [
-      { label: 'Saldo Inicial',  value: fmtVal(currentPeriod.initial_balance),                          color: NAVY  },
-      { label: 'Total Entradas', value: fmtVal(monthsData.reduce((s, m) => s + m.total_in,  0)),        color: GREEN },
-      { label: 'Total Saídas',   value: fmtVal(monthsData.reduce((s, m) => s + m.total_out, 0)),        color: RED   },
-      { label: 'Saldo Final',    value: fmtVal(currentPeriod.final_balance),                            color: NAVY  },
-    ]
-    sumItems.forEach((item, i) => {
-      const bx = M + i * (boxW4 + 3)
-      doc.setFillColor(...LIGHT)
-      doc.roundedRect(bx, y, boxW4, 18, 2, 2, 'F')
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...item.color)
-      doc.text(item.label, bx + boxW4 / 2, y + 5.5, { align: 'center' })
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(9)
-      doc.text(item.value, bx + boxW4 / 2, y + 13, { align: 'center' })
-    })
-    y += 26
+    // ── Tabela INFORMAÇÕES FINANCEIRAS ──
+    doc.setFillColor(26, 42, 108)
+    doc.rect(margin, y, contentW, 6, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'bold')
+    doc.text(`INFORMAÇÕES FINANCEIRAS ${currentYear}`, pageW / 2, y + 4, { align: 'center' })
+    y += 6
 
-    // Linha separadora
-    doc.setDrawColor(...NAVY)
-    doc.setLineWidth(0.4)
-    doc.line(M, y, PW - M, y)
-    y += 8
+    const colW = contentW / 2
+    const finRowH = 6.5
 
-    // Assinaturas
-    const halfW = (CW - 10) / 2
-    const sigY  = y + 14
-    doc.setDrawColor(...DARK)
-    doc.setLineWidth(0.4)
+    function drawFinRow(labelL, valL, labelR, valR, rowY, shadeL = false, shadeR = false, boldL = false, boldR = false) {
+      if (shadeL) {
+        doc.setFillColor(26, 42, 108)
+        doc.rect(margin, rowY, colW, finRowH, 'F')
+      }
+      if (shadeR) {
+        doc.setFillColor(26, 42, 108)
+        doc.rect(margin + colW, rowY, colW, finRowH, 'F')
+      }
+      doc.setDrawColor(200, 200, 200)
+      doc.rect(margin, rowY, colW, finRowH)
+      doc.rect(margin + colW, rowY, colW, finRowH)
 
-    doc.line(M, sigY, M + halfW, sigY)
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...NAVY)
-    doc.text('Presidente', M + halfW / 2, sigY + 5, { align: 'center' })
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...DARK)
-    doc.text(presidente?.member_name ?? '________________________', M + halfW / 2, sigY + 11, { align: 'center' })
+      const lColor = shadeL ? [255, 255, 255] : (boldL ? [26, 42, 108] : [20, 20, 20])
+      doc.setTextColor(...lColor)
+      doc.setFontSize(7.5)
+      doc.setFont('helvetica', boldL || shadeL ? 'bold' : 'normal')
+      if (labelL) doc.text(labelL, margin + 2, rowY + 4.5)
+      if (valL !== null && valL !== undefined) doc.text(String(valL), margin + colW - 2, rowY + 4.5, { align: 'right' })
 
-    const sigX2 = M + halfW + 10
-    doc.line(sigX2, sigY, sigX2 + halfW, sigY)
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...NAVY)
-    doc.text('Tesoureiro(a)', sigX2 + halfW / 2, sigY + 5, { align: 'center' })
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...DARK)
-    doc.text(tesoureiro?.member_name ?? '________________________', sigX2 + halfW / 2, sigY + 11, { align: 'center' })
+      const rColor = shadeR ? [255, 255, 255] : (boldR ? [26, 42, 108] : [20, 20, 20])
+      doc.setTextColor(...rColor)
+      doc.setFont('helvetica', boldR || shadeR ? 'bold' : 'normal')
+      if (labelR) doc.text(labelR, margin + colW + 2, rowY + 4.5)
+      if (valR !== null && valR !== undefined) doc.text(String(valR), margin + contentW - 2, rowY + 4.5, { align: 'right' })
 
-    // Rodapé da capa
-    const genDate = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(150, 150, 150)
-    doc.text(`Gerado em ${genDate}  •  Plataforma de Gestão UMP POPB`, PW / 2, PH - 13, { align: 'center' })
-    addFooter(1)
-
-    // ── PÁGINAS DE MESES ───────────────────────────────────────────────────
-    const typeLabels = {
-      outras_receitas: 'Outras Receitas',
-      outras_despesas: 'Outras Despesas',
-      aci_recebida:    'ACI Recebida',
-      aci_enviada:     'ACI Enviada',
+      return rowY + finRowH
     }
-    let pageNum = 1
+
+    const aciIn   = monthsData.reduce((s, m) => s + m.transactions.filter(t => t.transaction_type === 'aci_recebida').reduce((a, t) => a + Number(t.amount), 0), 0)
+    const aciOut  = monthsData.reduce((s, m) => s + m.transactions.filter(t => t.transaction_type === 'aci_enviada').reduce((a, t) => a + Number(t.amount), 0), 0)
+    const outrasRec = monthsData.reduce((s, m) => s + m.transactions.filter(t => t.transaction_type === 'outras_receitas').reduce((a, t) => a + Number(t.amount), 0), 0)
+    const outrasDes = monthsData.reduce((s, m) => s + m.transactions.filter(t => t.transaction_type === 'outras_despesas').reduce((a, t) => a + Number(t.amount), 0), 0)
+
+    y = drawFinRow(`SALDO DO ANO ANTERIOR ${currentYear - 1}`, formatCurrency(currentPeriod.initial_balance), '', null, y, true, false)
+    y = drawFinRow(`RECEITAS (${currentYear})`, null, `DESPESAS (${currentYear})`, null, y, true, true)
+    y = drawFinRow('ACI RECEBIDA', formatCurrency(aciIn), 'ACI ENVIADA', formatCurrency(aciOut), y)
+    y = drawFinRow('OUTRAS RECEITAS (+)', formatCurrency(outrasRec), 'OUTRAS DESPESAS (-)', formatCurrency(outrasDes), y)
+    y = drawFinRow('TOTAL DA RECEITA ANUAL', formatCurrency(totalIn), 'TOTAL DA DESPESA ANUAL', formatCurrency(totalOut), y, false, false, true, true)
+    y = drawFinRow('TOTAL GERAL (SALDO + RECEITAS)', formatCurrency(Number(currentPeriod.initial_balance) + totalIn), `SALDO FINAL PARA ${currentYear + 1}`, formatCurrency(finalBalance), y, false, false, true, true)
+
+    y += 4
+
+    // ── Observações ──
+    const obsH = 20
+    doc.setFillColor(255, 255, 204)
+    doc.rect(margin, y, colW - 1, obsH, 'F')
+    doc.rect(margin + colW + 1, y, colW - 1, obsH, 'F')
+    doc.setDrawColor(200, 200, 200)
+    doc.rect(margin, y, colW - 1, obsH)
+    doc.rect(margin + colW + 1, y, colW - 1, obsH)
+    doc.setTextColor(80, 80, 80)
+    doc.setFontSize(7)
+    doc.setFont('helvetica', 'bold')
+    doc.text('OBSERVAÇÕES:', margin + 2, y + 4)
+    doc.text('OBSERVAÇÕES:', margin + colW + 3, y + 4)
+    y += obsH + 4
+
+    // ── Link dos comprovantes ──
+    doc.setFillColor(255, 255, 204)
+    doc.rect(margin, y, contentW, 8, 'F')
+    doc.setDrawColor(200, 200, 200)
+    doc.rect(margin, y, contentW, 8)
+    doc.setTextColor(80, 80, 80)
+    doc.setFontSize(7)
+    doc.setFont('helvetica', 'bold')
+    doc.text('LINK DOS COMPROVANTES:', margin + 2, y + 5)
+    y += 12
+
+    // ── Assinaturas ──
+    const presName = presidente?.member_name || '________________________'
+    const tesName  = tesoureiro?.member_name || '________________________'
+    const sigW = contentW / 2 - 10
+    const sigX1 = margin + 5
+    const sigX2 = margin + contentW / 2 + 5
+
+    doc.setDrawColor(0, 0, 0)
+    doc.line(sigX1, y + 18, sigX1 + sigW, y + 18)
+    doc.line(sigX2, y + 18, sigX2 + sigW, y + 18)
+
+    doc.setTextColor(20, 20, 20)
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'normal')
+    doc.text(presName, sigX1 + sigW / 2, y + 22, { align: 'center' })
+    doc.setFont('helvetica', 'bold')
+    doc.text('Presidente da', sigX1 + sigW / 2, y + 26, { align: 'center' })
+    doc.text((orgData.name || '').toUpperCase(), sigX1 + sigW / 2, y + 30, { align: 'center' })
+
+    doc.setFont('helvetica', 'normal')
+    doc.text(tesName, sigX2 + sigW / 2, y + 22, { align: 'center' })
+    doc.setFont('helvetica', 'bold')
+    doc.text('Tesoureiro(a) da', sigX2 + sigW / 2, y + 26, { align: 'center' })
+    doc.text((orgData.name || '').toUpperCase(), sigX2 + sigW / 2, y + 30, { align: 'center' })
+
+    y += 36
+
+    // ── Rodapé da capa ──
+    doc.setFillColor(26, 42, 108)
+    doc.rect(margin, y, contentW, 7, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(7.5)
+    doc.setFont('helvetica', 'bold')
+    const footerText = isFedera
+      ? `FEDERAÇÃO DE MOCIDADES - ${(orgData.presbytery_name || '').toUpperCase()}`
+      : `UMP LOCAL - ${(orgData.church_name || '').toUpperCase()} - ${(orgData.presbytery_name || '').toUpperCase()}`
+    doc.text(footerText, pageW / 2, y + 4.5, { align: 'center' })
+
+    // ════════════════════════════════════════
+    // PÁGINAS SEGUINTES — UMA POR MÊS
+    // ════════════════════════════════════════
+
+    const INCOME_TYPES = { outras_receitas: 'Outras Receitas', aci_recebida: 'ACI Recebida' }
+    const EXPENSE_TYPES = { outras_despesas: 'Outras Despesas', aci_enviada: 'ACI Enviada' }
+    const totalPages = 1 + monthsData.length
 
     for (const month of monthsData) {
       doc.addPage()
-      pageNum++
-      let my = M
+      y = margin
 
-      // Cabeçalho azul
-      doc.setFillColor(...NAVY)
-      doc.rect(M, my, CW, 12, 'F')
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(255, 255, 255)
-      doc.text(`${month.month_label} ${currentYear}`, M + 5, my + 8)
-      my += 18
+      // Cabeçalho do mês
+      doc.setFillColor(26, 42, 108)
+      doc.rect(margin, y, contentW, 10, 'F')
+      doc.setTextColor(255, 255, 255)
+      doc.setFontSize(11)
+      doc.setFont('helvetica', 'bold')
+      doc.text(`${month.month_label.toUpperCase()} ${currentYear}`, pageW / 2, y + 7, { align: 'center' })
+      y += 13
 
-      // Mini resumo horizontal
-      const mBoxW = (CW - 9) / 4
-      const miniItems = [
-        { label: 'Saldo Anterior', value: fmtVal(month.opening_balance), color: DARK  },
-        { label: 'Entradas',       value: fmtVal(month.total_in),        color: GREEN },
-        { label: 'Saídas',         value: fmtVal(month.total_out),       color: RED   },
-        { label: 'Saldo do Mês',   value: fmtVal(month.closing_balance), color: month.closing_balance >= 0 ? NAVY : RED },
+      // Mini resumo do mês
+      const colMini = contentW / 4
+      const miniLabels = ['SALDO ANTERIOR', 'ENTRADAS', 'SAÍDAS', 'SALDO DO MÊS']
+      const miniVals = [
+        formatCurrency(month.opening_balance),
+        formatCurrency(month.total_in),
+        formatCurrency(month.total_out),
+        formatCurrency(month.closing_balance)
       ]
-      miniItems.forEach((item, i) => {
-        const bx = M + i * (mBoxW + 3)
-        doc.setFillColor(...LIGHT)
-        doc.roundedRect(bx, my, mBoxW, 14, 1.5, 1.5, 'F')
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(100, 100, 100)
-        doc.text(item.label, bx + mBoxW / 2, my + 5, { align: 'center' })
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(...item.color)
-        doc.text(item.value, bx + mBoxW / 2, my + 11, { align: 'center' })
+      const miniColors = [[26, 42, 108], [22, 163, 74], [220, 38, 38], [26, 42, 108]]
+
+      miniLabels.forEach((label, i) => {
+        const mx = margin + i * colMini
+        doc.setFillColor(245, 245, 245)
+        doc.rect(mx, y, colMini, 12, 'F')
+        doc.setDrawColor(200, 200, 200)
+        doc.rect(mx, y, colMini, 12)
+        doc.setTextColor(100, 100, 100)
+        doc.setFontSize(6.5)
+        doc.setFont('helvetica', 'normal')
+        doc.text(label, mx + colMini / 2, y + 4, { align: 'center' })
+        doc.setTextColor(...miniColors[i])
+        doc.setFontSize(8.5)
+        doc.setFont('helvetica', 'bold')
+        doc.text(miniVals[i], mx + colMini / 2, y + 9.5, { align: 'center' })
       })
-      my += 20
+      y += 16
 
       if (!month.transactions.length) {
-        doc.setFont('helvetica', 'italic'); doc.setFontSize(9.5); doc.setTextColor(150, 150, 150)
-        doc.text('Nenhum lançamento registrado neste mês.', M, my + 6)
+        doc.setTextColor(150, 150, 150)
+        doc.setFontSize(9)
+        doc.setFont('helvetica', 'italic')
+        doc.text('Nenhum lançamento registrado neste mês.', pageW / 2, y + 10, { align: 'center' })
+        y += 20
       } else {
-        const tableRows = month.transactions.map(t => {
-          const nature  = ['outras_receitas', 'aci_recebida'].includes(t.transaction_type) ? 'in' : 'out'
-          const dateStr = t.transaction_date.split('-').reverse().join('/')
-          const amtStr  = (nature === 'in' ? '+ ' : '– ') + fmtVal(t.amount)
-          return [dateStr, typeLabels[t.transaction_type] ?? t.transaction_type, t.description, amtStr, t.receipt_url ? 'Ver comprovante' : '—']
-        })
         doc.autoTable({
-          startY: my,
+          startY: y,
+          margin: { left: margin, right: margin },
           head: [['Data', 'Tipo', 'Descrição', 'Valor', 'Comprovante']],
-          body: tableRows,
-          margin: { left: M, right: M },
-          styles: { fontSize: 8.5, cellPadding: 2.5, font: 'helvetica', overflow: 'linebreak' },
-          headStyles: { fillColor: NAVY, textColor: [255, 255, 255], fontStyle: 'bold' },
+          body: month.transactions.map(t => {
+            const isIncome = ['outras_receitas', 'aci_recebida'].includes(t.transaction_type)
+            const typeLabel = INCOME_TYPES[t.transaction_type] || EXPENSE_TYPES[t.transaction_type] || t.transaction_type
+            return [
+              formatDate(t.transaction_date),
+              typeLabel,
+              t.description,
+              (isIncome ? '+ ' : '– ') + formatCurrency(t.amount),
+              receiptUrls[t.id] ? 'Ver comprovante' : '—'
+            ]
+          }),
           columnStyles: {
-            0: { cellWidth: 22 },
+            0: { cellWidth: 20 },
             1: { cellWidth: 32 },
             2: { cellWidth: 'auto' },
-            3: { cellWidth: 30, halign: 'right' },
-            4: { cellWidth: 30, halign: 'center' },
+            3: { cellWidth: 28, halign: 'right' },
+            4: { cellWidth: 28, halign: 'center' }
           },
+          headStyles: { fillColor: [26, 42, 108], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
+          bodyStyles: { fontSize: 7.5, textColor: [30, 30, 30] },
+          alternateRowStyles: { fillColor: [245, 247, 250] },
           didParseCell: (data) => {
             if (data.section === 'body' && data.column.index === 3) {
-              data.cell.styles.textColor = String(data.cell.raw).startsWith('+') ? GREEN : RED
+              const isInc = String(data.cell.raw).startsWith('+')
+              data.cell.styles.textColor = isInc ? [22, 163, 74] : [220, 38, 38]
+              data.cell.styles.fontStyle = 'bold'
             }
           },
           didDrawCell: (data) => {
-            if (data.section === 'body' && data.column.index === 4 && data.cell.raw === 'Ver comprovante') {
-              const txId = month.transactions[data.row.index]?.id
-              const url  = receiptUrlMap[txId]
-              if (url) doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url })
+            if (data.section === 'body' && data.column.index === 4) {
+              const tx = month.transactions[data.row.index]
+              if (tx && receiptUrls[tx.id]) {
+                doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url: receiptUrls[tx.id] })
+              }
             }
-          },
+          }
         })
+        y = doc.lastAutoTable.finalY + 4
       }
 
-      addFooter(pageNum)
+      // Rodapé da página do mês
+      doc.setFontSize(7)
+      doc.setTextColor(150, 150, 150)
+      doc.setFont('helvetica', 'normal')
+      doc.text(`${orgData.name} • Relatório Financeiro ${currentYear}`, margin, pageH - 8)
+      doc.text(`Página ${monthsData.indexOf(month) + 2} de ${totalPages}`, pageW - margin, pageH - 8, { align: 'right' })
+      doc.setDrawColor(200, 200, 200)
+      doc.line(margin, pageH - 11, pageW - margin, pageH - 11)
     }
 
-    // Salvar arquivo
-    doc.save(`Relatorio_Financeiro_${currentYear}_${slugify(org.name ?? 'org')}.pdf`)
+    doc.save(`Relatorio_Financeiro_${currentYear}_${slugify(orgData.name)}.pdf`)
   }
 
   loadPage()
