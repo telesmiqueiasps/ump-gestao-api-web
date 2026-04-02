@@ -665,15 +665,18 @@
     const tesoureiro = boardData.find(b => b.role === 'tesoureiro')
 
     // Converte logos para base64
-    const ipbLogoB64 = await imageToBase64('/assets/img/ipb_logo.png').catch(() => null)
+    // Logo da organização via pre-signed URL
     let orgLogoB64 = null
     if (orgData.logo_url) {
       try {
-        const logoEndpointUrl = isFedera ? '/api/federations/me/logo-url' : '/api/local-umps/me/logo-url'
-        const logoData = await api.get(logoEndpointUrl)
+        const logoUrlEndpoint = isFederation() ? '/api/federations/me/logo-url' : '/api/local-umps/me/logo-url'
+        const logoData = await api.get(logoUrlEndpoint)
         orgLogoB64 = await imageToBase64(logoData.url).catch(() => null)
       } catch { orgLogoB64 = null }
     }
+
+    // Logo do IPB/Sinodal (local)
+    const ipbLogoB64 = await imageToBase64('/assets/img/ipb_logo.png').catch(() => null)
 
     // Totais gerais
     const totalIn  = monthsData.reduce((s, m) => s + m.total_in, 0)
@@ -691,19 +694,22 @@
     // ── Cabeçalho com logo e título ──
     const headerH = 35
 
-    // Logo IPB à esquerda
-    if (ipbLogoB64) {
+    // Logo da organização à esquerda
+    if (orgLogoB64) {
+      doc.addImage(orgLogoB64, 'PNG', margin, y, 28, 28)
+    } else if (ipbLogoB64) {
+      // Fallback: usa IPB se não tiver logo própria
       doc.addImage(ipbLogoB64, 'PNG', margin, y, 28, 28)
     }
 
-    // Logo da org à direita (se existir)
-    if (orgLogoB64) {
-      doc.addImage(orgLogoB64, 'PNG', pageW - margin - 28, y, 28, 28)
+    // Logo do IPB/Sinodal à direita
+    if (ipbLogoB64) {
+      doc.addImage(ipbLogoB64, 'PNG', pageW - margin - 28, y, 28, 28)
     }
 
     // Bloco de título centralizado
     const titleX = margin + 32
-    const titleW = contentW - (orgLogoB64 ? 64 : 32)
+    const titleW = contentW - 64
 
     // Fundo azul no bloco de título
     doc.setFillColor(26, 42, 108)
@@ -724,13 +730,28 @@
     doc.setFont('helvetica', 'normal')
     doc.text(`Ano ${currentYear}`, titleX + titleW / 2, y + 30, { align: 'center' })
 
-    // Texto abaixo da logo IPB
+    // Nome abreviado da organização abaixo da logo esquerda
+    if (orgLogoB64 || ipbLogoB64) {
+      doc.setTextColor(80, 80, 80)
+      doc.setFontSize(5.5)
+      doc.setFont('helvetica', 'normal')
+      const shortName = (orgData.name || '').split(' ').slice(0, 3).join(' ')
+      const nameLines = doc.splitTextToSize(shortName, 32)
+      nameLines.forEach((line, i) => {
+        doc.text(line, margin + 14, y + 30 + (i * 3.5), { align: 'center' })
+      })
+    }
+
+    // Nome do IPB/Sinodal abaixo da logo direita
     if (ipbLogoB64) {
       doc.setTextColor(80, 80, 80)
-      doc.setFontSize(6)
+      doc.setFontSize(5.5)
       doc.setFont('helvetica', 'normal')
-      doc.text('Sinodal Paraíba', margin + 14, y + 30, { align: 'center' })
-      doc.text('de Mocidades', margin + 14, y + 33, { align: 'center' })
+      const synodalName = orgData.synodal_name || 'Sinodal Paraíba de Mocidades'
+      const synodalLines = doc.splitTextToSize(synodalName, 32)
+      synodalLines.forEach((line, i) => {
+        doc.text(line, pageW - margin - 14, y + 30 + (i * 3.5), { align: 'center' })
+      })
     }
 
     y += headerH + 6
