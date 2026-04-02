@@ -11,6 +11,7 @@ class Federation(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
     name = Column(String(200), nullable=False)
     presbytery_name = Column(String(200))
+    synodal_name = Column(String(200), nullable=True)
     logo_url = Column(Text)
     address = Column(Text)
     is_active = Column(Boolean, default=True)

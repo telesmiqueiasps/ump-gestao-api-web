@@ -17,6 +17,8 @@ class LocalUmpCreate(BaseModel):
     name: str
     church_name: Optional[str] = None
     pastor_name: Optional[str] = None
+    pastor_contact: Optional[str] = None
+    organization_date: Optional[str] = None
     presbytery_name: Optional[str] = None
     address: Optional[str] = None
     fiscal_year: Optional[int] = None
@@ -27,6 +29,8 @@ class LocalUmpUpdate(BaseModel):
     name: Optional[str] = None
     church_name: Optional[str] = None
     pastor_name: Optional[str] = None
+    pastor_contact: Optional[str] = None
+    organization_date: Optional[str] = None
     presbytery_name: Optional[str] = None
     address: Optional[str] = None
     fiscal_year: Optional[int] = None
@@ -166,6 +170,20 @@ async def upload_logo(
     if len(contents) > 5 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="Arquivo muito grande. Máximo 5MB.")
 
+    # Exclui logo antiga do B2 se existir
+    if local.logo_url:
+        from app.services.storage import delete_folder
+        from app.core.config import get_settings
+        import re
+        s = get_settings()
+        match = re.search(rf'/file/{re.escape(s.b2_bucket_name)}/(.+)$', local.logo_url)
+        if not match:
+            match = re.search(rf'/{re.escape(s.b2_bucket_name)}/(.+)$', local.logo_url)
+        if match:
+            old_key = match.group(1)
+            folder = '/'.join(old_key.split('/')[:-1]) + '/'
+            delete_folder(folder)
+
     key = f"logos/local_umps/{local.id}/{file.filename}"
     url = upload_file(contents, key, file.content_type)
     local.logo_url = url
@@ -181,6 +199,8 @@ def _to_out(l: LocalUmp) -> dict:
         "name": l.name,
         "church_name": l.church_name,
         "pastor_name": l.pastor_name,
+        "pastor_contact": l.pastor_contact,
+        "organization_date": l.organization_date.isoformat() if l.organization_date else None,
         "presbytery_name": l.presbytery_name,
         "address": l.address,
         "logo_url": l.logo_url,

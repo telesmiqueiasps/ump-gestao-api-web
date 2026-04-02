@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean, Text, Integer, Numeric, ForeignKey, DateTime
+from sqlalchemy import Column, String, Boolean, Text, Integer, Numeric, ForeignKey, DateTime, Date
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func, text
 from sqlalchemy.orm import relationship
@@ -16,6 +16,8 @@ class LocalUmp(Base):
     presbytery_name = Column(String(200))
     address = Column(Text)
     logo_url = Column(Text)
+    pastor_contact = Column(String(100), nullable=True)
+    organization_date = Column(Date, nullable=True)
     fiscal_year = Column(Integer)
     initial_balance = Column(Numeric(12, 2), default=0)
     is_active = Column(Boolean, default=True)

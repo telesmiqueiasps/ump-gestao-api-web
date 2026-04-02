@@ -16,12 +16,14 @@ router = APIRouter()
 class FederationCreate(BaseModel):
     name: str
     presbytery_name: Optional[str] = None
+    synodal_name: Optional[str] = None
     address: Optional[str] = None
 
 
 class FederationUpdate(BaseModel):
     name: Optional[str] = None
     presbytery_name: Optional[str] = None
+    synodal_name: Optional[str] = None
     address: Optional[str] = None
 
 
@@ -29,6 +31,7 @@ class FederationOut(BaseModel):
     id: str
     name: str
     presbytery_name: Optional[str]
+    synodal_name: Optional[str]
     address: Optional[str]
     logo_url: Optional[str]
     is_active: bool
@@ -103,6 +106,20 @@ async def upload_logo(
     if len(contents) > 5 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="Arquivo muito grande. Máximo 5MB.")
 
+    # Exclui logo antiga do B2 se existir
+    if federation.logo_url:
+        from app.services.storage import delete_folder
+        from app.core.config import get_settings
+        import re
+        s = get_settings()
+        match = re.search(rf'/file/{re.escape(s.b2_bucket_name)}/(.+)$', federation.logo_url)
+        if not match:
+            match = re.search(rf'/{re.escape(s.b2_bucket_name)}/(.+)$', federation.logo_url)
+        if match:
+            old_key = match.group(1)
+            folder = '/'.join(old_key.split('/')[:-1]) + '/'
+            delete_folder(folder)
+
     key = f"logos/federations/{federation.id}/{file.filename}"
     url = upload_file(contents, key, file.content_type)
 
@@ -139,6 +156,7 @@ def _to_out(f: Federation) -> dict:
         "id": str(f.id),
         "name": f.name,
         "presbytery_name": f.presbytery_name,
+        "synodal_name": f.synodal_name,
         "address": f.address,
         "logo_url": f.logo_url,
         "is_active": f.is_active,
