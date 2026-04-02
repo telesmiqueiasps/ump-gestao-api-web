@@ -3,133 +3,588 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Cache-Control" content="no-cache" />
   <meta name="theme-color" content="#1a2a6c" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="manifest" href="/manifest.json" />
+  <title>UMP POPB — Acesso</title>
   <link rel="icon" type="image/png" href="/assets/img/logo.png" />
-  <link rel="apple-touch-icon" href="/assets/img/logo.png" />
+  <link rel="apple-touch-icon" href="/assets/img/192-maskable.png" />
+  <link rel="manifest" href="/manifest.json" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <title>UMP POPB — Login</title>
-  <link rel="stylesheet" href="assets/css/main.css" />
-  <link rel="stylesheet" href="assets/css/components.css" />
-  <link rel="stylesheet" href="assets/css/layout.v2.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:   #1a2a6c;
+      --blue2:  #0d1640;
+      --orange: #e8630a;
+      --red:    #c0392b;
+      --white:  #ffffff;
+      --gray50: #f8fafc;
+      --gray200:#e2e8f0;
+      --gray400:#94a3b8;
+      --gray600:#475569;
+      --gray800:#1e293b;
+      --radius: 14px;
+      --shadow: 0 20px 60px rgba(0,0,0,.35);
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Inter', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(145deg, #060d24 0%, #1a2a6c 45%, #0d1640 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem 1rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Partículas decorativas */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(232,99,10,.12) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(26,42,108,.4) 0%, transparent 50%),
+        radial-gradient(circle at 60% 10%, rgba(255,255,255,.03) 0%, transparent 40%);
+      pointer-events: none;
+    }
+
+    .login-wrapper {
+      width: 100%;
+      max-width: 420px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Logo centralizada acima do card */
+    .login-logo-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .login-logo {
+      width: 90px;
+      height: 90px;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 20px rgba(232,99,10,.4));
+      animation: floatLogo 3s ease-in-out infinite;
+    }
+
+    @keyframes floatLogo {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-6px); }
+    }
+
+    .login-brand {
+      margin-top: .75rem;
+      text-align: center;
+    }
+
+    .login-brand h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: .5px;
+    }
+
+    .login-brand p {
+      font-size: .78rem;
+      color: rgba(255,255,255,.5);
+      margin-top: .2rem;
+    }
+
+    /* Card */
+    .login-card {
+      background: rgba(255,255,255,.97);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 2rem 2rem 1.5rem;
+      backdrop-filter: blur(10px);
+    }
+
+    .login-card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--gray800);
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    /* Campos */
+    .field {
+      margin-bottom: 1rem;
+    }
+
+    .field label {
+      display: block;
+      font-size: .8rem;
+      font-weight: 500;
+      color: var(--gray600);
+      margin-bottom: .4rem;
+    }
+
+    .input-wrap {
+      position: relative;
+    }
+
+    .input-wrap .icon {
+      position: absolute;
+      left: .9rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--gray400);
+      font-size: .95rem;
+      pointer-events: none;
+    }
+
+    .input-wrap input {
+      width: 100%;
+      padding: .7rem .9rem .7rem 2.5rem;
+      border: 1.5px solid var(--gray200);
+      border-radius: 10px;
+      font-size: .9rem;
+      font-family: inherit;
+      color: var(--gray800);
+      background: var(--gray50);
+      outline: none;
+      transition: border-color .15s, box-shadow .15s, background .15s;
+    }
+
+    .input-wrap input:focus {
+      border-color: #1a2a6c;
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(26,42,108,.12);
+    }
+
+    /* Botão */
+    .btn-login {
+      width: 100%;
+      padding: .8rem;
+      background: linear-gradient(135deg, #1a2a6c, #2a3f9f);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: .95rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      margin-top: .5rem;
+      transition: opacity .15s, transform .1s;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .6rem;
+      min-height: 48px;
+    }
+
+    .btn-login:hover:not(:disabled) {
+      opacity: .92;
+      transform: translateY(-1px);
+    }
+
+    .btn-login:disabled {
+      cursor: not-allowed;
+      opacity: .8;
+    }
+
+    /* Spinner dentro do botão */
+    .btn-spinner {
+      width: 18px; height: 18px;
+      border: 2.5px solid rgba(255,255,255,.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Status de conexão */
+    .connection-status {
+      display: none;
+      align-items: center;
+      gap: .5rem;
+      padding: .6rem .9rem;
+      border-radius: 8px;
+      font-size: .8rem;
+      margin-top: .75rem;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+    }
+
+    .connection-status.show { display: flex; }
+    .connection-status.error { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+    .connection-status.success { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
+
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      flex-shrink: 0;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    .status-dot.static { animation: none; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: .3; }
+    }
+
+    /* Alerta de erro */
+    .alert {
+      padding: .65rem .9rem;
+      border-radius: 8px;
+      font-size: .82rem;
+      margin-top: .75rem;
+      display: none;
+    }
+
+    .alert.show { display: block; }
+    .alert.error { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+
+    /* Footer */
+    .login-footer {
+      text-align: center;
+      margin-top: 1.25rem;
+    }
+
+    .login-footer p {
+      font-size: .7rem;
+      color: rgba(255,255,255,.3);
+      line-height: 1.6;
+    }
+
+    .login-footer strong {
+      color: rgba(255,255,255,.5);
+      font-weight: 500;
+    }
+
+    /* PWA Banner */
+    .pwa-banner {
+      position: fixed;
+      bottom: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #fff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: var(--radius);
+      box-shadow: 0 8px 24px rgba(0,0,0,.15);
+      padding: .9rem 1.1rem;
+      display: none;
+      align-items: center;
+      gap: .9rem;
+      z-index: 200;
+      max-width: 340px;
+      width: calc(100% - 2rem);
+      animation: slideUp .3s ease;
+    }
+
+    .pwa-banner.show { display: flex; }
+
+    @keyframes slideUp {
+      from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+      to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
+    }
+
+    .pwa-logo { width: 40px; height: 40px; object-fit: contain; flex-shrink: 0; }
+    .pwa-text { flex: 1; }
+    .pwa-text strong { font-size: .85rem; color: #1e293b; display: block; }
+    .pwa-text span   { font-size: .73rem; color: #64748b; }
+    .pwa-actions { display: flex; flex-direction: column; gap: .35rem; }
+
+    .btn-pwa-install {
+      padding: .35rem .75rem;
+      background: #1a2a6c;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: .78rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      font-family: inherit;
+    }
+
+    .btn-pwa-dismiss {
+      padding: .35rem .75rem;
+      background: none;
+      color: #64748b;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: .78rem;
+      cursor: pointer;
+      white-space: nowrap;
+      font-family: inherit;
+    }
+
+    @media (max-width: 480px) {
+      .login-card { padding: 1.5rem 1.25rem; }
+      .login-logo { width: 72px; height: 72px; }
+      .pwa-banner { bottom: 0; border-radius: var(--radius) var(--radius) 0 0; }
+    }
+  </style>
 </head>
 <body>
 
-<div class="login-page">
-  <div>
-    <div class="login-card">
-      <div class="login-card-top">
-        <img src="/assets/img/logo.png" class="login-logo" alt="Logo UMP POPB" onerror="this.style.display='none'" />
-        <h1>UMP POPB</h1>
-        <p>Plataforma de Gestão</p>
-      </div>
-      <div class="login-card-body">
-        <h2>Entrar na plataforma</h2>
+<div class="login-wrapper">
 
-        <div class="field mb-4">
-          <label for="email">E-mail</label>
-          <input class="input" type="email" id="email" placeholder="seu@email.com" autocomplete="email" />
-        </div>
+  <!-- Logo e marca -->
+  <div class="login-logo-wrap">
+    <img src="/assets/img/logo.png" class="login-logo" alt="Logo UMP POPB" />
+    <div class="login-brand">
+      <h1>UMP POPB</h1>
+      <p>Plataforma de Gestão</p>
+    </div>
+  </div>
 
-        <div class="field mb-4">
-          <label for="password">Senha</label>
-          <input class="input" type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
-        </div>
+  <!-- Card de login -->
+  <div class="login-card">
+    <h2>Entre na sua conta</h2>
 
-        <div id="login-alert" class="hidden mb-4"></div>
-
-        <button class="btn btn-primary w-full" id="btn-login" style="justify-content:center">
-          Entrar
-        </button>
+    <div class="field">
+      <label for="email">E-mail</label>
+      <div class="input-wrap">
+        <span class="icon">✉</span>
+        <input type="email" id="email" placeholder="seu@email.com" autocomplete="email" />
       </div>
     </div>
 
-    <p class="login-footer">Plataforma de Gestão UMP © <span id="year"></span></p>
-    <p class="login-credit">Desenvolvido por Miquéias Teles</p>
+    <div class="field">
+      <label for="password">Senha</label>
+      <div class="input-wrap">
+        <span class="icon">🔒</span>
+        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+    </div>
+
+    <button class="btn-login" id="btn-login">
+      Entrar
+    </button>
+
+    <!-- Status de conexão (servidor dormindo) -->
+    <div class="connection-status" id="conn-status">
+      <div class="status-dot" id="status-dot"></div>
+      <span id="status-text">Aguardando servidor...</span>
+    </div>
+
+    <!-- Alerta de erro -->
+    <div class="alert error" id="login-alert"></div>
   </div>
+
+  <!-- Rodapé -->
+  <div class="login-footer">
+    <p>© <span id="year"></span> UMP POPB — Plataforma de Gestão</p>
+    <p>Desenvolvido por <strong>Miquéias Teles</strong></p>
+  </div>
+
 </div>
 
-<!-- PWA Install Banner -->
-<div class="pwa-banner hidden" id="pwa-banner">
-  <img src="/assets/img/logo.png" class="pwa-banner-logo" alt="Logo" onerror="this.style.display='none'" />
-  <div class="pwa-banner-text">
+<!-- PWA Banner -->
+<div class="pwa-banner" id="pwa-banner">
+  <img src="/assets/img/logo.png" class="pwa-logo" alt="Logo" />
+  <div class="pwa-text">
     <strong>Instalar UMP POPB</strong>
-    <span>Adicione à tela inicial do seu celular</span>
+    <span>Adicione à tela inicial</span>
   </div>
-  <div class="pwa-banner-actions">
-    <button class="btn btn-primary btn-sm" id="btn-install">Instalar</button>
-    <button class="btn btn-ghost btn-sm" id="btn-dismiss">Agora não</button>
+  <div class="pwa-actions">
+    <button class="btn-pwa-install" id="btn-install">Instalar</button>
+    <button class="btn-pwa-dismiss" id="btn-dismiss">Agora não</button>
   </div>
 </div>
 
 <script type="module">
   import { login, isLoggedIn } from './assets/js/auth.js'
-  import { showAlert, setLoading } from './assets/js/utils.js'
 
-  // Se já estiver logado, redireciona
+  // Redireciona se já logado
   if (isLoggedIn()) window.location.href = '/pages/dashboard.html'
 
   document.getElementById('year').textContent = new Date().getFullYear()
 
-  const btnLogin = document.getElementById('btn-login')
-  const emailEl  = document.getElementById('email')
-  const passEl   = document.getElementById('password')
+  const btnLogin   = document.getElementById('btn-login')
+  const emailEl    = document.getElementById('email')
+  const passEl     = document.getElementById('password')
+  const alertEl    = document.getElementById('login-alert')
+  const connStatus = document.getElementById('conn-status')
+  const statusDot  = document.getElementById('status-dot')
+  const statusText = document.getElementById('status-text')
+
+  // ── Funções de UI ──────────────────────────────
+
+  function showAlert(msg) {
+    alertEl.textContent = msg
+    alertEl.classList.add('show')
+  }
+
+  function hideAlert() {
+    alertEl.classList.remove('show')
+  }
+
+  function showStatus(msg, type = 'loading') {
+    connStatus.className = 'connection-status show'
+    if (type === 'error') connStatus.classList.add('error')
+    if (type === 'success') connStatus.classList.add('success')
+    statusDot.className = type === 'loading' ? 'status-dot' : 'status-dot static'
+    statusText.textContent = msg
+  }
+
+  function hideStatus() {
+    connStatus.classList.remove('show')
+  }
+
+  function setLoading(loading) {
+    btnLogin.disabled = loading
+    btnLogin.innerHTML = loading
+      ? '<div class="btn-spinner"></div><span>Conectando...</span>'
+      : 'Entrar'
+  }
+
+  // ── Lógica de login com retry e wake-up ───────
+
+  async function attemptLogin(email, password, attempt = 1) {
+    const MAX_ATTEMPTS = 5
+    const RETRY_DELAYS = [0, 3000, 5000, 8000, 10000]
+
+    try {
+      if (attempt === 1) {
+        showStatus('Conectando ao servidor...', 'loading')
+      } else {
+        showStatus(`Servidor iniciando, aguarde... (tentativa ${attempt}/${MAX_ATTEMPTS})`, 'loading')
+      }
+
+      await login(email, password)
+
+      showStatus('Conectado! Redirecionando...', 'success')
+      setTimeout(() => {
+        window.location.href = '/pages/dashboard.html'
+      }, 400)
+
+    } catch (err) {
+      const msg = err.message || ''
+
+      const isNetworkError = (
+        msg.toLowerCase().includes('failed to fetch') ||
+        msg.toLowerCase().includes('network') ||
+        msg.toLowerCase().includes('timeout') ||
+        msg.toLowerCase().includes('demorando') ||
+        msg.toLowerCase().includes('502') ||
+        msg.toLowerCase().includes('503') ||
+        msg.toLowerCase().includes('504') ||
+        msg === 'Load failed'
+      )
+
+      const isAuthError = (
+        msg.toLowerCase().includes('incorret') ||
+        msg.toLowerCase().includes('incorretos') ||
+        msg.toLowerCase().includes('inválid') ||
+        msg.toLowerCase().includes('401') ||
+        msg.toLowerCase().includes('não encontrado')
+      )
+
+      // Erro de credenciais — não tenta de novo
+      if (isAuthError || (!isNetworkError && attempt > 1)) {
+        hideStatus()
+        setLoading(false)
+        showAlert(msg || 'E-mail ou senha incorretos.')
+        return
+      }
+
+      // Erro de rede — tenta de novo se ainda tiver tentativas
+      if (isNetworkError && attempt < MAX_ATTEMPTS) {
+        const delay = RETRY_DELAYS[attempt] || 5000
+        showStatus(
+          attempt === 1
+            ? 'Servidor iniciando (pode levar até 60s na primeira vez)...'
+            : `Aguardando servidor... (${attempt}/${MAX_ATTEMPTS})`,
+          'loading'
+        )
+        await new Promise(resolve => setTimeout(resolve, delay))
+        return attemptLogin(email, password, attempt + 1)
+      }
+
+      // Esgotou tentativas
+      hideStatus()
+      setLoading(false)
+      if (isNetworkError) {
+        showAlert('Servidor indisponível no momento. Tente novamente em alguns instantes.')
+      } else {
+        showAlert(msg || 'Erro ao fazer login.')
+      }
+    }
+  }
 
   async function doLogin() {
     const email    = emailEl.value.trim()
     const password = passEl.value
 
     if (!email || !password) {
-      showAlert('login-alert', 'Preencha e-mail e senha.', 'error')
+      showAlert('Preencha e-mail e senha.')
       return
     }
 
-    setLoading(btnLogin, true, 'Entrar')
-    try {
-      await login(email, password)
-      window.location.href = '/pages/dashboard.html'
-    } catch (err) {
-      showAlert('login-alert', err.message || 'E-mail ou senha incorretos.', 'error')
-    } finally {
-      setLoading(btnLogin, false, 'Entrar')
-    }
+    hideAlert()
+    setLoading(true)
+    await attemptLogin(email, password)
   }
+
+  // ── Event listeners ────────────────────────────
 
   btnLogin.addEventListener('click', doLogin)
-  document.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin() })
 
-  // Registra Service Worker
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').catch(console.error)
-  }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin()
+  })
 
-  // PWA Install prompt
+  setTimeout(() => emailEl.focus(), 100)
+
+  // ── PWA Install ────────────────────────────────
+
   let deferredPrompt = null
+
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault()
     deferredPrompt = e
     const dismissed = localStorage.getItem('pwa-dismissed')
     if (!dismissed) {
-      setTimeout(() => document.getElementById('pwa-banner').classList.remove('hidden'), 2000)
+      setTimeout(() => document.getElementById('pwa-banner').classList.add('show'), 3000)
     }
   })
 
-  document.getElementById('btn-install')?.addEventListener('click', async () => {
+  document.getElementById('btn-install').addEventListener('click', async () => {
     if (!deferredPrompt) return
     deferredPrompt.prompt()
     const { outcome } = await deferredPrompt.userChoice
     deferredPrompt = null
-    document.getElementById('pwa-banner').classList.add('hidden')
+    document.getElementById('pwa-banner').classList.remove('show')
   })
 
-  document.getElementById('btn-dismiss')?.addEventListener('click', () => {
+  document.getElementById('btn-dismiss').addEventListener('click', () => {
     localStorage.setItem('pwa-dismissed', '1')
-    document.getElementById('pwa-banner').classList.add('hidden')
+    document.getElementById('pwa-banner').classList.remove('show')
   })
+
+  // ── Service Worker ─────────────────────────────
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(console.error)
+  }
 </script>
 
 </body>

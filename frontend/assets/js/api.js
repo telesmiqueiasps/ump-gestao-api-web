@@ -9,7 +9,7 @@ async function request(method, path, body = null, isFormData = false) {
   if (!isFormData) headers['Content-Type'] = 'application/json'
 
   const controller = new AbortController()
-  const timeoutId  = setTimeout(() => controller.abort(), 15000)
+  const timeoutId  = setTimeout(() => controller.abort(), 30000)
 
   const options = { method, headers, signal: controller.signal }
   if (body) options.body = isFormData ? body : JSON.stringify(body)
@@ -19,7 +19,7 @@ async function request(method, path, body = null, isFormData = false) {
     res = await fetch(BASE_URL + path, options)
   } catch (err) {
     clearTimeout(timeoutId)
-    if (err.name === 'AbortError') throw new Error('Servidor demorando para responder, aguarde...')
+    if (err.name === 'AbortError') throw new Error('Servidor demorando para responder. Aguarde...')
     throw err
   }
   clearTimeout(timeoutId)
