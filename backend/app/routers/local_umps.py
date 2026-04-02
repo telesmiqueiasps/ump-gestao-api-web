@@ -192,6 +192,35 @@ async def upload_logo(
     return _to_out(local)
 
 
+@router.get("/me/logo-url")
+def get_logo_url_local(
+    current_user: User = Depends(require_local_ump),
+    db: Session = Depends(get_db),
+):
+    local = db.query(LocalUmp).filter(
+        LocalUmp.id == current_user.organization_id
+    ).first()
+    if not local or not local.logo_url:
+        raise HTTPException(status_code=404, detail="Logo não encontrada")
+
+    from app.services.storage import get_presigned_url
+    from app.core.config import get_settings
+    import re
+    s = get_settings()
+    bucket_name = s.b2_bucket_name
+    stored_url = local.logo_url
+
+    match = re.search(rf'/file/{re.escape(bucket_name)}/(.+)$', stored_url)
+    if not match:
+        match = re.search(rf'/{re.escape(bucket_name)}/(.+)$', stored_url)
+    if not match:
+        raise HTTPException(status_code=400, detail="URL da logo inválida")
+
+    key = match.group(1)
+    presigned = get_presigned_url(key, expires_in=86400)
+    return {"url": presigned}
+
+
 def _to_out(l: LocalUmp) -> dict:
     return {
         "id": str(l.id),

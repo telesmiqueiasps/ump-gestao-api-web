@@ -129,6 +129,35 @@ async def upload_logo(
     return _to_out(federation)
 
 
+@router.get("/me/logo-url")
+def get_logo_url(
+    current_user: User = Depends(require_federation),
+    db: Session = Depends(get_db),
+):
+    federation = db.query(Federation).filter(
+        Federation.id == current_user.organization_id
+    ).first()
+    if not federation or not federation.logo_url:
+        raise HTTPException(status_code=404, detail="Logo não encontrada")
+
+    from app.services.storage import get_presigned_url
+    from app.core.config import get_settings
+    import re
+    s = get_settings()
+    bucket_name = s.b2_bucket_name
+    stored_url = federation.logo_url
+
+    match = re.search(rf'/file/{re.escape(bucket_name)}/(.+)$', stored_url)
+    if not match:
+        match = re.search(rf'/{re.escape(bucket_name)}/(.+)$', stored_url)
+    if not match:
+        raise HTTPException(status_code=400, detail="URL da logo inválida")
+
+    key = match.group(1)
+    presigned = get_presigned_url(key, expires_in=86400)
+    return {"url": presigned}
+
+
 # Federação lista suas UMPs Locais
 @router.get("/me/local-umps")
 def list_my_local_umps(

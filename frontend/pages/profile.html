@@ -178,10 +178,16 @@
     try {
       const data = await api.get(endpoint)
 
-      // Logo
+      // Logo — busca pre-signed URL se tiver logo
       const preview = document.getElementById('logo-preview')
       if (data.logo_url) {
-        preview.innerHTML = `<img src="${data.logo_url}" style="width:100%;height:100%;object-fit:cover" />`
+        try {
+          const logoEndpointUrl = isFederation() ? '/api/federations/me/logo-url' : '/api/local-umps/me/logo-url'
+          const logoData = await api.get(logoEndpointUrl)
+          preview.innerHTML = `<img src="${logoData.url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-lg)" />`
+        } catch {
+          preview.textContent = data.name?.charAt(0).toUpperCase() ?? '?'
+        }
       } else {
         preview.textContent = data.name?.charAt(0).toUpperCase() ?? '?'
       }
@@ -220,11 +226,16 @@
     try {
       const fd = new FormData()
       fd.append('file', file)
-      const data = await api.upload(logoEndpoint, fd)
+      await api.upload(logoEndpoint, fd)
+
+      // Busca pre-signed URL para exibir
+      const logoEndpointUrl = isFederation() ? '/api/federations/me/logo-url' : '/api/local-umps/me/logo-url'
+      const logoData = await api.get(logoEndpointUrl)
+      const preview = document.getElementById('logo-preview')
+      preview.innerHTML = `<img src="${logoData.url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-lg)" />`
+
       status.textContent = '✓ Logo atualizada!'
       status.style.color = 'var(--green-600)'
-      const preview = document.getElementById('logo-preview')
-      preview.innerHTML = `<img src="${data.logo_url}" style="width:100%;height:100%;object-fit:cover" />`
     } catch(err) {
       status.textContent = err.message
       status.style.color = 'var(--red-600)'
