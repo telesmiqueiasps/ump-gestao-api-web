@@ -184,7 +184,8 @@
         try {
           const logoEndpointUrl = isFederation() ? '/api/federations/me/logo-url' : '/api/local-umps/me/logo-url'
           const logoData = await api.get(logoEndpointUrl)
-          preview.innerHTML = `<img src="${logoData.url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-lg)" />`
+          const imgSrc = logoData.base64 || logoData.url
+          preview.innerHTML = `<img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-lg)" />`
         } catch {
           preview.textContent = data.name?.charAt(0).toUpperCase() ?? '?'
         }
@@ -231,8 +232,9 @@
       // Busca pre-signed URL para exibir
       const logoEndpointUrl = isFederation() ? '/api/federations/me/logo-url' : '/api/local-umps/me/logo-url'
       const logoData = await api.get(logoEndpointUrl)
+      const imgSrc = logoData.base64 || logoData.url
       const preview = document.getElementById('logo-preview')
-      preview.innerHTML = `<img src="${logoData.url}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-lg)" />`
+      preview.innerHTML = `<img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-lg)" />`
 
       status.textContent = '✓ Logo atualizada!'
       status.style.color = 'var(--green-600)'

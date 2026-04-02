@@ -672,17 +672,17 @@
     const tesoureiro = boardData.find(b => b.role === 'tesoureiro')
 
     // ── Logos ──
-    // Logo da organização via pre-signed URL
+    // Logo da organização — backend retorna base64 para evitar CORS com B2
     let orgLogoB64 = null
     if (orgData.logo_url) {
       try {
         const logoUrlEndpoint = isFederation() ? '/api/federations/me/logo-url' : '/api/local-umps/me/logo-url'
         const logoData = await api.get(logoUrlEndpoint)
-        console.log('Logo URL gerada:', logoData.url)
-        orgLogoB64 = await imageToBase64(logoData.url)
-        console.log('Logo convertida para base64:', orgLogoB64 ? 'OK' : 'FALHOU')
+        // Usa base64 retornado pelo backend — sem CORS
+        orgLogoB64 = logoData.base64 || null
+        console.log('Logo base64 recebida:', orgLogoB64 ? 'OK' : 'FALHOU')
       } catch(err) {
-        console.error('Erro ao buscar logo da org:', err)
+        console.error('Erro ao buscar logo:', err)
         orgLogoB64 = null
       }
     }

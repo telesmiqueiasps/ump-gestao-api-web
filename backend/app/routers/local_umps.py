@@ -203,9 +203,9 @@ def get_logo_url_local(
     if not local or not local.logo_url:
         raise HTTPException(status_code=404, detail="Logo não encontrada")
 
-    from app.services.storage import get_presigned_url
+    from app.services.storage import get_presigned_url, _get_client
     from app.core.config import get_settings
-    import re
+    import re, base64
     s = get_settings()
     bucket_name = s.b2_bucket_name
     stored_url = local.logo_url
@@ -217,8 +217,17 @@ def get_logo_url_local(
         raise HTTPException(status_code=400, detail="URL da logo inválida")
 
     key = match.group(1)
-    presigned = get_presigned_url(key, expires_in=86400)
-    return {"url": presigned}
+
+    client = _get_client()
+    try:
+        response = client.get_object(Bucket=bucket_name, Key=key)
+        image_bytes = response['Body'].read()
+        content_type = response.get('ContentType', 'image/png')
+        b64 = base64.b64encode(image_bytes).decode('utf-8')
+        data_url = f"data:{content_type};base64,{b64}"
+        return {"url": get_presigned_url(key, expires_in=86400), "base64": data_url}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao baixar logo: {str(e)}")
 
 
 def _to_out(l: LocalUmp) -> dict:
