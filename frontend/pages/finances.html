@@ -611,7 +611,11 @@
 
   async function imageToBase64(url) {
     try {
-      const response = await fetch(url)
+      const response = await fetch(url, {
+        mode: 'cors',
+        credentials: 'omit'
+      })
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
       const blob = await response.blob()
       return new Promise((resolve, reject) => {
         const reader = new FileReader()
@@ -619,7 +623,10 @@
         reader.onerror = reject
         reader.readAsDataURL(blob)
       })
-    } catch { return null }
+    } catch(err) {
+      console.error('imageToBase64 falhou para URL:', url, err)
+      return null
+    }
   }
 
   async function generatePDF() {
@@ -664,18 +671,23 @@
     const presidente = boardData.find(b => b.role === 'presidente')
     const tesoureiro = boardData.find(b => b.role === 'tesoureiro')
 
-    // Converte logos para base64
+    // ── Logos ──
     // Logo da organização via pre-signed URL
     let orgLogoB64 = null
     if (orgData.logo_url) {
       try {
         const logoUrlEndpoint = isFederation() ? '/api/federations/me/logo-url' : '/api/local-umps/me/logo-url'
         const logoData = await api.get(logoUrlEndpoint)
-        orgLogoB64 = await imageToBase64(logoData.url).catch(() => null)
-      } catch { orgLogoB64 = null }
+        console.log('Logo URL gerada:', logoData.url)
+        orgLogoB64 = await imageToBase64(logoData.url)
+        console.log('Logo convertida para base64:', orgLogoB64 ? 'OK' : 'FALHOU')
+      } catch(err) {
+        console.error('Erro ao buscar logo da org:', err)
+        orgLogoB64 = null
+      }
     }
 
-    // Logo do IPB/Sinodal (local)
+    // Logo do IPB/Sinodal (apenas direita)
     const ipbLogoB64 = await imageToBase64('/assets/img/ipb_logo.png').catch(() => null)
 
     // Totais gerais
@@ -694,44 +706,11 @@
     // ── Cabeçalho com logo e título ──
     const headerH = 35
 
-    // Logo da organização à esquerda
+    // ── Desenho das logos na capa ──
+    // Esquerda: logo da organização APENAS (sem fallback para IPB)
     if (orgLogoB64) {
       doc.addImage(orgLogoB64, 'PNG', margin, y, 28, 28)
-    } else if (ipbLogoB64) {
-      // Fallback: usa IPB se não tiver logo própria
-      doc.addImage(ipbLogoB64, 'PNG', margin, y, 28, 28)
-    }
-
-    // Logo do IPB/Sinodal à direita
-    if (ipbLogoB64) {
-      doc.addImage(ipbLogoB64, 'PNG', pageW - margin - 28, y, 28, 28)
-    }
-
-    // Bloco de título centralizado
-    const titleX = margin + 32
-    const titleW = contentW - 64
-
-    // Fundo azul no bloco de título
-    doc.setFillColor(26, 42, 108)
-    doc.rect(titleX, y, titleW, headerH, 'F')
-
-    doc.setTextColor(255, 255, 255)
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'normal')
-    doc.text('RELATÓRIO FINANCEIRO DA', titleX + titleW / 2, y + 10, { align: 'center' })
-
-    doc.setFontSize(13)
-    doc.setFont('helvetica', 'bold')
-    const orgName = (orgData.name || '').toUpperCase()
-    const orgNameLines = doc.splitTextToSize(orgName, titleW - 8)
-    doc.text(orgNameLines, titleX + titleW / 2, y + 18, { align: 'center' })
-
-    doc.setFontSize(8)
-    doc.setFont('helvetica', 'normal')
-    doc.text(`Ano ${currentYear}`, titleX + titleW / 2, y + 30, { align: 'center' })
-
-    // Nome abreviado da organização abaixo da logo esquerda
-    if (orgLogoB64 || ipbLogoB64) {
+      // Nome da organização abaixo
       doc.setTextColor(80, 80, 80)
       doc.setFontSize(5.5)
       doc.setFont('helvetica', 'normal')
@@ -742,17 +721,45 @@
       })
     }
 
-    // Nome do IPB/Sinodal abaixo da logo direita
+    // Direita: logo do IPB/Sinodal APENAS
     if (ipbLogoB64) {
+      doc.addImage(ipbLogoB64, 'PNG', pageW - margin - 28, y, 28, 28)
+      // Nome do Sinodal abaixo
       doc.setTextColor(80, 80, 80)
       doc.setFontSize(5.5)
       doc.setFont('helvetica', 'normal')
-      const synodalName = orgData.synodal_name || 'Sinodal Paraíba de Mocidades'
+      const synodalName = orgData.synodal_name || 'Sinodal de Mocidades'
       const synodalLines = doc.splitTextToSize(synodalName, 32)
       synodalLines.forEach((line, i) => {
         doc.text(line, pageW - margin - 14, y + 30 + (i * 3.5), { align: 'center' })
       })
     }
+
+    // Ajusta largura do bloco de título baseado nas logos presentes
+    const hasOrgLogo = !!orgLogoB64
+    const hasIpbLogo = !!ipbLogoB64
+    const titleStartX = margin + (hasOrgLogo ? 32 : 0)
+    const titleEndX   = pageW - margin - (hasIpbLogo ? 32 : 0)
+    const titleW2     = titleEndX - titleStartX
+
+    // Fundo azul no bloco de título
+    doc.setFillColor(26, 42, 108)
+    doc.rect(titleStartX, y, titleW2, headerH, 'F')
+
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'normal')
+    doc.text('RELATÓRIO FINANCEIRO DA', titleStartX + titleW2 / 2, y + 10, { align: 'center' })
+
+    doc.setFontSize(13)
+    doc.setFont('helvetica', 'bold')
+    const orgName = (orgData.name || '').toUpperCase()
+    const orgNameLines = doc.splitTextToSize(orgName, titleW2 - 8)
+    doc.text(orgNameLines, titleStartX + titleW2 / 2, y + 18, { align: 'center' })
+
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`Ano ${currentYear}`, titleStartX + titleW2 / 2, y + 30, { align: 'center' })
 
     y += headerH + 6
 
