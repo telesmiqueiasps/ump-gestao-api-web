@@ -639,7 +639,7 @@
       api.get(orgEndpoint),
       api.get(`/api/board/?fiscal_year=${currentYear}`).catch(() => []),
       isFedera
-        ? api.get('/api/local-umps/').catch(() => [])
+        ? api.get('/api/federations/me/local-umps').catch(() => [])
         : api.get('/api/members/?active_only=false').catch(() => [])
     ])
 
