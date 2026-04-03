@@ -390,37 +390,16 @@
 
 <script>
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').then(reg => {
-      reg.addEventListener('updatefound', () => {
-        const newWorker = reg.installing
-        newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            newWorker.postMessage('skipWaiting')
-            window.location.reload()
-          }
-        })
-      })
-    }).catch(console.error)
+    navigator.serviceWorker.getRegistrations().then(registrations => {
+      // Remove todos os SW antigos primeiro
+      registrations.forEach(reg => reg.unregister())
+    }).then(() => {
+      // Registra o novo SW limpo
+      navigator.serviceWorker.register('/sw.js?v=6').then(reg => {
+        console.log('SW registrado:', reg.scope)
+      }).catch(console.error)
+    })
   }
-
-  const btnMenu = document.getElementById('btn-menu')
-  const sidebar = document.querySelector('.sidebar')
-  const overlay = document.getElementById('sidebar-overlay')
-
-  btnMenu?.addEventListener('click', () => {
-    sidebar.classList.toggle('open')
-    overlay.classList.toggle('open')
-  })
-  overlay?.addEventListener('click', () => {
-    sidebar.classList.remove('open')
-    overlay.classList.remove('open')
-  })
-  window.addEventListener('resize', () => {
-    if (window.innerWidth > 768) {
-      sidebar.classList.remove('open')
-      overlay.classList.remove('open')
-    }
-  })
 </script>
 
 </body>

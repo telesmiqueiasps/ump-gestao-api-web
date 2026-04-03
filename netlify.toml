@@ -1,22 +1,41 @@
 [build]
   publish = "frontend"
 
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
 [[headers]]
   for = "/*.html"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
 
 [[headers]]
   for = "/pages/*.html"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
 
 [[headers]]
-  for = "/assets/js/*.js"
+  for = "/assets/js/*"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+
+[[headers]]
+  for = "/assets/css/*"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+
+[[headers]]
+  for = "/sw.js"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
 
 [[headers]]
-  for = "/assets/css/*.css"
+  for = "/assets/img/*"
   [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
+    Cache-Control = "public, max-age=604800"

@@ -1,25 +1,10 @@
-const CACHE_NAME = 'ump-gestao-v8'
+const CACHE_NAME = 'ump-gestao-v6'
+
+// Apenas imagens são cacheadas
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/pages/dashboard.html',
-  '/pages/finances.html',
-  '/pages/profile.html',
-  '/pages/board.html',
-  '/pages/members.html',
-  '/pages/local-umps.html',
-  '/pages/secretary.html',
-  '/pages/president.html',
-  '/pages/notices.html',
-  '/assets/css/main.css',
-  '/assets/css/components.css',
-  '/assets/css/layout.v2.css',
-  '/assets/js/api.js',
-  '/assets/js/auth.js',
-  '/assets/js/router.v3.js',
-  '/assets/js/utils.js',
   '/assets/img/logo.png',
-  '/manifest.json',
+  '/assets/img/192-maskable.png',
+  '/assets/img/512-maskable.png',
 ]
 
 self.addEventListener('install', (event) => {
@@ -34,7 +19,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
       .then(keys => Promise.all(
-        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+        keys.map(k => caches.delete(k)) // apaga TODOS os caches antigos
       ))
       .then(() => self.clients.claim())
   )
@@ -46,50 +31,50 @@ self.addEventListener('fetch', (event) => {
   // Ignora tudo que não for http/https
   if (!url.startsWith('http')) return
 
-  // Nunca cacheia chamadas à API
-  if (url.includes('/api/')) {
+  // NUNCA cacheia JS, CSS, HTML ou chamadas de API
+  if (
+    url.includes('/api/') ||
+    url.includes('backblazeb2.com') ||
+    url.includes('fonts.googleapis.com') ||
+    url.includes('fonts.gstatic.com') ||
+    url.endsWith('.js') ||
+    url.endsWith('.css') ||
+    url.endsWith('.html') ||
+    url.includes('.js?') ||
+    url.includes('.css?') ||
+    url.includes('.html?')
+  ) {
+    event.respondWith(fetch(event.request))
+    return
+  }
+
+  // Cache apenas para imagens
+  if (
+    url.includes('/assets/img/') ||
+    url.endsWith('.png') ||
+    url.endsWith('.jpg') ||
+    url.endsWith('.webp') ||
+    url.endsWith('.ico')
+  ) {
     event.respondWith(
-      fetch(event.request).catch(() =>
-        new Response(JSON.stringify({ detail: 'Sem conexão' }), {
-          status: 503,
-          headers: { 'Content-Type': 'application/json' }
+      caches.match(event.request).then(cached => {
+        if (cached) return cached
+        return fetch(event.request).then(response => {
+          if (response && response.ok) {
+            const clone = response.clone()
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone))
+          }
+          return response
         })
-      )
+      })
     )
     return
   }
 
-  // Nunca cacheia Backblaze
-  if (url.includes('backblazeb2.com') || url.includes('backblaze.com')) return
-
-  // Nunca cacheia fontes externas para evitar problemas
-  if (url.includes('fonts.googleapis.com') || url.includes('fonts.gstatic.com')) {
-    event.respondWith(fetch(event.request).catch(() => new Response('')))
-    return
-  }
-
-  // Cache first para assets estáticos
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached
-      return fetch(event.request).then(response => {
-        if (response && response.ok && response.type !== 'opaque') {
-          const clone = response.clone()
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone))
-        }
-        return response
-      }).catch(() => {
-        // Fallback para páginas HTML — redireciona para index
-        if (event.request.destination === 'document') {
-          return caches.match('/index.html')
-        }
-        return new Response('')
-      })
-    })
-  )
+  // Todo o resto vai direto para a rede sem cache
+  event.respondWith(fetch(event.request))
 })
 
-// Recebe mensagem para forçar atualização do cache
 self.addEventListener('message', (event) => {
   if (event.data === 'skipWaiting') self.skipWaiting()
 })

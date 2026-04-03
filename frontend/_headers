@@ -1,19 +1,28 @@
-/
-  Cache-Control: no-cache, no-store, must-revalidate
-  Pragma: no-cache
-  Expires: 0
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
 
 /*.html
   Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
 
-/assets/js/*.js
+/pages/*.html
   Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
 
-/assets/css/*.css
+/assets/js/*
   Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+
+/assets/css/*
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
 
 /assets/img/*
-  Cache-Control: public, max-age=31536000, immutable
+  Cache-Control: public, max-age=604800
+
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
 
 /manifest.json
   Cache-Control: no-cache, no-store, must-revalidate
