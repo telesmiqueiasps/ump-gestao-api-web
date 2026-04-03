@@ -1,7 +1,16 @@
-const CACHE_NAME = 'ump-gestao-v6';
-
-// Apenas assets estáticos que mudam raramente
+const CACHE_NAME = 'ump-gestao-v7'
 const STATIC_ASSETS = [
+  '/',
+  '/index.html',
+  '/pages/dashboard.html',
+  '/pages/finances.html',
+  '/pages/profile.html',
+  '/pages/board.html',
+  '/pages/members.html',
+  '/pages/local-umps.html',
+  '/pages/secretary.html',
+  '/pages/president.html',
+  '/pages/notices.html',
   '/assets/css/main.css',
   '/assets/css/components.css',
   '/assets/css/layout.v2.css',
@@ -10,63 +19,77 @@ const STATIC_ASSETS = [
   '/assets/js/router.v2.js',
   '/assets/js/utils.js',
   '/assets/img/logo.png',
-  '/assets/img/ump_logo.png',
-];
+  '/manifest.json',
+]
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
-  );
-  self.skipWaiting();
-});
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(STATIC_ASSETS))
+      .then(() => self.skipWaiting())
+  )
+})
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    )
-  );
-  self.clients.claim();
-});
+    caches.keys()
+      .then(keys => Promise.all(
+        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+      ))
+      .then(() => self.clients.claim())
+  )
+})
 
 self.addEventListener('fetch', (event) => {
-  // Ignora requisições que não sejam http ou https
-  if (!event.request.url.startsWith('http')) return
+  const url = event.request.url
 
-  const { request } = event;
-  const url = new URL(request.url);
+  // Ignora tudo que não for http/https
+  if (!url.startsWith('http')) return
 
-  // Nunca faz cache de chamadas à API
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(fetch(request));
-    return;
-  }
-
-  // Network-first para páginas HTML — sempre busca versão mais recente
-  // e só usa o cache como fallback offline
-  if (request.destination === 'document' || url.pathname.endsWith('.html') || url.pathname === '/') {
+  // Nunca cacheia chamadas à API
+  if (url.includes('/api/')) {
     event.respondWith(
-      fetch(request)
-        .then(response => {
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
-          }
-          return response;
+      fetch(event.request).catch(() =>
+        new Response(JSON.stringify({ detail: 'Sem conexão' }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' }
         })
-        .catch(() => caches.match(request))
-    );
-    return;
+      )
+    )
+    return
   }
 
-  // Cache-first para assets estáticos (CSS, JS, imagens)
+  // Nunca cacheia Backblaze
+  if (url.includes('backblazeb2.com') || url.includes('backblaze.com')) return
+
+  // Nunca cacheia fontes externas para evitar problemas
+  if (url.includes('fonts.googleapis.com') || url.includes('fonts.gstatic.com')) {
+    event.respondWith(fetch(event.request).catch(() => new Response('')))
+    return
+  }
+
+  // Cache first para assets estáticos
   event.respondWith(
-    caches.match(request).then(cached => cached || fetch(request).then(response => {
-      if (response.ok) {
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
-      }
-      return response;
-    }))
-  );
-});
+    caches.match(event.request).then(cached => {
+      if (cached) return cached
+      return fetch(event.request).then(response => {
+        if (response && response.ok && response.type !== 'opaque') {
+          const clone = response.clone()
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone))
+        }
+        return response
+      }).catch(() => {
+        // Fallback para páginas HTML — redireciona para index
+        if (event.request.destination === 'document') {
+          return caches.match('/index.html')
+        }
+        return new Response('')
+      })
+    })
+  )
+})
+
+// Recebe mensagem para forçar atualização do cache
+self.addEventListener('message', (event) => {
+  if (event.data === 'skipWaiting') self.skipWaiting()
+})

@@ -250,3 +250,47 @@ export function setActivePage(page) {
     el.classList.toggle('active', el.dataset.page === page)
   })
 }
+
+export function renderBottomNav(currentPage) {
+  if (window.innerWidth > 768) return
+
+  const user = getUser()
+  if (!user) return
+
+  const userRoles = user?.roles ?? []
+
+  const BOTTOM_ITEMS = [
+    { page: 'dashboard', label: 'Início',     icon: '⊞', roles: null },
+    { page: 'finances',  label: 'Financeiro', icon: '◈', roles: ['presidente','vice_presidente','tesoureiro','conselheiro','secretario_presbiterial'] },
+    { page: 'members',   label: 'Sócios',     icon: '◉', localOnly: true, roles: ['presidente','vice_presidente','tesoureiro','conselheiro','secretario_presbiterial'] },
+    { page: 'board',     label: 'Diretoria',  icon: '❖', roles: ['presidente','vice_presidente','conselheiro','secretario_presbiterial'] },
+    { page: 'notices',   label: 'Avisos',     icon: '📢', roles: null },
+  ]
+
+  const visibleItems = BOTTOM_ITEMS.filter(item => {
+    if (item.fedOnly   && !isFederation()) return false
+    if (item.localOnly && !isLocalUmp())   return false
+    if (item.roles === null) return true
+    return item.roles.some(r => userRoles.includes(r))
+  })
+
+  let bottomNav = document.getElementById('bottom-nav')
+  if (!bottomNav) {
+    bottomNav = document.createElement('nav')
+    bottomNav.id = 'bottom-nav'
+    bottomNav.className = 'bottom-nav'
+    document.body.appendChild(bottomNav)
+  }
+
+  bottomNav.innerHTML = `
+    <div class="bottom-nav-items">
+      ${visibleItems.map(item => `
+        <button class="bottom-nav-item ${item.page === currentPage ? 'active' : ''}"
+          onclick="navigate('${item.page}')">
+          <span class="nav-icon">${item.icon}</span>
+          <span class="label">${item.label}</span>
+        </button>
+      `).join('')}
+    </div>
+  `
+}
