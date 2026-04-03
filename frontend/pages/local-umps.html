@@ -186,17 +186,24 @@
   document.querySelector('[data-page="local-umps"]')?.classList.add('active')
   initModalClose()
 
-  const societyType = localStorage.getItem('society_type') || 'UMP'
-  const societyLabel = societyType + 's Locais'
-  const societyLabelSingle = societyType + ' Local'
-
-  const titleEl = document.querySelector('.page-header-info h1')
-  if (titleEl) titleEl.textContent = societyLabel
-
-  const btnNew = document.getElementById('btn-new-local')
-  if (btnNew) btnNew.textContent = `+ Nova ${societyLabelSingle}`
-
   let editId = null
+
+  async function initPage() {
+    try {
+      const orgData = await api.get('/api/federations/me')
+      const societyType = orgData.society_type || 'UMP'
+      localStorage.setItem('society_type', societyType)
+      window._societyLabel       = `${societyType}s Locais`
+      window._societyLabelSingle = `${societyType} Local`
+    } catch {
+      window._societyLabel       = window._societyLabel       || 'UMPs Locais'
+      window._societyLabelSingle = window._societyLabelSingle || 'UMP Local'
+    }
+    const titleEl = document.querySelector('.page-header-info h1')
+    if (titleEl) titleEl.textContent = window._societyLabel
+    const btnNew = document.getElementById('btn-new-local')
+    if (btnNew) btnNew.textContent = `+ Nova ${window._societyLabelSingle}`
+  }
 
   async function loadLocals() {
     const grid = document.getElementById('local-grid')
@@ -204,7 +211,7 @@
     try {
       const data = await api.get('/api/federations/me/local-umps')
       if (!data.length) {
-        grid.innerHTML = `<div class="card" style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--slate-400)">Nenhuma ${societyLabelSingle} cadastrada.</div>`
+        grid.innerHTML = `<div class="card" style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--slate-400)">Nenhuma ${window._societyLabelSingle || 'UMP Local'} cadastrada.</div>`
         return
       }
       grid.innerHTML = data.map(l => `
@@ -235,7 +242,7 @@
 
   document.getElementById('btn-new-local').addEventListener('click', () => {
     editId = null
-    document.getElementById('modal-local-title').textContent = `Nova ${societyLabelSingle}`
+    document.getElementById('modal-local-title').textContent = `Nova ${window._societyLabelSingle || 'UMP Local'}`
     document.getElementById('l-name').value       = ''
     document.getElementById('l-church').value     = ''
     document.getElementById('l-pastor').value     = ''
@@ -251,7 +258,7 @@
     try {
       const data = await api.get(`/api/local-umps/${id}`)
       editId = id
-      document.getElementById('modal-local-title').textContent = `Editar ${societyLabelSingle}`
+      document.getElementById('modal-local-title').textContent = `Editar ${window._societyLabelSingle || 'UMP Local'}`
       document.getElementById('l-name').value       = data.name ?? ''
       document.getElementById('l-church').value     = data.church_name ?? ''
       document.getElementById('l-pastor').value     = data.pastor_name ?? ''
@@ -269,7 +276,7 @@
   document.getElementById('btn-save-local').addEventListener('click', async () => {
     const btn  = document.getElementById('btn-save-local')
     const name = document.getElementById('l-name').value.trim()
-    if (!name) { showAlert('local-alert', `Informe o nome da ${societyLabelSingle}.`, 'error'); return }
+    if (!name) { showAlert('local-alert', `Informe o nome da ${window._societyLabelSingle || 'UMP Local'}.`, 'error'); return }
 
     const payload = {
       name,
@@ -395,7 +402,7 @@
     } catch(err) { showAlert('user-alert', err.message, 'error') }
   }
 
-  loadLocals()
+  initPage().then(() => loadLocals())
 </script>
 
 <script>

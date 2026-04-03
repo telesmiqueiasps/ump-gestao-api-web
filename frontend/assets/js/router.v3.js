@@ -83,6 +83,33 @@ export function canAccessPage(page) {
   return item.roles.some(r => userRoles.includes(r))
 }
 
+const MEMBER_LABELS = { UMP: 'Sócios', UPH: 'Membros', SAF: 'Associadas', UPA: 'Participantes' }
+
+function buildNavHTML(user, societyType) {
+  societyType = societyType || localStorage.getItem('society_type') || 'UMP'
+  const userRoles = user?.roles ?? []
+  const memberLabel = MEMBER_LABELS[societyType] || 'Sócios'
+
+  return NAV_ITEMS
+    .filter(item => {
+      if (item.fedOnly && !isFederation()) return false
+      if (item.localOnly && !isLocalUmp()) return false
+      if (item.roles === null) return true
+      return item.roles.some(r => userRoles.includes(r))
+    })
+    .map(item => {
+      let label = item.label
+      if (item.page === 'local-umps') label = `${societyType}s Locais`
+      if (item.page === 'members')    label = memberLabel
+      return `
+        <button class="nav-item" data-page="${item.page}" onclick="navigate('${item.page}')">
+          <img class="nav-icon" src="${item.icon}" alt="" />
+          ${label}
+        </button>
+      `
+    }).join('')
+}
+
 export function renderShell() {
   const user = getUser()
   if (!user) return
@@ -91,35 +118,7 @@ export function renderShell() {
     ? (ROLE_LABELS[user.roles[0]] || user.roles[0])
     : ''
 
-  const userRoles = user?.roles ?? []
-  const societyType = localStorage.getItem('society_type') || 'UMP'
-  const memberLabel = societyType === 'SAF' ? 'Associadas'
-    : societyType === 'UPA' ? 'Participantes'
-    : societyType === 'UPH' ? 'Membros'
-    : 'Sócios'
-
-  const navHTML = NAV_ITEMS
-    .filter(item => {
-      if (item.fedOnly && !isFederation()) return false
-      if (item.localOnly && !isLocalUmp()) return false
-      if (item.roles === null) return true
-      return item.roles.some(r => userRoles.includes(r))
-    })
-    .map(item => {
-      const label = item.page === 'local-umps'
-        ? `${societyType}s Locais`
-        : item.page === 'members'
-        ? memberLabel
-        : item.label
-      return `
-        <button class="nav-item" data-page="${item.page}" onclick="navigate('${item.page}')">
-          <img class="nav-icon" src="${item.icon}" alt="" />
-          ${label}
-        </button>
-      `
-    }).join('')
-
-  document.getElementById('sidebar-nav').innerHTML = navHTML
+  document.getElementById('sidebar-nav').innerHTML = buildNavHTML(user)
   document.getElementById('header-name').textContent = user.full_name
   document.getElementById('header-role').textContent =
     `${ORG_LABELS[user.organization_type] || ''}${roleLabel ? ' · ' + roleLabel : ''}`
@@ -128,7 +127,7 @@ export function renderShell() {
 
   document.getElementById('btn-logout').addEventListener('click', logout)
 
-  // Preenche nome da organização no header
+  // Preenche nome da organização no header e atualiza society_type
   const orgNameEl = document.getElementById('header-org-name')
   if (orgNameEl) {
     const orgType = user.organization_type
@@ -136,10 +135,15 @@ export function renderShell() {
     import('./api.js').then(({ api }) => {
       api.get(endpoint).then(async data => {
         if (orgNameEl) orgNameEl.textContent = data.name || ''
-        if (data.society_type) {
-          const { setSocietyType } = await import('./utils.js')
-          setSocietyType(data.society_type)
-          document.title = document.title.replace(/UMP|UPH|SAF|UPA/g, data.society_type)
+        const newType = data.society_type || 'UMP'
+        const oldType = localStorage.getItem('society_type')
+        localStorage.setItem('society_type', newType)
+        document.title = document.title.replace(/UMP|UPH|SAF|UPA/g, newType)
+        // Re-renderiza a sidebar se o tipo mudou
+        if (oldType !== newType) {
+          const sidebarNav = document.getElementById('sidebar-nav')
+          if (sidebarNav) sidebarNav.innerHTML = buildNavHTML(user, newType)
+          renderBottomNav(_currentPage, newType)
         }
       }).catch(() => {})
     })
@@ -269,18 +273,18 @@ export function setActivePage(page) {
   })
 }
 
-export function renderBottomNav(currentPage) {
+let _currentPage = ''
+
+export function renderBottomNav(currentPage, societyType) {
+  _currentPage = currentPage
   if (window.innerWidth > 768) return
 
   const user = getUser()
   if (!user) return
 
   const userRoles = user?.roles ?? []
-  const bottomSocietyType = localStorage.getItem('society_type') || 'UMP'
-  const bottomMemberLabel = bottomSocietyType === 'SAF' ? 'Associadas'
-    : bottomSocietyType === 'UPA' ? 'Participantes'
-    : bottomSocietyType === 'UPH' ? 'Membros'
-    : 'Sócios'
+  const bottomSocietyType = societyType || localStorage.getItem('society_type') || 'UMP'
+  const bottomMemberLabel = MEMBER_LABELS[bottomSocietyType] || 'Sócios'
 
   const BOTTOM_ITEMS = [
     { page: 'dashboard', label: 'Início',          icon: '⊞', roles: null },
