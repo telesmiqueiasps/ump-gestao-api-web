@@ -115,6 +115,18 @@ export function renderShell() {
 
   document.getElementById('btn-logout').addEventListener('click', logout)
 
+  // Preenche nome da organização no header
+  const orgNameEl = document.getElementById('header-org-name')
+  if (orgNameEl) {
+    const orgType = user.organization_type
+    const endpoint = orgType === 'federation' ? '/api/federations/me' : '/api/local-umps/me'
+    import('./api.js').then(({ api }) => {
+      api.get(endpoint).then(data => {
+        if (orgNameEl) orgNameEl.textContent = data.name || ''
+      }).catch(() => {})
+    })
+  }
+
   // Botão de alterar senha antes do footer
   const sidebarFooter = document.querySelector('.sidebar-footer')
   if (sidebarFooter) {
