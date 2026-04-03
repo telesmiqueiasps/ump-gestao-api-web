@@ -14,6 +14,7 @@ class Federation(Base):
     synodal_name = Column(String(200), nullable=True)
     logo_url = Column(Text)
     address = Column(Text)
+    theme_color = Column(String(7), nullable=True, default='#1a2a6c')
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

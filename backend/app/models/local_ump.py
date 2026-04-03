@@ -16,6 +16,7 @@ class LocalUmp(Base):
     presbytery_name = Column(String(200))
     address = Column(Text)
     logo_url = Column(Text)
+    theme_color = Column(String(7), nullable=True, default='#1a2a6c')
     pastor_contact = Column(String(100), nullable=True)
     organization_date = Column(Date, nullable=True)
     fiscal_year = Column(Integer)

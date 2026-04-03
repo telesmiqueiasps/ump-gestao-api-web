@@ -25,6 +25,7 @@ class FederationUpdate(BaseModel):
     presbytery_name: Optional[str] = None
     synodal_name: Optional[str] = None
     address: Optional[str] = None
+    theme_color: Optional[str] = None
 
 
 class FederationOut(BaseModel):
@@ -197,5 +198,6 @@ def _to_out(f: Federation) -> dict:
         "synodal_name": f.synodal_name,
         "address": f.address,
         "logo_url": f.logo_url,
+        "theme_color": f.theme_color or "#1a2a6c",
         "is_active": f.is_active,
     }
