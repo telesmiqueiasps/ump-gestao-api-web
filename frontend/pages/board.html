@@ -178,11 +178,12 @@
   import { api } from '../assets/js/api.js'
   import { showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading } from '../assets/js/utils.js'
 
-  if (!requireAuth()) throw new Error()
-  if (!canAccessPage('board')) window.location.href = '/pages/dashboard.html'
-  renderShell()
-  renderBottomNav('board')
-  document.querySelector('[data-page="board"]')?.classList.add('active')
+  (async () => {
+    if (!requireAuth()) throw new Error()
+    if (!canAccessPage('board')) window.location.href = '/pages/dashboard.html'
+    await renderShell()
+    renderBottomNav('board')
+    document.querySelector('[data-page="board"]')?.classList.add('active')
   initModalClose()
 
   const ROLE_LABELS = {
@@ -409,6 +410,7 @@
   }
 
   loadBoard()
+  })()
 </script>
 
 <script>

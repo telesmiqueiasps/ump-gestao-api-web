@@ -254,9 +254,10 @@
   import { api } from '../assets/js/api.js'
   import { formatCurrency, showAlert, clearAlert, setLoading, setSocietyType } from '../assets/js/utils.js'
 
-  if (!requireAuth()) throw new Error()
-  renderShell()
-  renderBottomNav('profile')
+  (async () => {
+    if (!requireAuth()) throw new Error()
+    await renderShell()
+    renderBottomNav('profile')
 
   let selectedSocietyType = 'UMP'
 
@@ -424,6 +425,7 @@
       setLoading(btn, false, 'Salvar alterações')
     }
   })
+  })()
 </script>
 
 <script>

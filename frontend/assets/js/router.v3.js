@@ -110,7 +110,7 @@ function buildNavHTML(user, societyType) {
     }).join('')
 }
 
-export function renderShell() {
+export async function renderShell() {
   const user = getUser()
   if (!user) return
 
@@ -118,40 +118,35 @@ export function renderShell() {
     ? (ROLE_LABELS[user.roles[0]] || user.roles[0])
     : ''
 
-  document.getElementById('sidebar-nav').innerHTML = buildNavHTML(user)
+  // Busca o perfil da organização ANTES de renderizar para ter o society_type correto
+  let societyType = 'UMP'
+  let orgName = ''
+  try {
+    const { api } = await import('./api.js')
+    const orgType = user.organization_type
+    const endpoint = orgType === 'federation' ? '/api/federations/me' : '/api/local-umps/me'
+    const data = await api.get(endpoint)
+    orgName = data.name || ''
+    societyType = data.society_type || 'UMP'
+    localStorage.setItem('society_type', societyType)
+  } catch {}
+
+  // Agora renderiza a sidebar com o societyType correto
+  document.getElementById('sidebar-nav').innerHTML = buildNavHTML(user, societyType)
   document.getElementById('header-name').textContent = user.full_name
   document.getElementById('header-role').textContent =
     `${ORG_LABELS[user.organization_type] || ''}${roleLabel ? ' · ' + roleLabel : ''}`
   document.getElementById('header-avatar').textContent =
     user.full_name?.charAt(0).toUpperCase() || '?'
 
-  document.getElementById('btn-logout').addEventListener('click', logout)
-
-  // Preenche nome da organização no header e atualiza society_type
   const orgNameEl = document.getElementById('header-org-name')
-  if (orgNameEl) {
-    const orgType = user.organization_type
-    const endpoint = orgType === 'federation' ? '/api/federations/me' : '/api/local-umps/me'
-    import('./api.js').then(({ api }) => {
-      api.get(endpoint).then(async data => {
-        if (orgNameEl) orgNameEl.textContent = data.name || ''
-        const newType = data.society_type || 'UMP'
-        const oldType = localStorage.getItem('society_type')
-        localStorage.setItem('society_type', newType)
-        document.title = document.title.replace(/UMP|UPH|SAF|UPA/g, newType)
-        // Re-renderiza a sidebar se o tipo mudou
-        if (oldType !== newType) {
-          const sidebarNav = document.getElementById('sidebar-nav')
-          if (sidebarNav) sidebarNav.innerHTML = buildNavHTML(user, newType)
-          renderBottomNav(_currentPage, newType)
-        }
-      }).catch(() => {})
-    })
-  }
+  if (orgNameEl) orgNameEl.textContent = orgName
 
-  // Botão de alterar senha antes do footer
+  document.getElementById('btn-logout')?.addEventListener('click', logout)
+
+  // Botão de alterar senha e modal (código existente mantido)
   const sidebarFooter = document.querySelector('.sidebar-footer')
-  if (sidebarFooter) {
+  if (sidebarFooter && !document.querySelector('.sidebar-pw-btn')) {
     const pwBtn = document.createElement('button')
     pwBtn.className = 'sidebar-pw-btn'
     pwBtn.innerHTML = '🔒 Alterar senha'
@@ -159,7 +154,6 @@ export function renderShell() {
     sidebarFooter.parentNode.insertBefore(pwBtn, sidebarFooter)
   }
 
-  // Injeta modal de senha no body se ainda não existir
   if (!document.getElementById('modal-sidebar-pw')) {
     const modalHtml = `
       <div class="modal-overlay" id="modal-sidebar-pw">

@@ -74,11 +74,13 @@
   import { requireAuth } from '../assets/js/auth.js'
   import { renderShell, renderBottomNav } from '../assets/js/router.v3.js'
 
-  if (!requireAuth()) throw new Error()
+  (async () => {
+    if (!requireAuth()) throw new Error()
 
-  renderShell()
-  renderBottomNav('president')
-  document.querySelector('[data-page="president"]')?.classList.add('active')
+    await renderShell()
+    renderBottomNav('president')
+    document.querySelector('[data-page="president"]')?.classList.add('active')
+  })()
 </script>
 
 <script>

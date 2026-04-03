@@ -259,15 +259,16 @@
   import { api } from '../assets/js/api.js'
   import { formatCurrency, formatDate, showAlert, openModal, closeModal, initModalClose, setLoading } from '../assets/js/utils.js'
 
-  if (!requireAuth()) throw new Error()
-  if (!canAccessPage('finances')) window.location.href = '/pages/dashboard.html'
-  renderShell()
-  renderBottomNav('finances')
-  document.querySelector('[data-page="finances"]')?.classList.add('active')
+  (async () => {
+    if (!requireAuth()) throw new Error()
+    if (!canAccessPage('finances')) window.location.href = '/pages/dashboard.html'
+    await renderShell()
+    renderBottomNav('finances')
+    document.querySelector('[data-page="finances"]')?.classList.add('active')
 
-  const TYPES = {
-    outras_receitas: { label: 'Outras Receitas', nature: 'in' },
-    outras_despesas: { label: 'Outras Despesas', nature: 'out' },
+    const TYPES = {
+      outras_receitas: { label: 'Outras Receitas', nature: 'in' },
+      outras_despesas: { label: 'Outras Despesas', nature: 'out' },
     aci_recebida:    { label: 'ACI Recebida',    nature: 'in' },
     aci_enviada:     { label: 'ACI Enviada',      nature: 'out' },
   }
@@ -1106,6 +1107,7 @@
   }
 
   loadPage()
+  })()
 </script>
 
 <script>

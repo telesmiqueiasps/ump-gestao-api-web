@@ -178,11 +178,19 @@
   import { api } from '../assets/js/api.js'
   import { formatCurrency, showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading } from '../assets/js/utils.js'
 
-  if (!requireAuth()) throw new Error()
-  if (!canAccessPage('local-umps')) window.location.href = '/pages/dashboard.html'
+  (async () => {
+    if (!requireAuth()) throw new Error()
+    if (!canAccessPage('local-umps')) window.location.href = '/pages/dashboard.html'
 
-  renderShell()
-  renderBottomNav('local-umps')
+    await renderShell()
+    const societyType = localStorage.getItem('society_type') || 'UMP'
+    const societyLabelSingle = `${societyType} Local`
+    const societyLabel = `${societyType}s Locais`
+
+    document.querySelector('.page-header-info h1').textContent = societyLabel
+    document.getElementById('btn-new-local').textContent = `+ Nova ${societyLabelSingle}`
+    window._societyLabelSingle = societyLabelSingle
+    renderBottomNav('local-umps')
   document.querySelector('[data-page="local-umps"]')?.classList.add('active')
   initModalClose()
 
@@ -403,6 +411,7 @@
   }
 
   initPage().then(() => loadLocals())
+  })()
 </script>
 
 <script>

@@ -181,23 +181,24 @@
   import { api } from '../assets/js/api.js'
   import { formatCurrency, currentYear, getSocietyLabel } from '../assets/js/utils.js'
 
-  if (!requireAuth()) throw new Error('not auth')
-  if (!canAccessPage('dashboard')) window.location.href = '/pages/dashboard.html'
+  (async () => {
+    if (!requireAuth()) throw new Error('not auth')
+    if (!canAccessPage('dashboard')) window.location.href = '/pages/dashboard.html'
 
-  renderShell()
-  renderBottomNav('dashboard')
-  document.querySelector('[data-page="dashboard"]')?.classList.add('active')
+    await renderShell()
+    renderBottomNav('dashboard')
+    document.querySelector('[data-page="dashboard"]')?.classList.add('active')
 
-  const user = getUser()
-  const year = currentYear()
+    const user = getUser()
+    const year = currentYear()
 
-  document.getElementById('welcome-title').textContent = `Olá, ${user.full_name.split(' ')[0]} 👋`
-  document.getElementById('welcome-sub').textContent = `Resumo do ano vigente · ${year}`
-  document.getElementById('stat-board-sub').textContent = `Diretoria ${year}`
+    document.getElementById('welcome-title').textContent = `Olá, ${user.full_name.split(' ')[0]} 👋`
+    document.getElementById('welcome-sub').textContent = `Resumo do ano vigente · ${year}`
+    document.getElementById('stat-board-sub').textContent = `Diretoria ${year}`
 
-  // Mostrar cards condicionais
-  if (isLocalUmp()) {
-    document.getElementById('stat-members-card').style.display = 'flex'
+    // Mostrar cards condicionais
+    if (isLocalUmp()) {
+      document.getElementById('stat-members-card').style.display = 'flex'
     document.querySelector('#stat-members-card .stat-label').textContent = getSocietyLabel('membros') + ' Ativos'
   }
   if (isFederation()) document.getElementById('stat-locals-card').style.display = 'flex'
@@ -266,6 +267,7 @@
   }
 
   loadDashboard()
+  })()
 </script>
 
 <script>

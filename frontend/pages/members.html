@@ -167,12 +167,13 @@
   import { api } from '../assets/js/api.js'
   import { formatDate, showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading, getSocietyLabel } from '../assets/js/utils.js'
 
-  if (!requireAuth()) throw new Error()
-  if (!canAccessPage('members')) window.location.href = '/pages/dashboard.html'
+  (async () => {
+    if (!requireAuth()) throw new Error()
+    if (!canAccessPage('members')) window.location.href = '/pages/dashboard.html'
 
-  renderShell()
-  renderBottomNav('members')
-  document.querySelector('[data-page="members"]')?.classList.add('active')
+    await renderShell()
+    renderBottomNav('members')
+    document.querySelector('[data-page="members"]')?.classList.add('active')
   initModalClose()
 
   // Nomenclatura dinâmica
@@ -314,6 +315,7 @@
   })
 
   loadMembers()
+  })()
 </script>
 
 <script>
