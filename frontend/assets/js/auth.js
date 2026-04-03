@@ -33,6 +33,18 @@ export async function login(email, password) {
     organization_type: data.organization_type,
     roles: data.roles,
   }))
+
+  // Busca e salva o tipo de sociedade
+  try {
+    const orgEndpoint = data.organization_type === 'federation'
+      ? '/api/federations/me'
+      : '/api/local-umps/me'
+    const orgData = await api.get(orgEndpoint)
+    if (orgData.society_type) {
+      localStorage.setItem('society_type', orgData.society_type)
+    }
+  } catch {}
+
   return data
 }
 

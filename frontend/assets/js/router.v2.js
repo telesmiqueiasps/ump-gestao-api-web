@@ -1,4 +1,5 @@
 import { getUser, isFederation, isLocalUmp, logout } from './auth.js'
+import { getSocietyLabel } from './utils.js'
 
 const ROLE_LABELS = {
   presidente:              'Presidente',
@@ -33,7 +34,7 @@ const NAV_ITEMS = [
     roles: ['presidente','vice_presidente','tesoureiro','conselheiro','secretario_presbiterial']
   },
   {
-    page: 'members', label: 'Sócios', icon: '/assets/img/socios.png',
+    page: 'members', label: getSocietyLabel('membros'), icon: '/assets/img/socios.png',
     path: '/pages/members.html',
     localOnly: true,
     roles: ['presidente','vice_presidente','tesoureiro','conselheiro','secretario_presbiterial']
@@ -121,8 +122,13 @@ export function renderShell() {
     const orgType = user.organization_type
     const endpoint = orgType === 'federation' ? '/api/federations/me' : '/api/local-umps/me'
     import('./api.js').then(({ api }) => {
-      api.get(endpoint).then(data => {
+      api.get(endpoint).then(async data => {
         if (orgNameEl) orgNameEl.textContent = data.name || ''
+        if (data.society_type) {
+          const { setSocietyType } = await import('./utils.js')
+          setSocietyType(data.society_type)
+          document.title = document.title.replace(/UMP|UPH|SAF|UPA/g, data.society_type)
+        }
       }).catch(() => {})
     })
   }
@@ -262,7 +268,7 @@ export function renderBottomNav(currentPage) {
   const BOTTOM_ITEMS = [
     { page: 'dashboard', label: 'Início',     icon: '⊞', roles: null },
     { page: 'finances',  label: 'Financeiro', icon: '◈', roles: ['presidente','vice_presidente','tesoureiro','conselheiro','secretario_presbiterial'] },
-    { page: 'members',   label: 'Sócios',     icon: '◉', localOnly: true, roles: ['presidente','vice_presidente','tesoureiro','conselheiro','secretario_presbiterial'] },
+    { page: 'members',   label: getSocietyLabel('membros'), icon: '◉', localOnly: true, roles: ['presidente','vice_presidente','tesoureiro','conselheiro','secretario_presbiterial'] },
     { page: 'board',     label: 'Diretoria',  icon: '❖', roles: ['presidente','vice_presidente','conselheiro','secretario_presbiterial'] },
     { page: 'notices',   label: 'Avisos',     icon: '📢', roles: null },
   ]

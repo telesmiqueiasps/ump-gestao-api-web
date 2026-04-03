@@ -165,7 +165,7 @@
   import { requireAuth, isLocalUmp } from '../assets/js/auth.js'
   import { renderShell, canAccessPage, renderBottomNav } from '../assets/js/router.v2.js'
   import { api } from '../assets/js/api.js'
-  import { formatDate, showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading } from '../assets/js/utils.js'
+  import { formatDate, showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading, getSocietyLabel } from '../assets/js/utils.js'
 
   if (!requireAuth()) throw new Error()
   if (!canAccessPage('members')) window.location.href = '/pages/dashboard.html'
@@ -174,6 +174,10 @@
   renderBottomNav('members')
   document.querySelector('[data-page="members"]')?.classList.add('active')
   initModalClose()
+
+  // Nomenclatura dinâmica
+  document.querySelector('.page-header-info h1').textContent = getSocietyLabel('membros')
+  document.getElementById('btn-new-member').textContent = '+ Novo ' + getSocietyLabel('membro')
 
   let activeOnly = true
   let editId = null

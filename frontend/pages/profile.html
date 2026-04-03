@@ -15,6 +15,19 @@
   <link rel="stylesheet" href="../assets/css/main.css" />
   <link rel="stylesheet" href="../assets/css/components.css" />
   <link rel="stylesheet" href="../assets/css/layout.v2.css" />
+  <style>
+    .society-btn {
+      display: flex; flex-direction: column; align-items: center;
+      padding: .6rem 1rem; border: 2px solid var(--slate-200);
+      border-radius: var(--radius); background: #fff; cursor: pointer;
+      font-family: inherit; transition: all .15s; min-width: 80px;
+    }
+    .society-btn strong { font-size: .95rem; font-weight: 700; color: var(--slate-600); display: block; }
+    .society-btn span { font-size: .62rem; color: var(--slate-400); margin-top: .2rem; text-align: center; line-height: 1.3; }
+    .society-btn.active { border-color: var(--brand-blue, #1a2a6c); background: var(--blue-50, #eff6ff); color: var(--brand-blue, #1a2a6c); }
+    .society-btn.active span { color: var(--blue-600, #2563eb); }
+    .society-btn.active strong { color: var(--brand-blue, #1a2a6c); }
+  </style>
 </head>
 <body>
 
@@ -102,6 +115,15 @@
             <input class="input" type="text" id="org-synodal" placeholder="Ex: Sinodal Paraíba de Mocidades" />
           </div>
           <div class="field mb-4">
+            <label>Tipo de Sociedade</label>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap" id="fed-society-selector">
+              <button type="button" class="society-btn active" data-type="UMP" data-target="fed"><strong>UMP</strong><span>União de Mocidade Presbiteriana</span></button>
+              <button type="button" class="society-btn" data-type="UPH" data-target="fed"><strong>UPH</strong><span>União Presbiteriana de Homens</span></button>
+              <button type="button" class="society-btn" data-type="SAF" data-target="fed"><strong>SAF</strong><span>Sociedade Auxiliadora Feminina</span></button>
+              <button type="button" class="society-btn" data-type="UPA" data-target="fed"><strong>UPA</strong><span>União Presbiteriana de Adolescentes</span></button>
+            </div>
+          </div>
+          <div class="field mb-4">
             <label>Cor Tema dos Relatórios</label>
             <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
               <input type="color" id="fed-theme-color" value="#1a2a6c"
@@ -175,6 +197,15 @@
             <input class="input" type="text" id="local-balance" readonly style="background:var(--slate-50);color:var(--slate-500)" />
           </div>
           <div class="field mb-4">
+            <label>Tipo de Sociedade</label>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap" id="local-society-selector">
+              <button type="button" class="society-btn active" data-type="UMP" data-target="local"><strong>UMP</strong><span>União de Mocidade Presbiteriana</span></button>
+              <button type="button" class="society-btn" data-type="UPH" data-target="local"><strong>UPH</strong><span>União Presbiteriana de Homens</span></button>
+              <button type="button" class="society-btn" data-type="SAF" data-target="local"><strong>SAF</strong><span>Sociedade Auxiliadora Feminina</span></button>
+              <button type="button" class="society-btn" data-type="UPA" data-target="local"><strong>UPA</strong><span>União Presbiteriana de Adolescentes</span></button>
+            </div>
+          </div>
+          <div class="field mb-4">
             <label>Cor Tema dos Relatórios</label>
             <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
               <input type="color" id="local-theme-color" value="#1a2a6c"
@@ -221,11 +252,22 @@
   import { requireAuth, isFederation, isLocalUmp } from '../assets/js/auth.js'
   import { renderShell, canAccessPage, renderBottomNav } from '../assets/js/router.v2.js'
   import { api } from '../assets/js/api.js'
-  import { formatCurrency, showAlert, clearAlert, setLoading } from '../assets/js/utils.js'
+  import { formatCurrency, showAlert, clearAlert, setLoading, setSocietyType } from '../assets/js/utils.js'
 
   if (!requireAuth()) throw new Error()
   renderShell()
   renderBottomNav('profile')
+
+  let selectedSocietyType = 'UMP'
+
+  document.querySelectorAll('.society-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedSocietyType = btn.dataset.type
+      const target = btn.dataset.target
+      document.querySelectorAll(`.society-btn[data-target="${target}"]`).forEach(b => b.classList.remove('active'))
+      btn.classList.add('active')
+    })
+  })
   document.querySelector('[data-page="profile"]')?.classList.add('active')
 
   const endpoint       = isFederation() ? '/api/federations/me' : '/api/local-umps/me'
@@ -262,6 +304,12 @@
       const colorFieldId = isFederation() ? 'fed-theme-color' : 'local-theme-color'
       document.getElementById(colorFieldId).value = themeColor
       updateColorPresets(themeColor)
+
+      const sType = data.society_type || 'UMP'
+      selectedSocietyType = sType
+      document.querySelectorAll('.society-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.type === sType)
+      })
 
       if (isFederation()) {
         document.getElementById('org-name').value       = data.name ?? ''
@@ -362,9 +410,11 @@
       }
     }
     payload.theme_color = document.getElementById(colorFieldId)?.value || '#1a2a6c'
+    payload.society_type = selectedSocietyType
 
     try {
       await api.put(updateEndpoint, payload)
+      setSocietyType(selectedSocietyType)
       const ok = document.getElementById('save-success')
       ok.style.display = 'inline'
       setTimeout(() => ok.style.display = 'none', 3000)

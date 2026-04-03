@@ -26,6 +26,7 @@ class FederationUpdate(BaseModel):
     synodal_name: Optional[str] = None
     address: Optional[str] = None
     theme_color: Optional[str] = None
+    society_type: Optional[str] = None
 
 
 class FederationOut(BaseModel):
@@ -36,6 +37,7 @@ class FederationOut(BaseModel):
     address: Optional[str]
     logo_url: Optional[str]
     theme_color: Optional[str] = '#1a2a6c'
+    society_type: Optional[str] = 'UMP'
     is_active: bool
 
     class Config:
@@ -206,5 +208,6 @@ def _to_out(f: Federation) -> dict:
         "address": f.address,
         "logo_url": f.logo_url,
         "theme_color": theme or "#1a2a6c",
+        "society_type": getattr(f, 'society_type', None) or 'UMP',
         "is_active": f.is_active,
     }

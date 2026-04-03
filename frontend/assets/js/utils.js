@@ -1,3 +1,66 @@
+const SOCIETY_TYPES = {
+  UMP: {
+    sigla: 'UMP',
+    nome: 'União de Mocidade Presbiteriana',
+    membro: 'Sócio',
+    membros: 'Sócios',
+    presidente: 'Presidente',
+    tesoureiro: 'Tesoureiro(a)',
+    secretario: 'Secretário(a)',
+    conselheiro: 'Conselheiro(a)',
+    sociedade: 'Sociedade',
+  },
+  UPH: {
+    sigla: 'UPH',
+    nome: 'União Presbiteriana de Homens',
+    membro: 'Membro',
+    membros: 'Membros',
+    presidente: 'Presidente',
+    tesoureiro: 'Tesoureiro',
+    secretario: 'Secretário',
+    conselheiro: 'Conselheiro',
+    sociedade: 'Sociedade',
+  },
+  SAF: {
+    sigla: 'SAF',
+    nome: 'Sociedade Auxiliadora Feminina',
+    membro: 'Associada',
+    membros: 'Associadas',
+    presidente: 'Presidente',
+    tesoureiro: 'Tesoureira',
+    secretario: 'Secretária',
+    conselheiro: 'Conselheira',
+    sociedade: 'Sociedade',
+  },
+  UPA: {
+    sigla: 'UPA',
+    nome: 'União Presbiteriana de Adolescentes',
+    membro: 'Participante',
+    membros: 'Participantes',
+    presidente: 'Presidente',
+    tesoureiro: 'Tesoureiro(a)',
+    secretario: 'Secretário(a)',
+    conselheiro: 'Conselheiro(a)',
+    sociedade: 'Sociedade',
+  },
+}
+
+export function getSocietyType() {
+  return localStorage.getItem('society_type') || 'UMP'
+}
+
+export function setSocietyType(type) {
+  localStorage.setItem('society_type', type)
+}
+
+export function getSocietyInfo() {
+  return SOCIETY_TYPES[getSocietyType()] || SOCIETY_TYPES['UMP']
+}
+
+export function getSocietyLabel(key) {
+  return getSocietyInfo()[key] || key
+}
+
 export function formatCurrency(value) {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency', currency: 'BRL'

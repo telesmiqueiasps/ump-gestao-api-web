@@ -694,6 +694,16 @@
     const reportColor = hexToRgb(themeHex)
     console.log('Cor do relatório:', themeHex, '->', reportColor)
 
+    const societyType = orgData.society_type || 'UMP'
+    const societyNames = {
+      UMP: 'União de Mocidade Presbiteriana',
+      UPH: 'União Presbiteriana de Homens',
+      SAF: 'Sociedade Auxiliadora Feminina',
+      UPA: 'União Presbiteriana de Adolescentes',
+    }
+    const societyFullName = societyNames[societyType] || societyNames['UMP']
+    const memberLabel = { UMP: 'Sócios', UPH: 'Membros', SAF: 'Associadas', UPA: 'Participantes' }[societyType] || 'Sócios'
+
     // Pega presidente e tesoureiro do board
     const presidente = boardData.find(b => b.role === 'presidente')
     const tesoureiro = boardData.find(b => b.role === 'tesoureiro')
@@ -745,7 +755,7 @@
     doc.setTextColor(255, 255, 255)
     doc.setFontSize(9)
     doc.setFont('helvetica', 'normal')
-    doc.text('RELATÓRIO FINANCEIRO DA', titleStartX + titleW / 2, y + 10, { align: 'center' })
+    doc.text('RELATÓRIO FINANCEIRO DA ' + societyType, titleStartX + titleW / 2, y + 10, { align: 'center' })
 
     doc.setFontSize(13)
     doc.setFont('helvetica', 'bold')
@@ -821,14 +831,14 @@
       return rowY + rH
     }
 
-    const orgLabel = isFedera ? 'FEDERAÇÃO' : 'UMP LOCAL'
+    const orgLabel = isFedera ? 'FEDERAÇÃO' : societyType + ' LOCAL'
     y = drawRow(orgLabel, (orgData.name || '').toUpperCase(), y, false)
     y = drawRow('PRESBITÉRIO', (orgData.presbytery_name || '').toUpperCase(), y, true)
     if (!isFedera) {
       y = drawRow('IGREJA', (orgData.church_name || '').toUpperCase(), y, false)
       y = drawRow('PASTOR', (orgData.pastor_name || '').toUpperCase(), y, true)
     }
-    const statsLabel = isFedera ? 'UMPS LOCAIS' : 'SÓCIOS ATIVOS / COOPERADORES'
+    const statsLabel = isFedera ? societyType + 'S LOCAIS' : memberLabel.toUpperCase() + ' ATIVOS'
     const statsValue = isFedera
       ? `${Array.isArray(statsData) ? statsData.length : 0} cadastradas`
       : (() => {
@@ -957,8 +967,8 @@
     doc.setFontSize(7.5)
     doc.setFont('helvetica', 'bold')
     const footerText = isFedera
-      ? `FEDERAÇÃO DE MOCIDADES - ${(orgData.presbytery_name || '').toUpperCase()}`
-      : `UMP LOCAL - ${(orgData.church_name || '').toUpperCase()} - ${(orgData.presbytery_name || '').toUpperCase()}`
+      ? `FEDERAÇÃO ${societyType} - ${(orgData.presbytery_name || '').toUpperCase()}`
+      : `${societyType} LOCAL - ${(orgData.church_name || '').toUpperCase()} - ${(orgData.presbytery_name || '').toUpperCase()}`
     doc.text(footerText, pageW / 2, y + 4.5, { align: 'center' })
 
     // ════════════════════════════════════════

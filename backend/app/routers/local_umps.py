@@ -36,6 +36,7 @@ class LocalUmpUpdate(BaseModel):
     fiscal_year: Optional[int] = None
     initial_balance: Optional[float] = None
     theme_color: Optional[str] = None
+    society_type: Optional[str] = None
 
 
 # Federação cria uma UMP Local
@@ -244,6 +245,7 @@ def _to_out(l: LocalUmp) -> dict:
         "address": l.address,
         "logo_url": l.logo_url,
         "theme_color": getattr(l, 'theme_color', None) or "#1a2a6c",
+        "society_type": getattr(l, 'society_type', None) or 'UMP',
         "fiscal_year": l.fiscal_year,
         "initial_balance": float(l.initial_balance) if l.initial_balance else 0.0,
         "is_active": l.is_active,

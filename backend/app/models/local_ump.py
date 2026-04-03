@@ -17,6 +17,7 @@ class LocalUmp(Base):
     address = Column(Text)
     logo_url = Column(Text)
     theme_color = Column(String(7), nullable=True, default='#1a2a6c')
+    society_type = Column(String(10), nullable=True, default='UMP')
     pastor_contact = Column(String(100), nullable=True)
     organization_date = Column(Date, nullable=True)
     fiscal_year = Column(Integer)
