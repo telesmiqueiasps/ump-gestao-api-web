@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ump-gestao-v7'
+const CACHE_NAME = 'ump-gestao-v8'
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -16,7 +16,7 @@ const STATIC_ASSETS = [
   '/assets/css/layout.v2.css',
   '/assets/js/api.js',
   '/assets/js/auth.js',
-  '/assets/js/router.v2.js',
+  '/assets/js/router.v3.js',
   '/assets/js/utils.js',
   '/assets/img/logo.png',
   '/manifest.json',
