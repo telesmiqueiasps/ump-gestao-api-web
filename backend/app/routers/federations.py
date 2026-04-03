@@ -191,6 +191,12 @@ def list_my_local_umps(
 
 
 def _to_out(f: Federation) -> dict:
+    theme = None
+    try:
+        theme = f.theme_color
+    except Exception:
+        theme = None
+
     return {
         "id": str(f.id),
         "name": f.name,
@@ -198,6 +204,6 @@ def _to_out(f: Federation) -> dict:
         "synodal_name": f.synodal_name,
         "address": f.address,
         "logo_url": f.logo_url,
-        "theme_color": getattr(f, 'theme_color', None) or "#1a2a6c",
+        "theme_color": theme or "#1a2a6c",
         "is_active": f.is_active,
     }

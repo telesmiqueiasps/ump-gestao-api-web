@@ -14,7 +14,7 @@ settings = get_settings()
 
 app = FastAPI(
     title="Plataforma de Gestão UMP",
-    description="API para gestão da União de Mocidade Presbiteriana",
+    description="API para gestão da União de Mocidade Presbiteriana v2",
     version="1.0.0",
     docs_url="/docs" if settings.app_env == "development" else None,
     redoc_url="/redoc" if settings.app_env == "development" else None,
