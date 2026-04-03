@@ -22,12 +22,14 @@ class BoardMemberCreate(BaseModel):
     role: BoardRole
     fiscal_year: Optional[int] = None
     user_id: Optional[UUID] = None
+    contact: Optional[str] = None
 
 
 class BoardMemberUpdate(BaseModel):
     member_name: Optional[str] = None
     role: Optional[BoardRole] = None
     user_id: Optional[UUID] = None
+    contact: Optional[str] = None
 
 
 def _validate_role_for_org(role: BoardRole, org_type: OrgType):
@@ -84,6 +86,7 @@ def add_board_member(
         role=payload.role.value,
         fiscal_year=year,
         user_id=payload.user_id,
+        contact=payload.contact,
     )
     db.add(board_member)
 
@@ -158,5 +161,6 @@ def _to_out(b: BoardMember) -> dict:
         "role": b.role.value,
         "fiscal_year": b.fiscal_year,
         "user_id": str(b.user_id) if b.user_id else None,
+        "contact": b.contact,
         "is_active": b.is_active,
     }

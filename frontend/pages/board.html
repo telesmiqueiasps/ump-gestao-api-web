@@ -110,6 +110,10 @@
       <label>Ano de mandato</label>
       <input class="input" type="number" id="b-year" />
     </div>
+    <div class="field mb-4">
+      <label>Contato <span style="font-weight:400;color:var(--slate-400);font-size:.75rem">(opcional)</span></label>
+      <input class="input" type="tel" id="b-contact" placeholder="(83) 99999-9999" maxlength="15" />
+    </div>
     <div id="board-alert" class="hidden mb-4"></div>
     <div class="modal-footer">
       <button class="btn btn-secondary modal-close">Cancelar</button>
@@ -238,8 +242,9 @@
           <div class="board-card-name">${b.member_name}</div>
           <div class="board-card-role"><span class="badge badge-blue">${getRoleLabel(b.role)}</span></div>
           <div class="board-card-year">Mandato ${b.fiscal_year}</div>
+          ${b.contact ? `<div class="board-card-contact" style="font-size:.75rem;color:var(--slate-500);margin-top:.2rem">📞 ${b.contact}</div>` : ''}
           <div class="board-card-actions">
-            <button class="btn btn-secondary btn-sm" onclick="editBoard('${b.id}','${b.member_name}','${b.role}',${b.fiscal_year})">✎ Editar</button>
+            <button class="btn btn-secondary btn-sm" onclick="editBoard('${b.id}','${b.member_name}','${b.role}',${b.fiscal_year},'${b.contact ?? ''}')">✎ Editar</button>
             <button class="btn btn-ghost btn-sm" style="color:var(--red-600)" onclick="removeBoard('${b.id}','${b.member_name}')">✕</button>
           </div>
         </div>
@@ -255,19 +260,32 @@
     document.getElementById('b-name').value = ''
     document.getElementById('b-role').value = availableRoles[0]?.value ?? ''
     document.getElementById('b-year').value = currentYear
+    document.getElementById('b-contact').value = ''
     clearAlert('board-alert')
     openModal('modal-board')
   })
 
-  window.editBoard = (id, name, role, year) => {
+  window.editBoard = (id, name, role, year, contact) => {
     editId = id
     document.getElementById('modal-board-title').textContent = 'Editar Membro'
     document.getElementById('b-name').value = name
     document.getElementById('b-role').value = role
     document.getElementById('b-year').value = year
+    document.getElementById('b-contact').value = contact ?? ''
     clearAlert('board-alert')
     openModal('modal-board')
   }
+
+  document.getElementById('b-contact').addEventListener('input', (e) => {
+    let v = e.target.value.replace(/\D/g, '')
+    if (v.length > 11) v = v.slice(0, 11)
+    if (v.length <= 10) {
+      v = v.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3')
+    } else {
+      v = v.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3')
+    }
+    e.target.value = v.replace(/-$/, '')
+  })
 
   document.getElementById('btn-save-board').addEventListener('click', async () => {
     const btn  = document.getElementById('btn-save-board')
@@ -278,6 +296,7 @@
       member_name: name,
       role:        document.getElementById('b-role').value,
       fiscal_year: Number(document.getElementById('b-year').value),
+      contact:     document.getElementById('b-contact').value || null,
     }
 
     setLoading(btn, true, 'Salvar')

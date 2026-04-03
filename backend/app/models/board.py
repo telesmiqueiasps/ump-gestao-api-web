@@ -16,6 +16,7 @@ class BoardMember(Base):
     member_name = Column(String(200), nullable=False)
     role = Column(SAEnum(BoardRole, name="board_role", values_callable=lambda x: [e.value for e in x]), nullable=False)
     fiscal_year = Column(Integer, nullable=False)
+    contact = Column(String(20), nullable=True)
     is_active = Column(Boolean, default=True)
 
     user = relationship("User")
