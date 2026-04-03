@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ump-gestao-v5';
+const CACHE_NAME = 'ump-gestao-v6';
 
 // Apenas assets estáticos que mudam raramente
 const STATIC_ASSETS = [
@@ -30,6 +30,9 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Ignora requisições que não sejam http ou https
+  if (!event.request.url.startsWith('http')) return
+
   const { request } = event;
   const url = new URL(request.url);
 

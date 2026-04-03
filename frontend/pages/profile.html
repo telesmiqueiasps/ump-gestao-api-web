@@ -94,25 +94,25 @@
           <div class="field mb-4">
             <label>Cor Tema dos Relatórios</label>
             <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
-              <input type="color" id="org-theme-color" value="#1a2a6c"
+              <input type="color" id="fed-theme-color" value="#1a2a6c"
                 style="width:48px;height:40px;border:1.5px solid var(--slate-300);border-radius:8px;cursor:pointer;padding:2px" />
-              <div style="display:flex;gap:.5rem;flex-wrap:wrap" id="color-presets">
-                <button type="button" class="color-preset" data-color="#1a2a6c"
+              <div style="display:flex;gap:.5rem;flex-wrap:wrap" id="fed-color-presets">
+                <button type="button" class="color-preset" data-color="#1a2a6c" data-group="fed"
                   style="width:32px;height:32px;border-radius:6px;border:2px solid transparent;background:#1a2a6c;cursor:pointer;transition:all .15s"
                   title="Azul Marinho (padrão)"></button>
-                <button type="button" class="color-preset" data-color="#1a5c2a"
+                <button type="button" class="color-preset" data-color="#1a5c2a" data-group="fed"
                   style="width:32px;height:32px;border-radius:6px;border:2px solid transparent;background:#1a5c2a;cursor:pointer;transition:all .15s"
                   title="Verde Escuro"></button>
-                <button type="button" class="color-preset" data-color="#7b1fa2"
+                <button type="button" class="color-preset" data-color="#7b1fa2" data-group="fed"
                   style="width:32px;height:32px;border-radius:6px;border:2px solid transparent;background:#7b1fa2;cursor:pointer;transition:all .15s"
                   title="Roxo"></button>
-                <button type="button" class="color-preset" data-color="#b71c1c"
+                <button type="button" class="color-preset" data-color="#b71c1c" data-group="fed"
                   style="width:32px;height:32px;border-radius:6px;border:2px solid transparent;background:#b71c1c;cursor:pointer;transition:all .15s"
                   title="Vermelho Escuro"></button>
-                <button type="button" class="color-preset" data-color="#e65100"
+                <button type="button" class="color-preset" data-color="#e65100" data-group="fed"
                   style="width:32px;height:32px;border-radius:6px;border:2px solid transparent;background:#e65100;cursor:pointer;transition:all .15s"
                   title="Laranja Escuro"></button>
-                <button type="button" class="color-preset" data-color="#004d40"
+                <button type="button" class="color-preset" data-color="#004d40" data-group="fed"
                   style="width:32px;height:32px;border-radius:6px;border:2px solid transparent;background:#004d40;cursor:pointer;transition:all .15s"
                   title="Verde Teal"></button>
               </div>
@@ -167,25 +167,25 @@
           <div class="field mb-4">
             <label>Cor Tema dos Relatórios</label>
             <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
-              <input type="color" id="org-theme-color" value="#1a2a6c"
+              <input type="color" id="local-theme-color" value="#1a2a6c"
                 style="width:48px;height:40px;border:1.5px solid var(--slate-300);border-radius:8px;cursor:pointer;padding:2px" />
-              <div style="display:flex;gap:.5rem;flex-wrap:wrap" id="color-presets">
-                <button type="button" class="color-preset" data-color="#1a2a6c"
+              <div style="display:flex;gap:.5rem;flex-wrap:wrap" id="local-color-presets">
+                <button type="button" class="color-preset" data-color="#1a2a6c" data-group="local"
                   style="width:32px;height:32px;border-radius:6px;border:2px solid transparent;background:#1a2a6c;cursor:pointer;transition:all .15s"
                   title="Azul Marinho (padrão)"></button>
-                <button type="button" class="color-preset" data-color="#1a5c2a"
+                <button type="button" class="color-preset" data-color="#1a5c2a" data-group="local"
                   style="width:32px;height:32px;border-radius:6px;border:2px solid transparent;background:#1a5c2a;cursor:pointer;transition:all .15s"
                   title="Verde Escuro"></button>
-                <button type="button" class="color-preset" data-color="#7b1fa2"
+                <button type="button" class="color-preset" data-color="#7b1fa2" data-group="local"
                   style="width:32px;height:32px;border-radius:6px;border:2px solid transparent;background:#7b1fa2;cursor:pointer;transition:all .15s"
                   title="Roxo"></button>
-                <button type="button" class="color-preset" data-color="#b71c1c"
+                <button type="button" class="color-preset" data-color="#b71c1c" data-group="local"
                   style="width:32px;height:32px;border-radius:6px;border:2px solid transparent;background:#b71c1c;cursor:pointer;transition:all .15s"
                   title="Vermelho Escuro"></button>
-                <button type="button" class="color-preset" data-color="#e65100"
+                <button type="button" class="color-preset" data-color="#e65100" data-group="local"
                   style="width:32px;height:32px;border-radius:6px;border:2px solid transparent;background:#e65100;cursor:pointer;transition:all .15s"
                   title="Laranja Escuro"></button>
-                <button type="button" class="color-preset" data-color="#004d40"
+                <button type="button" class="color-preset" data-color="#004d40" data-group="local"
                   style="width:32px;height:32px;border-radius:6px;border:2px solid transparent;background:#004d40;cursor:pointer;transition:all .15s"
                   title="Verde Teal"></button>
               </div>
@@ -248,7 +248,8 @@
       }
 
       const themeColor = data.theme_color || '#1a2a6c'
-      document.getElementById('org-theme-color').value = themeColor
+      const colorFieldId = isFederation() ? 'fed-theme-color' : 'local-theme-color'
+      document.getElementById(colorFieldId).value = themeColor
       updateColorPresets(themeColor)
 
       if (isFederation()) {
@@ -271,6 +272,8 @@
     }
   }
 
+  const colorFieldId = isFederation() ? 'fed-theme-color' : 'local-theme-color'
+
   function updateColorPresets(selectedColor) {
     document.querySelectorAll('.color-preset').forEach(btn => {
       const isSelected = btn.dataset.color.toLowerCase() === selectedColor.toLowerCase()
@@ -281,12 +284,12 @@
 
   document.querySelectorAll('.color-preset').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.getElementById('org-theme-color').value = btn.dataset.color
+      document.getElementById(colorFieldId).value = btn.dataset.color
       updateColorPresets(btn.dataset.color)
     })
   })
 
-  document.getElementById('org-theme-color').addEventListener('input', (e) => {
+  document.getElementById(colorFieldId).addEventListener('input', (e) => {
     updateColorPresets(e.target.value)
   })
 
@@ -347,7 +350,7 @@
         organization_date: document.getElementById('local-org-date').value || null,
       }
     }
-    payload.theme_color = document.getElementById('org-theme-color').value
+    payload.theme_color = document.getElementById(colorFieldId)?.value || '#1a2a6c'
 
     try {
       await api.put(updateEndpoint, payload)
