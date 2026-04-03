@@ -198,6 +198,6 @@ def _to_out(f: Federation) -> dict:
         "synodal_name": f.synodal_name,
         "address": f.address,
         "logo_url": f.logo_url,
-        "theme_color": f.theme_color or "#1a2a6c",
+        "theme_color": getattr(f, 'theme_color', None) or "#1a2a6c",
         "is_active": f.is_active,
     }

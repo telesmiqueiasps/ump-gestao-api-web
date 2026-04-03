@@ -243,7 +243,7 @@ def _to_out(l: LocalUmp) -> dict:
         "presbytery_name": l.presbytery_name,
         "address": l.address,
         "logo_url": l.logo_url,
-        "theme_color": l.theme_color or "#1a2a6c",
+        "theme_color": getattr(l, 'theme_color', None) or "#1a2a6c",
         "fiscal_year": l.fiscal_year,
         "initial_balance": float(l.initial_balance) if l.initial_balance else 0.0,
         "is_active": l.is_active,
