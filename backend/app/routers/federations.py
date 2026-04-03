@@ -35,6 +35,7 @@ class FederationOut(BaseModel):
     synodal_name: Optional[str]
     address: Optional[str]
     logo_url: Optional[str]
+    theme_color: Optional[str] = '#1a2a6c'
     is_active: bool
 
     class Config:
