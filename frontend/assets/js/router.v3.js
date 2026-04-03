@@ -92,6 +92,11 @@ export function renderShell() {
     : ''
 
   const userRoles = user?.roles ?? []
+  const societyType = localStorage.getItem('society_type') || 'UMP'
+  const memberLabel = societyType === 'SAF' ? 'Associadas'
+    : societyType === 'UPA' ? 'Participantes'
+    : societyType === 'UPH' ? 'Membros'
+    : 'Sócios'
 
   const navHTML = NAV_ITEMS
     .filter(item => {
@@ -100,12 +105,19 @@ export function renderShell() {
       if (item.roles === null) return true
       return item.roles.some(r => userRoles.includes(r))
     })
-    .map(item => `
-      <button class="nav-item" data-page="${item.page}" onclick="navigate('${item.page}')">
-        <img class="nav-icon" src="${item.icon}" alt="" />
-        ${item.label}
-      </button>
-    `).join('')
+    .map(item => {
+      const label = item.page === 'local-umps'
+        ? `${societyType}s Locais`
+        : item.page === 'members'
+        ? memberLabel
+        : item.label
+      return `
+        <button class="nav-item" data-page="${item.page}" onclick="navigate('${item.page}')">
+          <img class="nav-icon" src="${item.icon}" alt="" />
+          ${label}
+        </button>
+      `
+    }).join('')
 
   document.getElementById('sidebar-nav').innerHTML = navHTML
   document.getElementById('header-name').textContent = user.full_name
@@ -264,13 +276,18 @@ export function renderBottomNav(currentPage) {
   if (!user) return
 
   const userRoles = user?.roles ?? []
+  const bottomSocietyType = localStorage.getItem('society_type') || 'UMP'
+  const bottomMemberLabel = bottomSocietyType === 'SAF' ? 'Associadas'
+    : bottomSocietyType === 'UPA' ? 'Participantes'
+    : bottomSocietyType === 'UPH' ? 'Membros'
+    : 'Sócios'
 
   const BOTTOM_ITEMS = [
-    { page: 'dashboard', label: 'Início',     icon: '⊞', roles: null },
-    { page: 'finances',  label: 'Financeiro', icon: '◈', roles: ['presidente','vice_presidente','tesoureiro','conselheiro','secretario_presbiterial'] },
-    { page: 'members',   label: getSocietyLabel('membros'), icon: '◉', localOnly: true, roles: ['presidente','vice_presidente','tesoureiro','conselheiro','secretario_presbiterial'] },
-    { page: 'board',     label: 'Diretoria',  icon: '❖', roles: ['presidente','vice_presidente','conselheiro','secretario_presbiterial'] },
-    { page: 'notices',   label: 'Avisos',     icon: '📢', roles: null },
+    { page: 'dashboard', label: 'Início',          icon: '⊞', roles: null },
+    { page: 'finances',  label: 'Financeiro',       icon: '◈', roles: ['presidente','vice_presidente','tesoureiro','conselheiro','secretario_presbiterial'] },
+    { page: 'members',   label: bottomMemberLabel,  icon: '◉', localOnly: true, roles: ['presidente','vice_presidente','tesoureiro','conselheiro','secretario_presbiterial'] },
+    { page: 'board',     label: 'Diretoria',        icon: '❖', roles: ['presidente','vice_presidente','conselheiro','secretario_presbiterial'] },
+    { page: 'notices',   label: 'Avisos',           icon: '📢', roles: null },
   ]
 
   const visibleItems = BOTTOM_ITEMS.filter(item => {
