@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ump-gestao-v6'
+const CACHE_NAME = 'ump-gestao-v7'
 
 // Apenas imagens são cacheadas
 const STATIC_ASSETS = [
