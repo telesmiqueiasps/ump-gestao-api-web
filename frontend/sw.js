@@ -44,7 +44,12 @@ self.addEventListener('fetch', (event) => {
     url.includes('.css?') ||
     url.includes('.html?')
   ) {
-    event.respondWith(fetch(event.request))
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        // Se falhar, retorna response vazio
+        return new Response('Network error', { status: 503 })
+      })
+    )
     return
   }
 
@@ -65,6 +70,9 @@ self.addEventListener('fetch', (event) => {
             caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone))
           }
           return response
+        }).catch(err => {
+          // Se falhar, tenta servir do cache ou retorna erro
+          return caches.match(event.request) || new Response('Network error', { status: 503 })
         })
       })
     )
@@ -72,7 +80,11 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Todo o resto vai direto para a rede sem cache
-  event.respondWith(fetch(event.request))
+  event.respondWith(
+    fetch(event.request).catch(() => {
+      return new Response('Network error', { status: 503 })
+    })
+  )
 })
 
 self.addEventListener('message', (event) => {
