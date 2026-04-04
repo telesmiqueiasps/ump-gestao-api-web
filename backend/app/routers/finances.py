@@ -290,15 +290,15 @@ def delete_transaction(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    import logging
     import re
-    logger = logging.getLogger(__name__)
+    from app.services.storage import delete_file, delete_folder
+    from app.core.config import get_settings
+    settings_obj = get_settings()
 
     transaction = db.query(FinancialTransaction).filter(
         FinancialTransaction.id == transaction_id,
         FinancialTransaction.organization_id == current_user.organization_id,
     ).first()
-
     if not transaction:
         raise HTTPException(status_code=404, detail="Lançamento não encontrado")
 
@@ -308,47 +308,40 @@ def delete_transaction(
     if period and period.is_closed:
         raise HTTPException(status_code=400, detail="Período encerrado — lançamento não pode ser excluído")
 
-    # Captura receipt_url ANTES de qualquer operação de delete
+    # Captura receipt_url antes de deletar
     receipt_url = str(transaction.receipt_url) if transaction.receipt_url else None
-    logger.info(f"DELETE transaction {transaction_id} - receipt_url capturado: {receipt_url}")
 
-    # Deleta o registro do banco primeiro
+    # Nulifica referências em member_monthly_fees se existir
+    try:
+        from app.models.member_fees import MemberMonthlyFee, MemberAciContribution
+        db.query(MemberMonthlyFee).filter(
+            MemberMonthlyFee.transaction_id == transaction_id
+        ).update({"transaction_id": None, "is_paid": False}, synchronize_session=False)
+
+        db.query(MemberAciContribution).filter(
+            MemberAciContribution.transaction_id == transaction_id
+        ).update({"transaction_id": None}, synchronize_session=False)
+    except Exception:
+        pass  # Tabelas podem não existir em ambientes antigos
+
+    # Deleta o lançamento
     db.delete(transaction)
     db.commit()
-    logger.info(f"Transação {transaction_id} deletada do banco")
 
-    # Depois tenta excluir do Backblaze
+    # Exclui comprovante do B2 se existir
     if receipt_url:
-        from app.services.storage import delete_file, delete_folder
-        from app.core.config import get_settings
-        settings = get_settings()
-        bucket_name = settings.b2_bucket_name
-
-        logger.info(f"Tentando excluir comprovante - URL: {receipt_url} - Bucket: {bucket_name}")
-
+        bucket_name = settings_obj.b2_bucket_name
         key = None
-
         match1 = re.search(rf'/file/{re.escape(bucket_name)}/(.+)$', receipt_url)
         if match1:
             key = match1.group(1)
-            logger.info(f"Key extraída (formato f005): {key}")
-
         if not key:
             match2 = re.search(rf'/{re.escape(bucket_name)}/(.+)$', receipt_url)
             if match2:
                 key = match2.group(1)
-                logger.info(f"Key extraída (formato S3): {key}")
-
         if key:
-            # Exclui o arquivo e toda a pasta da transação
             folder_prefix = '/'.join(key.split('/')[:-1]) + '/'
-            logger.info(f"Excluindo pasta completa: {folder_prefix}")
-            result = delete_folder(folder_prefix)
-            logger.info(f"Resultado exclusão pasta B2: {result}")
-        else:
-            logger.info(f"Não foi possível extrair key da URL: {receipt_url}")
-    else:
-        logger.info("Sem comprovante para excluir do B2")
+            delete_folder(folder_prefix)
 
 
 # Excluir todos os comprovantes de um ano
