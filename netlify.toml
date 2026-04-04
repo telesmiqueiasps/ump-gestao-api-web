@@ -1,6 +1,5 @@
 [build]
   publish = "frontend"
-  command = "echo 'Frontend build complete'"
 
 [build.environment]
   NODE_ENV = "production"
