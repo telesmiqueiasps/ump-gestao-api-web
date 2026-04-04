@@ -18,6 +18,41 @@
   <link rel="stylesheet" href="../assets/css/main.css?v=9" />
   <link rel="stylesheet" href="../assets/css/components.css?v=9" />
   <link rel="stylesheet" href="../assets/css/layout.v2.css?v=9" />
+  <style>
+    .contrib-tab {
+      padding: .45rem 1rem;
+      border: none;
+      background: none;
+      font-size: .875rem;
+      font-weight: 500;
+      color: var(--slate-500);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      font-family: inherit;
+      transition: all .15s;
+    }
+    .contrib-tab.active {
+      color: var(--brand-blue, #1a2a6c);
+      border-bottom-color: var(--brand-blue, #1a2a6c);
+    }
+    .month-fee-card {
+      border: 1.5px solid var(--slate-200);
+      border-radius: var(--radius);
+      padding: .65rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all .15s;
+      background: #fff;
+    }
+    .month-fee-card:hover { border-color: #1a2a6c; }
+    .month-fee-card.paid { border-color: var(--green-600, #16a34a); background: #f0fdf4; }
+    .month-fee-card.paid .fee-status { color: var(--green-700, #15803d); }
+    .month-fee-card .fee-month  { font-size: .78rem; font-weight: 600; color: var(--slate-700); }
+    .month-fee-card .fee-status { font-size: .65rem; margin-top: .2rem; }
+    .month-fee-card .fee-amount { font-size: .75rem; font-weight: 600; margin-top: .15rem; }
+    .month-fee-card .fee-date   { font-size: .62rem; color: var(--slate-400); margin-top: .1rem; }
+  </style>
 </head>
 <body>
 
@@ -55,13 +90,35 @@
     <main class="page-content">
       <div class="page-header">
         <div class="page-header-info">
-          <h1>Sócios</h1>
+          <h1 id="page-title">Sócios</h1>
           <p>Gerencie os sócios da sua sociedade</p>
         </div>
         <button class="btn btn-primary" id="btn-new-member">+ Novo sócio</button>
       </div>
 
       <div id="page-alert" class="hidden"></div>
+
+      <!-- Card de configuração de valores -->
+      <div class="card mb-4" id="fees-config-card">
+        <div class="card-header">
+          <h2>⚙️ Configuração de Valores</h2>
+          <button class="btn btn-secondary btn-sm" id="btn-toggle-config">Editar</button>
+        </div>
+        <div id="config-form" style="display:none;margin-top:1rem">
+          <div class="grid-2 mb-4">
+            <div class="field">
+              <label>Valor da Mensalidade Mensal (R$)</label>
+              <input class="input" type="number" step="0.01" id="config-monthly-value" placeholder="0,00" />
+            </div>
+            <div class="field">
+              <label>Valor da ACI do Ano (R$)</label>
+              <input class="input" type="number" step="0.01" id="config-aci-value" placeholder="0,00" />
+            </div>
+          </div>
+          <div id="config-alert" class="hidden mb-3"></div>
+          <button class="btn btn-primary btn-sm" id="btn-save-config">Salvar configurações</button>
+        </div>
+      </div>
 
       <div class="filter-bar">
         <button class="filter-btn active" id="filter-active" onclick="setFilter(true)">Ativos</button>
@@ -138,25 +195,106 @@
   </div>
 </div>
 
-<!-- Modal Mensalidade -->
-<div class="modal-overlay" id="modal-fee">
-  <div class="modal modal-sm">
+<!-- Modal Contribuições -->
+<div class="modal-overlay" id="modal-contributions">
+  <div class="modal modal-lg" style="max-height:90vh;overflow-y:auto">
     <div class="modal-header">
-      <h2>Registrar Mensalidade</h2>
+      <div>
+        <h2 id="modal-contrib-title">Contribuições</h2>
+        <p class="text-sm text-slate-500" id="modal-contrib-subtitle"></p>
+      </div>
       <button class="modal-close">✕</button>
     </div>
-    <div class="field mb-4">
-      <label>Mês de referência</label>
-      <input class="input" type="date" id="fee-month" />
+
+    <!-- Abas -->
+    <div style="display:flex;gap:.5rem;margin-bottom:1.25rem;border-bottom:2px solid var(--slate-100);padding-bottom:.5rem">
+      <button class="contrib-tab active" data-tab="monthly" onclick="switchContribTab('monthly')">💰 Mensalidades</button>
+      <button class="contrib-tab" data-tab="aci" onclick="switchContribTab('aci')">📋 ACI</button>
     </div>
-    <div class="field mb-4">
+
+    <!-- Aba Mensalidades -->
+    <div id="tab-monthly">
+      <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap">
+        <select class="input" id="monthly-year-select" style="width:auto"></select>
+        <span class="text-sm text-slate-500" id="monthly-summary"></span>
+      </div>
+      <div id="monthly-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:.6rem"></div>
+    </div>
+
+    <!-- Aba ACI -->
+    <div id="tab-aci" style="display:none">
+      <div class="card mb-4" id="aci-progress-card" style="padding:1rem">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem">
+          <div>
+            <p class="text-sm font-semi">ACI <span id="aci-year-label"></span></p>
+            <p class="text-xs text-slate-400">Valor anual: <strong id="aci-year-value-label"></strong></p>
+          </div>
+          <span class="badge" id="aci-status-badge"></span>
+        </div>
+        <div style="background:var(--slate-100);border-radius:99px;height:8px;overflow:hidden;margin-bottom:.5rem">
+          <div id="aci-progress-bar" style="height:100%;border-radius:99px;background:#16a34a;transition:width .4s ease;width:0%"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span class="text-xs text-slate-500">Pago: <strong id="aci-paid-label" style="color:#16a34a"></strong></span>
+          <span class="text-xs text-slate-500">Falta: <strong id="aci-remaining-label" style="color:#dc2626"></strong></span>
+        </div>
+      </div>
+      <div id="aci-list"></div>
+      <button class="btn btn-primary btn-sm mt-4" id="btn-new-aci">+ Registrar Contribuição ACI</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Registrar Mensalidade -->
+<div class="modal-overlay" id="modal-monthly-fee">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2 id="modal-monthly-title">Registrar Mensalidade</h2>
+      <button class="modal-close">✕</button>
+    </div>
+    <div class="field mb-3">
+      <label>Data do pagamento</label>
+      <input class="input" type="date" id="fee-paid-at" />
+    </div>
+    <div class="field mb-3">
       <label>Valor (R$)</label>
-      <input class="input" type="number" step="0.01" id="fee-amount" placeholder="0,00" />
+      <input class="input" type="number" step="0.01" id="fee-amount" />
     </div>
-    <div id="fee-alert" class="hidden mb-4"></div>
+    <div class="field mb-3">
+      <label>Comprovante <span class="text-slate-400" style="font-weight:400">(opcional)</span></label>
+      <input class="input" type="file" id="fee-receipt" accept="image/png,image/jpeg,application/pdf" />
+    </div>
+    <div id="fee-alert" class="hidden mb-3"></div>
     <div class="modal-footer">
       <button class="btn btn-secondary modal-close">Cancelar</button>
-      <button class="btn btn-primary" id="btn-save-fee">Registrar</button>
+      <button class="btn btn-primary" id="btn-save-monthly-fee">Registrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Registrar ACI -->
+<div class="modal-overlay" id="modal-aci-contrib">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2>Registrar Contribuição ACI</h2>
+      <button class="modal-close">✕</button>
+    </div>
+    <div class="field mb-3">
+      <label>Data do pagamento</label>
+      <input class="input" type="date" id="aci-paid-at" />
+    </div>
+    <div class="field mb-3">
+      <label>Valor (R$)</label>
+      <input class="input" type="number" step="0.01" id="aci-amount" />
+    </div>
+    <div class="field mb-3">
+      <label>Comprovante <span class="text-slate-400" style="font-weight:400">(opcional)</span></label>
+      <input class="input" type="file" id="aci-receipt" accept="image/png,image/jpeg,application/pdf" />
+    </div>
+    <div id="aci-alert" class="hidden mb-3"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary modal-close">Cancelar</button>
+      <button class="btn btn-primary" id="btn-save-aci">Registrar</button>
     </div>
   </div>
 </div>
@@ -165,7 +303,7 @@
   import { requireAuth, isLocalUmp } from '../assets/js/auth.js?v=9'
   import { renderShell, canAccessPage, renderBottomNav } from '../assets/js/router.v3.js?v=9'
   import { api } from '../assets/js/api.js?v=9'
-  import { formatDate, showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading, getSocietyLabel } from '../assets/js/utils.js?v=9'
+  import { formatCurrency, formatDate, showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading, getSocietyLabel } from '../assets/js/utils.js?v=9'
 
   (async () => {
     if (!requireAuth()) throw new Error()
@@ -174,160 +312,389 @@
     await renderShell()
     renderBottomNav('members')
     document.querySelector('[data-page="members"]')?.classList.add('active')
-  initModalClose()
+    initModalClose()
 
-  // Nomenclatura dinâmica
-  document.querySelector('.page-header-info h1').textContent = getSocietyLabel('membros')
-  document.getElementById('btn-new-member').textContent = '+ Novo ' + getSocietyLabel('membro')
+    // Nomenclatura dinâmica
+    document.getElementById('page-title').textContent = getSocietyLabel('membros')
+    document.getElementById('btn-new-member').textContent = '+ Novo ' + getSocietyLabel('membro')
 
-  let activeOnly = true
-  let editId = null
-  let feeTargetId = null
+    let activeOnly = true
+    let editId = null
 
-  window.setFilter = (active) => {
-    activeOnly = active
-    document.getElementById('filter-active').classList.toggle('active', active)
-    document.getElementById('filter-all').classList.toggle('active', !active)
+    // ── Estado das contribuições ──
+    let currentMemberId = null
+    let currentMemberName = null
+    let currentContribYear = new Date().getFullYear()
+    let feesConfig = { monthly_fee_value: 0, aci_year_value: 0 }
+    let monthlyData = []
+    let aciData = null
+
+    // ── Carrega configuração ──
+    async function loadFeesConfig() {
+      try {
+        feesConfig = await api.get('/api/member-fees/config')
+        document.getElementById('config-monthly-value').value = feesConfig.monthly_fee_value
+        document.getElementById('config-aci-value').value     = feesConfig.aci_year_value
+      } catch {}
+    }
+
+    // ── Configuração: toggle e salvar ──
+    document.getElementById('btn-toggle-config').addEventListener('click', () => {
+      const form = document.getElementById('config-form')
+      const open = form.style.display === 'none'
+      form.style.display = open ? 'block' : 'none'
+      document.getElementById('btn-toggle-config').textContent = open ? 'Fechar' : 'Editar'
+    })
+
+    document.getElementById('btn-save-config').addEventListener('click', async () => {
+      const btn = document.getElementById('btn-save-config')
+      setLoading(btn, true, 'Salvar configurações')
+      try {
+        feesConfig = await api.put('/api/member-fees/config', {
+          monthly_fee_value: parseFloat(document.getElementById('config-monthly-value').value || 0),
+          aci_year_value:    parseFloat(document.getElementById('config-aci-value').value || 0),
+        })
+        document.getElementById('config-form').style.display = 'none'
+        document.getElementById('btn-toggle-config').textContent = 'Editar'
+        showAlert('config-alert', 'Configurações salvas!', 'success')
+      } catch(err) {
+        showAlert('config-alert', err.message, 'error')
+      } finally {
+        setLoading(btn, false, 'Salvar configurações')
+      }
+    })
+
+    // ── Sócios ──
+    window.setFilter = (active) => {
+      activeOnly = active
+      document.getElementById('filter-active').classList.toggle('active', active)
+      document.getElementById('filter-all').classList.toggle('active', !active)
+      loadMembers()
+    }
+
+    async function loadMembers() {
+      try {
+        const data = await api.get(`/api/members/?active_only=${activeOnly}`)
+        document.getElementById('member-count').textContent = `${data.length} sócio${data.length !== 1 ? 's' : ''}`
+        renderTable(data)
+      } catch(err) {
+        showAlert('page-alert', err.message, 'error')
+      }
+    }
+
+    function renderTable(members) {
+      const tbody = document.getElementById('members-body')
+      if (!members.length) {
+        tbody.innerHTML = `<tr><td colspan="7" class="table-empty">Nenhum sócio encontrado.</td></tr>`
+        return
+      }
+      tbody.innerHTML = members.map(m => `
+        <tr>
+          <td class="font-medium">${m.full_name}</td>
+          <td><span class="badge ${m.member_type === 'ativo' ? 'badge-blue' : 'badge-slate'}">${m.member_type === 'ativo' ? 'Ativo' : 'Cooperador'}</span></td>
+          <td class="hide-mobile">${m.email ?? '—'}</td>
+          <td class="hide-mobile">${m.phone ?? '—'}</td>
+          <td class="hide-mobile">${formatDate(m.join_date)}</td>
+          <td class="text-center"><span class="badge ${m.is_active ? 'badge-green' : 'badge-slate'}">${m.is_active ? 'Ativo' : 'Inativo'}</span></td>
+          <td>
+            <div class="row-actions">
+              <button class="btn btn-ghost btn-icon" title="Contribuições" onclick="openContributions('${m.id}','${m.full_name.replace(/'/g, "\\'")}')">📋</button>
+              <button class="btn btn-ghost btn-icon" title="Editar" onclick="editMember('${m.id}','${m.full_name.replace(/'/g, "\\'")}','${m.member_type}','${m.email??''}','${m.phone??''}','${m.birth_date??''}','${m.join_date??''}')">✎</button>
+              ${m.is_active ? `<button class="btn btn-ghost btn-icon danger" title="Desativar" onclick="deactivate('${m.id}','${m.full_name.replace(/'/g, "\\'")}')">✕</button>` : ''}
+            </div>
+          </td>
+        </tr>
+      `).join('')
+    }
+
+    // ── Novo / Editar sócio ──
+    document.getElementById('btn-new-member').addEventListener('click', () => {
+      editId = null
+      document.getElementById('modal-member-title').textContent = 'Novo Sócio'
+      document.getElementById('m-name').value  = ''
+      document.getElementById('m-type').value  = 'ativo'
+      document.getElementById('m-email').value = ''
+      document.getElementById('m-phone').value = ''
+      document.getElementById('m-birth').value = ''
+      document.getElementById('m-join').value  = new Date().toISOString().split('T')[0]
+      clearAlert('member-alert')
+      openModal('modal-member')
+    })
+
+    window.editMember = (id, name, type, email, phone, birth, join) => {
+      editId = id
+      document.getElementById('modal-member-title').textContent = 'Editar Sócio'
+      document.getElementById('m-name').value  = name
+      document.getElementById('m-type').value  = type
+      document.getElementById('m-email').value = email
+      document.getElementById('m-phone').value = phone
+      document.getElementById('m-birth').value = birth
+      document.getElementById('m-join').value  = join
+      clearAlert('member-alert')
+      openModal('modal-member')
+    }
+
+    document.getElementById('btn-save-member').addEventListener('click', async () => {
+      const btn = document.getElementById('btn-save-member')
+      const name = document.getElementById('m-name').value.trim()
+      if (!name) { showAlert('member-alert', 'Informe o nome do sócio.', 'error'); return }
+
+      const payload = {
+        full_name:   name,
+        member_type: document.getElementById('m-type').value,
+        email:       document.getElementById('m-email').value || null,
+        phone:       document.getElementById('m-phone').value || null,
+        birth_date:  document.getElementById('m-birth').value || null,
+        join_date:   document.getElementById('m-join').value  || null,
+      }
+
+      setLoading(btn, true, 'Salvar')
+      try {
+        if (editId) await api.put(`/api/members/${editId}`, payload)
+        else        await api.post('/api/members/', payload)
+        closeModal('modal-member')
+        loadMembers()
+      } catch(err) {
+        showAlert('member-alert', err.message, 'error')
+      } finally {
+        setLoading(btn, false, 'Salvar')
+      }
+    })
+
+    window.deactivate = async (id, name) => {
+      if (!confirm(`Desativar ${name}?`)) return
+      try {
+        await api.delete(`/api/members/${id}`)
+        loadMembers()
+      } catch(err) { showAlert('page-alert', err.message, 'error') }
+    }
+
+    // ── Contribuições: abrir modal ──
+    window.openContributions = async (memberId, memberName) => {
+      currentMemberId  = memberId
+      currentMemberName = memberName
+      document.getElementById('modal-contrib-title').textContent   = memberName
+      document.getElementById('modal-contrib-subtitle').textContent = 'Gestão de mensalidades e ACI'
+      switchContribTab('monthly')
+      openModal('modal-contributions')
+      await loadMonthlyFees()
+    }
+
+    // ── Trocar aba ──
+    window.switchContribTab = (tab) => {
+      document.querySelectorAll('.contrib-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab))
+      document.getElementById('tab-monthly').style.display = tab === 'monthly' ? 'block' : 'none'
+      document.getElementById('tab-aci').style.display     = tab === 'aci'     ? 'block' : 'none'
+      if (tab === 'aci') loadAciContributions()
+    }
+
+    // ── Mensalidades ──
+    async function loadMonthlyFees() {
+      try {
+        monthlyData = await api.get(`/api/member-fees/monthly/${currentMemberId}?year=${currentContribYear}`)
+        renderMonthlyGrid()
+        const paid = monthlyData.filter(m => m.is_paid).length
+        document.getElementById('monthly-summary').textContent = `${paid} de 12 meses pagos em ${currentContribYear}`
+      } catch(err) { console.error(err) }
+    }
+
+    function renderMonthlyGrid() {
+      document.getElementById('monthly-grid').innerHTML = monthlyData.map(m => `
+        <div class="month-fee-card ${m.is_paid ? 'paid' : ''}"
+          onclick="${m.is_paid
+            ? `viewMonthlyFee('${m.id}','${m.month_label}','${m.reference_month}')`
+            : `openRegisterMonthly('${m.reference_month}','${m.month_label}')`}">
+          <div class="fee-month">${m.month_label.substring(0, 3)}</div>
+          <div class="fee-status">${m.is_paid ? '✓ Pago' : '○ Pendente'}</div>
+          ${m.is_paid ? `<div class="fee-amount">${formatCurrency(m.amount)}</div>` : ''}
+          ${m.paid_at ? `<div class="fee-date">${formatDate(m.paid_at)}</div>` : ''}
+        </div>
+      `).join('')
+    }
+
+    window.openRegisterMonthly = (refMonth, monthLabel) => {
+      document.getElementById('modal-monthly-title').textContent = `Mensalidade — ${monthLabel}`
+      document.getElementById('fee-paid-at').value  = new Date().toISOString().split('T')[0]
+      document.getElementById('fee-amount').value   = feesConfig.monthly_fee_value || ''
+      document.getElementById('fee-receipt').value  = ''
+      document.getElementById('btn-save-monthly-fee').dataset.refMonth = refMonth
+      clearAlert('fee-alert')
+      openModal('modal-monthly-fee')
+    }
+
+    window.viewMonthlyFee = (feeId, monthLabel) => {
+      if (confirm(`Mensalidade de ${monthLabel} já registrada.\n\nDeseja EXCLUIR este registro?\nIsso também remove o lançamento financeiro vinculado.`)) {
+        deleteMonthlyFee(feeId)
+      }
+    }
+
+    async function deleteMonthlyFee(feeId) {
+      try {
+        await api.delete(`/api/member-fees/monthly/${feeId}`)
+        await loadMonthlyFees()
+      } catch(err) { alert('Erro ao excluir: ' + err.message) }
+    }
+
+    document.getElementById('btn-save-monthly-fee').addEventListener('click', async () => {
+      const btn     = document.getElementById('btn-save-monthly-fee')
+      const refMonth = btn.dataset.refMonth
+      const paidAt  = document.getElementById('fee-paid-at').value
+      const amount  = parseFloat(document.getElementById('fee-amount').value)
+
+      if (!paidAt || !amount || !refMonth) {
+        showAlert('fee-alert', 'Preencha todos os campos.', 'error'); return
+      }
+
+      setLoading(btn, true, 'Registrar')
+      try {
+        const fee = await api.post('/api/member-fees/monthly', {
+          member_id: currentMemberId,
+          reference_month: refMonth,
+          amount,
+          paid_at: paidAt,
+        })
+        const fileInput = document.getElementById('fee-receipt')
+        if (fileInput.files[0]) {
+          const fd = new FormData()
+          fd.append('file', fileInput.files[0])
+          await api.upload(`/api/member-fees/monthly/${fee.id}/receipt`, fd)
+        }
+        closeModal('modal-monthly-fee')
+        await loadMonthlyFees()
+      } catch(err) {
+        showAlert('fee-alert', err.message, 'error')
+      } finally {
+        setLoading(btn, false, 'Registrar')
+      }
+    })
+
+    // ── ACI ──
+    async function loadAciContributions() {
+      try {
+        aciData = await api.get(`/api/member-fees/aci/${currentMemberId}?year=${currentContribYear}`)
+
+        document.getElementById('aci-year-label').textContent       = currentContribYear
+        document.getElementById('aci-year-value-label').textContent = formatCurrency(aciData.aci_year_value)
+        document.getElementById('aci-paid-label').textContent       = formatCurrency(aciData.total_paid)
+        document.getElementById('aci-remaining-label').textContent  = formatCurrency(aciData.remaining)
+        document.getElementById('aci-progress-bar').style.width     = `${Math.min(100, aciData.progress_percent)}%`
+
+        const badge = document.getElementById('aci-status-badge')
+        badge.textContent = aciData.is_complete ? '✓ Completa' : `${aciData.progress_percent}%`
+        badge.className   = `badge ${aciData.is_complete ? 'badge-green' : 'badge-amber'}`
+
+        const list = document.getElementById('aci-list')
+        if (!aciData.contributions.length) {
+          list.innerHTML = '<p class="text-sm text-slate-400 text-center" style="padding:1rem">Nenhuma contribuição ACI registrada.</p>'
+        } else {
+          list.innerHTML = `
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Data</th><th>Valor</th><th class="text-center">Comprovante</th><th></th></tr></thead>
+                <tbody>
+                  ${aciData.contributions.map(c => `
+                    <tr>
+                      <td>${formatDate(c.payment_date)}</td>
+                      <td class="font-medium" style="color:#16a34a">${formatCurrency(c.amount)}</td>
+                      <td class="text-center">
+                        ${c.transaction_id
+                          ? `<button class="btn btn-ghost btn-sm" style="font-size:.75rem" onclick="viewAciReceipt('${c.transaction_id}')">Ver</button>`
+                          : '—'}
+                      </td>
+                      <td><button class="btn btn-ghost btn-icon danger" onclick="deleteAci('${c.id}')">✕</button></td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>`
+        }
+      } catch(err) { console.error(err) }
+    }
+
+    window.viewAciReceipt = async (transactionId) => {
+      try {
+        const data = await api.get(`/api/finances/transactions/${transactionId}/receipt-url`)
+        window.open(data.url, '_blank')
+      } catch { alert('Comprovante não disponível') }
+    }
+
+    window.deleteAci = async (contribId) => {
+      if (!confirm('Excluir esta contribuição ACI?\nIsso também remove o lançamento financeiro vinculado.')) return
+      try {
+        await api.delete(`/api/member-fees/aci/${contribId}`)
+        await loadAciContributions()
+      } catch(err) { alert('Erro ao excluir: ' + err.message) }
+    }
+
+    document.getElementById('btn-new-aci').addEventListener('click', () => {
+      document.getElementById('aci-paid-at').value = new Date().toISOString().split('T')[0]
+      document.getElementById('aci-amount').value  = ''
+      document.getElementById('aci-receipt').value = ''
+      clearAlert('aci-alert')
+      openModal('modal-aci-contrib')
+    })
+
+    document.getElementById('btn-save-aci').addEventListener('click', async () => {
+      const btn    = document.getElementById('btn-save-aci')
+      const paidAt = document.getElementById('aci-paid-at').value
+      const amount = parseFloat(document.getElementById('aci-amount').value)
+
+      if (!paidAt || !amount) {
+        showAlert('aci-alert', 'Preencha todos os campos.', 'error'); return
+      }
+
+      setLoading(btn, true, 'Registrar')
+      try {
+        const contrib = await api.post('/api/member-fees/aci', {
+          member_id:    currentMemberId,
+          fiscal_year:  currentContribYear,
+          payment_date: paidAt,
+          amount,
+        })
+        const fileInput = document.getElementById('aci-receipt')
+        if (fileInput.files[0]) {
+          const fd = new FormData()
+          fd.append('file', fileInput.files[0])
+          await api.upload(`/api/member-fees/aci/${contrib.id}/receipt`, fd)
+        }
+        closeModal('modal-aci-contrib')
+        await loadAciContributions()
+      } catch(err) {
+        showAlert('aci-alert', err.message, 'error')
+      } finally {
+        setLoading(btn, false, 'Registrar')
+      }
+    })
+
+    // ── Seletor de ano no modal ──
+    const yearSelect = document.getElementById('monthly-year-select')
+    const thisYear   = new Date().getFullYear()
+    ;[thisYear - 1, thisYear, thisYear + 1].forEach(y => {
+      const opt = document.createElement('option')
+      opt.value = y; opt.textContent = y
+      if (y === currentContribYear) opt.selected = true
+      yearSelect.appendChild(opt)
+    })
+    yearSelect.addEventListener('change', async () => {
+      currentContribYear = Number(yearSelect.value)
+      await loadMonthlyFees()
+      if (document.querySelector('.contrib-tab[data-tab="aci"]').classList.contains('active')) {
+        await loadAciContributions()
+      }
+    })
+
+    // ── Init ──
+    await loadFeesConfig()
     loadMembers()
-  }
-
-  async function loadMembers() {
-    try {
-      const data = await api.get(`/api/members/?active_only=${activeOnly}`)
-      document.getElementById('member-count').textContent = `${data.length} sócio${data.length !== 1 ? 's' : ''}`
-      renderTable(data)
-    } catch(err) {
-      showAlert('page-alert', err.message, 'error')
-    }
-  }
-
-  function renderTable(members) {
-    const tbody = document.getElementById('members-body')
-    if (!members.length) {
-      tbody.innerHTML = `<tr><td colspan="7" class="table-empty">Nenhum sócio encontrado.</td></tr>`
-      return
-    }
-    tbody.innerHTML = members.map(m => `
-      <tr>
-        <td class="font-medium">${m.full_name}</td>
-        <td><span class="badge ${m.member_type === 'ativo' ? 'badge-blue' : 'badge-slate'}">${m.member_type === 'ativo' ? 'Ativo' : 'Cooperador'}</span></td>
-        <td class="hide-mobile">${m.email ?? '—'}</td>
-        <td class="hide-mobile">${m.phone ?? '—'}</td>
-        <td class="hide-mobile">${formatDate(m.join_date)}</td>
-        <td class="text-center"><span class="badge ${m.is_active ? 'badge-green' : 'badge-slate'}">${m.is_active ? 'Ativo' : 'Inativo'}</span></td>
-        <td>
-          <div class="row-actions">
-            <button class="btn btn-ghost btn-icon" title="Mensalidade" onclick="openFee('${m.id}')">✓</button>
-            <button class="btn btn-ghost btn-icon" title="Editar" onclick="editMember('${m.id}','${m.full_name}','${m.member_type}','${m.email??''}','${m.phone??''}','${m.birth_date??''}','${m.join_date??''}')">✎</button>
-            ${m.is_active ? `<button class="btn btn-ghost btn-icon danger" title="Desativar" onclick="deactivate('${m.id}','${m.full_name}')">✕</button>` : ''}
-          </div>
-        </td>
-      </tr>
-    `).join('')
-  }
-
-  // Novo sócio
-  document.getElementById('btn-new-member').addEventListener('click', () => {
-    editId = null
-    document.getElementById('modal-member-title').textContent = 'Novo Sócio'
-    document.getElementById('m-name').value  = ''
-    document.getElementById('m-type').value  = 'ativo'
-    document.getElementById('m-email').value = ''
-    document.getElementById('m-phone').value = ''
-    document.getElementById('m-birth').value = ''
-    document.getElementById('m-join').value  = new Date().toISOString().split('T')[0]
-    clearAlert('member-alert')
-    openModal('modal-member')
-  })
-
-  window.editMember = (id, name, type, email, phone, birth, join) => {
-    editId = id
-    document.getElementById('modal-member-title').textContent = 'Editar Sócio'
-    document.getElementById('m-name').value  = name
-    document.getElementById('m-type').value  = type
-    document.getElementById('m-email').value = email
-    document.getElementById('m-phone').value = phone
-    document.getElementById('m-birth').value = birth
-    document.getElementById('m-join').value  = join
-    clearAlert('member-alert')
-    openModal('modal-member')
-  }
-
-  document.getElementById('btn-save-member').addEventListener('click', async () => {
-    const btn = document.getElementById('btn-save-member')
-    const name = document.getElementById('m-name').value.trim()
-    if (!name) { showAlert('member-alert', 'Informe o nome do sócio.', 'error'); return }
-
-    const payload = {
-      full_name:   name,
-      member_type: document.getElementById('m-type').value,
-      email:       document.getElementById('m-email').value || null,
-      phone:       document.getElementById('m-phone').value || null,
-      birth_date:  document.getElementById('m-birth').value || null,
-      join_date:   document.getElementById('m-join').value  || null,
-    }
-
-    setLoading(btn, true, 'Salvar')
-    try {
-      if (editId) await api.put(`/api/members/${editId}`, payload)
-      else        await api.post('/api/members/', payload)
-      closeModal('modal-member')
-      loadMembers()
-    } catch(err) {
-      showAlert('member-alert', err.message, 'error')
-    } finally {
-      setLoading(btn, false, 'Salvar')
-    }
-  })
-
-  window.deactivate = async (id, name) => {
-    if (!confirm(`Desativar ${name}?`)) return
-    try {
-      await api.delete(`/api/members/${id}`)
-      loadMembers()
-    } catch(err) { showAlert('page-alert', err.message, 'error') }
-  }
-
-  // Mensalidade
-  window.openFee = (id) => {
-    feeTargetId = id
-    document.getElementById('fee-month').value  = new Date().toISOString().split('T')[0]
-    document.getElementById('fee-amount').value = ''
-    clearAlert('fee-alert')
-    openModal('modal-fee')
-  }
-
-  document.getElementById('btn-save-fee').addEventListener('click', async () => {
-    const btn = document.getElementById('btn-save-fee')
-    const month  = document.getElementById('fee-month').value
-    const amount = parseFloat(document.getElementById('fee-amount').value)
-    if (!month || !amount) { showAlert('fee-alert', 'Preencha todos os campos.', 'error'); return }
-
-    setLoading(btn, true, 'Registrar')
-    try {
-      await api.post('/api/members/fees', { member_id: feeTargetId, reference_month: month, amount })
-      closeModal('modal-fee')
-    } catch(err) {
-      showAlert('fee-alert', err.message, 'error')
-    } finally {
-      setLoading(btn, false, 'Registrar')
-    }
-  })
-
-  loadMembers()
   })()
 </script>
 
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.getRegistrations().then(registrations => {
-      // Remove todos os SW antigos primeiro
       registrations.forEach(reg => reg.unregister())
     }).then(() => {
-      // Registra o novo SW limpo
-      navigator.serviceWorker.register('/sw.js?v=6').then(reg => {
-        console.log('SW registrado:', reg.scope)
-      }).catch(console.error)
+      navigator.serviceWorker.register('/sw.js?v=6').catch(console.error)
     })
   }
 </script>

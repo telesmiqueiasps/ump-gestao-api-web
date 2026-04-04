@@ -20,6 +20,8 @@ class LocalUmp(Base):
     society_type = Column(String(10), nullable=True, default='UMP')
     pastor_contact = Column(String(100), nullable=True)
     organization_date = Column(Date, nullable=True)
+    monthly_fee_value = Column(Numeric(10, 2), default=0)
+    aci_year_value = Column(Numeric(10, 2), default=0)
     fiscal_year = Column(Integer)
     initial_balance = Column(Numeric(12, 2), default=0)
     is_active = Column(Boolean, default=True)

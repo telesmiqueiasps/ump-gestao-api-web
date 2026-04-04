@@ -162,6 +162,34 @@
         </div>
       </div>
 
+      <!-- Card ACI — apenas UMP Local -->
+      <div id="aci-summary-card" style="display:none">
+        <div class="card">
+          <div class="card-header">
+            <h2>📋 ACI <span id="aci-summary-year"></span></h2>
+            <span class="badge" id="aci-summary-badge"></span>
+          </div>
+          <div style="background:var(--slate-100);border-radius:99px;height:10px;overflow:hidden;margin-bottom:.75rem">
+            <div id="aci-dash-bar" style="height:100%;border-radius:99px;background:#16a34a;transition:width .5s ease;width:0%"></div>
+          </div>
+          <div class="grid-3" style="text-align:center">
+            <div style="background:var(--slate-50);border-radius:var(--radius);padding:.75rem">
+              <p class="text-xs text-slate-400 mb-1">Total a Repassar</p>
+              <p class="font-bold" style="color:#2563eb" id="aci-total-label">—</p>
+              <p class="text-xs text-slate-400" id="aci-members-label"></p>
+            </div>
+            <div style="background:#f0fdf4;border-radius:var(--radius);padding:.75rem">
+              <p class="text-xs text-slate-400 mb-1">Já Arrecadado</p>
+              <p class="font-bold" style="color:#16a34a" id="aci-collected-label">—</p>
+            </div>
+            <div style="background:#fef2f2;border-radius:var(--radius);padding:.75rem">
+              <p class="text-xs text-slate-400 mb-1">Ainda Falta</p>
+              <p class="font-bold" style="color:#dc2626" id="aci-remaining-dash-label">—</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Sem período -->
       <div id="no-period-alert" style="display:none">
         <div class="alert alert-warning">
@@ -255,6 +283,21 @@
         const members = await api.get('/api/members/?active_only=true')
         document.getElementById('stat-members').textContent = members.length
       } catch { document.getElementById('stat-members').textContent = '0' }
+
+      // ACI summary
+      try {
+        const aciSummary = await api.get(`/api/member-fees/aci-summary?year=${year}`)
+        document.getElementById('aci-summary-card').style.display = 'block'
+        document.getElementById('aci-summary-year').textContent        = year
+        document.getElementById('aci-total-label').textContent         = formatCurrency(aciSummary.total_to_collect)
+        document.getElementById('aci-members-label').textContent       = `${aciSummary.total_members} sócios × ${formatCurrency(aciSummary.aci_year_value)}`
+        document.getElementById('aci-collected-label').textContent     = formatCurrency(aciSummary.total_collected)
+        document.getElementById('aci-remaining-dash-label').textContent = formatCurrency(aciSummary.remaining)
+        document.getElementById('aci-dash-bar').style.width            = `${Math.min(100, aciSummary.progress_percent)}%`
+        const badge = document.getElementById('aci-summary-badge')
+        badge.textContent = aciSummary.is_complete ? '✓ Meta atingida' : `${aciSummary.progress_percent}% arrecadado`
+        badge.className   = `badge ${aciSummary.is_complete ? 'badge-green' : 'badge-amber'}`
+      } catch {}
     }
 
     // Locais (federação)
