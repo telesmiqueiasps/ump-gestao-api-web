@@ -129,6 +129,8 @@ export async function renderShell() {
     orgName = data.name || ''
     societyType = data.society_type || 'UMP'
     localStorage.setItem('society_type', societyType)
+    // Atualiza o título da página
+    document.title = document.title.replace(/UMP|UPH|SAF|UPA/g, societyType)
   } catch {}
 
   // Agora renderiza a sidebar com o societyType correto

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from pydantic import BaseModel
 from typing import Optional
 from uuid import UUID
@@ -62,7 +62,7 @@ def get_my_local_ump(
     current_user: User = Depends(require_local_ump),
     db: Session = Depends(get_db),
 ):
-    local = db.query(LocalUmp).filter(
+    local = db.query(LocalUmp).options(joinedload(LocalUmp.federation)).filter(
         LocalUmp.id == current_user.organization_id,
         LocalUmp.is_active == True,
     ).first()
@@ -245,7 +245,7 @@ def _to_out(l: LocalUmp) -> dict:
         "address": l.address,
         "logo_url": l.logo_url,
         "theme_color": getattr(l, 'theme_color', None) or "#1a2a6c",
-        "society_type": getattr(l, 'society_type', None) or 'UMP',
+        "society_type": l.federation.society_type if l.federation else getattr(l, 'society_type', None) or 'UMP',
         "fiscal_year": l.fiscal_year,
         "initial_balance": float(l.initial_balance) if l.initial_balance else 0.0,
         "is_active": l.is_active,
