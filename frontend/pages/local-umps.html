@@ -182,17 +182,17 @@
     if (!requireAuth()) throw new Error()
     if (!canAccessPage('local-umps')) window.location.href = '/pages/dashboard.html'
 
-    await renderShell()
-    const societyType = localStorage.getItem('society_type') || 'UMP'
+    const societyType = await renderShell() || localStorage.getItem('society_type') || 'UMP'
     const societyLabelSingle = `${societyType} Local`
     const societyLabel = `${societyType}s Locais`
 
     document.querySelector('.page-header-info h1').textContent = societyLabel
     document.getElementById('btn-new-local').textContent = `+ Nova ${societyLabelSingle}`
+    window._societyLabel       = societyLabel
     window._societyLabelSingle = societyLabelSingle
     renderBottomNav('local-umps')
-  document.querySelector('[data-page="local-umps"]')?.classList.add('active')
-  initModalClose()
+    document.querySelector('[data-page="local-umps"]')?.classList.add('active')
+    initModalClose()
 
   let editId = null
 

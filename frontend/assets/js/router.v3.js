@@ -252,6 +252,8 @@ export async function renderShell() {
       })
     })
   }
+
+  return societyType
 }
 
 window.openPasswordModal = function() {
