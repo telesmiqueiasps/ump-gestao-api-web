@@ -44,6 +44,53 @@
     .month-summary-item .label { font-size: .72rem; color: var(--slate-400); margin-bottom: .15rem; }
     .month-summary-item .value { font-size: .95rem; font-weight: 700; }
     @media (max-width: 600px) { .month-summary { grid-template-columns: 1fr 1fr; } }
+    
+    .finances-toolbar {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      flex-wrap: wrap;
+    }
+
+    .finances-actions {
+      display: flex;
+      gap: .4rem;
+      align-items: center;
+    }
+
+    .finances-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 600px) {
+      .finances-toolbar {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .finances-actions {
+        gap: .3rem;
+      }
+
+      .finances-btn {
+        padding: .5rem .6rem;
+        font-size: .78rem;
+      }
+
+      /* No mobile mostra apenas ícone */
+      .finances-btn .btn-label { display: none; }
+      .finances-btn .btn-icon-only { font-size: 1rem; }
+
+      /* Ano select menor */
+      #year-select { min-width: 70px; font-size: .82rem; }
+    }
+
+    @media (min-width: 601px) {
+      .finances-btn .btn-icon-only { display: none; }
+    }
   </style>
 </head>
 <body>
@@ -85,11 +132,22 @@
           <h1>Financeiro</h1>
           <p>Lançamentos e extrato financeiro</p>
         </div>
-        <div class="flex gap-3 items-center">
-          <select class="input" id="year-select" style="width:auto"></select>
-          <button class="btn btn-success" id="btn-report" style="display:none">📄 Relatório PDF</button>
-          <button class="btn btn-danger" id="btn-clean-receipts" style="display:none">🗑️ Limpar Comprovantes</button>
-          <button class="btn btn-primary" id="btn-new-tx" style="display:none">+ Novo lançamento</button>
+        <div class="finances-toolbar">
+          <select class="input" id="year-select" style="width:auto;min-width:80px"></select>
+          <div class="finances-actions">
+            <button class="btn btn-secondary finances-btn" id="btn-report" style="display:none" title="Relatório PDF">
+              <span class="btn-icon-only">📄</span>
+              <span class="btn-label">Relatório</span>
+            </button>
+            <button class="btn btn-secondary finances-btn" id="btn-clean-receipts" style="display:none" title="Limpar Comprovantes">
+              <span class="btn-icon-only">🗑️</span>
+              <span class="btn-label">Comprovantes</span>
+            </button>
+            <button class="btn btn-primary finances-btn" id="btn-new-tx" style="display:none" title="Novo Lançamento">
+              <span class="btn-icon-only">+</span>
+              <span class="btn-label">Lançamento</span>
+            </button>
+          </div>
         </div>
       </div>
 

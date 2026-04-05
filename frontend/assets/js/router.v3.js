@@ -263,6 +263,7 @@ export async function renderShell() {
   }
 
   checkNoticesBadge()
+  initMobileMenu()
   return societyType
 }
 
@@ -318,6 +319,12 @@ export function setActivePage(page) {
 
 let _currentPage = ''
 
+const ICON_IMAGES = {
+  dashboard:  '/assets/img/dashboard_mobile.png',
+  finances:   '/assets/img/financeiro_mobile.png',
+  board:      '/assets/img/diretoria_mobile.png',
+}
+
 export function renderBottomNav(currentPage, societyType) {
   _currentPage = currentPage
   if (window.innerWidth > 768) return
@@ -354,13 +361,63 @@ export function renderBottomNav(currentPage, societyType) {
 
   bottomNav.innerHTML = `
     <div class="bottom-nav-items">
-      ${visibleItems.map(item => `
-        <button class="bottom-nav-item ${item.page === currentPage ? 'active' : ''}"
-          onclick="navigate('${item.page}')">
-          <span class="nav-icon">${item.icon}</span>
-          <span class="label">${item.label}</span>
-        </button>
-      `).join('')}
+      ${visibleItems.map(item => {
+        const hasImg = ICON_IMAGES[item.page]
+        const iconHtml = hasImg
+          ? `<img src="${ICON_IMAGES[item.page]}" style="width:24px;height:24px;object-fit:contain;opacity:${item.page === currentPage ? '1' : '0.5'}" />`
+          : `<span class="nav-icon" style="font-size:1.3rem">${item.icon}</span>`
+        return `
+          <button class="bottom-nav-item ${item.page === currentPage ? 'active' : ''}"
+            onclick="navigate('${item.page}')">
+            ${iconHtml}
+            <span class="label">${item.label}</span>
+          </button>
+        `
+      }).join('')}
     </div>
   `
+}
+
+export function initMobileMenu() {
+  const btnMenu = document.getElementById('btn-menu')
+  const sidebar = document.querySelector('.sidebar')
+  const overlay = document.getElementById('sidebar-overlay')
+
+  if (!btnMenu || !sidebar) return
+
+  // Remove listeners antigos para evitar duplicação
+  const newBtn = btnMenu.cloneNode(true)
+  btnMenu.parentNode.replaceChild(newBtn, btnMenu)
+
+  newBtn.addEventListener('click', (e) => {
+    e.stopPropagation()
+    sidebar.classList.toggle('open')
+    overlay?.classList.toggle('open')
+  })
+
+  overlay?.addEventListener('click', () => {
+    sidebar.classList.remove('open')
+    overlay.classList.remove('open')
+  })
+
+  // Fecha ao clicar em item do nav
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      if (window.innerWidth <= 768) {
+        sidebar.classList.remove('open')
+        overlay?.classList.remove('open')
+      }
+    })
+  })
+
+  // Mostra/esconde btn-menu conforme tamanho da tela
+  const toggleMenuVisibility = () => {
+    newBtn.style.display = window.innerWidth <= 768 ? 'flex' : 'none'
+    if (window.innerWidth > 768) {
+      sidebar.classList.remove('open')
+      overlay?.classList.remove('open')
+    }
+  }
+  toggleMenuVisibility()
+  window.addEventListener('resize', toggleMenuVisibility)
 }
