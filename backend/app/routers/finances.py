@@ -314,13 +314,30 @@ def delete_transaction(
     # Nulifica referências em member_monthly_fees se existir
     try:
         from app.models.member_fees import MemberMonthlyFee, MemberAciContribution
+
+        # Mensalidades — nulifica referência e marca como não paga
         db.query(MemberMonthlyFee).filter(
             MemberMonthlyFee.transaction_id == transaction_id
-        ).update({"transaction_id": None, "is_paid": False}, synchronize_session=False)
+        ).update({"transaction_id": None, "is_paid": False, "paid_at": None}, synchronize_session=False)
 
-        db.query(MemberAciContribution).filter(
+        # ACI — exclui a contribuição vinculada completamente
+        aci_contribs = db.query(MemberAciContribution).filter(
             MemberAciContribution.transaction_id == transaction_id
-        ).update({"transaction_id": None}, synchronize_session=False)
+        ).all()
+        for contrib in aci_contribs:
+            if contrib.receipt_url:
+                try:
+                    bucket_name = settings_obj.b2_bucket_name
+                    match = re.search(rf'/file/{re.escape(bucket_name)}/(.+)$', contrib.receipt_url)
+                    if not match:
+                        match = re.search(rf'/{re.escape(bucket_name)}/(.+)$', contrib.receipt_url)
+                    if match:
+                        folder = '/'.join(match.group(1).split('/')[:-1]) + '/'
+                        delete_folder(folder)
+                except Exception:
+                    pass
+            db.delete(contrib)
+
     except Exception:
         pass  # Tabelas podem não existir em ambientes antigos
 
