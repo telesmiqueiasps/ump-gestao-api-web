@@ -101,6 +101,15 @@ function buildNavHTML(user, societyType) {
       let label = item.label
       if (item.page === 'local-umps') label = `${societyType}s Locais`
       if (item.page === 'members')    label = memberLabel
+      if (item.page === 'notices') {
+        return `
+          <button class="nav-item" data-page="${item.page}" onclick="navigate('${item.page}')">
+            <img class="nav-icon" src="${item.icon}" alt="" />
+            ${label}
+            <span class="nav-badge" id="notices-badge" style="display:none">0</span>
+          </button>
+        `
+      }
       return `
         <button class="nav-item" data-page="${item.page}" onclick="navigate('${item.page}')">
           <img class="nav-icon" src="${item.icon}" alt="" />
@@ -253,7 +262,43 @@ export async function renderShell() {
     })
   }
 
+  checkNoticesBadge()
   return societyType
+}
+
+async function checkNoticesBadge() {
+  try {
+    const { api } = await import('./api.js')
+    const user = getUser()
+    let count = 0
+
+    if (user?.organization_type === 'local_ump') {
+      try {
+        const notices = await api.get('/api/notices/received')
+        count += notices.length
+      } catch {}
+
+      try {
+        const birthdays = await api.get('/api/members/birthdays')
+        const todayBirthdays = birthdays.filter(b => b.is_today)
+        count += todayBirthdays.length
+      } catch {}
+    }
+
+    if (user?.organization_type === 'federation') {
+      try {
+        const anniversaries = await api.get('/api/local-umps/anniversaries')
+        const todayAnniversaries = anniversaries.filter(a => a.is_today)
+        count += todayAnniversaries.length
+      } catch {}
+    }
+
+    const badge = document.getElementById('notices-badge')
+    if (badge && count > 0) {
+      badge.textContent = count > 9 ? '9+' : count
+      badge.style.display = 'flex'
+    }
+  } catch {}
 }
 
 window.openPasswordModal = function() {

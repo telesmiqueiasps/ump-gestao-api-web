@@ -611,3 +611,19 @@
   .grid-3 { grid-template-columns: 1fr 1fr; }
   .summary-grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* ── Nav Badge ───────────────────────────────────────── */
+.nav-badge {
+  margin-left: auto;
+  background: var(--brand-orange, #e8630a);
+  color: #fff;
+  font-size: .6rem;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 99px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 .35rem;
+}

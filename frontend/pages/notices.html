@@ -19,76 +19,129 @@
   <link rel="stylesheet" href="../assets/css/components.css?v=9" />
   <link rel="stylesheet" href="../assets/css/layout.v2.css?v=9" />
   <style>
-    .birthday-card {
-      background: #fff;
-      border: 1.5px solid var(--slate-200);
+    /* ── Aniversário da Sociedade ── */
+    .anniversary-banner {
       border-radius: var(--radius-lg);
-      padding: 1rem 1.25rem;
-      display: flex; align-items: center; gap: 1rem;
-      transition: all .15s;
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1.1rem;
+      color: #fff;
+      margin-bottom: .5rem;
     }
-    .birthday-card.today {
+    .anniversary-banner.blue  { background: linear-gradient(135deg, #1a2a6c, #2a3f9f); }
+    .anniversary-banner.green { background: linear-gradient(135deg, #1a5c2a, #2d8a40); }
+    .anniversary-banner-icon  { font-size: 2rem; flex-shrink: 0; line-height: 1; }
+    .anniversary-banner-title { font-size: 1rem; font-weight: 700; margin-bottom: .2rem; }
+    .anniversary-banner-sub   { font-size: .8rem; opacity: .82; }
+
+    /* ── Cards de aniversariante ── */
+    .bday-card {
+      background: #fff;
+      border: 1.5px solid var(--slate-100);
+      border-radius: var(--radius-lg);
+      padding: .9rem 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: .9rem;
+      transition: box-shadow .15s;
+    }
+    .bday-card:hover { box-shadow: var(--shadow); }
+    .bday-card.today {
       border-color: var(--brand-orange, #e8630a);
-      background: linear-gradient(135deg, #fff8f3, #fff);
-      box-shadow: 0 2px 12px rgba(232,99,10,.12);
+      background: linear-gradient(135deg, #fffaf6, #fff);
     }
-    .birthday-card.passed { opacity: .55; }
-    .birthday-avatar {
-      width: 48px; height: 48px; border-radius: 50%;
+    .bday-card.passed { opacity: .45; }
+
+    .bday-avatar {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: var(--blue-100);
+      color: var(--blue-700);
       display: flex; align-items: center; justify-content: center;
-      font-size: 1.3rem; font-weight: 700; flex-shrink: 0;
-      background: var(--blue-100); color: var(--blue-600);
+      font-size: 1.1rem; font-weight: 700;
+      flex-shrink: 0;
     }
-    .birthday-card.today .birthday-avatar {
-      background: linear-gradient(135deg, #e8630a, #c0392b); color: #fff;
+    .bday-card.today .bday-avatar {
+      background: linear-gradient(135deg, #e8630a, #c0392b);
+      color: #fff;
+      font-size: 1.3rem;
     }
-    .birthday-info { flex: 1; min-width: 0; }
-    .birthday-name { font-weight: 600; color: var(--slate-800); font-size: .95rem; }
-    .birthday-sub  { font-size: .78rem; color: var(--slate-500); margin-top: .15rem; }
-    .birthday-badge {
-      flex-shrink: 0; font-size: .75rem; font-weight: 600;
-      padding: .3rem .75rem; border-radius: 99px;
+    .bday-name   { font-weight: 600; color: var(--slate-800); font-size: .9rem; }
+    .bday-sub    { font-size: .76rem; color: var(--slate-500); margin-top: .12rem; }
+    .bday-pill   {
+      margin-left: auto;
+      flex-shrink: 0;
+      font-size: .7rem;
+      font-weight: 600;
+      padding: .25rem .7rem;
+      border-radius: 99px;
     }
-    .society-anniversary-card {
-      background: linear-gradient(135deg, var(--brand-blue, #1a2a6c), #2a3f9f);
-      border-radius: var(--radius-lg);
-      padding: 1.5rem; color: #fff;
-      display: flex; align-items: center; gap: 1.25rem;
-    }
-    .society-anniversary-icon { font-size: 2.5rem; flex-shrink: 0; }
-    .section-title {
-      font-size: .72rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .8px; color: var(--slate-400);
-      margin-bottom: .75rem; padding-bottom: .4rem;
-      border-bottom: 1px solid var(--slate-100);
-    }
-    .empty-state {
-      text-align: center; padding: 2.5rem 1rem;
-      color: var(--slate-400); font-size: .875rem;
-    }
-    .empty-state .icon { font-size: 2rem; margin-bottom: .5rem; }
-    .notice-card {
+    .bday-pill.today   { background: #fff3e0; color: #e8630a; border: 1px solid #ffd699; }
+    .bday-pill.future  { background: var(--blue-50); color: var(--blue-700); border: 1px solid var(--blue-100); }
+    .bday-pill.passed  { background: var(--slate-100); color: var(--slate-500); }
+
+    /* ── Cards de avisos ── */
+    .notice-item {
       background: #fff;
-      border: 1.5px solid var(--slate-200);
+      border: 1.5px solid var(--slate-100);
+      border-left: 4px solid var(--brand-blue, #1a2a6c);
       border-radius: var(--radius-lg);
       padding: 1rem 1.25rem;
-      margin-bottom: .6rem;
+      transition: box-shadow .15s;
     }
-    .notice-card.inactive { opacity: .5; }
-    .notice-card-header {
-      display: flex; align-items: flex-start;
-      justify-content: space-between; gap: .75rem; margin-bottom: .6rem;
+    .notice-item:hover { box-shadow: var(--shadow); }
+    .notice-item.inactive { opacity: .45; border-left-color: var(--slate-300); }
+    .notice-item-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: .75rem;
+      margin-bottom: .5rem;
     }
-    .notice-title { font-weight: 600; color: var(--slate-800); font-size: .925rem; }
-    .notice-meta {
-      display: flex; align-items: center; gap: .5rem;
-      margin-top: .25rem; flex-wrap: wrap;
+    .notice-item-title { font-weight: 600; color: var(--slate-800); font-size: .9rem; line-height: 1.35; }
+    .notice-item-meta  {
+      display: flex; align-items: center; gap: .5rem; margin-top: .3rem; flex-wrap: wrap;
     }
-    .notice-content {
-      font-size: .875rem; color: var(--slate-600);
-      line-height: 1.6; white-space: pre-wrap;
+    .notice-item-meta span { font-size: .7rem; color: var(--slate-400); }
+    .notice-item-content {
+      font-size: .85rem; color: var(--slate-600);
+      line-height: 1.65; white-space: pre-wrap;
+      padding-top: .5rem;
+      border-top: 1px solid var(--slate-100);
+      margin-top: .5rem;
     }
-    .mb-4 { margin-bottom: 1.25rem; }
+    .notice-item-actions { display: flex; gap: .25rem; flex-shrink: 0; }
+
+    /* ── Section headers ── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: .75rem;
+    }
+    .section-label {
+      font-size: .7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .7px;
+      color: var(--slate-400);
+    }
+
+    /* ── Empty state ── */
+    .empty-box {
+      background: var(--slate-50);
+      border: 1.5px dashed var(--slate-200);
+      border-radius: var(--radius-lg);
+      padding: 2rem 1rem;
+      text-align: center;
+      color: var(--slate-400);
+      font-size: .85rem;
+    }
+    .empty-box .ei { font-size: 1.8rem; margin-bottom: .4rem; }
+
+    .stack { display: flex; flex-direction: column; gap: .6rem; }
+    .mb-6 { margin-bottom: 1.75rem; }
   </style>
 </head>
 <body>
@@ -127,24 +180,24 @@
     <main class="page-content">
       <div class="page-header">
         <div class="page-header-info">
-          <h1>📢 Avisos</h1>
-          <p id="notices-subtitle">Comunicados e avisos do mês</p>
+          <h1>Avisos</h1>
+          <p id="notices-subtitle" style="color:var(--slate-500);font-size:.875rem"></p>
         </div>
       </div>
 
       <div id="page-alert" class="hidden"></div>
 
-      <!-- ── SEÇÃO FEDERAÇÃO ── -->
+      <!-- ── FEDERAÇÃO ── -->
       <div id="fed-section" style="display:none">
 
         <!-- Aniversários das locais -->
-        <div id="fed-anniversaries" class="mb-4"></div>
+        <div id="fed-anniversaries" class="mb-6"></div>
 
         <!-- Avisos enviados -->
         <div>
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
-            <div class="section-title" style="margin:0">📨 Avisos Enviados às Locais</div>
-            <button class="btn btn-primary btn-sm" id="btn-new-notice">+ Novo Aviso</button>
+          <div class="section-header">
+            <span class="section-label">Avisos Enviados às Locais</span>
+            <button class="btn btn-primary btn-sm" id="btn-new-notice">+ Novo aviso</button>
           </div>
           <div id="sent-notices-list">
             <div class="loading-center"><div class="spinner"></div></div>
@@ -152,30 +205,31 @@
         </div>
       </div>
 
-      <!-- ── SEÇÃO UMP LOCAL ── -->
+      <!-- ── UMP LOCAL ── -->
       <div id="local-section" style="display:none">
 
         <!-- Aniversário da sociedade -->
-        <div id="local-anniversary" style="display:none" class="mb-4">
-          <div class="section-title">🏛️ Aniversário da Sociedade</div>
-          <div id="local-anniversary-card"></div>
-        </div>
+        <div id="local-anniversary" style="display:none" class="mb-6"></div>
 
         <!-- Aniversariantes -->
-        <div class="mb-4">
-          <div class="section-title" id="birthdays-title">🎂 Aniversariantes do Mês</div>
+        <div class="mb-6">
+          <div class="section-header">
+            <span class="section-label" id="birthdays-section-label">Aniversariantes do Mês</span>
+          </div>
           <div id="birthdays-loading" class="loading-center"><div class="spinner"></div></div>
-          <div id="birthdays-list" style="display:none;flex-direction:column;gap:.6rem"></div>
-          <div id="birthdays-empty" class="empty-state" style="display:none">
-            <div class="icon">🎈</div>
+          <div id="birthdays-list" class="stack" style="display:none"></div>
+          <div id="birthdays-empty" class="empty-box" style="display:none">
+            <div class="ei">🎈</div>
             <p>Nenhum aniversariante este mês.</p>
             <p style="font-size:.75rem;margin-top:.25rem">Cadastre as datas de nascimento dos sócios.</p>
           </div>
         </div>
 
         <!-- Avisos da federação -->
-        <div id="fed-notices-section">
-          <div class="section-title">📨 Avisos da Federação</div>
+        <div>
+          <div class="section-header">
+            <span class="section-label">Avisos da Federação</span>
+          </div>
           <div id="received-notices-list">
             <div class="loading-center"><div class="spinner"></div></div>
           </div>
@@ -293,29 +347,27 @@
     const section = document.getElementById('fed-anniversaries')
     if (!anniversaries.length) {
       section.innerHTML = `
-        <div class="section-title">🏛️ Aniversários de Locais este Mês</div>
-        <div class="empty-state"><div class="icon">🏛️</div><p>Nenhuma local faz aniversário este mês.</p></div>`
+        <div class="section-header"><span class="section-label">Aniversários de Locais este Mês</span></div>
+        <div class="empty-box"><div class="ei">🏛️</div><p>Nenhuma local faz aniversário este mês.</p></div>`
       return
     }
     section.innerHTML = `
-      <div class="section-title">🏛️ Aniversários de Locais este Mês</div>
-      <div style="display:flex;flex-direction:column;gap:.6rem">
+      <div class="section-header"><span class="section-label">Aniversários de Locais este Mês</span></div>
+      <div class="stack">
         ${anniversaries.map(a => `
-          <div class="birthday-card ${a.is_today ? 'today' : ''} ${a.already_passed && !a.is_today ? 'passed' : ''}">
-            <div class="birthday-avatar">${a.is_today ? '🎉' : '🏛️'}</div>
-            <div class="birthday-info">
-              <div class="birthday-name">${a.name}</div>
-              <div class="birthday-sub">
+          <div class="bday-card ${a.is_today ? 'today' : ''} ${a.already_passed && !a.is_today ? 'passed' : ''}">
+            <div class="bday-avatar">${a.is_today ? '🎉' : '🏛️'}</div>
+            <div style="flex:1;min-width:0">
+              <div class="bday-name">${a.name}</div>
+              <div class="bday-sub">
                 ${a.church_name ? a.church_name + ' · ' : ''}
-                ${a.is_today
-                  ? `Hoje! Completando ${a.years} anos!`
-                  : a.already_passed
-                    ? `Dia ${a.org_day} — ${a.years} anos (passou)`
-                    : `Dia ${a.org_day} de ${MONTH_NAMES[currentMonth]} — ${a.years} anos`}
+                ${a.is_today ? `Hoje! ${a.years} anos!`
+                  : a.already_passed ? `Dia ${a.org_day} — ${a.years} anos (passou)`
+                  : `Dia ${a.org_day} de ${MONTH_NAMES[currentMonth]} — ${a.years} anos`}
               </div>
             </div>
-            <span class="birthday-badge ${a.is_today ? 'badge-amber' : a.already_passed ? 'badge-slate' : 'badge-green'}">
-              ${a.is_today ? '🎉 Hoje!' : a.already_passed ? 'Passou' : `Dia ${a.org_day}`}
+            <span class="bday-pill ${a.is_today ? 'today' : a.already_passed ? 'passed' : 'future'}">
+              ${a.is_today ? '🎉 Hoje' : a.already_passed ? 'Passou' : `Dia ${a.org_day}`}
             </span>
           </div>
         `).join('')}
@@ -332,32 +384,33 @@
   function renderSentNotices(notices) {
     const container = document.getElementById('sent-notices-list')
     if (!notices.length) {
-      container.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>Nenhum aviso enviado ainda.</p></div>`
+      container.innerHTML = `<div class="empty-box"><div class="ei">📭</div><p>Nenhum aviso enviado ainda.</p></div>`
       return
     }
-    container.innerHTML = notices.map(n => `
-      <div class="notice-card ${!n.is_active ? 'inactive' : ''}">
-        <div class="notice-card-header">
-          <div>
-            <div class="notice-title">${n.title}</div>
-            <div class="notice-meta">
-              <span class="badge ${n.target_type === 'all' ? 'badge-blue' : 'badge-slate'}">
+    container.innerHTML = `<div class="stack">${notices.map(n => `
+      <div class="notice-item ${!n.is_active ? 'inactive' : ''}">
+        <div class="notice-item-header">
+          <div style="flex:1;min-width:0">
+            <div class="notice-item-title">${n.title}</div>
+            <div class="notice-item-meta">
+              <span class="badge ${n.target_type === 'all' ? 'badge-blue' : 'badge-slate'}" style="font-size:.68rem">
                 ${n.target_type === 'all' ? '📢 Todas as Locais' : `📍 ${n.target_local_name || 'Local específica'}`}
               </span>
-              <span style="font-size:.72rem;color:var(--slate-400)">${formatDate(n.created_at?.split('T')[0])}</span>
-              ${n.expires_at ? `<span style="font-size:.72rem;color:#92400e">Expira: ${formatDate(n.expires_at?.split('T')[0])}</span>` : ''}
+              <span>${formatDate(n.created_at?.split('T')[0])}</span>
+              ${n.expires_at ? `<span style="color:var(--amber-700)">Expira ${formatDate(n.expires_at?.split('T')[0])}</span>` : ''}
+              ${!n.is_active ? '<span style="color:var(--red-600)">Desativado</span>' : ''}
             </div>
           </div>
-          <div style="display:flex;gap:.3rem;flex-shrink:0">
-            <button class="btn btn-ghost btn-icon" onclick="toggleNotice('${n.id}',${n.is_active})" title="${n.is_active ? 'Desativar' : 'Ativar'}">
+          <div class="notice-item-actions">
+            <button class="btn btn-ghost btn-icon" onclick="toggleNotice('${n.id}', ${n.is_active})" title="${n.is_active ? 'Desativar' : 'Ativar'}" style="font-size:.9rem">
               ${n.is_active ? '👁️' : '🚫'}
             </button>
             <button class="btn btn-ghost btn-icon danger" onclick="deleteNotice('${n.id}')" title="Excluir">✕</button>
           </div>
         </div>
-        <div class="notice-content">${n.content}</div>
+        <div class="notice-item-content">${n.content}</div>
       </div>
-    `).join('')
+    `).join('')}</div>`
   }
 
   window.toggleNotice = async (id, currentActive) => {
@@ -425,32 +478,7 @@
   // ════════════════════════════════════════
 
   async function loadLocalData() {
-    try {
-      const orgData = await api.get('/api/local-umps/me')
-      if (orgData.organization_date) {
-        const orgDate = new Date(orgData.organization_date + 'T00:00:00')
-        if (orgDate.getMonth() === currentMonth) {
-          const years   = currentYear - orgDate.getFullYear()
-          const isToday = orgDate.getDate() === currentDay
-          const section = document.getElementById('local-anniversary')
-          section.style.display = 'block'
-          document.getElementById('local-anniversary-card').innerHTML = `
-            <div class="society-anniversary-card" style="${isToday ? '' : 'background:linear-gradient(135deg,#2d5a27,#3d7a35)'}">
-              <div class="society-anniversary-icon">${isToday ? '🎉' : '🏛️'}</div>
-              <div>
-                <p style="font-size:1.05rem;font-weight:700;margin-bottom:.25rem">
-                  ${isToday ? `Hoje é o aniversário de ${orgData.name}!` : `${orgData.name} faz aniversário este mês!`}
-                </p>
-                <p style="font-size:.85rem;opacity:.85">
-                  ${isToday
-                    ? `Completando ${years} anos! Parabéns! 🎊`
-                    : `Dia ${orgDate.getDate()} de ${MONTH_NAMES[currentMonth]} — ${years} anos`}
-                </p>
-              </div>
-            </div>`
-        }
-      }
-    } catch {}
+    await checkSocietyAnniversary()
 
     try {
       const birthdays = await api.get('/api/members/birthdays')
@@ -460,6 +488,34 @@
     }
 
     await loadReceivedNotices()
+  }
+
+  async function checkSocietyAnniversary() {
+    try {
+      const orgData = await api.get('/api/local-umps/me')
+      if (!orgData.organization_date) return
+      const orgDate = new Date(orgData.organization_date + 'T00:00:00')
+      if (orgDate.getMonth() !== currentMonth) return
+      const years   = currentYear - orgDate.getFullYear()
+      const isToday = orgDate.getDate() === currentDay
+      const section = document.getElementById('local-anniversary')
+      section.style.display = 'block'
+      section.innerHTML = `
+        <div class="section-header"><span class="section-label">Aniversário da Sociedade</span></div>
+        <div class="anniversary-banner ${isToday ? 'blue' : 'green'}">
+          <div class="anniversary-banner-icon">${isToday ? '🎉' : '🏛️'}</div>
+          <div>
+            <div class="anniversary-banner-title">
+              ${isToday ? `Hoje é o aniversário de ${orgData.name}!` : `${orgData.name} faz aniversário este mês!`}
+            </div>
+            <div class="anniversary-banner-sub">
+              ${isToday
+                ? `Completando ${years} anos de história! 🎊`
+                : `Dia ${orgDate.getDate()} de ${MONTH_NAMES[currentMonth]} — ${years} anos`}
+            </div>
+          </div>
+        </div>`
+    } catch {}
   }
 
   function renderBirthdays(birthdays) {
@@ -474,11 +530,11 @@
     list.innerHTML = birthdays.map(b => {
       const initials = b.full_name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
       return `
-        <div class="birthday-card ${b.is_today ? 'today' : ''} ${b.already_passed && !b.is_today ? 'passed' : ''}">
-          <div class="birthday-avatar">${b.is_today ? '🎂' : initials}</div>
-          <div class="birthday-info">
-            <div class="birthday-name">${b.full_name}</div>
-            <div class="birthday-sub">
+        <div class="bday-card ${b.is_today ? 'today' : ''} ${b.already_passed && !b.is_today ? 'passed' : ''}">
+          <div class="bday-avatar">${b.is_today ? '🎂' : initials}</div>
+          <div style="flex:1;min-width:0">
+            <div class="bday-name">${b.full_name}</div>
+            <div class="bday-sub">
               ${b.is_today
                 ? `🎉 Hoje! Completando ${b.age} anos`
                 : b.already_passed
@@ -486,8 +542,8 @@
                   : `Dia ${b.birth_day} de ${MONTH_NAMES[currentMonth]} — ${b.age} anos`}
             </div>
           </div>
-          <span class="birthday-badge ${b.is_today ? 'badge-amber' : b.already_passed ? 'badge-slate' : 'badge-blue'}">
-            ${b.is_today ? '🎉 Hoje!' : b.already_passed ? 'Passou' : `Dia ${b.birth_day}`}
+          <span class="bday-pill ${b.is_today ? 'today' : b.already_passed ? 'passed' : 'future'}">
+            ${b.is_today ? '🎉 Hoje' : b.already_passed ? 'Passou' : `Dia ${b.birth_day}`}
           </span>
         </div>`
     }).join('')
@@ -499,28 +555,24 @@
       const container = document.getElementById('received-notices-list')
 
       if (!notices.length) {
-        container.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>Nenhum aviso da Federação no momento.</p></div>`
+        container.innerHTML = `<div class="empty-box"><div class="ei">📭</div><p>Nenhum aviso da Federação no momento.</p></div>`
         return
       }
 
-      container.innerHTML = notices.map(n => `
-        <div class="notice-card">
-          <div class="notice-card-header">
-            <div>
-              <div class="notice-title">${n.title}</div>
-              <div class="notice-meta">
-                <span style="font-size:.72rem;color:var(--slate-400)">
-                  📨 Federação · ${formatDate(n.created_at?.split('T')[0])}
-                </span>
-                ${n.target_type === 'specific'
-                  ? '<span class="badge badge-blue" style="font-size:.65rem">Direcionado para você</span>'
-                  : ''}
+      container.innerHTML = `<div class="stack">${notices.map(n => `
+        <div class="notice-item">
+          <div class="notice-item-header">
+            <div style="flex:1;min-width:0">
+              <div class="notice-item-title">${n.title}</div>
+              <div class="notice-item-meta">
+                <span>📨 Federação · ${formatDate(n.created_at?.split('T')[0])}</span>
+                ${n.target_type === 'specific' ? '<span class="badge badge-blue" style="font-size:.65rem">Direcionado para você</span>' : ''}
               </div>
             </div>
           </div>
-          <div class="notice-content">${n.content}</div>
+          <div class="notice-item-content">${n.content}</div>
         </div>
-      `).join('')
+      `).join('')}</div>`
     } catch {}
   }
 </script>
