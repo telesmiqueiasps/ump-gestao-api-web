@@ -323,6 +323,7 @@ const ICON_IMAGES = {
   dashboard:  '/assets/img/dashboard_mobile.png',
   finances:   '/assets/img/financeiro_mobile.png',
   board:      '/assets/img/diretoria_mobile.png',
+  notices:    '/assets/img/aviso_mobile.png',
 }
 
 export function renderBottomNav(currentPage, societyType) {
