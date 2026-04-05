@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import extract
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from uuid import UUID
@@ -66,6 +67,42 @@ def create_member(
     db.commit()
     db.refresh(member)
     return _to_out(member)
+
+
+@router.get("/birthdays")
+def get_birthdays(
+    current_user: User = Depends(require_local_ump),
+    db: Session = Depends(get_db),
+):
+    current_month = datetime.date.today().month
+    current_day   = datetime.date.today().day
+
+    members = db.query(Member).filter(
+        Member.local_ump_id == current_user.organization_id,
+        Member.is_active == True,
+        Member.birth_date.isnot(None),
+        extract('month', Member.birth_date) == current_month,
+    ).order_by(extract('day', Member.birth_date)).all()
+
+    today = datetime.date.today()
+    result = []
+    for m in members:
+        birth_day      = m.birth_date.day
+        age            = today.year - m.birth_date.year
+        is_today       = birth_day == current_day
+        already_passed = birth_day < current_day
+
+        result.append({
+            "id":            str(m.id),
+            "full_name":     m.full_name,
+            "birth_date":    m.birth_date.isoformat(),
+            "birth_day":     birth_day,
+            "age":           age,
+            "is_today":      is_today,
+            "already_passed": already_passed,
+        })
+
+    return result
 
 
 # Detalhe de um sócio

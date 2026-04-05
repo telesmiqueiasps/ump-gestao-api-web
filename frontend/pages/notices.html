@@ -18,6 +18,60 @@
   <link rel="stylesheet" href="../assets/css/main.css?v=9" />
   <link rel="stylesheet" href="../assets/css/components.css?v=9" />
   <link rel="stylesheet" href="../assets/css/layout.v2.css?v=9" />
+  <style>
+    .birthday-card {
+      background: #fff;
+      border: 1.5px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      transition: all .15s;
+    }
+    .birthday-card.today {
+      border-color: var(--brand-orange, #e8630a);
+      background: linear-gradient(135deg, #fff8f3, #fff);
+      box-shadow: 0 2px 12px rgba(232,99,10,.12);
+    }
+    .birthday-card.passed { opacity: .55; }
+    .birthday-avatar {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; font-weight: 700; flex-shrink: 0;
+      background: var(--blue-100); color: var(--blue-600);
+    }
+    .birthday-card.today .birthday-avatar {
+      background: linear-gradient(135deg, #e8630a, #c0392b);
+      color: #fff;
+    }
+    .birthday-info { flex: 1; min-width: 0; }
+    .birthday-name { font-weight: 600; color: var(--slate-800); font-size: .95rem; }
+    .birthday-sub  { font-size: .78rem; color: var(--slate-500); margin-top: .15rem; }
+    .birthday-badge {
+      flex-shrink: 0; font-size: .75rem; font-weight: 600;
+      padding: .3rem .75rem; border-radius: 99px;
+    }
+    .society-anniversary-card {
+      background: linear-gradient(135deg, var(--brand-blue, #1a2a6c), #2a3f9f);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem; color: #fff;
+      display: flex; align-items: center; gap: 1.25rem;
+    }
+    .society-anniversary-icon { font-size: 2.5rem; flex-shrink: 0; }
+    .section-title {
+      font-size: .72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .8px; color: var(--slate-400);
+      margin-bottom: .75rem; padding-bottom: .4rem;
+      border-bottom: 1px solid var(--slate-100);
+    }
+    .empty-state {
+      text-align: center; padding: 2.5rem 1rem;
+      color: var(--slate-400); font-size: .875rem;
+    }
+    .empty-state .icon { font-size: 2rem; margin-bottom: .5rem; }
+  </style>
 </head>
 <body>
 
@@ -55,44 +109,172 @@
     <main class="page-content">
       <div class="page-header">
         <div class="page-header-info">
-          <h1>Avisos</h1>
-          <p>Comunicados e avisos gerais</p>
+          <h1>📢 Avisos</h1>
+          <p id="notices-subtitle">Comunicados e avisos do mês</p>
         </div>
       </div>
 
-      <div class="card" style="text-align:center;padding:3rem">
-        <p style="font-size:2rem;margin-bottom:1rem">📢</p>
-        <h2>Em breve</h2>
-        <p class="text-slate-500 text-sm mt-2">Módulo de Avisos em desenvolvimento.</p>
+      <div id="page-alert" class="hidden"></div>
+
+      <!-- Aniversário da Sociedade (apenas UMP Local) -->
+      <div id="society-anniversary-section" style="display:none">
+        <div class="section-title">🏛️ Aniversário da Sociedade</div>
+        <div class="society-anniversary-card" id="society-anniversary-card">
+          <div class="society-anniversary-icon">🎂</div>
+          <div>
+            <p style="font-size:1.05rem;font-weight:700;margin-bottom:.25rem" id="society-anniversary-title"></p>
+            <p style="font-size:.85rem;opacity:.85" id="society-anniversary-sub"></p>
+          </div>
+        </div>
       </div>
+
+      <!-- Aniversariantes do mês (apenas UMP Local) -->
+      <div id="birthdays-section" style="display:none">
+        <div class="section-title" id="birthdays-title">🎂 Aniversariantes do Mês</div>
+        <div id="birthdays-loading" class="loading-center"><div class="spinner"></div></div>
+        <div id="birthdays-list" style="display:none;flex-direction:column;gap:.6rem"></div>
+        <div id="birthdays-empty" class="empty-state" style="display:none">
+          <div class="icon">🎈</div>
+          <p>Nenhum aniversariante este mês.</p>
+          <p style="font-size:.75rem;margin-top:.25rem">Cadastre as datas de nascimento dos sócios para ver os aniversariantes.</p>
+        </div>
+      </div>
+
+      <!-- Avisos gerais -->
+      <div>
+        <div class="section-title">📋 Avisos Gerais</div>
+        <div class="card" style="text-align:center;padding:2.5rem">
+          <p style="font-size:1.5rem;margin-bottom:.5rem">🔔</p>
+          <p style="font-weight:600;color:var(--slate-700)">Em breve</p>
+          <p style="font-size:.875rem;color:var(--slate-400);margin-top:.25rem">Sistema de avisos e comunicados em desenvolvimento.</p>
+        </div>
+      </div>
+
     </main>
   </div>
   <div class="sidebar-overlay" id="sidebar-overlay"></div>
 </div>
 
 <script type="module">
-  import { requireAuth } from '../assets/js/auth.js?v=9'
-  import { renderShell, renderBottomNav } from '../assets/js/router.v3.js?v=9'
+  import { requireAuth, isLocalUmp, isFederation } from '../assets/js/auth.js'
+  import { renderShell, renderBottomNav } from '../assets/js/router.v3.js'
+  import { api } from '../assets/js/api.js'
 
-  (async () => {
-    if (!requireAuth()) throw new Error()
+  if (!requireAuth()) throw new Error()
+  renderShell()
+  renderBottomNav('notices')
+  document.querySelector('[data-page="notices"]')?.classList.add('active')
 
-    await renderShell()
-    renderBottomNav('notices')
-    document.querySelector('[data-page="notices"]')?.classList.add('active')
-  })()
+  const MONTH_NAMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                       'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+  const today        = new Date()
+  const currentMonth = today.getMonth()
+  const currentDay   = today.getDate()
+  const currentYear  = today.getFullYear()
+
+  document.getElementById('notices-subtitle').textContent =
+    `Avisos de ${MONTH_NAMES[currentMonth]} de ${currentYear}`
+
+  // ── Aniversário da Sociedade Local ──
+  async function checkSocietyAnniversary() {
+    try {
+      const orgData = await api.get('/api/local-umps/me')
+      if (!orgData.organization_date) return
+
+      const orgDate  = new Date(orgData.organization_date + 'T00:00:00')
+      const orgMonth = orgDate.getMonth()
+      const orgDay   = orgDate.getDate()
+      if (orgMonth !== currentMonth) return
+
+      const years   = currentYear - orgDate.getFullYear()
+      const isToday = orgDay === currentDay
+
+      const section = document.getElementById('society-anniversary-section')
+      const card    = document.getElementById('society-anniversary-card')
+      const title   = document.getElementById('society-anniversary-title')
+      const sub     = document.getElementById('society-anniversary-sub')
+
+      section.style.display = 'block'
+      title.textContent = isToday
+        ? `🎉 Hoje é o aniversário de ${orgData.name}!`
+        : `${orgData.name} faz aniversário este mês!`
+      sub.textContent = isToday
+        ? `Completando ${years} anos de história! Parabéns! 🎊`
+        : `Dia ${orgDay} de ${MONTH_NAMES[currentMonth]} — ${years} anos`
+
+      if (!isToday) card.style.background = 'linear-gradient(135deg, #2d5a27, #3d7a35)'
+    } catch {}
+  }
+
+  // ── Aniversariantes dos sócios ──
+  async function loadBirthdays() {
+    const section  = document.getElementById('birthdays-section')
+    const loading  = document.getElementById('birthdays-loading')
+    const list     = document.getElementById('birthdays-list')
+    const empty    = document.getElementById('birthdays-empty')
+    const titleEl  = document.getElementById('birthdays-title')
+
+    section.style.display = 'block'
+    titleEl.textContent   = `🎂 Aniversariantes de ${MONTH_NAMES[currentMonth]}`
+    loading.style.display = 'flex'
+
+    try {
+      const birthdays = await api.get('/api/members/birthdays')
+      loading.style.display = 'none'
+
+      if (!birthdays.length) {
+        empty.style.display = 'block'
+        return
+      }
+
+      list.style.display = 'flex'
+      list.innerHTML = birthdays.map(b => {
+        const isToday = b.is_today
+        const passed  = b.already_passed
+        const initials = b.full_name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
+        return `
+          <div class="birthday-card ${isToday ? 'today' : ''} ${passed && !isToday ? 'passed' : ''}">
+            <div class="birthday-avatar">${isToday ? '🎂' : initials}</div>
+            <div class="birthday-info">
+              <div class="birthday-name">${b.full_name}</div>
+              <div class="birthday-sub">
+                ${isToday
+                  ? `🎉 Hoje! Completando ${b.age} anos`
+                  : passed
+                    ? `Dia ${b.birth_day} — ${b.age} anos (já passou)`
+                    : `Dia ${b.birth_day} de ${MONTH_NAMES[currentMonth]} — ${b.age} anos`
+                }
+              </div>
+            </div>
+            <span class="birthday-badge ${isToday ? 'badge-amber' : passed ? 'badge-slate' : 'badge-blue'}">
+              ${isToday ? '🎉 Hoje!' : passed ? 'Passou' : `Dia ${b.birth_day}`}
+            </span>
+          </div>
+        `
+      }).join('')
+    } catch(err) {
+      loading.style.display = 'none'
+      console.error(err)
+    }
+  }
+
+  if (isLocalUmp()) {
+    checkSocietyAnniversary()
+    loadBirthdays()
+  }
+
+  if (isFederation()) {
+    document.getElementById('notices-subtitle').textContent =
+      `Comunicados de ${MONTH_NAMES[currentMonth]} de ${currentYear}`
+  }
 </script>
 
 <script>
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(registrations => {
-      // Remove todos os SW antigos primeiro
-      registrations.forEach(reg => reg.unregister())
+    navigator.serviceWorker.getRegistrations().then(regs => {
+      regs.forEach(r => r.unregister())
     }).then(() => {
-      // Registra o novo SW limpo
-      navigator.serviceWorker.register('/sw.js?v=6').then(reg => {
-        console.log('SW registrado:', reg.scope)
-      }).catch(console.error)
+      navigator.serviceWorker.register('/sw.js?v=6').catch(console.error)
     })
   }
 </script>

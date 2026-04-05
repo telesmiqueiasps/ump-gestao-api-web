@@ -135,6 +135,17 @@
         </div>
       </div>
 
+      <!-- Avisos rápidos -->
+      <div id="quick-notices" style="display:none">
+        <div class="card" style="border-left:4px solid var(--brand-orange,#e8630a);padding:1rem 1.25rem">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+            <h3 style="margin:0;font-size:.9rem">📢 Avisos do Mês</h3>
+            <a href="notices.html" style="font-size:.78rem;color:var(--blue-600);font-weight:500">Ver todos →</a>
+          </div>
+          <div id="quick-notices-list" style="display:flex;flex-direction:column;gap:.4rem"></div>
+        </div>
+      </div>
+
       <!-- Período financeiro -->
       <div class="card" id="period-card" style="display:none">
         <div class="card-header">
@@ -297,6 +308,41 @@
         const badge = document.getElementById('aci-summary-badge')
         badge.textContent = aciSummary.is_complete ? '✓ Meta atingida' : `${aciSummary.progress_percent}% arrecadado`
         badge.className   = `badge ${aciSummary.is_complete ? 'badge-green' : 'badge-amber'}`
+      } catch {}
+
+      // Avisos rápidos
+      try {
+        const birthdays       = await api.get('/api/members/birthdays')
+        const todayBirthdays  = birthdays.filter(b => b.is_today)
+        const monthBirthdays  = birthdays.filter(b => !b.is_today && !b.already_passed)
+
+        let societyNotice = null
+        try {
+          const orgData = await api.get('/api/local-umps/me')
+          if (orgData.organization_date) {
+            const orgDate  = new Date(orgData.organization_date + 'T00:00:00')
+            const now      = new Date()
+            if (orgDate.getMonth() === now.getMonth()) {
+              const years   = now.getFullYear() - orgDate.getFullYear()
+              const isToday = orgDate.getDate() === now.getDate()
+              societyNotice = isToday
+                ? `🎉 Hoje é o aniversário de ${orgData.name}! ${years} anos!`
+                : `🏛️ ${orgData.name} faz aniversário dia ${orgDate.getDate()} este mês (${years} anos)`
+            }
+          }
+        } catch {}
+
+        const notices = []
+        if (societyNotice) notices.push(societyNotice)
+        todayBirthdays.forEach(b => notices.push(`🎂 Hoje é aniversário de ${b.full_name}! (${b.age} anos)`))
+        if (monthBirthdays.length > 0) notices.push(`🎈 ${monthBirthdays.length} aniversariante(s) ainda este mês`)
+
+        if (notices.length > 0) {
+          document.getElementById('quick-notices').style.display = 'block'
+          document.getElementById('quick-notices-list').innerHTML = notices.map(text => `
+            <div style="font-size:.82rem;color:var(--slate-700);padding:.25rem 0;border-bottom:1px solid var(--slate-100)">${text}</div>
+          `).join('')
+        }
       } catch {}
     }
 
