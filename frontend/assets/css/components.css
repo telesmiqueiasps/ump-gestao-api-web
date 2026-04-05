@@ -24,6 +24,9 @@
 .btn-danger    { background: var(--red-600); color: #fff; }
 .btn-danger:hover:not(:disabled) { background: var(--red-700); }
 
+.btn-success   { background: var(--green-600, #16a34a); color: #fff; }
+.btn-success:hover:not(:disabled) { background: var(--green-700, #15803d); }
+
 .btn-ghost     { background: transparent; color: var(--slate-500); border-color: transparent; }
 .btn-ghost:hover:not(:disabled) { background: var(--slate-100); color: var(--slate-700); }
 
