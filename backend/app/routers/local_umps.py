@@ -71,6 +71,45 @@ def get_my_local_ump(
     return _to_out(local)
 
 
+@router.get("/anniversaries")
+def get_local_anniversaries(
+    current_user: User = Depends(require_federation),
+    db: Session = Depends(get_db),
+):
+    import datetime
+    from sqlalchemy import extract
+    current_month = datetime.date.today().month
+    current_day   = datetime.date.today().day
+    current_year  = datetime.date.today().year
+
+    locals_ = db.query(LocalUmp).filter(
+        LocalUmp.federation_id == current_user.organization_id,
+        LocalUmp.is_active == True,
+        LocalUmp.organization_date.isnot(None),
+        extract('month', LocalUmp.organization_date) == current_month,
+    ).order_by(extract('day', LocalUmp.organization_date)).all()
+
+    result = []
+    for l in locals_:
+        org_day        = l.organization_date.day
+        years          = current_year - l.organization_date.year
+        is_today       = org_day == current_day
+        already_passed = org_day < current_day
+
+        result.append({
+            "id":                str(l.id),
+            "name":              l.name,
+            "church_name":       l.church_name,
+            "organization_date": l.organization_date.isoformat(),
+            "org_day":           org_day,
+            "years":             years,
+            "is_today":          is_today,
+            "already_passed":    already_passed,
+        })
+
+    return result
+
+
 # Federação vê uma Local específica sua
 @router.get("/{local_id}")
 def get_local_ump(

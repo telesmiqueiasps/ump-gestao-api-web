@@ -24,9 +24,7 @@
       border: 1.5px solid var(--slate-200);
       border-radius: var(--radius-lg);
       padding: 1rem 1.25rem;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
+      display: flex; align-items: center; gap: 1rem;
       transition: all .15s;
     }
     .birthday-card.today {
@@ -36,15 +34,13 @@
     }
     .birthday-card.passed { opacity: .55; }
     .birthday-avatar {
-      width: 48px; height: 48px;
-      border-radius: 50%;
+      width: 48px; height: 48px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
       font-size: 1.3rem; font-weight: 700; flex-shrink: 0;
       background: var(--blue-100); color: var(--blue-600);
     }
     .birthday-card.today .birthday-avatar {
-      background: linear-gradient(135deg, #e8630a, #c0392b);
-      color: #fff;
+      background: linear-gradient(135deg, #e8630a, #c0392b); color: #fff;
     }
     .birthday-info { flex: 1; min-width: 0; }
     .birthday-name { font-weight: 600; color: var(--slate-800); font-size: .95rem; }
@@ -71,6 +67,28 @@
       color: var(--slate-400); font-size: .875rem;
     }
     .empty-state .icon { font-size: 2rem; margin-bottom: .5rem; }
+    .notice-card {
+      background: #fff;
+      border: 1.5px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.25rem;
+      margin-bottom: .6rem;
+    }
+    .notice-card.inactive { opacity: .5; }
+    .notice-card-header {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; gap: .75rem; margin-bottom: .6rem;
+    }
+    .notice-title { font-weight: 600; color: var(--slate-800); font-size: .925rem; }
+    .notice-meta {
+      display: flex; align-items: center; gap: .5rem;
+      margin-top: .25rem; flex-wrap: wrap;
+    }
+    .notice-content {
+      font-size: .875rem; color: var(--slate-600);
+      line-height: 1.6; white-space: pre-wrap;
+    }
+    .mb-4 { margin-bottom: 1.25rem; }
   </style>
 </head>
 <body>
@@ -116,37 +134,51 @@
 
       <div id="page-alert" class="hidden"></div>
 
-      <!-- Aniversário da Sociedade (apenas UMP Local) -->
-      <div id="society-anniversary-section" style="display:none">
-        <div class="section-title">🏛️ Aniversário da Sociedade</div>
-        <div class="society-anniversary-card" id="society-anniversary-card">
-          <div class="society-anniversary-icon">🎂</div>
-          <div>
-            <p style="font-size:1.05rem;font-weight:700;margin-bottom:.25rem" id="society-anniversary-title"></p>
-            <p style="font-size:.85rem;opacity:.85" id="society-anniversary-sub"></p>
+      <!-- ── SEÇÃO FEDERAÇÃO ── -->
+      <div id="fed-section" style="display:none">
+
+        <!-- Aniversários das locais -->
+        <div id="fed-anniversaries" class="mb-4"></div>
+
+        <!-- Avisos enviados -->
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+            <div class="section-title" style="margin:0">📨 Avisos Enviados às Locais</div>
+            <button class="btn btn-primary btn-sm" id="btn-new-notice">+ Novo Aviso</button>
+          </div>
+          <div id="sent-notices-list">
+            <div class="loading-center"><div class="spinner"></div></div>
           </div>
         </div>
       </div>
 
-      <!-- Aniversariantes do mês (apenas UMP Local) -->
-      <div id="birthdays-section" style="display:none">
-        <div class="section-title" id="birthdays-title">🎂 Aniversariantes do Mês</div>
-        <div id="birthdays-loading" class="loading-center"><div class="spinner"></div></div>
-        <div id="birthdays-list" style="display:none;flex-direction:column;gap:.6rem"></div>
-        <div id="birthdays-empty" class="empty-state" style="display:none">
-          <div class="icon">🎈</div>
-          <p>Nenhum aniversariante este mês.</p>
-          <p style="font-size:.75rem;margin-top:.25rem">Cadastre as datas de nascimento dos sócios para ver os aniversariantes.</p>
-        </div>
-      </div>
+      <!-- ── SEÇÃO UMP LOCAL ── -->
+      <div id="local-section" style="display:none">
 
-      <!-- Avisos gerais -->
-      <div>
-        <div class="section-title">📋 Avisos Gerais</div>
-        <div class="card" style="text-align:center;padding:2.5rem">
-          <p style="font-size:1.5rem;margin-bottom:.5rem">🔔</p>
-          <p style="font-weight:600;color:var(--slate-700)">Em breve</p>
-          <p style="font-size:.875rem;color:var(--slate-400);margin-top:.25rem">Sistema de avisos e comunicados em desenvolvimento.</p>
+        <!-- Aniversário da sociedade -->
+        <div id="local-anniversary" style="display:none" class="mb-4">
+          <div class="section-title">🏛️ Aniversário da Sociedade</div>
+          <div id="local-anniversary-card"></div>
+        </div>
+
+        <!-- Aniversariantes -->
+        <div class="mb-4">
+          <div class="section-title" id="birthdays-title">🎂 Aniversariantes do Mês</div>
+          <div id="birthdays-loading" class="loading-center"><div class="spinner"></div></div>
+          <div id="birthdays-list" style="display:none;flex-direction:column;gap:.6rem"></div>
+          <div id="birthdays-empty" class="empty-state" style="display:none">
+            <div class="icon">🎈</div>
+            <p>Nenhum aniversariante este mês.</p>
+            <p style="font-size:.75rem;margin-top:.25rem">Cadastre as datas de nascimento dos sócios.</p>
+          </div>
+        </div>
+
+        <!-- Avisos da federação -->
+        <div id="fed-notices-section">
+          <div class="section-title">📨 Avisos da Federação</div>
+          <div id="received-notices-list">
+            <div class="loading-center"><div class="spinner"></div></div>
+          </div>
         </div>
       </div>
 
@@ -155,15 +187,59 @@
   <div class="sidebar-overlay" id="sidebar-overlay"></div>
 </div>
 
+<!-- Modal novo aviso -->
+<div class="modal-overlay" id="modal-new-notice">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Novo Aviso</h2>
+      <button class="modal-close">✕</button>
+    </div>
+    <div class="field mb-4">
+      <label>Título</label>
+      <input class="input" type="text" id="notice-title-input" placeholder="Título do aviso" maxlength="200" />
+    </div>
+    <div class="field mb-4">
+      <label>Conteúdo</label>
+      <textarea class="input" id="notice-content-input" rows="5"
+        placeholder="Escreva o conteúdo do aviso..."
+        style="resize:vertical;min-height:120px"></textarea>
+    </div>
+    <div class="field mb-4">
+      <label>Destinatário</label>
+      <select class="input" id="notice-target-type">
+        <option value="all">📢 Todas as UMPs Locais</option>
+        <option value="specific">📍 Uma local específica</option>
+      </select>
+    </div>
+    <div class="field mb-4" id="notice-target-local-wrap" style="display:none">
+      <label>Selecione a Local</label>
+      <select class="input" id="notice-target-local">
+        <option value="">Selecione...</option>
+      </select>
+    </div>
+    <div class="field mb-4">
+      <label>Data de expiração <span style="font-weight:400;color:var(--slate-400)">(opcional)</span></label>
+      <input class="input" type="date" id="notice-expires" />
+    </div>
+    <div id="notice-alert" class="hidden mb-4"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary modal-close">Cancelar</button>
+      <button class="btn btn-primary" id="btn-save-notice">Enviar Aviso</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
   import { requireAuth, isLocalUmp, isFederation } from '../assets/js/auth.js'
   import { renderShell, renderBottomNav } from '../assets/js/router.v3.js'
   import { api } from '../assets/js/api.js'
+  import { formatDate, openModal, closeModal, initModalClose, showAlert, clearAlert, setLoading } from '../assets/js/utils.js'
 
   if (!requireAuth()) throw new Error()
   renderShell()
   renderBottomNav('notices')
   document.querySelector('[data-page="notices"]')?.classList.add('active')
+  initModalClose()
 
   const MONTH_NAMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
                        'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
@@ -175,97 +251,277 @@
   document.getElementById('notices-subtitle').textContent =
     `Avisos de ${MONTH_NAMES[currentMonth]} de ${currentYear}`
 
-  // ── Aniversário da Sociedade Local ──
-  async function checkSocietyAnniversary() {
+  // ── FEDERAÇÃO ────────────────────────────────────────────
+  if (isFederation()) {
+    document.getElementById('fed-section').style.display = 'block'
+    loadFedData()
+  }
+
+  // ── UMP LOCAL ────────────────────────────────────────────
+  if (isLocalUmp()) {
+    document.getElementById('local-section').style.display = 'block'
+    loadLocalData()
+  }
+
+  // ════════════════════════════════════════
+  // FEDERAÇÃO
+  // ════════════════════════════════════════
+
+  let localsList = []
+
+  async function loadFedData() {
     try {
-      const orgData = await api.get('/api/local-umps/me')
-      if (!orgData.organization_date) return
+      const anniversaries = await api.get('/api/local-umps/anniversaries')
+      renderAnniversaries(anniversaries)
+    } catch {}
 
-      const orgDate  = new Date(orgData.organization_date + 'T00:00:00')
-      const orgMonth = orgDate.getMonth()
-      const orgDay   = orgDate.getDate()
-      if (orgMonth !== currentMonth) return
+    await loadSentNotices()
 
-      const years   = currentYear - orgDate.getFullYear()
-      const isToday = orgDay === currentDay
-
-      const section = document.getElementById('society-anniversary-section')
-      const card    = document.getElementById('society-anniversary-card')
-      const title   = document.getElementById('society-anniversary-title')
-      const sub     = document.getElementById('society-anniversary-sub')
-
-      section.style.display = 'block'
-      title.textContent = isToday
-        ? `🎉 Hoje é o aniversário de ${orgData.name}!`
-        : `${orgData.name} faz aniversário este mês!`
-      sub.textContent = isToday
-        ? `Completando ${years} anos de história! Parabéns! 🎊`
-        : `Dia ${orgDay} de ${MONTH_NAMES[currentMonth]} — ${years} anos`
-
-      if (!isToday) card.style.background = 'linear-gradient(135deg, #2d5a27, #3d7a35)'
+    try {
+      localsList = await api.get('/api/federations/me/local-umps')
+      const select = document.getElementById('notice-target-local')
+      localsList.forEach(l => {
+        const opt = document.createElement('option')
+        opt.value = l.id
+        opt.textContent = l.name
+        select.appendChild(opt)
+      })
     } catch {}
   }
 
-  // ── Aniversariantes dos sócios ──
-  async function loadBirthdays() {
-    const section  = document.getElementById('birthdays-section')
-    const loading  = document.getElementById('birthdays-loading')
-    const list     = document.getElementById('birthdays-list')
-    const empty    = document.getElementById('birthdays-empty')
-    const titleEl  = document.getElementById('birthdays-title')
+  function renderAnniversaries(anniversaries) {
+    const section = document.getElementById('fed-anniversaries')
+    if (!anniversaries.length) {
+      section.innerHTML = `
+        <div class="section-title">🏛️ Aniversários de Locais este Mês</div>
+        <div class="empty-state"><div class="icon">🏛️</div><p>Nenhuma local faz aniversário este mês.</p></div>`
+      return
+    }
+    section.innerHTML = `
+      <div class="section-title">🏛️ Aniversários de Locais este Mês</div>
+      <div style="display:flex;flex-direction:column;gap:.6rem">
+        ${anniversaries.map(a => `
+          <div class="birthday-card ${a.is_today ? 'today' : ''} ${a.already_passed && !a.is_today ? 'passed' : ''}">
+            <div class="birthday-avatar">${a.is_today ? '🎉' : '🏛️'}</div>
+            <div class="birthday-info">
+              <div class="birthday-name">${a.name}</div>
+              <div class="birthday-sub">
+                ${a.church_name ? a.church_name + ' · ' : ''}
+                ${a.is_today
+                  ? `Hoje! Completando ${a.years} anos!`
+                  : a.already_passed
+                    ? `Dia ${a.org_day} — ${a.years} anos (passou)`
+                    : `Dia ${a.org_day} de ${MONTH_NAMES[currentMonth]} — ${a.years} anos`}
+              </div>
+            </div>
+            <span class="birthday-badge ${a.is_today ? 'badge-amber' : a.already_passed ? 'badge-slate' : 'badge-green'}">
+              ${a.is_today ? '🎉 Hoje!' : a.already_passed ? 'Passou' : `Dia ${a.org_day}`}
+            </span>
+          </div>
+        `).join('')}
+      </div>`
+  }
 
-    section.style.display = 'block'
-    titleEl.textContent   = `🎂 Aniversariantes de ${MONTH_NAMES[currentMonth]}`
-    loading.style.display = 'flex'
+  async function loadSentNotices() {
+    try {
+      const notices = await api.get('/api/notices/sent')
+      renderSentNotices(notices)
+    } catch {}
+  }
+
+  function renderSentNotices(notices) {
+    const container = document.getElementById('sent-notices-list')
+    if (!notices.length) {
+      container.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>Nenhum aviso enviado ainda.</p></div>`
+      return
+    }
+    container.innerHTML = notices.map(n => `
+      <div class="notice-card ${!n.is_active ? 'inactive' : ''}">
+        <div class="notice-card-header">
+          <div>
+            <div class="notice-title">${n.title}</div>
+            <div class="notice-meta">
+              <span class="badge ${n.target_type === 'all' ? 'badge-blue' : 'badge-slate'}">
+                ${n.target_type === 'all' ? '📢 Todas as Locais' : `📍 ${n.target_local_name || 'Local específica'}`}
+              </span>
+              <span style="font-size:.72rem;color:var(--slate-400)">${formatDate(n.created_at?.split('T')[0])}</span>
+              ${n.expires_at ? `<span style="font-size:.72rem;color:#92400e">Expira: ${formatDate(n.expires_at?.split('T')[0])}</span>` : ''}
+            </div>
+          </div>
+          <div style="display:flex;gap:.3rem;flex-shrink:0">
+            <button class="btn btn-ghost btn-icon" onclick="toggleNotice('${n.id}',${n.is_active})" title="${n.is_active ? 'Desativar' : 'Ativar'}">
+              ${n.is_active ? '👁️' : '🚫'}
+            </button>
+            <button class="btn btn-ghost btn-icon danger" onclick="deleteNotice('${n.id}')" title="Excluir">✕</button>
+          </div>
+        </div>
+        <div class="notice-content">${n.content}</div>
+      </div>
+    `).join('')
+  }
+
+  window.toggleNotice = async (id, currentActive) => {
+    try {
+      await api.put(`/api/notices/${id}`, { is_active: !currentActive })
+      await loadSentNotices()
+    } catch(err) { alert(err.message) }
+  }
+
+  window.deleteNotice = async (id) => {
+    if (!confirm('Excluir este aviso?')) return
+    try {
+      await api.delete(`/api/notices/${id}`)
+      await loadSentNotices()
+    } catch(err) { alert(err.message) }
+  }
+
+  document.getElementById('btn-new-notice')?.addEventListener('click', () => {
+    document.getElementById('notice-title-input').value   = ''
+    document.getElementById('notice-content-input').value = ''
+    document.getElementById('notice-target-type').value   = 'all'
+    document.getElementById('notice-target-local-wrap').style.display = 'none'
+    document.getElementById('notice-expires').value       = ''
+    clearAlert('notice-alert')
+    openModal('modal-new-notice')
+  })
+
+  document.getElementById('notice-target-type')?.addEventListener('change', (e) => {
+    document.getElementById('notice-target-local-wrap').style.display =
+      e.target.value === 'specific' ? 'block' : 'none'
+  })
+
+  document.getElementById('btn-save-notice')?.addEventListener('click', async () => {
+    const btn       = document.getElementById('btn-save-notice')
+    const title     = document.getElementById('notice-title-input').value.trim()
+    const content   = document.getElementById('notice-content-input').value.trim()
+    const targetType = document.getElementById('notice-target-type').value
+    const targetLocalId = document.getElementById('notice-target-local').value
+    const expiresAt = document.getElementById('notice-expires').value
+
+    if (!title || !content) {
+      showAlert('notice-alert', 'Preencha título e conteúdo.', 'error'); return
+    }
+
+    setLoading(btn, true, 'Enviar')
+    try {
+      await api.post('/api/notices/', {
+        title,
+        content,
+        target_type: targetType,
+        target_local_id: targetType === 'specific' ? targetLocalId : null,
+        expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
+      })
+      closeModal('modal-new-notice')
+      await loadSentNotices()
+    } catch(err) {
+      showAlert('notice-alert', err.message, 'error')
+    } finally {
+      setLoading(btn, false, 'Enviar')
+    }
+  })
+
+  // ════════════════════════════════════════
+  // UMP LOCAL
+  // ════════════════════════════════════════
+
+  async function loadLocalData() {
+    try {
+      const orgData = await api.get('/api/local-umps/me')
+      if (orgData.organization_date) {
+        const orgDate = new Date(orgData.organization_date + 'T00:00:00')
+        if (orgDate.getMonth() === currentMonth) {
+          const years   = currentYear - orgDate.getFullYear()
+          const isToday = orgDate.getDate() === currentDay
+          const section = document.getElementById('local-anniversary')
+          section.style.display = 'block'
+          document.getElementById('local-anniversary-card').innerHTML = `
+            <div class="society-anniversary-card" style="${isToday ? '' : 'background:linear-gradient(135deg,#2d5a27,#3d7a35)'}">
+              <div class="society-anniversary-icon">${isToday ? '🎉' : '🏛️'}</div>
+              <div>
+                <p style="font-size:1.05rem;font-weight:700;margin-bottom:.25rem">
+                  ${isToday ? `Hoje é o aniversário de ${orgData.name}!` : `${orgData.name} faz aniversário este mês!`}
+                </p>
+                <p style="font-size:.85rem;opacity:.85">
+                  ${isToday
+                    ? `Completando ${years} anos! Parabéns! 🎊`
+                    : `Dia ${orgDate.getDate()} de ${MONTH_NAMES[currentMonth]} — ${years} anos`}
+                </p>
+              </div>
+            </div>`
+        }
+      }
+    } catch {}
 
     try {
       const birthdays = await api.get('/api/members/birthdays')
-      loading.style.display = 'none'
+      renderBirthdays(birthdays)
+    } catch {
+      document.getElementById('birthdays-loading').style.display = 'none'
+    }
 
-      if (!birthdays.length) {
-        empty.style.display = 'block'
+    await loadReceivedNotices()
+  }
+
+  function renderBirthdays(birthdays) {
+    const loading = document.getElementById('birthdays-loading')
+    const list    = document.getElementById('birthdays-list')
+    const empty   = document.getElementById('birthdays-empty')
+    loading.style.display = 'none'
+
+    if (!birthdays.length) { empty.style.display = 'block'; return }
+
+    list.style.display = 'flex'
+    list.innerHTML = birthdays.map(b => {
+      const initials = b.full_name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
+      return `
+        <div class="birthday-card ${b.is_today ? 'today' : ''} ${b.already_passed && !b.is_today ? 'passed' : ''}">
+          <div class="birthday-avatar">${b.is_today ? '🎂' : initials}</div>
+          <div class="birthday-info">
+            <div class="birthday-name">${b.full_name}</div>
+            <div class="birthday-sub">
+              ${b.is_today
+                ? `🎉 Hoje! Completando ${b.age} anos`
+                : b.already_passed
+                  ? `Dia ${b.birth_day} — ${b.age} anos (passou)`
+                  : `Dia ${b.birth_day} de ${MONTH_NAMES[currentMonth]} — ${b.age} anos`}
+            </div>
+          </div>
+          <span class="birthday-badge ${b.is_today ? 'badge-amber' : b.already_passed ? 'badge-slate' : 'badge-blue'}">
+            ${b.is_today ? '🎉 Hoje!' : b.already_passed ? 'Passou' : `Dia ${b.birth_day}`}
+          </span>
+        </div>`
+    }).join('')
+  }
+
+  async function loadReceivedNotices() {
+    try {
+      const notices   = await api.get('/api/notices/received')
+      const container = document.getElementById('received-notices-list')
+
+      if (!notices.length) {
+        container.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>Nenhum aviso da Federação no momento.</p></div>`
         return
       }
 
-      list.style.display = 'flex'
-      list.innerHTML = birthdays.map(b => {
-        const isToday = b.is_today
-        const passed  = b.already_passed
-        const initials = b.full_name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
-        return `
-          <div class="birthday-card ${isToday ? 'today' : ''} ${passed && !isToday ? 'passed' : ''}">
-            <div class="birthday-avatar">${isToday ? '🎂' : initials}</div>
-            <div class="birthday-info">
-              <div class="birthday-name">${b.full_name}</div>
-              <div class="birthday-sub">
-                ${isToday
-                  ? `🎉 Hoje! Completando ${b.age} anos`
-                  : passed
-                    ? `Dia ${b.birth_day} — ${b.age} anos (já passou)`
-                    : `Dia ${b.birth_day} de ${MONTH_NAMES[currentMonth]} — ${b.age} anos`
-                }
+      container.innerHTML = notices.map(n => `
+        <div class="notice-card">
+          <div class="notice-card-header">
+            <div>
+              <div class="notice-title">${n.title}</div>
+              <div class="notice-meta">
+                <span style="font-size:.72rem;color:var(--slate-400)">
+                  📨 Federação · ${formatDate(n.created_at?.split('T')[0])}
+                </span>
+                ${n.target_type === 'specific'
+                  ? '<span class="badge badge-blue" style="font-size:.65rem">Direcionado para você</span>'
+                  : ''}
               </div>
             </div>
-            <span class="birthday-badge ${isToday ? 'badge-amber' : passed ? 'badge-slate' : 'badge-blue'}">
-              ${isToday ? '🎉 Hoje!' : passed ? 'Passou' : `Dia ${b.birth_day}`}
-            </span>
           </div>
-        `
-      }).join('')
-    } catch(err) {
-      loading.style.display = 'none'
-      console.error(err)
-    }
-  }
-
-  if (isLocalUmp()) {
-    checkSocietyAnniversary()
-    loadBirthdays()
-  }
-
-  if (isFederation()) {
-    document.getElementById('notices-subtitle').textContent =
-      `Comunicados de ${MONTH_NAMES[currentMonth]} de ${currentYear}`
+          <div class="notice-content">${n.content}</div>
+        </div>
+      `).join('')
+    } catch {}
   }
 </script>
 

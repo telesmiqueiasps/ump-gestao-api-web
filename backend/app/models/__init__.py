@@ -4,4 +4,4 @@ from app.models.user import User, UserRole
 from app.models.finance import FinancialPeriod, FinancialTransaction
 from app.models.member import Member, MembershipFee
 from app.models.board import BoardMember
-from app.models.member_fees import MemberMonthlyFee, MemberAciContribution
+from app.models.member_fees import MemberMonthlyFee, MemberAciContributionfrom app.models.notice import FederationNotice
