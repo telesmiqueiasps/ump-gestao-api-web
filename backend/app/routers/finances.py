@@ -575,6 +575,8 @@ def close_period(
         b2_client=b2_client,
         bucket_name=bucket_name,
         theme_color=theme_color,
+        board_data=board_data,
+        logo_bytes=logo_bytes,
     )
 
     # ── Faz upload dos PDFs no B2 ──

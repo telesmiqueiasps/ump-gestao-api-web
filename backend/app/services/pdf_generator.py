@@ -253,8 +253,8 @@ def generate_financial_report(
         return Paragraph(txt, _ps(7.5, color, bold=bold, align=TA_RIGHT))
 
     fin_data = [
-        [_fl(f'SALDO DO ANO ANTERIOR {year-1}', bold=True),
-         _fr(_fc(initial), bold=True),
+        [Paragraph(f'SALDO DO ANO ANTERIOR {year-1}', _ps(8, WHITE, bold=True)),
+         Paragraph(_fc(initial), _ps(8, WHITE, bold=True, align=TA_RIGHT)),
          Paragraph('', _ps()), Paragraph('', _ps())],
 
         [_fhdr(f'RECEITAS ({year})'), _fhdr(''),
@@ -508,6 +508,7 @@ def generate_financial_report(
 def generate_receipts_report(
     org_data, period_data, months_data,
     b2_client, bucket_name, theme_color='#1a2a6c',
+    board_data=None, logo_bytes=None,
 ):
     buf = io.BytesIO()
     ML = MR = 14*mm
@@ -521,26 +522,141 @@ def generate_receipts_report(
     org_name = (org_data.get('name') or '').upper()
     story = []
 
-    # Capa
-    capa = Table([
-        [Paragraph('RELATÓRIO DE COMPROVANTES', _ps(14, WHITE, bold=True, align=TA_CENTER))],
-        [Paragraph(org_name,                    _ps(10, WHITE, align=TA_CENTER))],
-        [Paragraph(f'Ano {year}',               _ps(9,  WHITE, align=TA_CENTER))],
-    ], colWidths=[W])
-    capa.setStyle(TableStyle([
+    # ── Capa elaborada ──
+    # Cabeçalho com logo + bloco colorido (mesmo padrão do financeiro)
+    logo_img_capa = _logo(logo_bytes, 28, 28) if logo_bytes else None
+    title_w_capa = W - (28*mm if logo_img_capa else 0)
+
+    title_capa = Table([
+        [Paragraph('RELATÓRIO DE COMPROVANTES', _ps(9, WHITE, align=TA_CENTER))],
+        [Paragraph(org_name,                    _ps(13, WHITE, bold=True, align=TA_CENTER))],
+        [Paragraph(f'Ano {year}',               _ps(8, WHITE, align=TA_CENTER))],
+    ], colWidths=[title_w_capa])
+    title_capa.setStyle(TableStyle([
         ('BACKGROUND',    (0,0),(-1,-1), TC),
-        ('TOPPADDING',    (0,0),(-1,-1), 4),
-        ('BOTTOMPADDING', (0,0),(-1,-1), 4),
-        ('LEFTPADDING',   (0,0),(-1,-1), 8),
-        ('RIGHTPADDING',  (0,0),(-1,-1), 8),
+        ('TOPPADDING',    (0,0),(-1,-1), 2),
+        ('BOTTOMPADDING', (0,0),(-1,-1), 2),
+        ('LEFTPADDING',   (0,0),(-1,-1), 6),
+        ('RIGHTPADDING',  (0,0),(-1,-1), 6),
+        ('VALIGN',        (0,0),(-1,-1), 'MIDDLE'),
     ]))
-    story.append(capa)
+
+    if logo_img_capa:
+        hdr_capa_row = [[logo_img_capa, title_capa]]
+        hdr_capa_cw  = [28*mm, title_w_capa]
+    else:
+        hdr_capa_row = [[title_capa]]
+        hdr_capa_cw  = [W]
+
+    hdr_capa = Table(hdr_capa_row, colWidths=hdr_capa_cw, rowHeights=[35*mm])
+    hdr_capa.setStyle(TableStyle([
+        ('VALIGN',        (0,0),(-1,-1), 'MIDDLE'),
+        ('TOPPADDING',    (0,0),(-1,-1), 0),
+        ('BOTTOMPADDING', (0,0),(-1,-1), 0),
+        ('LEFTPADDING',   (0,0),(-1,-1), 0),
+        ('RIGHTPADDING',  (0,0),(-1,-1), 0),
+        ('BACKGROUND',    (1 if logo_img_capa else 0, 0),(-1,0), TC),
+    ]))
+    story.append(hdr_capa)
+    story.append(Spacer(1, 6*mm))
+
+    # Faixa informativa
+    story.append(_section_bar('INFORMAÇÕES DO PERÍODO', W, TC))
+    story.append(Spacer(1, 1*mm))
+
+    # Tabela com dados do período
+    is_fed_rec = org_data.get('organization_type') == 'federation'
+    org_label_rec = 'FEDERAÇÃO' if is_fed_rec else (org_data.get('society_type') or 'UMP')
+
+    # Conta total de lançamentos e comprovantes
+    total_txs = sum(len(m.get('transactions', [])) for m in months_data)
+    total_receipts = sum(
+        sum(1 for t in m.get('transactions', []) if t.get('receipt_url'))
+        for m in months_data
+    )
+    total_in_rec  = sum(float(m.get('total_in',  0)) for m in months_data)
+    total_out_rec = sum(float(m.get('total_out', 0)) for m in months_data)
+
+    presidente_rec = next((b for b in board_data if b.get('role') == 'presidente'), None) if board_data else None
+    tesoureiro_rec  = next((b for b in board_data if b.get('role') == 'tesoureiro'),  None) if board_data else None
+
+    LWC = 48*mm
+    VWC = W - LWC
+    info_capa_data = [
+        [Paragraph(org_label_rec.upper(), _ps(7, GRAY_TXT, align=TA_RIGHT)),
+         Paragraph((org_data.get('name') or '').upper(), _ps(7.5, BLACK))],
+        [Paragraph('PRESBITÉRIO', _ps(7, GRAY_TXT, align=TA_RIGHT)),
+         Paragraph((org_data.get('presbytery_name') or '—').upper(), _ps(7.5, BLACK))],
+        [Paragraph('ANO DO PERÍODO', _ps(7, GRAY_TXT, align=TA_RIGHT)),
+         Paragraph(str(year), _ps(7.5, BLACK))],
+        [Paragraph('TOTAL DE LANÇAMENTOS', _ps(7, GRAY_TXT, align=TA_RIGHT)),
+         Paragraph(str(total_txs), _ps(7.5, BLACK))],
+        [Paragraph('LANÇAMENTOS COM COMPROVANTE', _ps(7, GRAY_TXT, align=TA_RIGHT)),
+         Paragraph(f'{total_receipts} de {total_txs}', _ps(7.5, BLACK))],
+        [Paragraph('TOTAL DE RECEITAS', _ps(7, GRAY_TXT, align=TA_RIGHT)),
+         Paragraph(_fc(total_in_rec), _ps(7.5, GREEN, bold=True))],
+        [Paragraph('TOTAL DE DESPESAS', _ps(7, GRAY_TXT, align=TA_RIGHT)),
+         Paragraph(_fc(total_out_rec), _ps(7.5, RED_C, bold=True))],
+        [Paragraph('DATA DE GERAÇÃO', _ps(7, GRAY_TXT, align=TA_RIGHT)),
+         Paragraph(datetime.date.today().strftime('%d/%m/%Y'), _ps(7.5, BLACK))],
+    ]
+    info_capa_styles = [
+        ('GRID',          (0,0),(-1,-1), 0.5, GRAY_LINE),
+        ('VALIGN',        (0,0),(-1,-1), 'MIDDLE'),
+        ('TOPPADDING',    (0,0),(-1,-1), 3),
+        ('BOTTOMPADDING', (0,0),(-1,-1), 3),
+        ('LEFTPADDING',   (0,0),(-1,-1), 4),
+        ('RIGHTPADDING',  (0,0),(-1,-1), 4),
+    ]
+    for i in [1, 3, 5, 7]:
+        if i < len(info_capa_data):
+            info_capa_styles.append(('BACKGROUND', (0,i),(-1,i), GRAY_ROW))
+
+    info_capa_t = Table(info_capa_data, colWidths=[LWC, VWC])
+    info_capa_t.setStyle(TableStyle(info_capa_styles))
+    story.append(info_capa_t)
     story.append(Spacer(1, 5*mm))
-    story.append(Paragraph(
-        'Este relatório contém os comprovantes de todos os lançamentos do ano. '
-        'Cada registro apresenta os dados do lançamento e a imagem do comprovante.',
-        _ps(9, GRAY_TXT, align=TA_CENTER)
-    ))
+
+    # Responsáveis — apenas nomes destacados, sem linha de assinatura
+    if presidente_rec or tesoureiro_rec:
+        story.append(_section_bar('RESPONSÁVEIS', W, TC))
+        story.append(Spacer(1, 1*mm))
+
+        pres_name_rec = (presidente_rec.get('member_name') or '').upper() if presidente_rec else '—'
+        tes_name_rec  = (tesoureiro_rec.get('member_name')  or '').upper() if tesoureiro_rec  else '—'
+
+        resp_data = [
+            [Paragraph('PRESIDENTE', _ps(7, GRAY_TXT, align=TA_RIGHT)),
+             Paragraph(pres_name_rec, _ps(8, BLACK, bold=True)),
+             Paragraph('TESOUREIRO(A)', _ps(7, GRAY_TXT, align=TA_RIGHT)),
+             Paragraph(tes_name_rec, _ps(8, BLACK, bold=True))],
+        ]
+        HWR = W / 2
+        LWR = 32*mm
+        VWR = HWR - LWR
+        resp_t = Table(resp_data, colWidths=[LWR, VWR, LWR, VWR])
+        resp_t.setStyle(TableStyle([
+            ('GRID',          (0,0),(-1,-1), 0.5, GRAY_LINE),
+            ('BACKGROUND',    (0,0),(-1,-1), GRAY_ROW),
+            ('VALIGN',        (0,0),(-1,-1), 'MIDDLE'),
+            ('TOPPADDING',    (0,0),(-1,-1), 5),
+            ('BOTTOMPADDING', (0,0),(-1,-1), 5),
+            ('LEFTPADDING',   (0,0),(-1,-1), 4),
+            ('RIGHTPADDING',  (0,0),(-1,-1), 4),
+        ]))
+        story.append(resp_t)
+        story.append(Spacer(1, 5*mm))
+
+    # Rodapé da capa
+    presby_rec = (org_data.get('presbytery_name') or '').upper()
+    ft_txt_rec = f'{org_name} — {presby_rec}' if presby_rec else org_name
+    ft_rec = Table([[Paragraph(ft_txt_rec, _ps(7.5, WHITE, bold=True, align=TA_CENTER))]],
+                   colWidths=[W], rowHeights=[7*mm])
+    ft_rec.setStyle(TableStyle([
+        ('BACKGROUND', (0,0),(-1,-1), TC),
+        ('VALIGN',     (0,0),(-1,-1), 'MIDDLE'),
+    ]))
+    story.append(ft_rec)
     story.append(PageBreak())
 
     receipt_num = 0
