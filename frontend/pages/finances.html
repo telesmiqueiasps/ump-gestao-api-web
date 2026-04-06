@@ -21,70 +21,163 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
   <style>
-    .month-tabs-wrap { overflow-x: auto; padding-bottom: .25rem; margin-bottom: .75rem; }
-    .month-tabs { display: flex; gap: .5rem; min-width: max-content; }
-    .month-tab {
-      padding: .5rem 1.1rem; border-radius: var(--radius); font-size: .825rem; font-weight: 500;
-      border: 1.5px solid var(--slate-200); background: #fff; color: var(--slate-600);
-      cursor: pointer; transition: all var(--transition); white-space: nowrap;
-      display: flex; flex-direction: column; align-items: center; gap: .15rem;
-    }
-    .month-tab:hover { border-color: var(--blue-500); color: var(--blue-600); }
-    .month-tab.active { background: var(--blue-600); border-color: var(--blue-600); color: #fff; }
-    .month-tab.has-data { border-color: #bfdbfe; }
-    .month-tab.has-data.active { border-color: var(--blue-600); }
-    .month-tab .tab-balance { font-size: .68rem; opacity: .8; }
-    .month-tab.active .tab-balance { opacity: .9; }
-    .tab-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--brand-orange, #e8630a); margin-top: .1rem; }
-    .month-tab.active .tab-dot { background: rgba(255,255,255,.8); }
-    .month-summary {
-      display: grid; grid-template-columns: repeat(4, 1fr); gap: .75rem; margin-bottom: 1rem;
-    }
-    .month-summary-item { background: var(--slate-50); border-radius: var(--radius); padding: .6rem .75rem; text-align: center; }
-    .month-summary-item .label { font-size: .72rem; color: var(--slate-400); margin-bottom: .15rem; }
-    .month-summary-item .value { font-size: .95rem; font-weight: 700; }
-    @media (max-width: 600px) { .month-summary { grid-template-columns: 1fr 1fr; } }
-    
-    .finances-toolbar {
-      display: flex;
-      align-items: center;
-      gap: .6rem;
-      flex-wrap: wrap;
+    /* ── Tela de meses ── */
+    .months-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: .75rem;
     }
 
-    .finances-actions {
-      display: flex;
-      gap: .4rem;
-      align-items: center;
+    .month-card {
+      background: #fff;
+      border: 2px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      padding: 1.1rem 1rem;
+      cursor: pointer;
+      transition: all .15s;
+      position: relative;
+      overflow: hidden;
+      text-align: center;
+    }
+    .month-card:hover {
+      border-color: var(--blue-500);
+      box-shadow: 0 4px 16px rgba(26,42,108,.12);
+      transform: translateY(-2px);
+    }
+    .month-card.current {
+      border-color: var(--brand-orange, #e8630a);
+      background: linear-gradient(135deg, #fffaf6, #fff);
+    }
+    .month-card.has-data { border-color: var(--slate-300); }
+    .month-card.future {
+      opacity: .45;
+      cursor: default;
+      pointer-events: none;
+    }
+    .month-card.future:hover { transform: none; box-shadow: none; }
+
+    .month-card-dot {
+      position: absolute;
+      top: .6rem; right: .6rem;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--slate-200);
+    }
+    .month-card.has-data .month-card-dot { background: var(--green-600); }
+    .month-card.current .month-card-dot  { background: var(--brand-orange, #e8630a); }
+
+    .month-card-name { font-size: .95rem; font-weight: 700; color: var(--slate-800); margin-bottom: .35rem; }
+    .month-card.current .month-card-name { color: var(--brand-orange, #e8630a); }
+    .month-card-balance { font-size: .8rem; font-weight: 600; color: var(--slate-600); }
+    .month-card-balance.positive { color: var(--green-600); }
+    .month-card-balance.negative { color: var(--red-600); }
+    .month-card-count { font-size: .68rem; color: var(--slate-400); margin-top: .2rem; }
+    .month-card-current-label {
+      display: inline-block;
+      background: var(--brand-orange, #e8630a);
+      color: #fff; font-size: .58rem; font-weight: 700;
+      padding: .15rem .45rem; border-radius: 99px; margin-top: .35rem;
+      text-transform: uppercase; letter-spacing: .4px;
     }
 
-    .finances-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: .4rem;
-      white-space: nowrap;
+    /* ── Resumo anual ── */
+    .annual-summary-card {
+      background: #fff;
+      border: 1.5px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.25rem;
+      display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
+      margin-bottom: .25rem;
     }
+    .annual-summary-item { text-align: center; flex: 1; min-width: 70px; }
+    .annual-summary-item .label { display: block; font-size: .68rem; color: var(--slate-400); margin-bottom: .15rem; }
+    .annual-summary-item .value { font-size: .95rem; font-weight: 700; color: var(--slate-700); }
+    .annual-summary-item .value.green { color: var(--green-600); }
+    .annual-summary-item .value.red   { color: var(--red-600); }
+    .annual-summary-item .value.blue  { color: var(--blue-600); }
+    .annual-summary-sep { color: var(--slate-300); font-size: 1.1rem; font-weight: 300; flex-shrink: 0; }
+    .annual-summary-status { display: flex; flex-direction: column; align-items: center; gap: .3rem; flex-shrink: 0; }
+
+    /* ── Sem período ── */
+    .no-period-box {
+      background: var(--slate-50);
+      border: 2px dashed var(--slate-200);
+      border-radius: var(--radius-xl);
+      padding: 3rem 1.5rem; text-align: center; max-width: 400px; margin: 0 auto;
+    }
+    .no-period-box h2 { font-size: 1.1rem; margin-bottom: .5rem; }
+    .no-period-box p  { font-size: .875rem; color: var(--slate-500); }
+
+    /* ── Tela de detalhe do mês ── */
+    .month-detail-header {
+      display: flex; align-items: center; gap: .75rem; margin-bottom: 1rem; flex-wrap: wrap;
+    }
+
+    .btn-back {
+      width: 40px; height: 40px;
+      background: #fff; border: 1.5px solid var(--slate-200); border-radius: var(--radius);
+      cursor: pointer; font-size: 1.2rem;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--slate-600); transition: all .15s; flex-shrink: 0;
+    }
+    .btn-back:hover { background: var(--slate-50); border-color: var(--slate-300); color: var(--slate-800); }
+
+    .month-nav { display: flex; align-items: center; gap: .5rem; flex: 1; }
+    .month-detail-title { display: flex; align-items: baseline; gap: .3rem; flex: 1; }
+    .month-detail-title h1 { margin: 0; font-size: 1.4rem; }
+
+    .month-nav-arrow {
+      width: 34px; height: 34px;
+      background: #fff; border: 1.5px solid var(--slate-200); border-radius: var(--radius);
+      cursor: pointer; font-size: 1.2rem;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--slate-500); transition: all .15s; flex-shrink: 0; line-height: 1;
+    }
+    .month-nav-arrow:hover { background: var(--slate-50); color: var(--slate-800); }
+    .month-nav-arrow:disabled { opacity: .3; cursor: not-allowed; }
+
+    /* ── Barra de resumo do mês ── */
+    .month-summary-bar {
+      display: flex; align-items: center; gap: .5rem;
+      background: #fff; border: 1.5px solid var(--slate-200); border-radius: var(--radius-lg);
+      padding: .9rem 1.1rem; margin-bottom: 1rem; flex-wrap: wrap;
+    }
+    .msb-item { text-align: center; flex: 1; min-width: 60px; }
+    .msb-item.highlight { background: var(--slate-50); border-radius: var(--radius); padding: .4rem .6rem; }
+    .msb-label { display: block; font-size: .65rem; color: var(--slate-400); margin-bottom: .1rem; text-transform: uppercase; letter-spacing: .3px; }
+    .msb-value { font-size: .88rem; font-weight: 700; color: var(--slate-700); }
+    .msb-value.green { color: var(--green-600); }
+    .msb-value.red   { color: var(--red-600); }
+    .msb-value.blue  { color: var(--blue-600); }
+    .msb-arrow { color: var(--slate-300); font-size: .9rem; flex-shrink: 0; }
+
+    .month-empty-box {
+      background: var(--slate-50); border: 2px dashed var(--slate-200); border-radius: var(--radius-xl);
+      padding: 3rem 1.5rem; text-align: center; max-width: 400px; margin: 0 auto;
+    }
+    .month-empty-box h2 { font-size: 1rem; margin-bottom: .5rem; }
+    .month-empty-box p  { font-size: .875rem; color: var(--slate-500); }
+
+    /* ── Responsive ── */
+    .finances-toolbar { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+    .finances-actions { display: flex; gap: .4rem; align-items: center; }
+    .finances-btn { display: inline-flex; align-items: center; gap: .4rem; white-space: nowrap; }
 
     @media (max-width: 600px) {
-      .finances-toolbar {
-        width: 100%;
-        justify-content: space-between;
-      }
-
-      .finances-actions {
-        gap: .3rem;
-      }
-
-      .finances-btn {
-        padding: .5rem .6rem;
-        font-size: .78rem;
-      }
-
-      /* No mobile mostra apenas ícone */
+      .months-grid { grid-template-columns: repeat(3, 1fr); gap: .5rem; }
+      .month-card { padding: .8rem .5rem; }
+      .month-card-name { font-size: .85rem; }
+      .month-card-balance { font-size: .72rem; }
+      .annual-summary-card { gap: .4rem; padding: .75rem; }
+      .annual-summary-sep { display: none; }
+      .month-detail-header { gap: .5rem; }
+      .month-detail-title h1 { font-size: 1.15rem; }
+      .month-summary-bar { gap: .3rem; padding: .7rem .75rem; }
+      .msb-arrow { display: none; }
+      .msb-value { font-size: .78rem; }
+      .finances-toolbar { width: 100%; justify-content: space-between; }
       .finances-btn .btn-label { display: none; }
       .finances-btn .btn-icon-only { font-size: 1rem; }
-
-      /* Ano select menor */
       #year-select { min-width: 70px; font-size: .82rem; }
     }
 
@@ -126,67 +219,122 @@
       </div>
     </header>
 
-    <main class="page-content">
-      <div class="page-header">
-        <div class="page-header-info">
-          <h1>Financeiro</h1>
-          <p>Lançamentos e extrato financeiro</p>
-        </div>
-        <div class="finances-toolbar">
-          <select class="input" id="year-select" style="width:auto;min-width:80px"></select>
-          <div class="finances-actions">
-            <button class="btn btn-secondary finances-btn" id="btn-report" style="display:none" title="Relatório PDF">
-              <span class="btn-icon-only">📄</span>
-              <span class="btn-label">Relatório</span>
-            </button>
-            <button class="btn btn-secondary finances-btn" id="btn-clean-receipts" style="display:none" title="Limpar Comprovantes">
-              <span class="btn-icon-only">🗑️</span>
-              <span class="btn-label">Comprovantes</span>
-            </button>
-            <button class="btn btn-primary finances-btn" id="btn-new-tx" style="display:none" title="Novo Lançamento">
-              <span class="btn-icon-only">+</span>
-              <span class="btn-label">Lançamento</span>
-            </button>
+    <main class="page-content" id="finances-main">
+
+      <!-- ══ TELA 1: SELEÇÃO DE MÊS ══ -->
+      <div id="screen-months" style="display:none">
+        <div class="page-header">
+          <div class="page-header-info">
+            <h1>Financeiro</h1>
+            <p id="period-year-subtitle">Selecione um mês para visualizar</p>
+          </div>
+          <div class="finances-toolbar">
+            <select class="input" id="year-select" style="width:auto;min-width:80px"></select>
+            <div class="finances-actions">
+              <button class="btn btn-secondary finances-btn" id="btn-report" style="display:none" title="Relatório PDF">
+                <span class="btn-icon-only">📄</span>
+                <span class="btn-label">Relatório</span>
+              </button>
+              <button class="btn btn-secondary finances-btn" id="btn-clean-receipts" style="display:none" title="Limpar Comprovantes">
+                <span class="btn-icon-only">🗑️</span>
+                <span class="btn-label">Comprovantes</span>
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div id="page-alert" class="hidden"></div>
+        <div id="screen-months-alert" class="hidden"></div>
 
-      <!-- Sem período -->
-      <div id="no-period" style="display:none">
-        <div class="alert alert-warning" style="justify-content:space-between;align-items:center">
-          <span>⚠️ Nenhum período financeiro encontrado para este ano.</span>
-          <button class="btn btn-secondary btn-sm" id="btn-create-period">+ Criar período</button>
-        </div>
-      </div>
-
-      <!-- Resumo -->
-      <div class="card" id="period-summary" style="display:none">
-        <div class="card-header">
-          <div class="flex items-center gap-3">
-            <h2 id="period-title">Período</h2>
-            <span class="badge" id="period-badge"></span>
+        <!-- Resumo anual -->
+        <div id="annual-summary" style="display:none">
+          <div class="annual-summary-card">
+            <div class="annual-summary-item">
+              <span class="label">Saldo Inicial</span>
+              <span class="value" id="ann-initial">—</span>
+            </div>
+            <div class="annual-summary-sep">→</div>
+            <div class="annual-summary-item">
+              <span class="label">Entradas</span>
+              <span class="value green" id="ann-in">—</span>
+            </div>
+            <div class="annual-summary-sep">−</div>
+            <div class="annual-summary-item">
+              <span class="label">Saídas</span>
+              <span class="value red" id="ann-out">—</span>
+            </div>
+            <div class="annual-summary-sep">=</div>
+            <div class="annual-summary-item">
+              <span class="label">Saldo Final</span>
+              <span class="value blue" id="ann-final">—</span>
+            </div>
+            <div class="annual-summary-status">
+              <span class="badge" id="period-status-badge"></span>
+              <button class="btn btn-ghost btn-sm" id="btn-close-period" style="display:none;font-size:.75rem;color:var(--red-600)">Encerrar ano</button>
+            </div>
           </div>
-          <button class="btn btn-secondary btn-sm" id="btn-close-period" style="display:none">Encerrar período</button>
         </div>
-        <div class="summary-grid">
-          <div class="summary-item"><div class="label">Saldo Inicial</div><div class="value" id="sum-initial">—</div></div>
-          <div class="summary-item"><div class="label">Entradas</div><div class="value green" id="sum-in">—</div></div>
-          <div class="summary-item"><div class="label">Saídas</div><div class="value red" id="sum-out">—</div></div>
-          <div class="summary-item"><div class="label">Saldo Final</div><div class="value blue" id="sum-final">—</div></div>
+
+        <!-- Sem período -->
+        <div id="no-period" style="display:none">
+          <div class="no-period-box">
+            <div style="font-size:2.5rem;margin-bottom:.75rem">📂</div>
+            <h2>Nenhum período financeiro para <span id="no-period-year"></span></h2>
+            <p>Crie o período para começar a registrar lançamentos.</p>
+            <button class="btn btn-primary" id="btn-create-period" style="margin-top:1rem">+ Criar período <span id="no-period-year-btn"></span></button>
+          </div>
         </div>
+
+        <!-- Grid de meses -->
+        <div id="months-grid" class="months-grid" style="display:none"></div>
       </div>
 
-      <!-- Abas de mês -->
-      <div id="months-section" style="display:none">
-        <div class="month-tabs-wrap">
-          <div class="month-tabs" id="month-tabs"></div>
+      <!-- ══ TELA 2: MÊS SELECIONADO ══ -->
+      <div id="screen-month-detail" style="display:none">
+
+        <!-- Header do mês -->
+        <div class="month-detail-header">
+          <button class="btn-back" id="btn-back-months" title="Voltar">←</button>
+          <div class="month-nav">
+            <button class="month-nav-arrow" id="btn-prev-month" title="Mês anterior">‹</button>
+            <div class="month-detail-title">
+              <h1 id="month-detail-name"></h1>
+              <span id="month-detail-year" style="color:var(--slate-400);font-size:1rem;margin-left:.4rem"></span>
+            </div>
+            <button class="month-nav-arrow" id="btn-next-month" title="Próximo mês">›</button>
+          </div>
+          <button class="btn btn-primary" id="btn-new-tx" style="display:none">
+            <span style="font-size:1.1rem;line-height:1">+</span>
+            <span class="btn-label">Lançamento</span>
+          </button>
         </div>
 
-        <div class="card" id="month-content">
-          <div class="month-summary" id="month-summary"></div>
-          <hr style="border:none;border-top:1px solid var(--slate-100);margin:.25rem 0 1rem" />
+        <!-- Resumo do mês -->
+        <div class="month-summary-bar" id="month-summary-bar">
+          <div class="msb-item">
+            <span class="msb-label">Saldo Anterior</span>
+            <span class="msb-value" id="msb-opening">—</span>
+          </div>
+          <div class="msb-arrow">+</div>
+          <div class="msb-item">
+            <span class="msb-label">Entradas</span>
+            <span class="msb-value green" id="msb-in">—</span>
+          </div>
+          <div class="msb-arrow">−</div>
+          <div class="msb-item">
+            <span class="msb-label">Saídas</span>
+            <span class="msb-value red" id="msb-out">—</span>
+          </div>
+          <div class="msb-arrow">=</div>
+          <div class="msb-item highlight">
+            <span class="msb-label">Saldo do Mês</span>
+            <span class="msb-value blue" id="msb-closing">—</span>
+          </div>
+        </div>
+
+        <div id="screen-detail-alert" class="hidden"></div>
+
+        <!-- Tabela de lançamentos -->
+        <div class="card" id="tx-section">
           <div class="table-wrap" style="border:none">
             <table>
               <thead>
@@ -195,23 +343,27 @@
                   <th>Tipo</th>
                   <th>Descrição</th>
                   <th class="text-right">Valor</th>
-                  <th class="text-center">Comprovante</th>
-                  <th id="th-actions-month"></th>
+                  <th class="text-center hide-mobile">Comprovante</th>
+                  <th id="th-actions-col"></th>
                 </tr>
               </thead>
               <tbody id="month-tx-body">
-                <tr><td colspan="6" class="table-empty">Selecione um mês</td></tr>
+                <tr><td colspan="6" class="table-empty">Carregando...</td></tr>
               </tbody>
             </table>
           </div>
         </div>
 
-        <div id="month-empty" style="display:none">
-          <div class="card" style="text-align:center;padding:3rem;color:var(--slate-400)">
-            Nenhum lançamento neste mês.
+        <!-- Empty state -->
+        <div id="month-empty-state" style="display:none">
+          <div class="month-empty-box">
+            <div style="font-size:2.5rem;margin-bottom:.75rem">📋</div>
+            <h2>Nenhum lançamento em <span id="month-empty-name"></span></h2>
+            <p>Clique no botão acima para adicionar o primeiro lançamento deste mês.</p>
           </div>
         </div>
       </div>
+
     </main>
   </div>
   <div class="sidebar-overlay" id="sidebar-overlay"></div>
@@ -312,51 +464,339 @@
 </div>
 
 <script type="module">
-  import { requireAuth, isFederation } from '../assets/js/auth.js?v=9'
-  import { renderShell, canAccessPage, renderBottomNav } from '../assets/js/router.v3.js?v=9'
-  import { api } from '../assets/js/api.js?v=9'
-  import { formatCurrency, formatDate, showAlert, openModal, closeModal, initModalClose, setLoading } from '../assets/js/utils.js?v=9'
+  import { requireAuth, isFederation, isLocalUmp } from '../assets/js/auth.js'
+  import { renderShell, renderBottomNav, canAccessPage } from '../assets/js/router.v3.js'
+  import { api } from '../assets/js/api.js'
+  import { formatCurrency, formatDate, showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading } from '../assets/js/utils.js'
 
-  (async () => {
-    if (!requireAuth()) throw new Error()
-    if (!canAccessPage('finances')) window.location.href = '/pages/dashboard.html'
-    await renderShell()
-    renderBottomNav('finances')
-    document.querySelector('[data-page="finances"]')?.classList.add('active')
+  if (!requireAuth()) throw new Error()
+  await renderShell()
+  renderBottomNav('finances')
+  document.querySelector('[data-page="finances"]')?.classList.add('active')
+  initModalClose()
 
-    const TYPES = {
-      outras_receitas: { label: 'Outras Receitas', nature: 'in' },
-      outras_despesas: { label: 'Outras Despesas', nature: 'out' },
+  const TYPES = {
+    outras_receitas: { label: 'Outras Receitas', nature: 'in' },
+    outras_despesas: { label: 'Outras Despesas', nature: 'out' },
     aci_recebida:    { label: 'ACI Recebida',    nature: 'in' },
     aci_enviada:     { label: 'ACI Enviada',      nature: 'out' },
   }
 
-  let currentPeriod = null
-  let editId = null
-  let currentYear = new Date().getFullYear()
-  let monthsData = []
-  let currentMonthKey = null
-  let txMapMonth = {}
+  const MONTH_NAMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                       'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
 
-  // Preenche select de anos
+  let currentYear       = new Date().getFullYear()
+  let currentPeriod     = null
+  let monthsData        = []
+  let currentMonthIndex = new Date().getMonth()
+  let editId            = null
+  let txMap             = {}
+
+  // ── Preenche select de anos ──
   const yearSelect = document.getElementById('year-select')
-  ;[2023,2024,2025,2026].forEach(y => {
+  ;[2023,2024,2025,2026,2027].forEach(y => {
     const opt = document.createElement('option')
     opt.value = y; opt.textContent = y
     if (y === currentYear) opt.selected = true
     yearSelect.appendChild(opt)
   })
-  yearSelect.addEventListener('change', () => { currentYear = Number(yearSelect.value); loadPage() })
+  yearSelect.addEventListener('change', () => {
+    currentYear = Number(yearSelect.value)
+    showScreen('months')
+    loadPage()
+  })
 
-  initModalClose()
+  // ── Navegação entre telas ──
+  function showScreen(screen) {
+    document.getElementById('screen-months').style.display = screen === 'months' ? 'block' : 'none'
+    document.getElementById('screen-month-detail').style.display = screen === 'detail' ? 'block' : 'none'
+  }
 
-  // Criar período
+  document.getElementById('btn-back-months').addEventListener('click', () => showScreen('months'))
+
+  document.getElementById('btn-prev-month').addEventListener('click', () => {
+    if (currentMonthIndex > 0) {
+      currentMonthIndex--
+      renderMonthDetail(currentMonthIndex)
+    }
+  })
+
+  document.getElementById('btn-next-month').addEventListener('click', () => {
+    if (currentMonthIndex < 11) {
+      currentMonthIndex++
+      renderMonthDetail(currentMonthIndex)
+    }
+  })
+
+  // ── Carrega página principal ──
+  async function loadPage() {
+    clearAlert('screen-months-alert')
+    document.getElementById('no-period').style.display = 'none'
+    document.getElementById('annual-summary').style.display = 'none'
+    document.getElementById('months-grid').style.display = 'none'
+    document.getElementById('btn-report').style.display = 'none'
+    document.getElementById('btn-clean-receipts').style.display = 'none'
+
+    try {
+      const data = await api.get(`/api/finances/transactions/by-month?year=${currentYear}`)
+      currentPeriod = data.period
+      monthsData = data.months
+
+      document.getElementById('ann-initial').textContent = formatCurrency(currentPeriod.initial_balance)
+      document.getElementById('ann-in').textContent = formatCurrency(data.total_in)
+      document.getElementById('ann-out').textContent = formatCurrency(data.total_out)
+      document.getElementById('ann-final').textContent = formatCurrency(currentPeriod.final_balance)
+      document.getElementById('period-status-badge').textContent = currentPeriod.is_closed ? 'Encerrado' : 'Aberto'
+      document.getElementById('period-status-badge').className = `badge ${currentPeriod.is_closed ? 'badge-slate' : 'badge-green'}`
+      document.getElementById('period-year-subtitle').textContent = `Período ${currentYear}`
+      document.getElementById('annual-summary').style.display = 'block'
+
+      if (!currentPeriod.is_closed) {
+        document.getElementById('btn-close-period').style.display = 'inline-flex'
+      } else {
+        document.getElementById('btn-close-period').style.display = 'none'
+      }
+
+      document.getElementById('btn-report').style.display = 'inline-flex'
+      document.getElementById('btn-clean-receipts').style.display = 'inline-flex'
+
+      renderMonthsGrid()
+      document.getElementById('months-grid').style.display = 'grid'
+
+    } catch {
+      document.getElementById('no-period-year').textContent = currentYear
+      document.getElementById('no-period-year-btn').textContent = currentYear
+      document.getElementById('no-period').style.display = 'block'
+      document.getElementById('period-year-subtitle').textContent = `Ano ${currentYear}`
+    }
+  }
+
+  // ── Grid de meses ──
+  function renderMonthsGrid() {
+    const today = new Date()
+    const todayMonth = today.getMonth()
+    const todayYear  = today.getFullYear()
+    const grid = document.getElementById('months-grid')
+
+    grid.innerHTML = monthsData.map((m, idx) => {
+      const isCurrent = idx === todayMonth && currentYear === todayYear
+      const isFuture  = currentYear === todayYear && idx > todayMonth
+      const hasData   = m.has_transactions
+
+      let cardClass = 'month-card'
+      if (isCurrent) cardClass += ' current'
+      else if (isFuture) cardClass += ' future'
+      else if (hasData) cardClass += ' has-data'
+
+      const balanceClass = m.closing_balance >= 0 ? 'positive' : 'negative'
+
+      return `
+        <div class="${cardClass}" onclick="openMonth(${idx})">
+          <div class="month-card-dot"></div>
+          <div class="month-card-name">${MONTH_NAMES[idx]}</div>
+          <div class="month-card-balance ${balanceClass}">${formatCurrency(m.closing_balance)}</div>
+          ${hasData
+            ? `<div class="month-card-count">${m.transactions.length} lançamento${m.transactions.length !== 1 ? 's' : ''}</div>`
+            : `<div class="month-card-count" style="color:var(--slate-300)">Sem lançamentos</div>`
+          }
+          ${isCurrent ? `<div class="month-card-current-label">Mês atual</div>` : ''}
+        </div>`
+    }).join('')
+  }
+
+  // ── Abre mês ──
+  window.openMonth = (monthIdx) => {
+    currentMonthIndex = monthIdx
+    renderMonthDetail(monthIdx)
+    showScreen('detail')
+  }
+
+  function renderMonthDetail(idx) {
+    const month = monthsData[idx]
+    if (!month) return
+
+    document.getElementById('month-detail-name').textContent = MONTH_NAMES[idx]
+    document.getElementById('month-detail-year').textContent = currentYear
+    document.getElementById('month-empty-name').textContent = MONTH_NAMES[idx]
+
+    document.getElementById('btn-prev-month').disabled = idx === 0
+    document.getElementById('btn-next-month').disabled = idx === 11
+
+    document.getElementById('msb-opening').textContent = formatCurrency(month.opening_balance)
+    document.getElementById('msb-in').textContent = formatCurrency(month.total_in)
+    document.getElementById('msb-out').textContent = formatCurrency(month.total_out)
+    document.getElementById('msb-closing').textContent = formatCurrency(month.closing_balance)
+
+    const canEdit = !currentPeriod?.is_closed
+    document.getElementById('btn-new-tx').style.display = canEdit ? 'inline-flex' : 'none'
+    document.getElementById('th-actions-col').textContent = ''
+
+    txMap = {}
+    const tbody = document.getElementById('month-tx-body')
+    const txSection = document.getElementById('tx-section')
+    const emptyState = document.getElementById('month-empty-state')
+
+    if (!month.transactions.length) {
+      txSection.style.display = 'none'
+      emptyState.style.display = 'block'
+      return
+    }
+
+    txSection.style.display = 'block'
+    emptyState.style.display = 'none'
+
+    tbody.innerHTML = month.transactions.map(t => {
+      txMap[t.id] = t
+      const nature = TYPES[t.transaction_type]?.nature
+      const label  = TYPES[t.transaction_type]?.label
+      return `
+        <tr>
+          <td style="white-space:nowrap">${formatDate(t.transaction_date)}</td>
+          <td>
+            <span class="badge ${nature === 'in' ? 'badge-green' : 'badge-red'}" style="font-size:.7rem">
+              ${nature === 'in' ? '+' : '–'} ${label}
+            </span>
+          </td>
+          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${t.description}">${t.description}</td>
+          <td class="text-right font-medium" style="color:${nature==='in'?'var(--green-600)':'var(--red-600)'};white-space:nowrap">
+            ${nature === 'in' ? '+' : '–'} ${formatCurrency(t.amount)}
+          </td>
+          <td class="text-center hide-mobile">
+            ${t.receipt_url
+              ? `<button class="btn btn-ghost btn-sm" style="padding:.2rem .5rem;font-size:.75rem" data-action="receipt" data-id="${t.id}">Ver</button>`
+              : '<span style="color:var(--slate-300);font-size:.8rem">—</span>'}
+          </td>
+          <td>
+            ${canEdit ? `
+              <div class="row-actions">
+                <button class="btn btn-ghost btn-icon" data-action="edit" data-id="${t.id}" title="Editar">✎</button>
+                <button class="btn btn-ghost btn-icon danger" data-action="delete" data-id="${t.id}" title="Excluir">✕</button>
+              </div>` : ''}
+          </td>
+        </tr>`
+    }).join('')
+  }
+
+  // Event delegation na tabela
+  document.getElementById('month-tx-body').addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-action]')
+    if (!btn) return
+    const action = btn.dataset.action
+    const id = btn.dataset.id
+    const t = txMap[id]
+
+    if (action === 'receipt') {
+      try {
+        const data = await api.get(`/api/finances/transactions/${id}/receipt-url`)
+        window.open(data.url, '_blank')
+      } catch { alert('Erro ao obter comprovante') }
+    }
+
+    if (action === 'edit' && t) {
+      editId = id
+      document.getElementById('modal-tx-title').textContent = 'Editar Lançamento'
+      document.getElementById('tx-date').value = t.transaction_date
+      document.getElementById('tx-type').value = t.transaction_type
+      document.getElementById('tx-desc').value = t.description
+      document.getElementById('tx-amount').value = t.amount
+      document.getElementById('tx-receipt-field').style.display = 'none'
+      clearAlert('tx-alert')
+      openModal('modal-tx')
+    }
+
+    if (action === 'delete') {
+      if (!confirm('Excluir este lançamento?')) return
+      try {
+        await api.delete(`/api/finances/transactions/${id}`)
+        await reloadCurrentMonth()
+      } catch(err) { showAlert('screen-detail-alert', err.message, 'error') }
+    }
+  })
+
+  // Recarrega o mês atual após alteração
+  async function reloadCurrentMonth() {
+    try {
+      const data = await api.get(`/api/finances/transactions/by-month?year=${currentYear}`)
+      currentPeriod = data.period
+      monthsData = data.months
+      renderMonthDetail(currentMonthIndex)
+      renderMonthsGrid()
+      document.getElementById('ann-in').textContent = formatCurrency(data.total_in)
+      document.getElementById('ann-out').textContent = formatCurrency(data.total_out)
+      document.getElementById('ann-final').textContent = formatCurrency(currentPeriod.final_balance)
+    } catch {}
+  }
+
+  // ── Criar período ──
   document.getElementById('btn-create-period').addEventListener('click', () => {
     document.getElementById('period-year').value = currentYear
     document.getElementById('period-balance').value = ''
+    clearAlert('period-alert')
     openModal('modal-period')
   })
 
+  // ── Encerrar período ──
+  document.getElementById('btn-close-period').addEventListener('click', async () => {
+    if (!confirm(`Encerrar o período ${currentYear}? Esta ação não pode ser desfeita.`)) return
+    try {
+      await api.post(`/api/finances/periods/${currentPeriod.id}/close`)
+      await loadPage()
+    } catch(err) { showAlert('screen-months-alert', err.message, 'error') }
+  })
+
+  // ── Novo lançamento ──
+  document.getElementById('btn-new-tx').addEventListener('click', () => {
+    editId = null
+    document.getElementById('modal-tx-title').textContent = 'Novo Lançamento'
+    const today = new Date()
+    const month = currentMonthIndex + 1
+    const year  = currentYear
+    const day   = today.getMonth() === currentMonthIndex && today.getFullYear() === year
+      ? today.getDate() : 1
+    document.getElementById('tx-date').value = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`
+    document.getElementById('tx-type').value = 'outras_receitas'
+    document.getElementById('tx-desc').value = ''
+    document.getElementById('tx-amount').value = ''
+    document.getElementById('tx-receipt-field').style.display = 'block'
+    document.getElementById('tx-receipt').value = ''
+    clearAlert('tx-alert')
+    openModal('modal-tx')
+  })
+
+  // ── Salvar lançamento ──
+  document.getElementById('btn-save-tx').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-save-tx')
+    const payload = {
+      transaction_date: document.getElementById('tx-date').value,
+      transaction_type: document.getElementById('tx-type').value,
+      description:      document.getElementById('tx-desc').value,
+      amount:           parseFloat(document.getElementById('tx-amount').value),
+    }
+    if (!payload.transaction_date || !payload.description || !payload.amount) {
+      showAlert('tx-alert', 'Preencha todos os campos.', 'error'); return
+    }
+    setLoading(btn, true, 'Salvar')
+    try {
+      if (editId) {
+        await api.put(`/api/finances/transactions/${editId}`, payload)
+      } else {
+        const tx = await api.post('/api/finances/transactions', payload)
+        const file = document.getElementById('tx-receipt').files[0]
+        if (file) {
+          const fd = new FormData(); fd.append('file', file)
+          await api.upload(`/api/finances/transactions/${tx.id}/receipt`, fd)
+        }
+      }
+      closeModal('modal-tx')
+      await reloadCurrentMonth()
+    } catch(err) {
+      showAlert('tx-alert', err.message, 'error')
+    } finally {
+      setLoading(btn, false, 'Salvar')
+    }
+  })
+
+  // ── Criar período (modal) ──
   document.getElementById('btn-save-period').addEventListener('click', async () => {
     const btn = document.getElementById('btn-save-period')
     setLoading(btn, true, 'Criar')
@@ -374,261 +814,18 @@
     }
   })
 
-  // Novo lançamento
-  document.getElementById('btn-new-tx').addEventListener('click', () => {
-    editId = null
-    document.getElementById('modal-tx-title').textContent = 'Novo Lançamento'
-    document.getElementById('tx-date').value   = new Date().toISOString().split('T')[0]
-    document.getElementById('tx-type').value   = 'outras_receitas'
-    document.getElementById('tx-desc').value   = ''
-    document.getElementById('tx-amount').value = ''
-    document.getElementById('tx-receipt-field').style.display = 'block'
-    openModal('modal-tx')
-  })
-
-  // Salvar lançamento
-  document.getElementById('btn-save-tx').addEventListener('click', async () => {
-    const btn = document.getElementById('btn-save-tx')
-    const payload = {
-      transaction_date: document.getElementById('tx-date').value,
-      transaction_type: document.getElementById('tx-type').value,
-      description:      document.getElementById('tx-desc').value,
-      amount:           parseFloat(document.getElementById('tx-amount').value),
-    }
-    if (!payload.transaction_date || !payload.description || !payload.amount) {
-      showAlert('tx-alert', 'Preencha todos os campos obrigatórios.', 'error'); return
-    }
-    setLoading(btn, true, 'Salvar')
-    try {
-      if (editId) {
-        await api.put(`/api/finances/transactions/${editId}`, payload)
-      } else {
-        const tx = await api.post('/api/finances/transactions', payload)
-        const file = document.getElementById('tx-receipt').files[0]
-        if (file) {
-          const fd = new FormData(); fd.append('file', file)
-          await api.upload(`/api/finances/transactions/${tx.id}/receipt`, fd)
-        }
-      }
-      closeModal('modal-tx')
-      loadPage()
-    } catch(err) {
-      showAlert('tx-alert', err.message, 'error')
-    } finally {
-      setLoading(btn, false, 'Salvar')
-    }
-  })
-
-  // Encerrar período
-  document.getElementById('btn-close-period').addEventListener('click', async () => {
-    if (!confirm('Encerrar o período? Esta ação não pode ser desfeita.')) return
-    try {
-      await api.post(`/api/finances/periods/${currentPeriod.id}/close`)
-      loadPage()
-    } catch(err) { showAlert('page-alert', err.message, 'error') }
-  })
-
-  async function loadPage() {
-    document.getElementById('no-period').style.display = 'none'
-    document.getElementById('period-summary').style.display = 'none'
-    document.getElementById('months-section').style.display = 'none'
-    document.getElementById('btn-new-tx').style.display = 'none'
-    document.getElementById('btn-report').style.display = 'none'
-    document.getElementById('btn-clean-receipts').style.display = 'none'
-
-    try {
-      const data = await api.get(`/api/finances/transactions/by-month?year=${currentYear}`)
-      currentPeriod = data.period
-      monthsData = data.months
-
-      document.getElementById('period-title').textContent = `Período ${currentPeriod.fiscal_year}`
-      document.getElementById('period-badge').textContent = currentPeriod.is_closed ? 'Encerrado' : 'Aberto'
-      document.getElementById('period-badge').className = `badge ${currentPeriod.is_closed ? 'badge-slate' : 'badge-green'}`
-      document.getElementById('sum-initial').textContent = formatCurrency(currentPeriod.initial_balance)
-      document.getElementById('sum-in').textContent      = formatCurrency(data.total_in)
-      document.getElementById('sum-out').textContent     = formatCurrency(data.total_out)
-      document.getElementById('sum-final').textContent   = formatCurrency(currentPeriod.final_balance)
-      document.getElementById('period-summary').style.display = 'block'
-
-      document.getElementById('btn-report').style.display = 'inline-flex'
-      document.getElementById('btn-clean-receipts').style.display = 'inline-flex'
-      if (!currentPeriod.is_closed) {
-        document.getElementById('btn-new-tx').style.display = 'inline-flex'
-        document.getElementById('btn-close-period').style.display = 'inline-flex'
-        document.getElementById('th-actions-month').textContent = ''
-      } else {
-        document.getElementById('btn-close-period').style.display = 'none'
-      }
-
-      renderMonthTabs()
-      document.getElementById('months-section').style.display = 'block'
-
-      const today = new Date()
-      const todayKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`
-      const found = monthsData.find(m => m.month_key === todayKey)
-      const target = found || monthsData[monthsData.length - 1]
-      if (target) selectMonth(target.month_key)
-
-    } catch {
-      document.getElementById('no-period').style.display = 'block'
-    }
-  }
-
-  function renderMonthTabs() {
-    const tabs = document.getElementById('month-tabs')
-    tabs.innerHTML = monthsData.map(m => `
-      <button class="month-tab ${m.month_key === currentMonthKey ? 'active' : ''} ${m.has_transactions ? 'has-data' : ''}"
-        data-month="${m.month_key}" onclick="selectMonth('${m.month_key}')">
-        <span>${m.month_label.substring(0, 3)}</span>
-        <span class="tab-balance">${formatCurrency(m.closing_balance)}</span>
-        ${m.has_transactions ? '<span class="tab-dot"></span>' : ''}
-      </button>
-    `).join('')
-  }
-
-  window.selectMonth = (monthKey) => {
-    currentMonthKey = monthKey
-    const month = monthsData.find(m => m.month_key === monthKey)
-    if (!month) return
-
-    document.querySelectorAll('.month-tab').forEach(t => {
-      t.classList.toggle('active', t.dataset.month === monthKey)
-    })
-
-    document.getElementById('month-summary').innerHTML = `
-      <div class="month-summary-item">
-        <div class="label">Saldo Anterior</div>
-        <div class="value">${formatCurrency(month.opening_balance)}</div>
-      </div>
-      <div class="month-summary-item">
-        <div class="label">Entradas</div>
-        <div class="value" style="color:var(--green-600)">${formatCurrency(month.total_in)}</div>
-      </div>
-      <div class="month-summary-item">
-        <div class="label">Saídas</div>
-        <div class="value" style="color:var(--red-600)">${formatCurrency(month.total_out)}</div>
-      </div>
-      <div class="month-summary-item">
-        <div class="label">Saldo do Mês</div>
-        <div class="value" style="color:${month.closing_balance >= 0 ? 'var(--blue-600)' : 'var(--red-600)'}">
-          ${formatCurrency(month.closing_balance)}
-        </div>
-      </div>
-    `
-
-    if (!month.transactions.length) {
-      document.getElementById('month-content').style.display = 'block'
-      document.getElementById('month-empty').style.display = 'none'
-      document.getElementById('month-summary').innerHTML = `
-        <div class="month-summary-item">
-          <div class="label">Saldo Anterior</div>
-          <div class="value">${formatCurrency(month.opening_balance)}</div>
-        </div>
-        <div class="month-summary-item">
-          <div class="label">Entradas</div>
-          <div class="value" style="color:var(--green-600)">R$ 0,00</div>
-        </div>
-        <div class="month-summary-item">
-          <div class="label">Saídas</div>
-          <div class="value" style="color:var(--red-600)">R$ 0,00</div>
-        </div>
-        <div class="month-summary-item">
-          <div class="label">Saldo do Mês</div>
-          <div class="value" style="color:var(--blue-600)">${formatCurrency(month.closing_balance)}</div>
-        </div>
-      `
-      document.getElementById('month-tx-body').innerHTML = `
-        <tr>
-          <td colspan="6" class="table-empty">
-            Nenhum lançamento em ${month.month_label}.
-            ${!currentPeriod.is_closed ? `<br><button class="btn btn-primary btn-sm" style="margin-top:.75rem" onclick="document.getElementById('btn-new-tx').click()">+ Adicionar lançamento</button>` : ''}
-          </td>
-        </tr>`
-      return
-    }
-
-    document.getElementById('month-content').style.display = 'block'
-    document.getElementById('month-empty').style.display = 'none'
-
-    txMapMonth = {}
-    const canEdit = !currentPeriod.is_closed
-    const tbody = document.getElementById('month-tx-body')
-    tbody.innerHTML = month.transactions.map(t => {
-      txMapMonth[t.id] = t
-      const nature = TYPES[t.transaction_type]?.nature
-      const label  = TYPES[t.transaction_type]?.label
-      return `
-        <tr>
-          <td>${formatDate(t.transaction_date)}</td>
-          <td><span class="badge ${nature === 'in' ? 'badge-green' : 'badge-red'}">${nature === 'in' ? '+' : '–'} ${label}</span></td>
-          <td>${t.description}</td>
-          <td class="text-right font-medium" style="color:${nature==='in'?'var(--green-600)':'var(--red-600)'}">
-            ${nature === 'in' ? '+' : '–'} ${formatCurrency(t.amount)}
-          </td>
-          <td class="text-center">
-            ${t.receipt_url
-              ? `<button class="btn btn-ghost btn-sm" style="padding:.2rem .5rem;font-size:.8rem" data-action="receipt" data-id="${t.id}">Ver</button>`
-              : '<span class="text-slate-400">—</span>'}
-          </td>
-          <td>
-            ${canEdit ? `
-              <div class="row-actions">
-                <button class="btn btn-ghost btn-icon" data-action="edit" data-id="${t.id}">✎</button>
-                <button class="btn btn-ghost btn-icon danger" data-action="delete" data-id="${t.id}">✕</button>
-              </div>` : ''}
-          </td>
-        </tr>`
-    }).join('')
-  }
-
-  document.getElementById('month-tx-body').addEventListener('click', async (e) => {
-    const btn = e.target.closest('[data-action]')
-    if (!btn) return
-    const action = btn.dataset.action
-    const id = btn.dataset.id
-    const t = txMapMonth[id]
-
-    if (action === 'receipt') {
-      try {
-        const data = await api.get(`/api/finances/transactions/${id}/receipt-url`)
-        window.open(data.url, '_blank')
-      } catch(err) { alert('Erro ao obter comprovante: ' + err.message) }
-    }
-
-    if (action === 'edit' && t) {
-      editId = id
-      document.getElementById('modal-tx-title').textContent = 'Editar Lançamento'
-      document.getElementById('tx-date').value   = t.transaction_date
-      document.getElementById('tx-type').value   = t.transaction_type
-      document.getElementById('tx-desc').value   = t.description
-      document.getElementById('tx-amount').value = t.amount
-      document.getElementById('tx-receipt-field').style.display = 'none'
-      openModal('modal-tx')
-    }
-
-    if (action === 'delete') {
-      if (!confirm('Excluir este lançamento?')) return
-      try {
-        await api.delete(`/api/finances/transactions/${id}`)
-        loadPage()
-      } catch(err) { showAlert('page-alert', err.message, 'error') }
-    }
-  })
-
-  // ── Limpar Comprovantes ─────────────────────────────────────────────────────
-
+  // ── Limpar comprovantes ──
   document.getElementById('btn-clean-receipts').addEventListener('click', () => {
     const select = document.getElementById('clean-year-select')
     select.innerHTML = ''
     const thisYear = new Date().getFullYear()
     for (let y = 2023; y <= thisYear; y++) {
       const opt = document.createElement('option')
-      opt.value = y
-      opt.textContent = y
+      opt.value = y; opt.textContent = y
       if (y === thisYear - 1) opt.selected = true
       select.appendChild(opt)
     }
-    document.getElementById('clean-alert').classList.add('hidden')
+    clearAlert('clean-alert')
     document.getElementById('clean-success').classList.add('hidden')
     document.getElementById('btn-confirm-clean').disabled = false
     document.getElementById('btn-confirm-clean').textContent = 'Excluir Comprovantes'
@@ -638,46 +835,38 @@
   document.getElementById('btn-confirm-clean').addEventListener('click', async () => {
     const btn = document.getElementById('btn-confirm-clean')
     const year = document.getElementById('clean-year-select').value
-
-    if (!confirm(`Tem certeza que deseja excluir TODOS os comprovantes de ${year}? Esta ação não pode ser desfeita.`)) return
-
+    if (!confirm(`Excluir TODOS os comprovantes de ${year}? Irreversível.`)) return
     setLoading(btn, true, 'Excluir Comprovantes')
-    document.getElementById('clean-alert').classList.add('hidden')
-    document.getElementById('clean-success').classList.add('hidden')
-
     try {
       const data = await api.delete(`/api/finances/receipts/year/${year}`)
-      document.getElementById('clean-success').innerHTML = `
-        <div class="alert alert-success">
-          ✅ ${data.message}
-          ${data.failed > 0 ? `<br><small>${data.failed} falha(s) ao excluir.</small>` : ''}
-        </div>`
+      document.getElementById('clean-success').innerHTML = `<div class="alert alert-success">✅ ${data.message}</div>`
       document.getElementById('clean-success').classList.remove('hidden')
       btn.disabled = true
       btn.textContent = 'Concluído'
-      if (Number(year) === currentYear) {
-        setTimeout(() => { closeModal('modal-clean-receipts'); loadPage() }, 2000)
-      }
+      if (Number(year) === currentYear) await reloadCurrentMonth()
     } catch(err) {
-      showAlert('clean-alert', err.message || 'Erro ao excluir comprovantes.', 'error')
+      showAlert('clean-alert', err.message || 'Erro', 'error')
     } finally {
       if (!btn.disabled) setLoading(btn, false, 'Excluir Comprovantes')
     }
   })
 
-  // ── Relatório PDF ───────────────────────────────────────────────────────────
-
+  // ── Relatório PDF ──
   document.getElementById('btn-report').addEventListener('click', async () => {
     const btn = document.getElementById('btn-report')
     setLoading(btn, true, '📄 Relatório PDF')
     try {
       await generatePDF()
     } catch(err) {
-      showAlert('page-alert', 'Erro ao gerar relatório: ' + err.message, 'error')
+      showAlert('screen-months-alert', 'Erro ao gerar relatório: ' + err.message, 'error')
     } finally {
       setLoading(btn, false, '📄 Relatório PDF')
     }
   })
+
+  // ── Inicia ──
+  showScreen('months')
+  loadPage()
 
   async function imageToBase64(url) {
     try {
@@ -1163,9 +1352,6 @@
 
     doc.save(`Relatorio_Financeiro_${currentYear}_${slugify(orgData.name)}.pdf`)
   }
-
-  loadPage()
-  })()
 </script>
 
 <script>
