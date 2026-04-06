@@ -16,6 +16,8 @@ class FinancialPeriod(Base):
     initial_balance = Column(Numeric(12, 2), default=0)
     is_closed = Column(Boolean, default=False)
     closed_at = Column(DateTime(timezone=True), nullable=True)
+    report_url = Column(Text, nullable=True)
+    receipts_report_url = Column(Text, nullable=True)
 
     __table_args__ = (
         UniqueConstraint("organization_id", "fiscal_year", name="uq_period_org_year"),

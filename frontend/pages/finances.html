@@ -235,6 +235,10 @@
                 <span class="btn-icon-only">📄</span>
                 <span class="btn-label">Relatório</span>
               </button>
+              <button class="btn btn-secondary finances-btn" id="btn-view-reports" style="display:none" title="Ver Relatórios">
+                <span class="btn-icon-only">📁</span>
+                <span class="btn-label">Ver Relatórios</span>
+              </button>
               <button class="btn btn-secondary finances-btn" id="btn-clean-receipts" style="display:none" title="Limpar Comprovantes">
                 <span class="btn-icon-only">🗑️</span>
                 <span class="btn-label">Comprovantes</span>
@@ -463,6 +467,30 @@
   </div>
 </div>
 
+<!-- Modal Ver Relatórios -->
+<div class="modal-overlay" id="modal-view-reports">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2>Relatórios <span id="modal-reports-year"></span></h2>
+      <button class="modal-close">✕</button>
+    </div>
+    <p class="text-sm text-slate-500" style="margin-bottom:1.25rem">
+      Relatórios gerados automaticamente no encerramento do período.
+    </p>
+    <div style="display:flex;flex-direction:column;gap:.75rem">
+      <a id="link-fin-report" href="#" target="_blank" class="btn btn-primary" style="justify-content:center;text-decoration:none">
+        📄 Relatório Financeiro
+      </a>
+      <a id="link-rec-report" href="#" target="_blank" class="btn btn-secondary" style="justify-content:center;text-decoration:none">
+        🖼️ Relatório de Comprovantes
+      </a>
+    </div>
+    <div class="modal-footer" style="margin-top:1rem">
+      <button class="btn btn-ghost modal-close" style="width:100%;justify-content:center">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
   import { requireAuth, isFederation, isLocalUmp } from '../assets/js/auth.js'
   import { renderShell, renderBottomNav, canAccessPage } from '../assets/js/router.v3.js'
@@ -535,6 +563,7 @@
     document.getElementById('annual-summary').style.display = 'none'
     document.getElementById('months-grid').style.display = 'none'
     document.getElementById('btn-report').style.display = 'none'
+    document.getElementById('btn-view-reports').style.display = 'none'
     document.getElementById('btn-clean-receipts').style.display = 'none'
 
     try {
@@ -553,12 +582,26 @@
 
       if (!currentPeriod.is_closed) {
         document.getElementById('btn-close-period').style.display = 'inline-flex'
+        document.getElementById('btn-report').style.display = 'inline-flex'
       } else {
         document.getElementById('btn-close-period').style.display = 'none'
+        document.getElementById('btn-report').style.display = 'none'
       }
 
-      document.getElementById('btn-report').style.display = 'inline-flex'
-      document.getElementById('btn-clean-receipts').style.display = 'inline-flex'
+      // Limpar comprovantes só aparece com período fechado
+      if (currentPeriod.is_closed) {
+        document.getElementById('btn-clean-receipts').style.display = 'inline-flex'
+      } else {
+        document.getElementById('btn-clean-receipts').style.display = 'none'
+      }
+
+      // Ver relatórios só aparece com período fechado e relatórios disponíveis
+      if (currentPeriod.is_closed && (currentPeriod.report_url || currentPeriod.receipts_report_url)) {
+        document.getElementById('btn-view-reports').style.display = 'inline-flex'
+        document.getElementById('btn-view-reports').dataset.periodId = currentPeriod.id
+      } else {
+        document.getElementById('btn-view-reports').style.display = 'none'
+      }
 
       renderMonthsGrid()
       document.getElementById('months-grid').style.display = 'grid'
@@ -737,11 +780,45 @@
 
   // ── Encerrar período ──
   document.getElementById('btn-close-period').addEventListener('click', async () => {
-    if (!confirm(`Encerrar o período ${currentYear}? Esta ação não pode ser desfeita.`)) return
+    if (!confirm(`Encerrar o período ${currentYear}?\n\nIsso irá:\n✓ Gerar o relatório financeiro\n✓ Gerar o relatório de comprovantes\n✓ Salvar ambos no armazenamento\n\nEsta ação não pode ser desfeita.`)) return
+    
+    const btn = document.getElementById('btn-close-period')
+    btn.disabled = true
+    btn.textContent = '⏳ Gerando relatórios...'
+    showAlert('screen-months-alert', '⏳ Encerrando período e gerando relatórios... Isso pode levar alguns segundos.', 'success')
+    
     try {
-      await api.post(`/api/finances/periods/${currentPeriod.id}/close`)
+      const result = await api.post(`/api/finances/periods/${currentPeriod.id}/close`)
+      clearAlert('screen-months-alert')
+      showAlert('screen-months-alert', '✅ Período encerrado! Relatórios gerados com sucesso.', 'success')
       await loadPage()
-    } catch(err) { showAlert('screen-months-alert', err.message, 'error') }
+    } catch(err) {
+      clearAlert('screen-months-alert')
+      showAlert('screen-months-alert', err.message, 'error')
+      btn.disabled = false
+      btn.textContent = 'Encerrar ano'
+    }
+  })
+
+  // ── Ver relatórios ──
+  document.getElementById('btn-view-reports').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-view-reports')
+    const periodId = btn.dataset.periodId
+    setLoading(btn, true, 'Ver Relatórios')
+    try {
+      const data = await api.get(`/api/finances/periods/${periodId}/report-urls`)
+      // Abre modal com os dois links
+      document.getElementById('modal-reports-year').textContent = data.fiscal_year
+      document.getElementById('link-fin-report').href = data.report_url || '#'
+      document.getElementById('link-rec-report').href = data.receipts_report_url || '#'
+      document.getElementById('link-fin-report').style.display = data.report_url ? 'inline-flex' : 'none'
+      document.getElementById('link-rec-report').style.display = data.receipts_report_url ? 'inline-flex' : 'none'
+      openModal('modal-view-reports')
+    } catch(err) {
+      showAlert('screen-months-alert', err.message, 'error')
+    } finally {
+      setLoading(btn, false, 'Ver Relatórios')
+    }
   })
 
   // ── Novo lançamento ──

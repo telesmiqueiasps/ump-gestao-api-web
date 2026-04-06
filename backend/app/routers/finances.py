@@ -424,6 +424,7 @@ def close_period(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    import datetime as dt
     period = db.query(FinancialPeriod).filter(
         FinancialPeriod.id == period_id,
         FinancialPeriod.organization_id == current_user.organization_id,
@@ -433,10 +434,211 @@ def close_period(
     if period.is_closed:
         raise HTTPException(status_code=400, detail="Período já encerrado")
 
+    # Busca dados necessários para os PDFs
+    from app.models.board import BoardMember
+    from app.models.local_ump import LocalUmp
+    from app.models.federation import Federation
+    from app.services.storage import upload_file, _get_client, get_presigned_url
+    from app.services.pdf_generator import generate_financial_report, generate_receipts_report
+    from app.core.config import get_settings
+    import re
+
+    settings_obj = get_settings()
+
+    # Dados da organização
+    if current_user.organization_type.value == 'federation':
+        org_obj = db.query(Federation).filter(
+            Federation.id == current_user.organization_id
+        ).first()
+        org_data = {
+            "id": str(org_obj.id),
+            "name": org_obj.name,
+            "presbytery_name": org_obj.presbytery_name,
+            "synodal_name": getattr(org_obj, 'synodal_name', None),
+            "logo_url": org_obj.logo_url,
+            "theme_color": getattr(org_obj, 'theme_color', '#1a2a6c') or '#1a2a6c',
+            "society_type": getattr(org_obj, 'society_type', 'UMP') or 'UMP',
+            "organization_type": "federation",
+        }
+    else:
+        org_obj = db.query(LocalUmp).filter(
+            LocalUmp.id == current_user.organization_id
+        ).first()
+        org_data = {
+            "id": str(org_obj.id),
+            "name": org_obj.name,
+            "presbytery_name": org_obj.presbytery_name,
+            "church_name": org_obj.church_name,
+            "pastor_name": org_obj.pastor_name,
+            "logo_url": org_obj.logo_url,
+            "theme_color": getattr(org_obj, 'theme_color', '#1a2a6c') or '#1a2a6c',
+            "society_type": getattr(org_obj, 'society_type', 'UMP') or 'UMP',
+            "organization_type": "local_ump",
+        }
+
+    # Diretoria
+    board_list = db.query(BoardMember).filter(
+        BoardMember.organization_id == current_user.organization_id,
+        BoardMember.fiscal_year == period.fiscal_year,
+        BoardMember.is_active == True,
+    ).all()
+    board_data = [{"role": b.role.value, "member_name": b.member_name} for b in board_list]
+
+    # Lançamentos por mês
+    transactions = db.query(FinancialTransaction).filter(
+        FinancialTransaction.period_id == period.id,
+    ).order_by(FinancialTransaction.transaction_date).all()
+
+    INCOME_TYPES = {"outras_receitas", "aci_recebida"}
+    tx_by_month = {}
+    for t in transactions:
+        mk = t.transaction_date.month
+        if mk not in tx_by_month:
+            tx_by_month[mk] = []
+        tx_by_month[mk].append(t)
+
+    running = float(period.initial_balance)
+    months_data = []
+    total_in_all = 0
+    total_out_all = 0
+    for m in range(1, 13):
+        txs = tx_by_month.get(m, [])
+        tin  = sum(float(t.amount) for t in txs if t.transaction_type.value in INCOME_TYPES)
+        tout = sum(float(t.amount) for t in txs if t.transaction_type.value not in INCOME_TYPES)
+        opening = running
+        running += tin - tout
+        total_in_all += tin
+        total_out_all += tout
+        months_data.append({
+            "month_num": m,
+            "month_label": ["Janeiro","Fevereiro","Março","Abril","Maio","Junho",
+                            "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"][m-1],
+            "transactions": [
+                {
+                    "id": str(t.id),
+                    "transaction_date": t.transaction_date.isoformat(),
+                    "transaction_type": t.transaction_type.value,
+                    "description": t.description,
+                    "amount": float(t.amount),
+                    "receipt_url": t.receipt_url,
+                }
+                for t in txs
+            ],
+            "total_in": tin,
+            "total_out": tout,
+            "opening_balance": opening,
+            "closing_balance": running,
+            "has_transactions": len(txs) > 0,
+        })
+
+    period_dict = {
+        "fiscal_year": period.fiscal_year,
+        "initial_balance": float(period.initial_balance),
+        "final_balance": running,
+    }
+
+    # Baixa logo da organização
+    logo_bytes = None
+    logo_ct = None
+    b2_client = _get_client()
+    bucket_name = settings_obj.b2_bucket_name
+    if org_data.get('logo_url'):
+        match = re.search(rf'/file/{re.escape(bucket_name)}/(.+)$', org_data['logo_url'])
+        if not match:
+            match = re.search(rf'/{re.escape(bucket_name)}/(.+)$', org_data['logo_url'])
+        if match:
+            try:
+                resp = b2_client.get_object(Bucket=bucket_name, Key=match.group(1))
+                logo_bytes = resp['Body'].read()
+                logo_ct = resp.get('ContentType', 'image/png')
+            except:
+                pass
+
+    theme_color = org_data.get('theme_color', '#1a2a6c')
+
+    # ── Gera relatório financeiro ──
+    fin_pdf_bytes = generate_financial_report(
+        org_data=org_data,
+        period_data=period_dict,
+        months_data=months_data,
+        board_data=board_data,
+        logo_bytes=logo_bytes,
+        logo_content_type=logo_ct,
+        theme_color=theme_color,
+    )
+
+    # ── Gera relatório de comprovantes ──
+    rec_pdf_bytes = generate_receipts_report(
+        org_data=org_data,
+        period_data=period_dict,
+        months_data=months_data,
+        b2_client=b2_client,
+        bucket_name=bucket_name,
+        theme_color=theme_color,
+    )
+
+    # ── Faz upload dos PDFs no B2 ──
+    org_id = str(current_user.organization_id)
+    year = period.fiscal_year
+
+    fin_key = f"reports/{org_id}/{year}/relatorio_financeiro_{year}.pdf"
+    rec_key = f"reports/{org_id}/{year}/relatorio_comprovantes_{year}.pdf"
+
+    fin_url = upload_file(fin_pdf_bytes, fin_key, 'application/pdf')
+    rec_url = upload_file(rec_pdf_bytes, rec_key, 'application/pdf')
+
+    # ── Encerra o período ──
     period.is_closed = True
-    period.closed_at = datetime.datetime.now(datetime.timezone.utc)
+    period.closed_at = dt.datetime.now(dt.timezone.utc)
+    period.report_url = fin_url
+    period.receipts_report_url = rec_url
     db.commit()
-    return {"detail": "Período encerrado com sucesso", "final_balance": _calc_balance(db, period.id, period.initial_balance)}
+
+    return {
+        "detail": "Período encerrado com sucesso",
+        "final_balance": running,
+        "report_url": fin_url,
+        "receipts_report_url": rec_url,
+    }
+
+
+# Gerar pre-signed URLs dos relatórios
+@router.get("/periods/{period_id}/report-urls")
+def get_report_urls(
+    period_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    period = db.query(FinancialPeriod).filter(
+        FinancialPeriod.id == period_id,
+        FinancialPeriod.organization_id == current_user.organization_id,
+    ).first()
+    if not period:
+        raise HTTPException(status_code=404, detail="Período não encontrado")
+    if not period.is_closed:
+        raise HTTPException(status_code=400, detail="Período não encerrado")
+
+    from app.services.storage import get_presigned_url, _get_client
+    from app.core.config import get_settings
+    import re
+    settings_obj = get_settings()
+    bucket_name = settings_obj.b2_bucket_name
+
+    def get_url(stored_url):
+        if not stored_url:
+            return None
+        match = re.search(rf'/file/{re.escape(bucket_name)}/(.+)$', stored_url)
+        if not match:
+            match = re.search(rf'/{re.escape(bucket_name)}/(.+)$', stored_url)
+        if not match:
+            return None
+        return get_presigned_url(match.group(1), expires_in=3600)
+
+    return {
+        "report_url": get_url(period.report_url),
+        "receipts_report_url": get_url(period.receipts_report_url),
+        "fiscal_year": period.fiscal_year,
+    }
 
 
 # Gerar pre-signed URL para comprovante de uma transação
@@ -475,6 +677,8 @@ def _period_out(p: FinancialPeriod, db) -> dict:
         "final_balance": final_balance,
         "is_closed": p.is_closed,
         "closed_at": p.closed_at.isoformat() if p.closed_at else None,
+        "report_url": getattr(p, 'report_url', None),
+        "receipts_report_url": getattr(p, 'receipts_report_url', None),
     }
 
 
