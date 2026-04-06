@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ump-gestao-v7'
+const CACHE_NAME = 'ump-gestao-v8'
 
 // Apenas imagens são cacheadas
 const STATIC_ASSETS = [
@@ -19,7 +19,22 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
       .then(keys => Promise.all(
-        keys.map(k => caches.delete(k)) // apaga TODOS os caches antigos
+        keys.map(k => {
+          // Deleta TODOS os caches anteriores sem exceção
+          if (k !== CACHE_NAME) {
+            return caches.delete(k)
+          }
+          // Para o cache atual, remove apenas as imagens para forçar reload
+          return caches.open(k).then(cache => {
+            return cache.keys().then(requests => {
+              return Promise.all(
+                requests
+                  .filter(r => r.url.includes('/assets/img/'))
+                  .map(r => cache.delete(r))
+              )
+            })
+          })
+        })
       ))
       .then(() => self.clients.claim())
   )

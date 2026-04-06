@@ -319,11 +319,13 @@ export function setActivePage(page) {
 
 let _currentPage = ''
 
+const CACHE_BUST = '?v=7'
+
 const ICON_IMAGES = {
-  dashboard:  '/assets/img/dashboard_mobile.png',
-  finances:   '/assets/img/financeiro_mobile.png',
-  board:      '/assets/img/diretoria_mobile.png',
-  notices:    '/assets/img/aviso_mobile.png',
+  dashboard:  '/assets/img/dashboard_mobile.png' + CACHE_BUST,
+  finances:   '/assets/img/financeiro_mobile.png' + CACHE_BUST,
+  board:      '/assets/img/diretoria_mobile.png' + CACHE_BUST,
+  notices:    '/assets/img/aviso_mobile.png' + CACHE_BUST,
 }
 
 export function renderBottomNav(currentPage, societyType) {
