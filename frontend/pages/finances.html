@@ -161,7 +161,58 @@
     /* ── Responsive ── */
     .finances-toolbar { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
     .finances-actions { display: flex; gap: .4rem; align-items: center; }
-    .finances-btn { display: inline-flex; align-items: center; gap: .4rem; white-space: nowrap; }
+
+    .finances-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      white-space: nowrap;
+      border-radius: var(--radius);
+      font-weight: 600;
+      font-size: .85rem;
+      padding: .55rem .9rem;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all .15s;
+      min-height: 38px;
+    }
+
+    .btn-relatorio {
+      background: linear-gradient(135deg, #1a2a6c, #2a3f9f);
+      color: #fff;
+    }
+    .btn-relatorio:hover { opacity: .88; transform: translateY(-1px); }
+
+    .btn-comprovantes {
+      background: linear-gradient(135deg, #7b1fa2, #9c27b0);
+      color: #fff;
+    }
+    .btn-comprovantes:hover { opacity: .88; transform: translateY(-1px); }
+
+    .btn-ver-relatorios {
+      background: linear-gradient(135deg, #1a5c2a, #2d8a40);
+      color: #fff;
+    }
+    .btn-ver-relatorios:hover { opacity: .88; transform: translateY(-1px); }
+
+    .btn-encerrar {
+      background: none;
+      border: 1.5px solid var(--red-200, #fecaca);
+      color: var(--red-600, #dc2626);
+      font-size: .75rem;
+      padding: .4rem .75rem;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 500;
+      transition: all .15s;
+      white-space: nowrap;
+    }
+    .btn-encerrar:hover {
+      background: var(--red-50, #fef2f2);
+      border-color: var(--red-400, #f87171);
+    }
 
     @media (max-width: 600px) {
       .months-grid { grid-template-columns: repeat(3, 1fr); gap: .5rem; }
@@ -175,14 +226,39 @@
       .month-summary-bar { gap: .3rem; padding: .7rem .75rem; }
       .msb-arrow { display: none; }
       .msb-value { font-size: .78rem; }
-      .finances-toolbar { width: 100%; justify-content: space-between; }
+      .finances-toolbar {
+        width: 100%;
+        justify-content: space-between;
+        gap: .4rem;
+      }
+      .finances-actions {
+        display: flex;
+        gap: .35rem;
+        align-items: center;
+        flex-wrap: nowrap;
+      }
+      .finances-btn {
+        padding: .5rem .55rem;
+        font-size: .72rem;
+        min-height: 36px;
+      }
       .finances-btn .btn-label { display: none; }
-      .finances-btn .btn-icon-only { font-size: 1rem; }
-      #year-select { min-width: 70px; font-size: .82rem; }
+      .finances-btn .btn-icon-only {
+        font-size: 1.05rem;
+        line-height: 1;
+      }
+      #year-select {
+        min-width: 68px;
+        font-size: .82rem;
+        padding: .4rem .5rem;
+      }
+      .btn-encerrar .btn-label { display: none; }
+      .btn-encerrar .btn-icon-only { font-size: 1rem; }
     }
 
     @media (min-width: 601px) {
       .finances-btn .btn-icon-only { display: none; }
+      .btn-encerrar .btn-icon-only { display: none; }
     }
   </style>
 </head>
@@ -231,17 +307,17 @@
           <div class="finances-toolbar">
             <select class="input" id="year-select" style="width:auto;min-width:80px"></select>
             <div class="finances-actions">
-              <button class="btn btn-secondary finances-btn" id="btn-report" style="display:none" title="Relatório PDF">
+              <button class="finances-btn btn-relatorio" id="btn-report" style="display:none" title="Gerar Relatório PDF">
                 <span class="btn-icon-only">📄</span>
-                <span class="btn-label">Relatório</span>
+                <span class="btn-label">📄 Relatório PDF</span>
               </button>
-              <button class="btn btn-secondary finances-btn" id="btn-view-reports" style="display:none" title="Ver Relatórios">
-                <span class="btn-icon-only">📁</span>
-                <span class="btn-label">Ver Relatórios</span>
-              </button>
-              <button class="btn btn-secondary finances-btn" id="btn-clean-receipts" style="display:none" title="Limpar Comprovantes">
+              <button class="finances-btn btn-comprovantes" id="btn-clean-receipts" style="display:none" title="Limpar Comprovantes">
                 <span class="btn-icon-only">🗑️</span>
-                <span class="btn-label">Comprovantes</span>
+                <span class="btn-label">🗑️ Limpar Comprovantes</span>
+              </button>
+              <button class="finances-btn btn-ver-relatorios" id="btn-view-reports" style="display:none" title="Ver Relatórios">
+                <span class="btn-icon-only">📁</span>
+                <span class="btn-label">📁 Ver Relatórios</span>
               </button>
             </div>
           </div>
@@ -273,7 +349,7 @@
             </div>
             <div class="annual-summary-status">
               <span class="badge" id="period-status-badge"></span>
-              <button class="btn btn-ghost btn-sm" id="btn-close-period" style="display:none;font-size:.75rem;color:var(--red-600)">Encerrar ano</button>
+              <button class="btn-encerrar" id="btn-close-period" style="display:none"><span class="btn-icon-only">🔒</span><span class="btn-label">Encerrar ano</span></button>
             </div>
           </div>
         </div>
