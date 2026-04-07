@@ -128,11 +128,13 @@ def generate_financial_report(
     doc = SimpleDocTemplate(buf, pagesize=A4,
         leftMargin=ML, rightMargin=MR, topMargin=14*mm, bottomMargin=14*mm)
 
-    TC = _tc(theme_color)
-    year     = period_data.get('fiscal_year')
-    org_name = (org_data.get('name') or '').upper()
-    is_fed   = org_data.get('organization_type') == 'federation'
-    story    = []
+    TC        = _tc(theme_color)
+    year      = period_data.get('fiscal_year')
+    org_name  = (org_data.get('name') or '').upper()
+    is_fed    = org_data.get('organization_type') == 'federation'
+    initial   = float(period_data.get('initial_balance') or 0)
+    final_bal = float(period_data.get('final_balance') or 0)
+    story     = []
 
     # ─── CABEÇALHO ───────────────────────────────────────────
     LOGO_W = 28
@@ -236,9 +238,6 @@ def generate_financial_report(
                         if t['transaction_type']=='aci_enviada') for m in months_data)
     outras_rec = total_in  - aci_in
     outras_des = total_out - aci_out
-    initial    = float(period_data.get('initial_balance', 0))
-    final_bal  = float(period_data.get('final_balance', initial + total_in - total_out))
-
     story.append(_section_bar(f'INFORMAÇÕES FINANCEIRAS {year}', W, TC))
 
     HW  = W / 2
