@@ -329,58 +329,81 @@ def generate_financial_report(
 
     # ─── ASSINATURAS ────────────────────────────────────────
     if signature_data:
-        # Bloco de assinatura digital
-        val_code      = signature_data.get('validation_code', '')
-        data_hash     = signature_data.get('data_hash', '')
-        reviewer_name = (signature_data.get('approved_by') or '').upper()
-        requester_name= (signature_data.get('requested_by') or '').upper()
-        sig_date      = signature_data.get('approved_at', '')
-        validate_url  = signature_data.get('validation_url', '')
-        qr_bytes      = signature_data.get('qr_bytes')
+        story.append(Spacer(1, 4*mm))
+        story.append(_section_bar('DOCUMENTO ASSINADO DIGITALMENTE', W, TC))
 
-        QR_W   = 28*mm
-        INFO_W = W - QR_W - 6*mm
-        SEAL_H = 32*mm
-
-        # QR Code
         qr_img = None
-        if qr_bytes:
+        QR_SIZE = 32*mm
+        if signature_data.get('qr_bytes'):
             try:
-                qr_img = Image(io.BytesIO(qr_bytes), width=QR_W, height=QR_W)
+                qr_img = Image(io.BytesIO(signature_data['qr_bytes']),
+                               width=QR_SIZE, height=QR_SIZE)
             except Exception:
                 pass
 
-        BLUE_DARK = colors.HexColor('#0f1f5c')
-        info_inner = Table([
-            [Paragraph('DOCUMENTO ASSINADO DIGITALMENTE', _ps(9, TC, bold=True))],
-            [Paragraph(f'Código de Validação: <b>{val_code}</b>', _ps(7.5, BLACK))],
-            [Paragraph(f'Hash SHA-256: {data_hash}', _ps(6.5, GRAY_TXT))],
-            [Paragraph(f'Aprovado por: <b>{reviewer_name}</b>', _ps(7.5, BLACK))],
-            [Paragraph(f'Data de Aprovação: <b>{sig_date}</b>', _ps(7.5, BLACK))],
-            [Paragraph(f'Solicitado por: <b>{requester_name}</b>', _ps(7.5, BLACK))],
-            [Paragraph(f'Valide em: {validate_url}', _ps(6.5, GRAY_TXT))],
-        ], colWidths=[INFO_W])
-        info_inner.setStyle(TableStyle([
-            ('TOPPADDING',    (0,0),(-1,-1), 2),
-            ('BOTTOMPADDING', (0,0),(-1,-1), 2),
+        code       = signature_data.get('validation_code', '')
+        hash_short = signature_data.get('data_hash', '')
+        TEXT_W     = W - (QR_SIZE + 6*mm if qr_img else 0)
+
+        text_rows = [
+            [Paragraph('Código de Validação', _ps(7, GRAY_TXT, bold=True))],
+            [Paragraph(code,                  _ps(9, TC, bold=True))],
+            [Spacer(1, 2*mm)],
+            [Paragraph(f'Hash SHA-256: {hash_short}', _ps(6.5, GRAY_TXT))],
+            [Spacer(1, 2*mm)],
+            [Paragraph(f"Aprovado por: <b>{signature_data.get('approved_by','')}</b>",  _ps(7.5, BLACK))],
+            [Paragraph(f"Data de Aprovação: <b>{signature_data.get('approved_at','')}</b>", _ps(7.5, BLACK))],
+            [Paragraph(f"Solicitado por: <b>{signature_data.get('requested_by','')}</b>", _ps(7.5, BLACK))],
+            [Spacer(1, 2*mm)],
+            [Paragraph('Valide em: <b>umpgestao.netlify.app/validar.html</b>', _ps(7, GRAY_TXT))],
+        ]
+        text_table = Table(text_rows, colWidths=[TEXT_W])
+        text_table.setStyle(TableStyle([
+            ('TOPPADDING',    (0,0),(-1,-1), 1),
+            ('BOTTOMPADDING', (0,0),(-1,-1), 1),
             ('LEFTPADDING',   (0,0),(-1,-1), 0),
             ('RIGHTPADDING',  (0,0),(-1,-1), 0),
         ]))
 
-        qr_cell  = qr_img if qr_img else Paragraph('', _ps(7))
-        dig_row  = [[qr_cell, Spacer(6*mm, 1), info_inner]]
-        dig_cw   = [QR_W, 6*mm, INFO_W]
-        dig_t    = Table(dig_row, colWidths=dig_cw, rowHeights=[SEAL_H])
-        dig_t.setStyle(TableStyle([
-            ('VALIGN',        (0,0),(-1,-1), 'MIDDLE'),
-            ('TOPPADDING',    (0,0),(-1,-1), 4),
-            ('BOTTOMPADDING', (0,0),(-1,-1), 4),
-            ('LEFTPADDING',   (0,0),(-1,-1), 4),
-            ('RIGHTPADDING',  (0,0),(-1,-1), 4),
-            ('BOX',           (0,0),(-1,-1), 1, TC),
-            ('BACKGROUND',    (0,0),(-1,-1), colors.HexColor('#f0f4ff')),
+        if qr_img:
+            inner_data = [[text_table, Spacer(6*mm, 1), qr_img]]
+            inner_cw   = [TEXT_W, 6*mm, QR_SIZE]
+        else:
+            inner_data = [[text_table]]
+            inner_cw   = [W - 16*mm]
+
+        inner_t = Table(inner_data, colWidths=inner_cw)
+        inner_t.setStyle(TableStyle([('VALIGN', (0,0),(-1,-1), 'MIDDLE')]))
+
+        outer_t = Table([[inner_t]], colWidths=[W])
+        outer_t.setStyle(TableStyle([
+            ('BOX',           (0,0),(-1,-1), 1.5, TC),
+            ('BACKGROUND',    (0,0),(-1,-1), colors.HexColor('#f8fafc')),
+            ('TOPPADDING',    (0,0),(-1,-1), 8),
+            ('BOTTOMPADDING', (0,0),(-1,-1), 8),
+            ('LEFTPADDING',   (0,0),(-1,-1), 10),
+            ('RIGHTPADDING',  (0,0),(-1,-1), 10),
         ]))
-        story.append(dig_t)
+        story.append(outer_t)
+        story.append(Spacer(1, 6*mm))
+
+        # Linhas de assinatura digital
+        SIG_W2 = (W - 20*mm) / 2
+        def _sig_digital(name, role_label):
+            return Table([
+                [HRFlowable(width=SIG_W2, thickness=1, color=BLACK)],
+                [Paragraph(name.upper(), _ps(9, BLACK, bold=True, align=TA_CENTER))],
+                [Paragraph(role_label,   _ps(8, BLACK, align=TA_CENTER))],
+                [Paragraph(org_name,     _ps(8, BLACK, bold=True, align=TA_CENTER))],
+            ], colWidths=[SIG_W2])
+
+        sig_t2 = Table([[
+            _sig_digital(signature_data.get('requested_by', ''), 'Solicitante'),
+            Spacer(20*mm, 1),
+            _sig_digital(signature_data.get('approved_by', ''), 'Aprovador'),
+        ]], colWidths=[SIG_W2, 20*mm, SIG_W2])
+        sig_t2.setStyle(TableStyle([('VALIGN', (0,0),(-1,-1), 'TOP')]))
+        story.append(sig_t2)
         story.append(Spacer(1, 4*mm))
     else:
         # Bloco de assinatura manual

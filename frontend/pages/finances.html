@@ -350,6 +350,8 @@
             <div class="annual-summary-status">
               <span class="badge" id="period-status-badge"></span>
               <button class="btn-encerrar" id="btn-close-period" style="display:none"><span class="btn-icon-only">🔒</span><span class="btn-label">Encerrar ano</span></button>
+              <button class="btn-encerrar" id="btn-unlock-period" style="display:none;border-color:var(--amber-200,#fde68a);color:var(--amber-700,#b45309)"><span class="btn-icon-only">🔓</span><span class="btn-label">Desbloquear</span></button>
+              <button class="finances-btn btn-ver-relatorios" id="btn-view-signed" style="display:none;font-size:.78rem" title="Ver Relatório Assinado"><span class="btn-icon-only">✅</span><span class="btn-label">✅ Ver Assinado</span></button>
             </div>
           </div>
         </div>
@@ -676,17 +678,38 @@
       document.getElementById('ann-in').textContent = formatCurrency(data.total_in)
       document.getElementById('ann-out').textContent = formatCurrency(data.total_out)
       document.getElementById('ann-final').textContent = formatCurrency(currentPeriod.final_balance)
-      document.getElementById('period-status-badge').textContent = currentPeriod.is_closed ? 'Encerrado' : 'Aberto'
-      document.getElementById('period-status-badge').className = `badge ${currentPeriod.is_closed ? 'badge-slate' : 'badge-green'}`
       document.getElementById('period-year-subtitle').textContent = `Período ${currentYear}`
       document.getElementById('annual-summary').style.display = 'block'
 
-      if (!currentPeriod.is_closed) {
+      // Badge de status
+      if (currentPeriod.is_locked) {
+        document.getElementById('period-status-badge').textContent = '🔒 Assinado'
+        document.getElementById('period-status-badge').className = 'badge badge-green'
+      } else if (currentPeriod.is_closed) {
+        document.getElementById('period-status-badge').textContent = 'Encerrado'
+        document.getElementById('period-status-badge').className = 'badge badge-slate'
+      } else {
+        document.getElementById('period-status-badge').textContent = 'Aberto'
+        document.getElementById('period-status-badge').className = 'badge badge-green'
+      }
+
+      // Botões de ação do período
+      if (currentPeriod.is_locked) {
+        document.getElementById('btn-close-period').style.display = 'none'
+        document.getElementById('btn-report').style.display = 'none'
+        document.getElementById('btn-unlock-period').style.display = 'inline-flex'
+        document.getElementById('btn-view-signed').style.display = 'inline-flex'
+        document.getElementById('btn-view-signed').dataset.sigId = currentPeriod.signature_id || ''
+      } else if (!currentPeriod.is_closed) {
         document.getElementById('btn-close-period').style.display = 'inline-flex'
         document.getElementById('btn-report').style.display = 'inline-flex'
+        document.getElementById('btn-unlock-period').style.display = 'none'
+        document.getElementById('btn-view-signed').style.display = 'none'
       } else {
         document.getElementById('btn-close-period').style.display = 'none'
         document.getElementById('btn-report').style.display = 'none'
+        document.getElementById('btn-unlock-period').style.display = 'none'
+        document.getElementById('btn-view-signed').style.display = 'none'
       }
 
       // Limpar comprovantes só aparece com período fechado
@@ -771,7 +794,7 @@
     document.getElementById('msb-out').textContent = formatCurrency(month.total_out)
     document.getElementById('msb-closing').textContent = formatCurrency(month.closing_balance)
 
-    const canEdit = !currentPeriod?.is_closed
+    const canEdit = !currentPeriod?.is_closed && !currentPeriod?.is_locked
     document.getElementById('btn-new-tx').style.display = canEdit ? 'inline-flex' : 'none'
     document.getElementById('th-actions-col').textContent = ''
 
@@ -1062,6 +1085,32 @@
       showAlert('report-type-alert', err.message || 'Erro ao solicitar assinatura.', 'error')
     } finally {
       setLoading(btn, false, '🔏 Solicitar Relatório Assinado')
+    }
+  })
+
+  // ── Desbloquear período ──
+  document.getElementById('btn-unlock-period').addEventListener('click', async () => {
+    const reason = prompt('Motivo do desbloqueio (a assinatura anterior será invalidada):')
+    if (reason === null) return
+    if (!reason.trim()) { alert('Informe o motivo.'); return }
+    try {
+      await api.post(`/api/signatures/unlock/${currentPeriod.id}`, { reason })
+      showAlert('screen-months-alert', '🔓 Período desbloqueado. Assinatura anterior invalidada.', 'success')
+      await loadPage()
+    } catch(err) {
+      showAlert('screen-months-alert', err.message || 'Erro ao desbloquear.', 'error')
+    }
+  })
+
+  // ── Ver relatório assinado ──
+  document.getElementById('btn-view-signed').addEventListener('click', async () => {
+    const sigId = document.getElementById('btn-view-signed').dataset.sigId
+    if (!sigId) return
+    try {
+      const data = await api.get(`/api/signatures/${sigId}/report-url`)
+      window.open(data.url, '_blank')
+    } catch(err) {
+      showAlert('screen-months-alert', err.message || 'Erro ao obter link.', 'error')
     }
   })
 

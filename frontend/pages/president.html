@@ -19,6 +19,27 @@
   <link rel="stylesheet" href="../assets/css/components.css?v=9" />
   <link rel="stylesheet" href="../assets/css/layout.v2.css?v=9" />
   <style>
+    .pres-tab {
+      padding: .45rem 1rem;
+      border: none;
+      background: none;
+      font-size: .875rem;
+      font-weight: 500;
+      color: var(--slate-500);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      font-family: inherit;
+      transition: all .15s;
+      white-space: nowrap;
+    }
+    .pres-tab.active {
+      color: var(--brand-blue, #1a2a6c);
+      border-bottom-color: var(--brand-blue, #1a2a6c);
+    }
+    .loading-center { display:flex;justify-content:center;padding:2rem; }
+  </style>
+  <style>
     .sig-card {
       background: #fff;
       border: 1px solid var(--slate-200);
@@ -132,27 +153,45 @@
     <main class="page-content">
       <div class="page-header">
         <div class="page-header-info">
-          <h1>Presidência</h1>
-          <p>Aprovação de relatórios assinados digitalmente</p>
+          <h1>👑 Presidência</h1>
+          <p>Painel exclusivo da presidência</p>
         </div>
-        <button class="btn btn-ghost" id="btn-refresh" title="Atualizar">🔄 Atualizar</button>
       </div>
 
       <div id="page-alert" style="margin-bottom:.75rem"></div>
 
-      <!-- Pendentes -->
-      <div class="card" style="margin-bottom:1rem">
-        <div class="section-title">⏳ Aguardando Aprovação</div>
-        <div id="list-pending">
-          <div class="empty-state"><div class="icon">✅</div><p>Nenhuma solicitação pendente.</p></div>
+      <!-- Tabs -->
+      <div style="display:flex;gap:.5rem;border-bottom:2px solid var(--slate-100);margin-bottom:1.25rem;overflow-x:auto">
+        <button class="pres-tab active" data-tab="financeiro" onclick="switchTab('financeiro')">💰 Financeiro</button>
+        <button class="pres-tab" data-tab="outros" onclick="switchTab('outros')">📋 Outros</button>
+      </div>
+
+      <!-- ABA FINANCEIRO -->
+      <div id="tab-financeiro">
+        <div style="margin-bottom:1.5rem">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+            <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--slate-400)">Aguardando Sua Aprovação</div>
+            <button class="btn btn-ghost btn-sm" id="btn-refresh-pending">↺ Atualizar</button>
+          </div>
+          <div id="pending-list">
+            <div class="loading-center"><div class="spinner"></div></div>
+          </div>
+        </div>
+
+        <div>
+          <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--slate-400);margin-bottom:.75rem">Histórico de Relatórios</div>
+          <div id="history-list">
+            <div class="loading-center"><div class="spinner"></div></div>
+          </div>
         </div>
       </div>
 
-      <!-- Histórico -->
-      <div class="card">
-        <div class="section-title">📋 Histórico de Assinaturas</div>
-        <div id="list-history">
-          <div class="empty-state"><div class="icon">📭</div><p>Nenhum registro ainda.</p></div>
+      <!-- ABA OUTROS -->
+      <div id="tab-outros" style="display:none">
+        <div class="card" style="text-align:center;padding:2.5rem">
+          <p style="font-size:1.8rem;margin-bottom:.5rem">📋</p>
+          <p class="font-semi text-slate-700">Em breve</p>
+          <p class="text-sm text-slate-400 mt-1">Outros tipos de relatórios e aprovações em desenvolvimento.</p>
         </div>
       </div>
     </main>
@@ -237,8 +276,14 @@
     return `<span class="badge ${cls}">${label}</span>`
   }
 
+  window.switchTab = (tab) => {
+    document.querySelectorAll('.pres-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab))
+    document.getElementById('tab-financeiro').style.display = tab === 'financeiro' ? 'block' : 'none'
+    document.getElementById('tab-outros').style.display = tab === 'outros' ? 'block' : 'none'
+  }
+
   function renderPending(list) {
-    const el = document.getElementById('list-pending')
+    const el = document.getElementById('pending-list')
     if (!list.length) {
       el.innerHTML = '<div class="empty-state"><div class="icon">✅</div><p>Nenhuma solicitação pendente.</p></div>'
       return
@@ -263,7 +308,7 @@
   }
 
   function renderHistory(list) {
-    const el = document.getElementById('list-history')
+    const el = document.getElementById('history-list')
     const history = list.filter(s => s.status !== 'pending')
     if (!history.length) {
       el.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>Nenhum registro ainda.</p></div>'
@@ -312,7 +357,7 @@
   }
 
   // Delegação de eventos
-  document.getElementById('list-pending').addEventListener('click', e => {
+  document.getElementById('pending-list').addEventListener('click', e => {
     const approveBtn = e.target.closest('.btn-approve')
     const rejectBtn  = e.target.closest('.btn-reject')
 
@@ -334,7 +379,7 @@
     }
   })
 
-  document.getElementById('list-history').addEventListener('click', async e => {
+  document.getElementById('history-list').addEventListener('click', async e => {
     const dlBtn = e.target.closest('.btn-download')
     if (!dlBtn) return
     const sigId = dlBtn.dataset.id
@@ -388,7 +433,7 @@
     }
   })
 
-  document.getElementById('btn-refresh').addEventListener('click', loadPending)
+  document.getElementById('btn-refresh-pending').addEventListener('click', loadPending)
 
   loadPending()
 </script>

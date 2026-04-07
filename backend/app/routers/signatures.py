@@ -91,20 +91,32 @@ def request_signature(
         ReportSignature.status == 'pending',
     ).first()
     if pending:
-        raise HTTPException(400, "Já existe uma solicitação pendente para este ano")
+        raise HTTPException(
+            status_code=400,
+            detail="Já existe uma solicitação pendente para este ano. Aguarde a aprovação ou rejeição."
+        )
 
-    # Invalida aprovações anteriores
-    old = db.query(ReportSignature).filter(
+    now = datetime.datetime.now(datetime.timezone.utc)
+
+    # Se existe aprovada, invalida e desbloqueia o período
+    existing_approved = db.query(ReportSignature).filter(
         ReportSignature.organization_id == current_user.organization_id,
         ReportSignature.fiscal_year == payload.fiscal_year,
         ReportSignature.status == 'approved',
     ).first()
-    if old:
-        old.status = 'invalidated'
-        old.invalidated_at = datetime.datetime.now(datetime.timezone.utc)
-        old.invalidated_reason = 'Nova solicitação emitida'
+    if existing_approved:
+        existing_approved.status = 'invalidated'
+        existing_approved.invalidated_at = now
+        existing_approved.invalidated_reason = 'Substituído por nova solicitação'
         period.is_locked = False
         period.signature_id = None
+
+    # Limpa rejeitadas/invalidadas antigas
+    db.query(ReportSignature).filter(
+        ReportSignature.organization_id == current_user.organization_id,
+        ReportSignature.fiscal_year == payload.fiscal_year,
+        ReportSignature.status.in_(['rejected', 'invalidated']),
+    ).update({"status": "invalidated"}, synchronize_session=False)
 
     txs = db.query(FinancialTransaction).filter(
         FinancialTransaction.period_id == period.id

@@ -131,6 +131,8 @@ def create_transaction(
     period = _get_period(db, current_user.organization_id, current_user.organization_type, year)
     if not period:
         raise HTTPException(status_code=404, detail=f"Período financeiro para {year} não encontrado. Crie o período primeiro.")
+    if period.is_locked:
+        raise HTTPException(status_code=400, detail="Período bloqueado — relatório assinado pendente. Solicite desbloqueio ao Tesoureiro.")
     if period.is_closed:
         raise HTTPException(status_code=400, detail="Este período financeiro está encerrado")
 
@@ -273,6 +275,8 @@ def update_transaction(
         raise HTTPException(status_code=404, detail="Lançamento não encontrado")
 
     period = db.query(FinancialPeriod).filter(FinancialPeriod.id == transaction.period_id).first()
+    if period and period.is_locked:
+        raise HTTPException(status_code=400, detail="Período bloqueado — relatório assinado pendente.")
     if period and period.is_closed:
         raise HTTPException(status_code=400, detail="Período encerrado — lançamento não pode ser editado")
 
@@ -305,6 +309,8 @@ def delete_transaction(
     period = db.query(FinancialPeriod).filter(
         FinancialPeriod.id == transaction.period_id
     ).first()
+    if period and period.is_locked:
+        raise HTTPException(status_code=400, detail="Período bloqueado — relatório assinado pendente.")
     if period and period.is_closed:
         raise HTTPException(status_code=400, detail="Período encerrado — lançamento não pode ser excluído")
 
@@ -682,6 +688,8 @@ def _period_out(p: FinancialPeriod, db) -> dict:
         "initial_balance": float(p.initial_balance),
         "final_balance": final_balance,
         "is_closed": p.is_closed,
+        "is_locked": p.is_locked or False,
+        "signature_id": str(p.signature_id) if p.signature_id else None,
         "closed_at": p.closed_at.isoformat() if p.closed_at else None,
         "report_url": getattr(p, 'report_url', None),
         "receipts_report_url": getattr(p, 'receipts_report_url', None),
