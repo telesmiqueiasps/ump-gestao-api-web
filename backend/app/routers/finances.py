@@ -431,6 +431,13 @@ def close_period(
     db: Session = Depends(get_db),
 ):
     import datetime as dt
+    import secrets
+    import hashlib
+
+    user_roles = _get_user_roles(db, current_user.id, current_user.organization_id)
+    if not any(r in CLOSE_ROLES for r in user_roles):
+        raise HTTPException(status_code=403, detail="Apenas Presidente, Vice-Presidente, Secretário Presbiterial ou Conselheiro podem encerrar o período")
+
     period = db.query(FinancialPeriod).filter(
         FinancialPeriod.id == period_id,
         FinancialPeriod.organization_id == current_user.organization_id,
@@ -566,6 +573,49 @@ def close_period(
 
     theme_color = org_data.get('theme_color', '#1a2a6c')
 
+    # ── Gera validation_code e data_hash ──
+    validation_code = secrets.token_urlsafe(32)[:48]
+    ts = dt.datetime.now(dt.timezone.utc).isoformat()
+    data_hash = hashlib.sha256(
+        f"{str(current_user.organization_id)}:{period.fiscal_year}:{total_in_all}:{total_out_all}:{float(period.initial_balance)}:{running}:{ts}".encode()
+    ).hexdigest()
+
+    # ── Monta signature_data para os PDFs ──
+    pres_board = next((b for b in board_list if b.role.value == 'presidente'), None)
+    tes_board  = next((b for b in board_list if b.role.value == 'tesoureiro'),  None)
+
+    closer_role_map = {
+        'presidente': 'Presidente',
+        'vice_presidente': 'Vice-Presidente',
+        'secretario_presbiterial': 'Secretário Presbiterial',
+        'conselheiro': 'Conselheiro',
+    }
+    closer_role = next((closer_role_map[r] for r in user_roles if r in closer_role_map), 'Presidente')
+
+    validation_url = f"https://umpgestao.netlify.app/validar.html?codigo={validation_code}"
+
+    import io as _io
+    import qrcode as _qrcode
+    _qr = _qrcode.QRCode(version=1, box_size=6, border=2)
+    _qr.add_data(validation_url)
+    _qr.make(fit=True)
+    _qr_img = _qr.make_image(fill_color="black", back_color="white")
+    _qr_buf = _io.BytesIO()
+    _qr_img.save(_qr_buf, format='PNG')
+    qr_bytes = _qr_buf.getvalue()
+
+    signature_data = {
+        "validation_code": validation_code,
+        "data_hash": data_hash[:32] + "...",
+        "requested_by": tes_board.member_name if tes_board else current_user.full_name,
+        "approved_by": pres_board.member_name if pres_board else current_user.full_name,
+        "approved_at": dt.datetime.now(dt.timezone.utc).strftime('%d/%m/%Y %H:%M UTC'),
+        "validation_url": validation_url,
+        "qr_bytes": qr_bytes,
+        "req_role": "Tesoureiro(a)" if tes_board else "Responsável",
+        "app_role": closer_role,
+    }
+
     # ── Gera relatório financeiro ──
     fin_pdf_bytes = generate_financial_report(
         org_data=org_data,
@@ -575,6 +625,7 @@ def close_period(
         logo_bytes=logo_bytes,
         logo_content_type=logo_ct,
         theme_color=theme_color,
+        signature_data=signature_data,
     )
 
     # ── Gera relatório de comprovantes ──
@@ -600,10 +651,14 @@ def close_period(
     rec_url = upload_file(rec_pdf_bytes, rec_key, 'application/pdf')
 
     # ── Encerra o período ──
+    now_close = dt.datetime.now(dt.timezone.utc)
     period.is_closed = True
-    period.closed_at = dt.datetime.now(dt.timezone.utc)
+    period.closed_at = now_close
     period.report_url = fin_url
     period.receipts_report_url = rec_url
+    period.validation_code = validation_code
+    period.data_hash = data_hash
+    period.ready_to_close = False
     db.commit()
 
     return {
@@ -653,6 +708,133 @@ def get_report_urls(
     }
 
 
+READY_ROLES = {'tesoureiro', 'vice_presidente'}
+CLOSE_ROLES = {'presidente', 'vice_presidente', 'secretario_presbiterial', 'conselheiro'}
+
+
+def _get_user_roles(db, user_id, org_id):
+    from app.models.user import UserRole
+    roles = db.query(UserRole).filter(
+        UserRole.user_id == user_id,
+        UserRole.organization_id == org_id,
+    ).all()
+    return [r.role.value if hasattr(r.role, 'value') else str(r.role) for r in roles]
+
+
+@router.post("/periods/{period_id}/mark-ready")
+def mark_period_ready(
+    period_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    import datetime as dt
+    user_roles = _get_user_roles(db, current_user.id, current_user.organization_id)
+    if not any(r in READY_ROLES for r in user_roles):
+        raise HTTPException(status_code=403, detail="Apenas Tesoureiro ou Vice-Presidente podem marcar como pronto")
+
+    period = db.query(FinancialPeriod).filter(
+        FinancialPeriod.id == period_id,
+        FinancialPeriod.organization_id == current_user.organization_id,
+    ).first()
+    if not period:
+        raise HTTPException(status_code=404, detail="Período não encontrado")
+    if period.is_closed:
+        raise HTTPException(status_code=400, detail="Período já encerrado")
+
+    period.ready_to_close = True
+    period.ready_at = dt.datetime.now(dt.timezone.utc)
+    period.ready_by = current_user.id
+    db.commit()
+    return {"detail": "Período marcado como pronto para encerramento"}
+
+
+@router.post("/periods/{period_id}/unmark-ready")
+def unmark_period_ready(
+    period_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    user_roles = _get_user_roles(db, current_user.id, current_user.organization_id)
+    if not any(r in READY_ROLES for r in user_roles):
+        raise HTTPException(status_code=403, detail="Sem permissão")
+
+    period = db.query(FinancialPeriod).filter(
+        FinancialPeriod.id == period_id,
+        FinancialPeriod.organization_id == current_user.organization_id,
+    ).first()
+    if not period:
+        raise HTTPException(status_code=404, detail="Período não encontrado")
+    if period.is_closed:
+        raise HTTPException(status_code=400, detail="Período já encerrado")
+
+    period.ready_to_close = False
+    period.ready_at = None
+    period.ready_by = None
+    db.commit()
+    return {"detail": "Marcação removida"}
+
+
+@router.get("/periods-ready")
+def list_ready_periods(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    periods = db.query(FinancialPeriod).filter(
+        FinancialPeriod.organization_id == current_user.organization_id,
+        FinancialPeriod.ready_to_close == True,
+        FinancialPeriod.is_closed == False,
+    ).all()
+
+    INCOME = {'outras_receitas', 'aci_recebida'}
+    result = []
+    for p in periods:
+        txs = db.query(FinancialTransaction).filter(
+            FinancialTransaction.period_id == p.id
+        ).all()
+        tin  = sum(float(t.amount) for t in txs if t.transaction_type.value in INCOME)
+        tout = sum(float(t.amount) for t in txs if t.transaction_type.value not in INCOME)
+        result.append({
+            **_period_out(p, db),
+            "total_in": tin,
+            "total_out": tout,
+        })
+    return result
+
+
+@router.get("/validate/{code}")
+def validate_period_code(
+    code: str,
+    db: Session = Depends(get_db),
+):
+    period = db.query(FinancialPeriod).filter(
+        FinancialPeriod.validation_code == code,
+    ).first()
+
+    if not period:
+        return {"valid": False, "message": "Código de validação não encontrado."}
+
+    from app.models.federation import Federation
+    from app.models.local_ump import LocalUmp
+    org_name = None
+    fed = db.query(Federation).filter(Federation.id == period.organization_id).first()
+    if fed:
+        org_name = fed.name
+    else:
+        local = db.query(LocalUmp).filter(LocalUmp.id == period.organization_id).first()
+        if local:
+            org_name = local.name
+
+    return {
+        "valid": True,
+        "message": "✅ Documento válido e autêntico.",
+        "organization": org_name,
+        "fiscal_year": period.fiscal_year,
+        "validation_code": period.validation_code,
+        "closed_at": period.closed_at.isoformat() if period.closed_at else None,
+        "data_hash": period.data_hash,
+    }
+
+
 # Gerar pre-signed URL para comprovante de uma transação
 @router.get("/transactions/{transaction_id}/receipt-url")
 def get_receipt_url(
@@ -693,6 +875,11 @@ def _period_out(p: FinancialPeriod, db) -> dict:
         "closed_at": p.closed_at.isoformat() if p.closed_at else None,
         "report_url": getattr(p, 'report_url', None),
         "receipts_report_url": getattr(p, 'receipts_report_url', None),
+        "ready_to_close": p.ready_to_close or False,
+        "ready_at": p.ready_at.isoformat() if p.ready_at else None,
+        "ready_by": str(p.ready_by) if p.ready_by else None,
+        "validation_code": p.validation_code,
+        "data_hash": p.data_hash,
     }
 
 

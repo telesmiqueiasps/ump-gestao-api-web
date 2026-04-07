@@ -199,61 +199,16 @@
   <div class="sidebar-overlay" id="sidebar-overlay"></div>
 </div>
 
-<!-- Modal Aprovar -->
-<div class="modal-overlay" id="modal-approve">
-  <div class="modal modal-sm">
-    <div class="modal-header">
-      <h2>Aprovar Relatório</h2>
-      <button class="modal-close">✕</button>
-    </div>
-    <p class="text-sm text-slate-500" style="margin-bottom:1rem">
-      Ao aprovar, o relatório financeiro será assinado digitalmente e o período ficará bloqueado para edições.
-    </p>
-    <div id="approve-details" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:1rem;margin-bottom:1rem;font-size:.85rem;color:#334155"></div>
-    <div id="approve-alert" style="margin-bottom:.5rem"></div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost modal-close">Cancelar</button>
-      <button class="btn btn-primary" id="btn-confirm-approve">✅ Confirmar Aprovação</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Rejeitar -->
-<div class="modal-overlay" id="modal-reject">
-  <div class="modal modal-sm">
-    <div class="modal-header">
-      <h2>Rejeitar Solicitação</h2>
-      <button class="modal-close">✕</button>
-    </div>
-    <p class="text-sm text-slate-500" style="margin-bottom:1rem">
-      Informe o motivo da rejeição. O tesoureiro poderá solicitar novamente após fazer as correções necessárias.
-    </p>
-    <div>
-      <label class="form-label">Motivo da Rejeição</label>
-      <textarea id="reject-reason" class="form-input" rows="3" placeholder="Ex: Há lançamentos incorretos no mês de março..." style="resize:vertical"></textarea>
-    </div>
-    <div id="reject-alert" style="margin-top:.5rem"></div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost modal-close">Cancelar</button>
-      <button class="btn btn-danger" id="btn-confirm-reject">❌ Confirmar Rejeição</button>
-    </div>
-  </div>
-</div>
-
 <script type="module">
-  import { requireAuth, hasRole } from '../assets/js/auth.js'
+  import { requireAuth } from '../assets/js/auth.js'
   import { renderShell, renderBottomNav } from '../assets/js/router.v3.js'
   import { api } from '../assets/js/api.js'
-  import { formatDate, showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading } from '../assets/js/utils.js'
+  import { formatDate, showAlert, clearAlert, setLoading } from '../assets/js/utils.js'
 
   if (!requireAuth()) throw new Error()
   await renderShell()
   renderBottomNav('president')
   document.querySelector('[data-page="president"]')?.classList.add('active')
-  initModalClose()
-
-  let pendingList = []
-  let selectedSigId = null
 
   function fmtDate(dt) {
     if (!dt) return '—'
@@ -282,160 +237,145 @@
     document.getElementById('tab-outros').style.display = tab === 'outros' ? 'block' : 'none'
   }
 
-  function renderPending(list) {
-    const el = document.getElementById('pending-list')
-    if (!list.length) {
-      el.innerHTML = '<div class="empty-state"><div class="icon">✅</div><p>Nenhuma solicitação pendente.</p></div>'
-      return
-    }
-    el.innerHTML = list.map(sig => `
-      <div class="sig-card" data-id="${sig.id}">
-        <div class="sig-card-row">
-          <div class="sig-card-title">Exercício ${sig.fiscal_year}</div>
-          ${badgeHtml(sig.status)}
-        </div>
-        <div class="sig-card-meta">Solicitado por <strong>${sig.requester_name || '—'}</strong> em ${fmtDate(sig.requested_at)}</div>
-        <div class="sig-card-actions">
-          <button class="btn btn-primary btn-sm btn-approve" data-id="${sig.id}" data-year="${sig.fiscal_year}" data-req="${sig.requester_name || ''}">
-            ✅ Aprovar
-          </button>
-          <button class="btn btn-danger btn-sm btn-reject" data-id="${sig.id}">
-            ❌ Rejeitar
-          </button>
-        </div>
-      </div>
-    `).join('')
-  }
-
-  function renderHistory(list) {
-    const el = document.getElementById('history-list')
-    const history = list.filter(s => s.status !== 'pending')
-    if (!history.length) {
-      el.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>Nenhum registro ainda.</p></div>'
-      return
-    }
-    el.innerHTML = history.map(sig => {
-      const extra = sig.status === 'approved'
-        ? `<div class="sig-card-meta">Aprovado por <strong>${sig.reviewer_name || '—'}</strong> em ${fmtDate(sig.reviewed_at)}</div>
-           <div class="sig-card-actions">
-             <button class="btn btn-ghost btn-sm btn-download" data-id="${sig.id}">📥 Baixar PDF Assinado</button>
-           </div>`
-        : sig.status === 'rejected'
-        ? `<div class="sig-card-meta">Rejeitado por <strong>${sig.reviewer_name || '—'}</strong> em ${fmtDate(sig.reviewed_at)}</div>
-           ${sig.rejection_reason ? `<div class="sig-card-meta" style="color:#dc2626">Motivo: ${sig.rejection_reason}</div>` : ''}`
-        : sig.status === 'invalidated'
-        ? `<div class="sig-card-meta">Invalidado em ${fmtDate(sig.invalidated_at)}</div>
-           ${sig.invalidated_reason ? `<div class="sig-card-meta">Motivo: ${sig.invalidated_reason}</div>` : ''}`
-        : ''
-
-      return `
-        <div class="sig-card" style="margin-bottom:.75rem">
-          <div class="sig-card-row">
-            <div class="sig-card-title">Exercício ${sig.fiscal_year}</div>
-            ${badgeHtml(sig.status)}
-          </div>
-          <div class="sig-card-meta">Solicitado por <strong>${sig.requester_name || '—'}</strong> em ${fmtDate(sig.requested_at)}</div>
-          ${extra}
-        </div>
-      `
-    }).join('')
+  function formatCurrency(v) {
+    try {
+      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(v) || 0)
+    } catch { return 'R$ 0,00' }
   }
 
   async function loadPending() {
     clearAlert('page-alert')
+    document.getElementById('pending-list').innerHTML =
+      '<div class="loading-center"><div class="spinner"></div></div>'
     try {
-      const [pending, all] = await Promise.all([
-        api.get('/api/signatures/pending'),
-        api.get('/api/signatures/'),
-      ])
-      pendingList = pending
-      renderPending(pending)
-      renderHistory(all)
+      const data = await api.get('/api/finances/periods-ready')
+      const list = document.getElementById('pending-list')
+
+      if (!data.length) {
+        list.innerHTML = `
+          <div style="background:var(--slate-50);border:1.5px dashed var(--slate-200);border-radius:var(--radius-lg);padding:2rem;text-align:center;color:var(--slate-400);font-size:.875rem">
+            <div style="font-size:1.8rem;margin-bottom:.5rem">📭</div>
+            Nenhum período aguardando encerramento.
+          </div>`
+        return
+      }
+
+      list.innerHTML = data.map(p => `
+        <div class="card" style="border-left:4px solid var(--brand-orange,#e8630a);margin-bottom:.75rem">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+            <div>
+              <div style="font-weight:700;font-size:.95rem;margin-bottom:.25rem">Período Financeiro ${p.fiscal_year}</div>
+              <div style="font-size:.78rem;color:var(--slate-500)">Marcado como pronto em ${formatDate(p.ready_at?.split('T')[0])}</div>
+              <div style="margin-top:.5rem"><span class="badge badge-pending">📋 Aguardando encerramento</span></div>
+            </div>
+            <div style="display:flex;gap:.5rem;flex-shrink:0">
+              <button class="btn btn-sm"
+                style="background:linear-gradient(135deg,#1a5c2a,#2d8a40);color:#fff"
+                onclick="closePeriod('${p.id}', ${p.fiscal_year})">
+                🔒 Encerrar Período
+              </button>
+            </div>
+          </div>
+          <div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--slate-100);display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.5rem">
+            <div style="background:var(--slate-50);border-radius:var(--radius);padding:.5rem .75rem;text-align:center">
+              <div style="font-size:.65rem;color:var(--slate-400)">Saldo Inicial</div>
+              <div style="font-size:.85rem;font-weight:600">${formatCurrency(p.initial_balance)}</div>
+            </div>
+            <div style="background:#f0fdf4;border-radius:var(--radius);padding:.5rem .75rem;text-align:center">
+              <div style="font-size:.65rem;color:var(--slate-400)">Receitas</div>
+              <div style="font-size:.85rem;font-weight:600;color:var(--green-600)">${formatCurrency(p.total_in)}</div>
+            </div>
+            <div style="background:#fef2f2;border-radius:var(--radius);padding:.5rem .75rem;text-align:center">
+              <div style="font-size:.65rem;color:var(--slate-400)">Despesas</div>
+              <div style="font-size:.85rem;font-weight:600;color:var(--red-600)">${formatCurrency(p.total_out)}</div>
+            </div>
+            <div style="background:#eff6ff;border-radius:var(--radius);padding:.5rem .75rem;text-align:center">
+              <div style="font-size:.65rem;color:var(--slate-400)">Saldo Final</div>
+              <div style="font-size:.85rem;font-weight:600;color:var(--blue-600)">${formatCurrency(p.final_balance)}</div>
+            </div>
+          </div>
+        </div>
+      `).join('')
     } catch(err) {
-      showAlert('page-alert', 'Erro ao carregar dados: ' + (err.message || 'Tente novamente.'), 'error')
+      document.getElementById('pending-list').innerHTML =
+        `<div class="alert alert-error">${err.message}</div>`
     }
   }
 
-  // Delegação de eventos
-  document.getElementById('pending-list').addEventListener('click', e => {
-    const approveBtn = e.target.closest('.btn-approve')
-    const rejectBtn  = e.target.closest('.btn-reject')
-
-    if (approveBtn) {
-      selectedSigId = approveBtn.dataset.id
-      const year = approveBtn.dataset.year
-      const req  = approveBtn.dataset.req
-      document.getElementById('approve-details').innerHTML =
-        `<strong>Exercício:</strong> ${year}<br><strong>Solicitado por:</strong> ${req || '—'}`
-      clearAlert('approve-alert')
-      openModal('modal-approve')
+  async function loadHistory() {
+    const el = document.getElementById('history-list')
+    el.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>'
+    try {
+      const periods = await api.get('/api/finances/periods')
+      const closed = periods.filter(p => p.is_closed)
+      if (!closed.length) {
+        el.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>Nenhum período encerrado ainda.</p></div>'
+        return
+      }
+      el.innerHTML = closed.map(p => `
+        <div class="sig-card" style="margin-bottom:.75rem">
+          <div class="sig-card-row">
+            <div class="sig-card-title">Período Financeiro ${p.fiscal_year}</div>
+            <span class="badge badge-approved">✅ Encerrado</span>
+          </div>
+          <div class="sig-card-meta">Encerrado em ${fmtDate(p.closed_at)}</div>
+          ${p.report_url || p.receipts_report_url ? `
+          <div class="sig-card-actions">
+            <button class="btn btn-ghost btn-sm btn-download-period" data-id="${p.id}">📥 Ver Relatórios</button>
+          </div>` : ''}
+        </div>
+      `).join('')
+    } catch(err) {
+      el.innerHTML = `<div class="alert alert-error">${err.message}</div>`
     }
-
-    if (rejectBtn) {
-      selectedSigId = rejectBtn.dataset.id
-      document.getElementById('reject-reason').value = ''
-      clearAlert('reject-alert')
-      openModal('modal-reject')
-    }
-  })
+  }
 
   document.getElementById('history-list').addEventListener('click', async e => {
-    const dlBtn = e.target.closest('.btn-download')
+    const dlBtn = e.target.closest('.btn-download-period')
     if (!dlBtn) return
-    const sigId = dlBtn.dataset.id
-    setLoading(dlBtn, true, '📥 Baixar PDF Assinado')
+    const periodId = dlBtn.dataset.id
+    setLoading(dlBtn, true, '📥 Ver Relatórios')
     try {
-      const data = await api.get(`/api/signatures/${sigId}/report-url`)
-      window.open(data.url, '_blank')
+      const data = await api.get(`/api/finances/periods/${periodId}/report-urls`)
+      if (data.report_url) window.open(data.report_url, '_blank')
+      if (data.receipts_report_url) window.open(data.receipts_report_url, '_blank')
     } catch(err) {
-      showAlert('page-alert', 'Erro ao obter link: ' + (err.message || 'Tente novamente.'), 'error')
+      showAlert('page-alert', 'Erro ao obter relatórios: ' + (err.message || 'Tente novamente.'), 'error')
     } finally {
-      setLoading(dlBtn, false, '📥 Baixar PDF Assinado')
+      setLoading(dlBtn, false, '📥 Ver Relatórios')
     }
   })
 
-  document.getElementById('btn-confirm-approve').addEventListener('click', async () => {
-    if (!selectedSigId) return
-    const btn = document.getElementById('btn-confirm-approve')
-    setLoading(btn, true, '✅ Aprovando...')
-    clearAlert('approve-alert')
+  window.closePeriod = async (periodId, year) => {
+    if (!confirm(
+      `Encerrar definitivamente o período ${year}?\n\n` +
+      `✓ Relatório financeiro assinado digitalmente\n` +
+      `✓ Relatório de comprovantes gerado\n` +
+      `✓ Período bloqueado permanentemente\n\n` +
+      `Esta ação é irreversível.`
+    )) return
+
+    document.getElementById('pending-list').innerHTML =
+      '<div class="loading-center"><div class="spinner"></div></div><p style="text-align:center;color:var(--slate-500);margin-top:.5rem;font-size:.875rem">⏳ Gerando relatórios assinados... Aguarde.</p>'
+
     try {
-      await api.post(`/api/signatures/${selectedSigId}/approve`, {})
-      closeModal('modal-approve')
-      showAlert('page-alert', '✅ Relatório aprovado e assinado digitalmente. O período foi bloqueado.', 'success')
+      await api.post(`/api/finances/periods/${periodId}/close`)
+      showAlert('page-alert', '✅ Período encerrado! Relatórios assinados gerados com sucesso.', 'success')
       await loadPending()
+      await loadHistory()
     } catch(err) {
-      showAlert('approve-alert', err.message || 'Erro ao aprovar.', 'error')
-    } finally {
-      setLoading(btn, false, '✅ Confirmar Aprovação')
-    }
-  })
-
-  document.getElementById('btn-confirm-reject').addEventListener('click', async () => {
-    if (!selectedSigId) return
-    const reason = document.getElementById('reject-reason').value.trim()
-    if (!reason) {
-      showAlert('reject-alert', 'Informe o motivo da rejeição.', 'error')
-      return
-    }
-    const btn = document.getElementById('btn-confirm-reject')
-    setLoading(btn, true, '❌ Rejeitando...')
-    clearAlert('reject-alert')
-    try {
-      await api.post(`/api/signatures/${selectedSigId}/reject`, { reason })
-      closeModal('modal-reject')
-      showAlert('page-alert', 'Solicitação rejeitada. O tesoureiro pode corrigir e solicitar novamente.', 'success')
+      showAlert('page-alert', err.message, 'error')
       await loadPending()
-    } catch(err) {
-      showAlert('reject-alert', err.message || 'Erro ao rejeitar.', 'error')
-    } finally {
-      setLoading(btn, false, '❌ Confirmar Rejeição')
     }
-  })
+  }
 
-  document.getElementById('btn-refresh-pending').addEventListener('click', loadPending)
+  document.getElementById('btn-refresh-pending').addEventListener('click', () => {
+    loadPending()
+    loadHistory()
+  })
 
   loadPending()
+  loadHistory()
 </script>
 
 <script>

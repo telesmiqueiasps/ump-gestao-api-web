@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Date, Text, Numeric, Boolean, ForeignKey, Enum as SAEnum, Integer, UniqueConstraint, DateTime
+from sqlalchemy import Column, Date, Text, Numeric, Boolean, ForeignKey, Enum as SAEnum, Integer, UniqueConstraint, DateTime, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func, text
 from sqlalchemy.orm import relationship
@@ -20,6 +20,11 @@ class FinancialPeriod(Base):
     receipts_report_url = Column(Text, nullable=True)
     is_locked = Column(Boolean, default=False)
     signature_id = Column(UUID(as_uuid=True), ForeignKey("report_signatures.id"), nullable=True)
+    ready_to_close = Column(Boolean, default=False)
+    ready_at = Column(DateTime(timezone=True), nullable=True)
+    ready_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    validation_code = Column(String(64), nullable=True)
+    data_hash = Column(Text, nullable=True)
 
     __table_args__ = (
         UniqueConstraint("organization_id", "fiscal_year", name="uq_period_org_year"),

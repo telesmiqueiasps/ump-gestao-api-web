@@ -350,6 +350,7 @@
             <div class="annual-summary-status">
               <span class="badge" id="period-status-badge"></span>
               <button class="btn-encerrar" id="btn-close-period" style="display:none"><span class="btn-icon-only">🔒</span><span class="btn-label">Encerrar ano</span></button>
+              <button class="btn-encerrar" id="btn-mark-ready" style="display:none;border-color:var(--blue-200,#bfdbfe);color:var(--blue-600,#2563eb)"><span class="btn-icon-only">📋</span><span class="btn-label">Marcar como Pronto</span></button>
               <button class="btn-encerrar" id="btn-unlock-period" style="display:none;border-color:var(--amber-200,#fde68a);color:var(--amber-700,#b45309)"><span class="btn-icon-only">🔓</span><span class="btn-label">Desbloquear</span></button>
               <button class="finances-btn btn-ver-relatorios" id="btn-view-signed" style="display:none;font-size:.78rem" title="Ver Relatório Assinado"><span class="btn-icon-only">✅</span><span class="btn-label">✅ Ver Assinado</span></button>
             </div>
@@ -595,7 +596,7 @@
 </div>
 
 <script type="module">
-  import { requireAuth, isFederation, isLocalUmp, hasRole } from '../assets/js/auth.js'
+  import { requireAuth, isFederation, isLocalUmp, hasRole, getUser } from '../assets/js/auth.js'
   import { renderShell, renderBottomNav, canAccessPage } from '../assets/js/router.v3.js'
   import { api } from '../assets/js/api.js'
   import { formatCurrency, formatDate, showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading } from '../assets/js/utils.js'
@@ -681,20 +682,62 @@
       document.getElementById('period-year-subtitle').textContent = `Período ${currentYear}`
       document.getElementById('annual-summary').style.display = 'block'
 
+      const user = getUser()
+      const userRoles = user?.roles ?? []
+      const canClose = userRoles.some(r => ['presidente','vice_presidente','secretario_presbiterial','conselheiro'].includes(r))
+      const canMarkReady = userRoles.some(r => ['tesoureiro','vice_presidente'].includes(r))
+
       // Badge de status
       if (currentPeriod.is_closed) {
         document.getElementById('period-status-badge').textContent = 'Encerrado'
         document.getElementById('period-status-badge').className = 'badge badge-slate'
-      } else if (currentPeriod.is_locked) {
-        document.getElementById('period-status-badge').textContent = '🔒 Assinado'
-        document.getElementById('period-status-badge').className = 'badge badge-green'
+      } else if (currentPeriod.ready_to_close) {
+        document.getElementById('period-status-badge').textContent = '📋 Aguardando Encerramento'
+        document.getElementById('period-status-badge').className = 'badge badge-amber'
       } else {
         document.getElementById('period-status-badge').textContent = 'Aberto'
         document.getElementById('period-status-badge').className = 'badge badge-green'
       }
 
-      // Botão encerrar — aparece sempre que período aberto (bloqueado ou não)
-      document.getElementById('btn-close-period').style.display = !currentPeriod.is_closed ? 'inline-flex' : 'none'
+      // Botão encerrar — apenas para quem pode encerrar, enquanto não encerrado
+      const btnClose = document.getElementById('btn-close-period')
+      if (!currentPeriod.is_closed && canClose) {
+        btnClose.style.display = 'inline-flex'
+        if (currentPeriod.ready_to_close) {
+          btnClose.style.background = 'linear-gradient(135deg,#1a5c2a,#2d8a40)'
+          btnClose.style.color = '#fff'
+          btnClose.style.border = 'none'
+          btnClose.querySelector('.btn-label').textContent = '🔒 Encerrar Ano'
+        } else {
+          btnClose.style.background = ''
+          btnClose.style.color = ''
+          btnClose.style.border = ''
+          btnClose.querySelector('.btn-label').textContent = 'Encerrar ano'
+        }
+      } else {
+        btnClose.style.display = 'none'
+      }
+
+      // Botão marcar pronto — apenas para tesoureiro/vice
+      const btnReady = document.getElementById('btn-mark-ready')
+      if (!currentPeriod.is_closed && canMarkReady) {
+        btnReady.style.display = 'inline-flex'
+        if (currentPeriod.ready_to_close) {
+          btnReady.querySelector('.btn-label').textContent = '✓ Pronto — Desfazer'
+          btnReady.style.background = '#f0fdf4'
+          btnReady.style.color = '#15803d'
+          btnReady.style.borderColor = '#86efac'
+          btnReady.dataset.ready = 'true'
+        } else {
+          btnReady.querySelector('.btn-label').textContent = 'Marcar como Pronto'
+          btnReady.style.background = ''
+          btnReady.style.color = ''
+          btnReady.style.borderColor = ''
+          btnReady.dataset.ready = 'false'
+        }
+      } else {
+        btnReady.style.display = 'none'
+      }
 
       // Botão desbloquear — apenas quando bloqueado e não encerrado
       document.getElementById('btn-unlock-period').style.display = (currentPeriod.is_locked && !currentPeriod.is_closed) ? 'inline-flex' : 'none'
@@ -898,23 +941,56 @@
 
   // ── Encerrar período ──
   document.getElementById('btn-close-period').addEventListener('click', async () => {
-    if (!confirm(`Encerrar o período ${currentYear}?\n\nIsso irá:\n✓ Gerar o relatório financeiro\n✓ Gerar o relatório de comprovantes\n✓ Salvar ambos no armazenamento\n\nEsta ação não pode ser desfeita.`)) return
-    
+    if (!confirm(
+      `Encerrar definitivamente o período ${currentYear}?\n\n` +
+      `✓ Será gerado o relatório financeiro oficial\n` +
+      `✓ Será gerado o relatório de comprovantes\n` +
+      `✓ Ambos serão assinados digitalmente\n` +
+      `✓ O período não poderá mais ser alterado\n\n` +
+      `Esta ação é irreversível.`
+    )) return
+
     const btn = document.getElementById('btn-close-period')
     btn.disabled = true
-    btn.textContent = '⏳ Gerando relatórios...'
-    showAlert('screen-months-alert', '⏳ Encerrando período e gerando relatórios... Isso pode levar alguns segundos.', 'success')
-    
+    btn.querySelector('.btn-label').textContent = '⏳ Gerando relatórios...'
+    showAlert('screen-months-alert', '⏳ Encerrando período e gerando relatórios assinados... Aguarde.', 'success')
+
     try {
-      const result = await api.post(`/api/finances/periods/${currentPeriod.id}/close`)
+      await api.post(`/api/finances/periods/${currentPeriod.id}/close`)
       clearAlert('screen-months-alert')
-      showAlert('screen-months-alert', '✅ Período encerrado! Relatórios gerados com sucesso.', 'success')
+      showAlert('screen-months-alert', '✅ Período encerrado com sucesso! Relatórios assinados digitalmente gerados.', 'success')
       await loadPage()
     } catch(err) {
       clearAlert('screen-months-alert')
       showAlert('screen-months-alert', err.message, 'error')
       btn.disabled = false
-      btn.textContent = 'Encerrar ano'
+      btn.querySelector('.btn-label').textContent = 'Encerrar ano'
+    }
+  })
+
+  // ── Marcar como pronto ──
+  document.getElementById('btn-mark-ready').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-mark-ready')
+    const isReady = btn.dataset.ready === 'true'
+
+    if (!isReady) {
+      if (!confirm(`Marcar o período ${currentYear} como pronto para encerramento?\n\nO Presidente poderá encerrar oficialmente.`)) return
+      try {
+        await api.post(`/api/finances/periods/${currentPeriod.id}/mark-ready`)
+        showAlert('screen-months-alert', '📋 Período marcado como pronto! O Presidente pode encerrar agora.', 'success')
+        await loadPage()
+      } catch(err) {
+        showAlert('screen-months-alert', err.message, 'error')
+      }
+    } else {
+      if (!confirm('Desfazer marcação? Isso indicará que ainda há ajustes a fazer.')) return
+      try {
+        await api.post(`/api/finances/periods/${currentPeriod.id}/unmark-ready`)
+        showAlert('screen-months-alert', '↩ Marcação removida. Faça os ajustes necessários.', 'success')
+        await loadPage()
+      } catch(err) {
+        showAlert('screen-months-alert', err.message, 'error')
+      }
     }
   })
 
@@ -1047,15 +1123,7 @@
   })
 
   // ── Relatório PDF ──
-  document.getElementById('btn-report').addEventListener('click', () => {
-    clearAlert('report-type-alert')
-    const canRequest = hasRole('tesoureiro', 'vice_presidente')
-    document.getElementById('btn-report-signed').style.display = canRequest ? 'flex' : 'none'
-    openModal('modal-report-type')
-  })
-
-  document.getElementById('btn-report-preview').addEventListener('click', async () => {
-    closeModal('modal-report-type')
+  document.getElementById('btn-report').addEventListener('click', async () => {
     const btn = document.getElementById('btn-report')
     setLoading(btn, true, '📄 Relatório PDF')
     try {
@@ -1064,21 +1132,6 @@
       showAlert('screen-months-alert', 'Erro ao gerar relatório: ' + err.message, 'error')
     } finally {
       setLoading(btn, false, '📄 Relatório PDF')
-    }
-  })
-
-  document.getElementById('btn-report-signed').addEventListener('click', async () => {
-    const btn = document.getElementById('btn-report-signed')
-    setLoading(btn, true, '🔏 Solicitando...')
-    clearAlert('report-type-alert')
-    try {
-      await api.post('/api/signatures/request', { fiscal_year: currentYear, period_id: currentPeriod?.id })
-      closeModal('modal-report-type')
-      showAlert('screen-months-alert', '✅ Solicitação de assinatura enviada ao presidente.', 'success')
-    } catch(err) {
-      showAlert('report-type-alert', err.message || 'Erro ao solicitar assinatura.', 'error')
-    } finally {
-      setLoading(btn, false, '🔏 Solicitar Relatório Assinado')
     }
   })
 

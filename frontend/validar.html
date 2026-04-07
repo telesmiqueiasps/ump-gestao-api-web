@@ -181,26 +181,9 @@
       <dl>
         <dt>Organização</dt><dd id="d-org">—</dd>
         <dt>Exercício</dt><dd id="d-year">—</dd>
-        <dt>Aprovado por</dt><dd id="d-reviewer">—</dd>
-        <dt>Data de aprovação</dt><dd id="d-date">—</dd>
-        <dt>Solicitado por</dt><dd id="d-requester">—</dd>
+        <dt>Data de encerramento</dt><dd id="d-date">—</dd>
         <dt>Hash SHA-256</dt><dd><span class="code-mono" id="d-hash">—</span></dd>
         <dt>Status</dt><dd><span class="badge badge-valid">VÁLIDO</span></dd>
-      </dl>
-    </div>
-  </div>
-
-  <!-- Invalidado (desbloqueado após aprovação) -->
-  <div class="state" id="state-invalidated">
-    <div class="result-icon">⚠️</div>
-    <div class="result-title">Assinatura Invalidada</div>
-    <p class="result-msg">Este documento possuía assinatura digital, mas ela foi posteriormente invalidada pelo gestor da organização.</p>
-    <div class="doc-details">
-      <dl>
-        <dt>Organização</dt><dd id="di-org">—</dd>
-        <dt>Exercício</dt><dd id="di-year">—</dd>
-        <dt>Motivo</dt><dd id="di-reason">—</dd>
-        <dt>Status</dt><dd><span class="badge badge-invalidated">INVALIDADO</span></dd>
       </dl>
     </div>
   </div>
@@ -249,7 +232,7 @@
     }
 
     try {
-      const res  = await fetch(`${API_BASE}/api/signatures/validate/${encodeURIComponent(code)}`)
+      const res  = await fetch(`${API_BASE}/api/finances/validate/${encodeURIComponent(code)}`)
       const data = await res.json()
 
       if (!res.ok) {

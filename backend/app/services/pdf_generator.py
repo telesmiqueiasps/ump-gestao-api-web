@@ -345,25 +345,8 @@ def generate_financial_report(
         req_name   = signature_data.get('requested_by', '')
         app_name   = signature_data.get('approved_by', '')
 
-        # Detecta cargo de cada signatário no board_data
-        req_role_label = 'Tesoureiro(a)'
-        app_role_label = 'Presidente'
-        role_map_req = {
-            'tesoureiro': 'Tesoureiro(a)',
-            'vice_presidente': 'Vice-Presidente',
-        }
-        role_map_app = {
-            'presidente': 'Presidente',
-            'vice_presidente': 'Vice-Presidente',
-            'secretario_presbiterial': 'Secretário Presbiterial',
-            'conselheiro': 'Conselheiro',
-        }
-        for b in board_data:
-            bname = (b.get('member_name') or '').upper()
-            if bname == req_name.upper():
-                req_role_label = role_map_req.get(b.get('role', ''), req_role_label)
-            if bname == app_name.upper():
-                app_role_label = role_map_app.get(b.get('role', ''), app_role_label)
+        req_role_label = signature_data.get('req_role', 'Tesoureiro(a)')
+        app_role_label = signature_data.get('app_role', 'Presidente')
 
         TEXT_W = W - (QR_SIZE + 5*mm if qr_img else 0)
 
