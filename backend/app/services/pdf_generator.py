@@ -254,7 +254,8 @@ def generate_financial_report(
     fin_data = [
         [Paragraph(f'SALDO DO ANO ANTERIOR {year-1}', _ps(8, WHITE, bold=True)),
          Paragraph(_fc(initial), _ps(8, WHITE, bold=True, align=TA_RIGHT)),
-         Paragraph('', _ps()), Paragraph('', _ps())],
+         Paragraph('', _ps(8, WHITE)),
+         Paragraph('', _ps(8, WHITE))],
 
         [_fhdr(f'RECEITAS ({year})'), _fhdr(''),
          _fhdr(f'DESPESAS ({year})'), _fhdr('')],
@@ -284,9 +285,7 @@ def generate_financial_report(
         ('RIGHTPADDING',  (0,0),(-1,-1), 4),
         # Linha 0: azul esquerda, cinza direita
         ('BACKGROUND',    (0,0),(1,0), TC),
-        ('SPAN',          (0,0),(1,0)),
         ('BACKGROUND',    (2,0),(3,0), GRAY_ROW),
-        ('SPAN',          (2,0),(3,0)),
         # Linha 1: cabeçalhos
         ('BACKGROUND',    (0,1),(1,1), TC),
         ('SPAN',          (0,1),(1,1)),
