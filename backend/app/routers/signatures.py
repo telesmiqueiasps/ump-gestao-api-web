@@ -23,7 +23,6 @@ APPROVE_ROLES = {'presidente', 'vice_presidente', 'secretario_presbiterial', 'co
 def _get_user_roles(db: Session, user_id, org_id) -> list[str]:
     roles = db.query(UserRole).filter(
         UserRole.user_id == user_id,
-        UserRole.organization_id == org_id,
     ).all()
     return [r.role.value if hasattr(r.role, 'value') else str(r.role) for r in roles]
 
