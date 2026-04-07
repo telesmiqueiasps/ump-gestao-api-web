@@ -533,9 +533,13 @@ def close_period(
 
     period_dict = {
         "fiscal_year": period.fiscal_year,
-        "initial_balance": float(period.initial_balance),
+        "initial_balance": float(period.initial_balance or 0),
         "final_balance": running,
     }
+    import logging as _logging
+    _logging.getLogger(__name__).info(
+        f"Period dict: initial={float(period.initial_balance or 0)}, final={running}"
+    )
 
     # Baixa logo da organização
     logo_bytes = None
