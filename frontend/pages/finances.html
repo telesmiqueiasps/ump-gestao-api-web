@@ -682,44 +682,38 @@
       document.getElementById('annual-summary').style.display = 'block'
 
       // Badge de status
-      if (currentPeriod.is_locked) {
-        document.getElementById('period-status-badge').textContent = '🔒 Assinado'
-        document.getElementById('period-status-badge').className = 'badge badge-green'
-      } else if (currentPeriod.is_closed) {
+      if (currentPeriod.is_closed) {
         document.getElementById('period-status-badge').textContent = 'Encerrado'
         document.getElementById('period-status-badge').className = 'badge badge-slate'
+      } else if (currentPeriod.is_locked) {
+        document.getElementById('period-status-badge').textContent = '🔒 Assinado'
+        document.getElementById('period-status-badge').className = 'badge badge-green'
       } else {
         document.getElementById('period-status-badge').textContent = 'Aberto'
         document.getElementById('period-status-badge').className = 'badge badge-green'
       }
 
-      // Botões de ação do período
-      if (currentPeriod.is_locked) {
-        document.getElementById('btn-close-period').style.display = 'none'
-        document.getElementById('btn-report').style.display = 'none'
-        document.getElementById('btn-unlock-period').style.display = 'inline-flex'
+      // Botão encerrar — aparece sempre que período aberto (bloqueado ou não)
+      document.getElementById('btn-close-period').style.display = !currentPeriod.is_closed ? 'inline-flex' : 'none'
+
+      // Botão desbloquear — apenas quando bloqueado e não encerrado
+      document.getElementById('btn-unlock-period').style.display = (currentPeriod.is_locked && !currentPeriod.is_closed) ? 'inline-flex' : 'none'
+
+      // Botão ver relatório assinado
+      if (currentPeriod.is_locked && currentPeriod.signature_id) {
         document.getElementById('btn-view-signed').style.display = 'inline-flex'
-        document.getElementById('btn-view-signed').dataset.sigId = currentPeriod.signature_id || ''
-      } else if (!currentPeriod.is_closed) {
-        document.getElementById('btn-close-period').style.display = 'inline-flex'
-        document.getElementById('btn-report').style.display = 'inline-flex'
-        document.getElementById('btn-unlock-period').style.display = 'none'
-        document.getElementById('btn-view-signed').style.display = 'none'
+        document.getElementById('btn-view-signed').dataset.sigId = currentPeriod.signature_id
       } else {
-        document.getElementById('btn-close-period').style.display = 'none'
-        document.getElementById('btn-report').style.display = 'none'
-        document.getElementById('btn-unlock-period').style.display = 'none'
         document.getElementById('btn-view-signed').style.display = 'none'
       }
 
-      // Limpar comprovantes só aparece com período fechado
-      if (currentPeriod.is_closed) {
-        document.getElementById('btn-clean-receipts').style.display = 'inline-flex'
-      } else {
-        document.getElementById('btn-clean-receipts').style.display = 'none'
-      }
+      // Botão gerar relatório — apenas período aberto e não bloqueado
+      document.getElementById('btn-report').style.display = (!currentPeriod.is_closed && !currentPeriod.is_locked) ? 'inline-flex' : 'none'
 
-      // Ver relatórios só aparece com período fechado e relatórios disponíveis
+      // Botão limpar comprovantes — apenas encerrado
+      document.getElementById('btn-clean-receipts').style.display = currentPeriod.is_closed ? 'inline-flex' : 'none'
+
+      // Ver relatórios finais — apenas encerrado com relatórios disponíveis
       if (currentPeriod.is_closed && (currentPeriod.report_url || currentPeriod.receipts_report_url)) {
         document.getElementById('btn-view-reports').style.display = 'inline-flex'
         document.getElementById('btn-view-reports').dataset.periodId = currentPeriod.id

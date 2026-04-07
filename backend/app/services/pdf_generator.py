@@ -329,11 +329,10 @@ def generate_financial_report(
 
     # ─── ASSINATURAS ────────────────────────────────────────
     if signature_data:
-        story.append(Spacer(1, 4*mm))
-        story.append(_section_bar('DOCUMENTO ASSINADO DIGITALMENTE', W, TC))
+        story.append(Spacer(1, 3*mm))
 
+        QR_SIZE = 24*mm
         qr_img = None
-        QR_SIZE = 32*mm
         if signature_data.get('qr_bytes'):
             try:
                 qr_img = Image(io.BytesIO(signature_data['qr_bytes']),
@@ -343,22 +342,43 @@ def generate_financial_report(
 
         code       = signature_data.get('validation_code', '')
         hash_short = signature_data.get('data_hash', '')
-        TEXT_W     = W - (QR_SIZE + 6*mm if qr_img else 0)
+        req_name   = signature_data.get('requested_by', '')
+        app_name   = signature_data.get('approved_by', '')
 
-        text_rows = [
-            [Paragraph('Código de Validação', _ps(7, GRAY_TXT, bold=True))],
-            [Paragraph(code,                  _ps(9, TC, bold=True))],
-            [Spacer(1, 2*mm)],
-            [Paragraph(f'Hash SHA-256: {hash_short}', _ps(6.5, GRAY_TXT))],
-            [Spacer(1, 2*mm)],
-            [Paragraph(f"Aprovado por: <b>{signature_data.get('approved_by','')}</b>",  _ps(7.5, BLACK))],
-            [Paragraph(f"Data de Aprovação: <b>{signature_data.get('approved_at','')}</b>", _ps(7.5, BLACK))],
-            [Paragraph(f"Solicitado por: <b>{signature_data.get('requested_by','')}</b>", _ps(7.5, BLACK))],
-            [Spacer(1, 2*mm)],
-            [Paragraph('Valide em: <b>umpgestao.netlify.app/validar.html</b>', _ps(7, GRAY_TXT))],
-        ]
-        text_table = Table(text_rows, colWidths=[TEXT_W])
-        text_table.setStyle(TableStyle([
+        # Detecta cargo de cada signatário no board_data
+        req_role_label = 'Tesoureiro(a)'
+        app_role_label = 'Presidente'
+        role_map_req = {
+            'tesoureiro': 'Tesoureiro(a)',
+            'vice_presidente': 'Vice-Presidente',
+        }
+        role_map_app = {
+            'presidente': 'Presidente',
+            'vice_presidente': 'Vice-Presidente',
+            'secretario_presbiterial': 'Secretário Presbiterial',
+            'conselheiro': 'Conselheiro',
+        }
+        for b in board_data:
+            bname = (b.get('member_name') or '').upper()
+            if bname == req_name.upper():
+                req_role_label = role_map_req.get(b.get('role', ''), req_role_label)
+            if bname == app_name.upper():
+                app_role_label = role_map_app.get(b.get('role', ''), app_role_label)
+
+        TEXT_W = W - (QR_SIZE + 5*mm if qr_img else 0)
+
+        sig_content = Table([
+            [Paragraph('<b>DOCUMENTO ASSINADO DIGITALMENTE</b>', _ps(8, TC, bold=True))],
+            [Paragraph(f'Código: <b>{code}</b>', _ps(7, BLACK))],
+            [Paragraph(f'Hash: {hash_short[:40]}...', _ps(6, GRAY_TXT))],
+            [Paragraph(
+                f'{req_role_label}: <b>{req_name}</b>  |  {app_role_label}: <b>{app_name}</b>',
+                _ps(7, BLACK)
+            )],
+            [Paragraph(f"Aprovado em: <b>{signature_data.get('approved_at', '')}</b>", _ps(7, BLACK))],
+            [Paragraph('Valide em: umpgestao.netlify.app/validar.html', _ps(6.5, GRAY_TXT))],
+        ], colWidths=[TEXT_W])
+        sig_content.setStyle(TableStyle([
             ('TOPPADDING',    (0,0),(-1,-1), 1),
             ('BOTTOMPADDING', (0,0),(-1,-1), 1),
             ('LEFTPADDING',   (0,0),(-1,-1), 0),
@@ -366,41 +386,40 @@ def generate_financial_report(
         ]))
 
         if qr_img:
-            inner_data = [[text_table, Spacer(6*mm, 1), qr_img]]
-            inner_cw   = [TEXT_W, 6*mm, QR_SIZE]
+            inner = Table([[sig_content, Spacer(5*mm, 1), qr_img]],
+                          colWidths=[TEXT_W, 5*mm, QR_SIZE])
         else:
-            inner_data = [[text_table]]
-            inner_cw   = [W - 16*mm]
+            inner = Table([[sig_content]], colWidths=[W - 14*mm])
 
-        inner_t = Table(inner_data, colWidths=inner_cw)
-        inner_t.setStyle(TableStyle([('VALIGN', (0,0),(-1,-1), 'MIDDLE')]))
+        inner.setStyle(TableStyle([('VALIGN', (0,0),(-1,-1), 'MIDDLE')]))
 
-        outer_t = Table([[inner_t]], colWidths=[W])
-        outer_t.setStyle(TableStyle([
+        outer = Table([[inner]], colWidths=[W])
+        outer.setStyle(TableStyle([
             ('BOX',           (0,0),(-1,-1), 1.5, TC),
             ('BACKGROUND',    (0,0),(-1,-1), colors.HexColor('#f8fafc')),
-            ('TOPPADDING',    (0,0),(-1,-1), 8),
-            ('BOTTOMPADDING', (0,0),(-1,-1), 8),
-            ('LEFTPADDING',   (0,0),(-1,-1), 10),
-            ('RIGHTPADDING',  (0,0),(-1,-1), 10),
+            ('TOPPADDING',    (0,0),(-1,-1), 6),
+            ('BOTTOMPADDING', (0,0),(-1,-1), 6),
+            ('LEFTPADDING',   (0,0),(-1,-1), 8),
+            ('RIGHTPADDING',  (0,0),(-1,-1), 8),
         ]))
-        story.append(outer_t)
-        story.append(Spacer(1, 6*mm))
+        story.append(outer)
+        story.append(Spacer(1, 5*mm))
 
-        # Linhas de assinatura digital
+        # Linhas de assinatura digital com cargo
         SIG_W2 = (W - 20*mm) / 2
-        def _sig_digital(name, role_label):
+
+        def _sig_digital(role_label, name):
             return Table([
                 [HRFlowable(width=SIG_W2, thickness=1, color=BLACK)],
+                [Paragraph(role_label,   _ps(7, GRAY_TXT, align=TA_CENTER))],
                 [Paragraph(name.upper(), _ps(9, BLACK, bold=True, align=TA_CENTER))],
-                [Paragraph(role_label,   _ps(8, BLACK, align=TA_CENTER))],
-                [Paragraph(org_name,     _ps(8, BLACK, bold=True, align=TA_CENTER))],
+                [Paragraph(org_name,     _ps(7.5, BLACK, align=TA_CENTER))],
             ], colWidths=[SIG_W2])
 
         sig_t2 = Table([[
-            _sig_digital(signature_data.get('requested_by', ''), 'Solicitante'),
+            _sig_digital(req_role_label, req_name),
             Spacer(20*mm, 1),
-            _sig_digital(signature_data.get('approved_by', ''), 'Aprovador'),
+            _sig_digital(app_role_label, app_name),
         ]], colWidths=[SIG_W2, 20*mm, SIG_W2])
         sig_t2.setStyle(TableStyle([('VALIGN', (0,0),(-1,-1), 'TOP')]))
         story.append(sig_t2)
