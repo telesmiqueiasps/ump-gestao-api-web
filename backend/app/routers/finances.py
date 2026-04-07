@@ -434,7 +434,7 @@ def close_period(
     import secrets
     import hashlib
 
-    user_roles = _get_user_roles(db, current_user.id, current_user.organization_id)
+    user_roles = _get_user_roles(db, current_user.id)
     if not any(r in CLOSE_ROLES for r in user_roles):
         raise HTTPException(status_code=403, detail="Apenas Presidente, Vice-Presidente, Secretário Presbiterial ou Conselheiro podem encerrar o período")
 
@@ -712,11 +712,12 @@ READY_ROLES = {'tesoureiro', 'vice_presidente'}
 CLOSE_ROLES = {'presidente', 'vice_presidente', 'secretario_presbiterial', 'conselheiro'}
 
 
-def _get_user_roles(db, user_id, org_id):
+def _get_user_roles(db, user_id):
     from app.models.user import UserRole
     roles = db.query(UserRole).filter(
         UserRole.user_id == user_id,
-        UserRole.organization_id == org_id,
+        UserRole.is_active == True,
+        UserRole.fiscal_year == datetime.date.today().year,
     ).all()
     return [r.role.value if hasattr(r.role, 'value') else str(r.role) for r in roles]
 
@@ -728,7 +729,7 @@ def mark_period_ready(
     db: Session = Depends(get_db),
 ):
     import datetime as dt
-    user_roles = _get_user_roles(db, current_user.id, current_user.organization_id)
+    user_roles = _get_user_roles(db, current_user.id)
     if not any(r in READY_ROLES for r in user_roles):
         raise HTTPException(status_code=403, detail="Apenas Tesoureiro ou Vice-Presidente podem marcar como pronto")
 
@@ -754,7 +755,7 @@ def unmark_period_ready(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    user_roles = _get_user_roles(db, current_user.id, current_user.organization_id)
+    user_roles = _get_user_roles(db, current_user.id)
     if not any(r in READY_ROLES for r in user_roles):
         raise HTTPException(status_code=403, detail="Sem permissão")
 
