@@ -120,6 +120,7 @@ def _section_bar(text, W, TC):
 def generate_financial_report(
     org_data, period_data, months_data, board_data,
     logo_bytes=None, logo_content_type=None, theme_color='#1a2a6c',
+    signature_data=None,
 ):
     buf = io.BytesIO()
     ML = MR = 14*mm
@@ -327,26 +328,82 @@ def generate_financial_report(
     story.append(Spacer(1, 8*mm))
 
     # ─── ASSINATURAS ────────────────────────────────────────
-    SIG_W = (W - 20*mm) / 2
-    pres_name = (presidente.get('member_name') or '').upper() if presidente else ''
-    tes_name  = (tesoureiro.get('member_name')  or '').upper() if tesoureiro else ''
+    if signature_data:
+        # Bloco de assinatura digital
+        val_code      = signature_data.get('validation_code', '')
+        data_hash     = signature_data.get('data_hash', '')
+        reviewer_name = (signature_data.get('approved_by') or '').upper()
+        requester_name= (signature_data.get('requested_by') or '').upper()
+        sig_date      = signature_data.get('approved_at', '')
+        validate_url  = signature_data.get('validation_url', '')
+        qr_bytes      = signature_data.get('qr_bytes')
 
-    def _sig(name, role):
-        return Table([
-            [HRFlowable(width=SIG_W, thickness=1, color=BLACK)],
-            [Paragraph(name, _ps(9, BLACK, bold=True, align=TA_CENTER))],
-            [Paragraph(role, _ps(8, BLACK, align=TA_CENTER))],
-            [Paragraph(org_name, _ps(8, BLACK, bold=True, align=TA_CENTER))],
-        ], colWidths=[SIG_W])
+        QR_W   = 28*mm
+        INFO_W = W - QR_W - 6*mm
+        SEAL_H = 32*mm
 
-    sig_t = Table([
-        [_sig(pres_name, 'Presidente da'),
-         Spacer(20*mm, 1),
-         _sig(tes_name, 'Tesoureiro(a) da')]
-    ], colWidths=[SIG_W, 20*mm, SIG_W])
-    sig_t.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'TOP')]))
-    story.append(sig_t)
-    story.append(Spacer(1, 6*mm))
+        # QR Code
+        qr_img = None
+        if qr_bytes:
+            try:
+                qr_img = Image(io.BytesIO(qr_bytes), width=QR_W, height=QR_W)
+            except Exception:
+                pass
+
+        BLUE_DARK = colors.HexColor('#0f1f5c')
+        info_inner = Table([
+            [Paragraph('DOCUMENTO ASSINADO DIGITALMENTE', _ps(9, TC, bold=True))],
+            [Paragraph(f'Código de Validação: <b>{val_code}</b>', _ps(7.5, BLACK))],
+            [Paragraph(f'Hash SHA-256: {data_hash}', _ps(6.5, GRAY_TXT))],
+            [Paragraph(f'Aprovado por: <b>{reviewer_name}</b>', _ps(7.5, BLACK))],
+            [Paragraph(f'Data de Aprovação: <b>{sig_date}</b>', _ps(7.5, BLACK))],
+            [Paragraph(f'Solicitado por: <b>{requester_name}</b>', _ps(7.5, BLACK))],
+            [Paragraph(f'Valide em: {validate_url}', _ps(6.5, GRAY_TXT))],
+        ], colWidths=[INFO_W])
+        info_inner.setStyle(TableStyle([
+            ('TOPPADDING',    (0,0),(-1,-1), 2),
+            ('BOTTOMPADDING', (0,0),(-1,-1), 2),
+            ('LEFTPADDING',   (0,0),(-1,-1), 0),
+            ('RIGHTPADDING',  (0,0),(-1,-1), 0),
+        ]))
+
+        qr_cell  = qr_img if qr_img else Paragraph('', _ps(7))
+        dig_row  = [[qr_cell, Spacer(6*mm, 1), info_inner]]
+        dig_cw   = [QR_W, 6*mm, INFO_W]
+        dig_t    = Table(dig_row, colWidths=dig_cw, rowHeights=[SEAL_H])
+        dig_t.setStyle(TableStyle([
+            ('VALIGN',        (0,0),(-1,-1), 'MIDDLE'),
+            ('TOPPADDING',    (0,0),(-1,-1), 4),
+            ('BOTTOMPADDING', (0,0),(-1,-1), 4),
+            ('LEFTPADDING',   (0,0),(-1,-1), 4),
+            ('RIGHTPADDING',  (0,0),(-1,-1), 4),
+            ('BOX',           (0,0),(-1,-1), 1, TC),
+            ('BACKGROUND',    (0,0),(-1,-1), colors.HexColor('#f0f4ff')),
+        ]))
+        story.append(dig_t)
+        story.append(Spacer(1, 4*mm))
+    else:
+        # Bloco de assinatura manual
+        SIG_W = (W - 20*mm) / 2
+        pres_name = (presidente.get('member_name') or '').upper() if presidente else ''
+        tes_name  = (tesoureiro.get('member_name')  or '').upper() if tesoureiro else ''
+
+        def _sig(name, role):
+            return Table([
+                [HRFlowable(width=SIG_W, thickness=1, color=BLACK)],
+                [Paragraph(name, _ps(9, BLACK, bold=True, align=TA_CENTER))],
+                [Paragraph(role, _ps(8, BLACK, align=TA_CENTER))],
+                [Paragraph(org_name, _ps(8, BLACK, bold=True, align=TA_CENTER))],
+            ], colWidths=[SIG_W])
+
+        sig_t = Table([
+            [_sig(pres_name, 'Presidente da'),
+             Spacer(20*mm, 1),
+             _sig(tes_name, 'Tesoureiro(a) da')]
+        ], colWidths=[SIG_W, 20*mm, SIG_W])
+        sig_t.setStyle(TableStyle([('VALIGN',(0,0),(-1,-1),'TOP')]))
+        story.append(sig_t)
+        story.append(Spacer(1, 6*mm))
 
     presby = (org_data.get('presbytery_name') or '').upper()
     ft_txt = f'{org_name} — {presby}' if presby else org_name

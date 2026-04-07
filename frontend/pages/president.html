@@ -18,6 +18,83 @@
   <link rel="stylesheet" href="../assets/css/main.css?v=9" />
   <link rel="stylesheet" href="../assets/css/components.css?v=9" />
   <link rel="stylesheet" href="../assets/css/layout.v2.css?v=9" />
+  <style>
+    .sig-card {
+      background: #fff;
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+    }
+    .sig-card-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: .5rem;
+    }
+    .sig-card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--slate-800);
+    }
+    .sig-card-meta {
+      font-size: .8rem;
+      color: var(--slate-500);
+    }
+    .sig-card-actions {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin-top: .25rem;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: .2rem .7rem;
+      border-radius: 99px;
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+    .badge-pending     { background: #fef9c3; color: #a16207; }
+    .badge-approved    { background: #dcfce7; color: #16a34a; }
+    .badge-rejected    { background: #fee2e2; color: #dc2626; }
+    .badge-invalidated { background: #f1f5f9; color: #64748b; }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--slate-400);
+    }
+    .empty-state .icon { font-size: 2.5rem; margin-bottom: .75rem; }
+    .empty-state p { font-size: .9rem; }
+
+    .section-title {
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--slate-700);
+      margin-bottom: .75rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+    .section-divider { margin: 1.5rem 0; border: none; border-top: 1px solid var(--slate-200); }
+
+    .spinner-inline {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
 </head>
 <body>
 
@@ -56,41 +133,272 @@
       <div class="page-header">
         <div class="page-header-info">
           <h1>Presidência</h1>
-          <p>Painel exclusivo da presidência</p>
+          <p>Aprovação de relatórios assinados digitalmente</p>
+        </div>
+        <button class="btn btn-ghost" id="btn-refresh" title="Atualizar">🔄 Atualizar</button>
+      </div>
+
+      <div id="page-alert" style="margin-bottom:.75rem"></div>
+
+      <!-- Pendentes -->
+      <div class="card" style="margin-bottom:1rem">
+        <div class="section-title">⏳ Aguardando Aprovação</div>
+        <div id="list-pending">
+          <div class="empty-state"><div class="icon">✅</div><p>Nenhuma solicitação pendente.</p></div>
         </div>
       </div>
 
-      <div class="card" style="text-align:center;padding:3rem">
-        <p style="font-size:2rem;margin-bottom:1rem">👑</p>
-        <h2>Em breve</h2>
-        <p class="text-slate-500 text-sm mt-2">Módulo da Presidência em desenvolvimento.</p>
+      <!-- Histórico -->
+      <div class="card">
+        <div class="section-title">📋 Histórico de Assinaturas</div>
+        <div id="list-history">
+          <div class="empty-state"><div class="icon">📭</div><p>Nenhum registro ainda.</p></div>
+        </div>
       </div>
     </main>
   </div>
   <div class="sidebar-overlay" id="sidebar-overlay"></div>
 </div>
 
+<!-- Modal Aprovar -->
+<div class="modal-overlay" id="modal-approve">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2>Aprovar Relatório</h2>
+      <button class="modal-close">✕</button>
+    </div>
+    <p class="text-sm text-slate-500" style="margin-bottom:1rem">
+      Ao aprovar, o relatório financeiro será assinado digitalmente e o período ficará bloqueado para edições.
+    </p>
+    <div id="approve-details" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:1rem;margin-bottom:1rem;font-size:.85rem;color:#334155"></div>
+    <div id="approve-alert" style="margin-bottom:.5rem"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost modal-close">Cancelar</button>
+      <button class="btn btn-primary" id="btn-confirm-approve">✅ Confirmar Aprovação</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Rejeitar -->
+<div class="modal-overlay" id="modal-reject">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2>Rejeitar Solicitação</h2>
+      <button class="modal-close">✕</button>
+    </div>
+    <p class="text-sm text-slate-500" style="margin-bottom:1rem">
+      Informe o motivo da rejeição. O tesoureiro poderá solicitar novamente após fazer as correções necessárias.
+    </p>
+    <div>
+      <label class="form-label">Motivo da Rejeição</label>
+      <textarea id="reject-reason" class="form-input" rows="3" placeholder="Ex: Há lançamentos incorretos no mês de março..." style="resize:vertical"></textarea>
+    </div>
+    <div id="reject-alert" style="margin-top:.5rem"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost modal-close">Cancelar</button>
+      <button class="btn btn-danger" id="btn-confirm-reject">❌ Confirmar Rejeição</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
-  import { requireAuth } from '../assets/js/auth.js?v=9'
-  import { renderShell, renderBottomNav } from '../assets/js/router.v3.js?v=9'
+  import { requireAuth, hasRole } from '../assets/js/auth.js'
+  import { renderShell, renderBottomNav } from '../assets/js/router.v3.js'
+  import { api } from '../assets/js/api.js'
+  import { formatDate, showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading } from '../assets/js/utils.js'
 
-  (async () => {
-    if (!requireAuth()) throw new Error()
+  if (!requireAuth()) throw new Error()
+  await renderShell()
+  renderBottomNav('president')
+  document.querySelector('[data-page="president"]')?.classList.add('active')
+  initModalClose()
 
-    await renderShell()
-    renderBottomNav('president')
-    document.querySelector('[data-page="president"]')?.classList.add('active')
-  })()
+  let pendingList = []
+  let selectedSigId = null
+
+  function fmtDate(dt) {
+    if (!dt) return '—'
+    try {
+      return new Date(dt).toLocaleDateString('pt-BR', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      })
+    } catch { return dt }
+  }
+
+  function badgeHtml(status) {
+    const map = {
+      pending:     ['badge-pending',     '⏳ Pendente'],
+      approved:    ['badge-approved',    '✅ Aprovado'],
+      rejected:    ['badge-rejected',    '❌ Rejeitado'],
+      invalidated: ['badge-invalidated', '🔒 Invalidado'],
+    }
+    const [cls, label] = map[status] || ['badge-pending', status]
+    return `<span class="badge ${cls}">${label}</span>`
+  }
+
+  function renderPending(list) {
+    const el = document.getElementById('list-pending')
+    if (!list.length) {
+      el.innerHTML = '<div class="empty-state"><div class="icon">✅</div><p>Nenhuma solicitação pendente.</p></div>'
+      return
+    }
+    el.innerHTML = list.map(sig => `
+      <div class="sig-card" data-id="${sig.id}">
+        <div class="sig-card-row">
+          <div class="sig-card-title">Exercício ${sig.fiscal_year}</div>
+          ${badgeHtml(sig.status)}
+        </div>
+        <div class="sig-card-meta">Solicitado por <strong>${sig.requester_name || '—'}</strong> em ${fmtDate(sig.requested_at)}</div>
+        <div class="sig-card-actions">
+          <button class="btn btn-primary btn-sm btn-approve" data-id="${sig.id}" data-year="${sig.fiscal_year}" data-req="${sig.requester_name || ''}">
+            ✅ Aprovar
+          </button>
+          <button class="btn btn-danger btn-sm btn-reject" data-id="${sig.id}">
+            ❌ Rejeitar
+          </button>
+        </div>
+      </div>
+    `).join('')
+  }
+
+  function renderHistory(list) {
+    const el = document.getElementById('list-history')
+    const history = list.filter(s => s.status !== 'pending')
+    if (!history.length) {
+      el.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>Nenhum registro ainda.</p></div>'
+      return
+    }
+    el.innerHTML = history.map(sig => {
+      const extra = sig.status === 'approved'
+        ? `<div class="sig-card-meta">Aprovado por <strong>${sig.reviewer_name || '—'}</strong> em ${fmtDate(sig.reviewed_at)}</div>
+           <div class="sig-card-actions">
+             <button class="btn btn-ghost btn-sm btn-download" data-id="${sig.id}">📥 Baixar PDF Assinado</button>
+           </div>`
+        : sig.status === 'rejected'
+        ? `<div class="sig-card-meta">Rejeitado por <strong>${sig.reviewer_name || '—'}</strong> em ${fmtDate(sig.reviewed_at)}</div>
+           ${sig.rejection_reason ? `<div class="sig-card-meta" style="color:#dc2626">Motivo: ${sig.rejection_reason}</div>` : ''}`
+        : sig.status === 'invalidated'
+        ? `<div class="sig-card-meta">Invalidado em ${fmtDate(sig.invalidated_at)}</div>
+           ${sig.invalidated_reason ? `<div class="sig-card-meta">Motivo: ${sig.invalidated_reason}</div>` : ''}`
+        : ''
+
+      return `
+        <div class="sig-card" style="margin-bottom:.75rem">
+          <div class="sig-card-row">
+            <div class="sig-card-title">Exercício ${sig.fiscal_year}</div>
+            ${badgeHtml(sig.status)}
+          </div>
+          <div class="sig-card-meta">Solicitado por <strong>${sig.requester_name || '—'}</strong> em ${fmtDate(sig.requested_at)}</div>
+          ${extra}
+        </div>
+      `
+    }).join('')
+  }
+
+  async function loadPending() {
+    clearAlert('page-alert')
+    try {
+      const [pending, all] = await Promise.all([
+        api.get('/api/signatures/pending'),
+        api.get('/api/signatures/'),
+      ])
+      pendingList = pending
+      renderPending(pending)
+      renderHistory(all)
+    } catch(err) {
+      showAlert('page-alert', 'Erro ao carregar dados: ' + (err.message || 'Tente novamente.'), 'error')
+    }
+  }
+
+  // Delegação de eventos
+  document.getElementById('list-pending').addEventListener('click', e => {
+    const approveBtn = e.target.closest('.btn-approve')
+    const rejectBtn  = e.target.closest('.btn-reject')
+
+    if (approveBtn) {
+      selectedSigId = approveBtn.dataset.id
+      const year = approveBtn.dataset.year
+      const req  = approveBtn.dataset.req
+      document.getElementById('approve-details').innerHTML =
+        `<strong>Exercício:</strong> ${year}<br><strong>Solicitado por:</strong> ${req || '—'}`
+      clearAlert('approve-alert')
+      openModal('modal-approve')
+    }
+
+    if (rejectBtn) {
+      selectedSigId = rejectBtn.dataset.id
+      document.getElementById('reject-reason').value = ''
+      clearAlert('reject-alert')
+      openModal('modal-reject')
+    }
+  })
+
+  document.getElementById('list-history').addEventListener('click', async e => {
+    const dlBtn = e.target.closest('.btn-download')
+    if (!dlBtn) return
+    const sigId = dlBtn.dataset.id
+    setLoading(dlBtn, true, '📥 Baixar PDF Assinado')
+    try {
+      const data = await api.get(`/api/signatures/${sigId}/report-url`)
+      window.open(data.url, '_blank')
+    } catch(err) {
+      showAlert('page-alert', 'Erro ao obter link: ' + (err.message || 'Tente novamente.'), 'error')
+    } finally {
+      setLoading(dlBtn, false, '📥 Baixar PDF Assinado')
+    }
+  })
+
+  document.getElementById('btn-confirm-approve').addEventListener('click', async () => {
+    if (!selectedSigId) return
+    const btn = document.getElementById('btn-confirm-approve')
+    setLoading(btn, true, '✅ Aprovando...')
+    clearAlert('approve-alert')
+    try {
+      await api.post(`/api/signatures/${selectedSigId}/approve`, {})
+      closeModal('modal-approve')
+      showAlert('page-alert', '✅ Relatório aprovado e assinado digitalmente. O período foi bloqueado.', 'success')
+      await loadPending()
+    } catch(err) {
+      showAlert('approve-alert', err.message || 'Erro ao aprovar.', 'error')
+    } finally {
+      setLoading(btn, false, '✅ Confirmar Aprovação')
+    }
+  })
+
+  document.getElementById('btn-confirm-reject').addEventListener('click', async () => {
+    if (!selectedSigId) return
+    const reason = document.getElementById('reject-reason').value.trim()
+    if (!reason) {
+      showAlert('reject-alert', 'Informe o motivo da rejeição.', 'error')
+      return
+    }
+    const btn = document.getElementById('btn-confirm-reject')
+    setLoading(btn, true, '❌ Rejeitando...')
+    clearAlert('reject-alert')
+    try {
+      await api.post(`/api/signatures/${selectedSigId}/reject`, { reason })
+      closeModal('modal-reject')
+      showAlert('page-alert', 'Solicitação rejeitada. O tesoureiro pode corrigir e solicitar novamente.', 'success')
+      await loadPending()
+    } catch(err) {
+      showAlert('reject-alert', err.message || 'Erro ao rejeitar.', 'error')
+    } finally {
+      setLoading(btn, false, '❌ Confirmar Rejeição')
+    }
+  })
+
+  document.getElementById('btn-refresh').addEventListener('click', loadPending)
+
+  loadPending()
 </script>
 
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.getRegistrations().then(registrations => {
-      // Remove todos os SW antigos primeiro
       registrations.forEach(reg => reg.unregister())
     }).then(() => {
-      // Registra o novo SW limpo
-      navigator.serviceWorker.register('/sw.js?v=6').then(reg => {
+      navigator.serviceWorker.register('/sw.js?v=8').then(reg => {
         console.log('SW registrado:', reg.scope)
       }).catch(console.error)
     })

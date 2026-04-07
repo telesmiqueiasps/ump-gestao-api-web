@@ -543,6 +543,31 @@
   </div>
 </div>
 
+<!-- Modal Tipo de Relatório -->
+<div class="modal-overlay" id="modal-report-type">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2>Relatório Financeiro</h2>
+      <button class="modal-close">✕</button>
+    </div>
+    <p class="text-sm text-slate-500" style="margin-bottom:1.25rem">
+      Escolha o tipo de relatório a gerar.
+    </p>
+    <div style="display:flex;flex-direction:column;gap:.75rem">
+      <button id="btn-report-preview" class="btn btn-primary" style="justify-content:center">
+        📄 Visualização (PDF local)
+      </button>
+      <button id="btn-report-signed" class="btn btn-secondary" style="justify-content:center" id="btn-report-signed">
+        🔏 Solicitar Relatório Assinado
+      </button>
+    </div>
+    <div id="report-type-alert" style="margin-top:.75rem"></div>
+    <div class="modal-footer" style="margin-top:.5rem">
+      <button class="btn btn-ghost modal-close" style="width:100%;justify-content:center">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal Ver Relatórios -->
 <div class="modal-overlay" id="modal-view-reports">
   <div class="modal modal-sm">
@@ -568,7 +593,7 @@
 </div>
 
 <script type="module">
-  import { requireAuth, isFederation, isLocalUmp } from '../assets/js/auth.js'
+  import { requireAuth, isFederation, isLocalUmp, hasRole } from '../assets/js/auth.js'
   import { renderShell, renderBottomNav, canAccessPage } from '../assets/js/router.v3.js'
   import { api } from '../assets/js/api.js'
   import { formatCurrency, formatDate, showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading } from '../assets/js/utils.js'
@@ -1005,7 +1030,15 @@
   })
 
   // ── Relatório PDF ──
-  document.getElementById('btn-report').addEventListener('click', async () => {
+  document.getElementById('btn-report').addEventListener('click', () => {
+    clearAlert('report-type-alert')
+    const canRequest = hasRole('tesoureiro', 'vice_presidente')
+    document.getElementById('btn-report-signed').style.display = canRequest ? 'flex' : 'none'
+    openModal('modal-report-type')
+  })
+
+  document.getElementById('btn-report-preview').addEventListener('click', async () => {
+    closeModal('modal-report-type')
     const btn = document.getElementById('btn-report')
     setLoading(btn, true, '📄 Relatório PDF')
     try {
@@ -1014,6 +1047,21 @@
       showAlert('screen-months-alert', 'Erro ao gerar relatório: ' + err.message, 'error')
     } finally {
       setLoading(btn, false, '📄 Relatório PDF')
+    }
+  })
+
+  document.getElementById('btn-report-signed').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-report-signed')
+    setLoading(btn, true, '🔏 Solicitando...')
+    clearAlert('report-type-alert')
+    try {
+      await api.post('/api/signatures/request', { fiscal_year: currentYear, period_id: currentPeriod?.id })
+      closeModal('modal-report-type')
+      showAlert('screen-months-alert', '✅ Solicitação de assinatura enviada ao presidente.', 'success')
+    } catch(err) {
+      showAlert('report-type-alert', err.message || 'Erro ao solicitar assinatura.', 'error')
+    } finally {
+      setLoading(btn, false, '🔏 Solicitar Relatório Assinado')
     }
   })
 

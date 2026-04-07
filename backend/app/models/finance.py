@@ -18,6 +18,8 @@ class FinancialPeriod(Base):
     closed_at = Column(DateTime(timezone=True), nullable=True)
     report_url = Column(Text, nullable=True)
     receipts_report_url = Column(Text, nullable=True)
+    is_locked = Column(Boolean, default=False)
+    signature_id = Column(UUID(as_uuid=True), ForeignKey("report_signatures.id"), nullable=True)
 
     __table_args__ = (
         UniqueConstraint("organization_id", "fiscal_year", name="uq_period_org_year"),
