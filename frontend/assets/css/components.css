@@ -156,7 +156,77 @@ tbody td.font-medium { font-weight: 500; color: var(--slate-800); }
   font-size: .875rem;
 }
 
-/* ── Modal — estilos em layout.css ───────────────────── */
+/* ── Modal ────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.modal-overlay.open {
+  display: flex;
+}
+
+.modal {
+  background: #fff;
+  border-radius: var(--radius-xl);
+  width: 100%;
+  max-width: 540px;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 1.5rem;
+  box-shadow: 0 20px 60px rgba(0,0,0,.2);
+  position: relative;
+}
+
+.modal-sm { max-width: 420px; }
+.modal-lg { max-width: 680px; }
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.modal-header h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--slate-800);
+  margin: 0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--slate-400);
+  font-size: 1.1rem;
+  padding: .25rem;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color var(--transition);
+}
+.modal-close:hover { color: var(--slate-700); }
+
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: .75rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--slate-100);
+}
 
 /* ── Alertas ──────────────────────────────────────────── */
 .alert {
