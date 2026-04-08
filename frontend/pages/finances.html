@@ -991,8 +991,9 @@
 
     tbody.innerHTML = month.transactions.map(t => {
       txMap[t.id] = t
-      const nature = TYPES[t.transaction_type]?.nature
-      const label  = TYPES[t.transaction_type]?.label
+      const nature     = TYPES[t.transaction_type]?.nature
+      const label      = TYPES[t.transaction_type]?.label
+      const hasReceipt = !!t.receipt_url
       return `
         <tr>
           <td style="white-space:nowrap">${formatDate(t.transaction_date)}</td>
@@ -1001,12 +1002,29 @@
               ${nature === 'in' ? '+' : '–'} ${label}
             </span>
           </td>
-          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${t.description}">${t.description}</td>
+          <td style="max-width:200px">
+            <div style="display:flex;align-items:center;gap:.35rem;min-width:0">
+              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1"
+                    title="${t.description}">${t.description}</span>
+              ${hasReceipt ? `
+                <button
+                  style="flex-shrink:0;background:none;border:none;cursor:pointer;
+                         color:var(--blue-500);font-size:.9rem;padding:.1rem .2rem;
+                         line-height:1;border-radius:4px;transition:background .15s"
+                  title="Ver comprovante"
+                  data-action="receipt"
+                  data-id="${t.id}"
+                  onmouseover="this.style.background='var(--blue-50)'"
+                  onmouseout="this.style.background='none'"
+                >👁️</button>
+              ` : ''}
+            </div>
+          </td>
           <td class="text-right font-medium" style="color:${nature==='in'?'var(--green-600)':'var(--red-600)'};white-space:nowrap">
             ${nature === 'in' ? '+' : '–'} ${formatCurrency(t.amount)}
           </td>
-          <td class="text-center hide-mobile">
-            ${t.receipt_url
+          <td class="hide-mobile text-center">
+            ${hasReceipt
               ? `<button class="btn btn-ghost btn-sm" style="padding:.2rem .5rem;font-size:.75rem" data-action="receipt" data-id="${t.id}">Ver</button>`
               : '<span style="color:var(--slate-300);font-size:.8rem">—</span>'}
           </td>
