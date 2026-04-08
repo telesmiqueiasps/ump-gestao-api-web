@@ -562,15 +562,6 @@
   .stat-card { padding: .9rem 1rem; }
   .stat-value { font-size: 1.15rem; }
 
-  .modal {
-    max-width: 100%;
-    margin: auto 0 0;
-    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-    max-height: 90vh;
-  }
-
-  .modal-overlay { align-items: flex-end; }
-
   .btn { min-height: 40px; }
   .btn-sm { min-height: 34px; }
 

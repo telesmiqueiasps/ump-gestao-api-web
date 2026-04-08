@@ -516,13 +516,16 @@
     padding: 0;
   }
 
+  .modal-overlay.open {
+    display: flex;
+  }
+
   .modal {
     max-width: 100%;
     width: 100%;
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     max-height: calc(
       100vh
-      - env(safe-area-inset-top, 0px)
       - 65px
       - env(safe-area-inset-bottom, 16px)
     );
@@ -530,17 +533,6 @@
       calc(1.25rem + env(safe-area-inset-bottom, 8px));
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-  }
-
-  .modal-sm,
-  .modal-lg {
-    max-width: 100%;
-    max-height: calc(
-      100vh
-      - env(safe-area-inset-top, 0px)
-      - 65px
-      - env(safe-area-inset-bottom, 16px)
-    );
   }
 
   .modal::before {
@@ -557,18 +549,10 @@
     position: sticky;
     bottom: 0;
     background: #fff;
-    padding-bottom: .75rem;
-    margin-bottom: -.25rem;
+    padding-top: .75rem;
+    padding-bottom: .5rem;
+    border-top: 1px solid var(--slate-100);
     z-index: 1;
-  }
-}
-
-/* iPhone com notch/dynamic island */
-@supports (padding-bottom: env(safe-area-inset-bottom)) {
-  @media (max-width: 768px) {
-    .modal {
-      padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));
-    }
   }
 }
 
