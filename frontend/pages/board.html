@@ -415,15 +415,14 @@
 
 <script>
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(registrations => {
-      // Remove todos os SW antigos primeiro
-      registrations.forEach(reg => reg.unregister())
+    // Remove todos os SWs antigos primeiro
+    navigator.serviceWorker.getRegistrations().then(regs => {
+      return Promise.all(regs.map(r => r.unregister()))
     }).then(() => {
-      // Registra o novo SW limpo
-      navigator.serviceWorker.register('/sw.js?v=6').then(reg => {
-        console.log('SW registrado:', reg.scope)
-      }).catch(console.error)
-    })
+      return navigator.serviceWorker.register('/sw.js?v=8')
+    }).then(reg => {
+      console.log('SW registrado:', reg.scope)
+    }).catch(err => console.error('SW erro:', err))
   }
 </script>
 

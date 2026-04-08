@@ -580,10 +580,19 @@
     document.getElementById('pwa-banner').classList.remove('show')
   })
 
-  // ── Service Worker ─────────────────────────────
 
+</script>
+
+<script>
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').catch(console.error)
+    // Remove todos os SWs antigos primeiro
+    navigator.serviceWorker.getRegistrations().then(regs => {
+      return Promise.all(regs.map(r => r.unregister()))
+    }).then(() => {
+      return navigator.serviceWorker.register('/sw.js?v=8')
+    }).then(reg => {
+      console.log('SW registrado:', reg.scope)
+    }).catch(err => console.error('SW erro:', err))
   }
 </script>
 
