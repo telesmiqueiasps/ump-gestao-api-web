@@ -110,6 +110,88 @@ def get_local_anniversaries(
     return result
 
 
+@router.get("/{local_id}/reports")
+def get_local_reports(
+    local_id: UUID,
+    current_user: User = Depends(require_federation),
+    db: Session = Depends(get_db),
+):
+    local = db.query(LocalUmp).filter(
+        LocalUmp.id == local_id,
+        LocalUmp.federation_id == current_user.organization_id,
+    ).first()
+    if not local:
+        raise HTTPException(status_code=404, detail="UMP Local não encontrada")
+
+    from app.models.finance import FinancialPeriod
+    periods = db.query(FinancialPeriod).filter(
+        FinancialPeriod.organization_id == local_id,
+        FinancialPeriod.is_closed == True,
+    ).order_by(FinancialPeriod.fiscal_year.desc()).all()
+
+    result = []
+    for p in periods:
+        if p.report_url or p.receipts_report_url:
+            result.append({
+                "id": str(p.id),
+                "fiscal_year": p.fiscal_year,
+                "closed_at": p.closed_at.isoformat() if p.closed_at else None,
+                "report_url": p.report_url,
+                "receipts_report_url": p.receipts_report_url,
+                "validation_code": p.validation_code,
+            })
+    return result
+
+
+@router.get("/{local_id}/reports/{period_id}/urls")
+def get_local_report_urls(
+    local_id: UUID,
+    period_id: UUID,
+    current_user: User = Depends(require_federation),
+    db: Session = Depends(get_db),
+):
+    local = db.query(LocalUmp).filter(
+        LocalUmp.id == local_id,
+        LocalUmp.federation_id == current_user.organization_id,
+    ).first()
+    if not local:
+        raise HTTPException(status_code=404, detail="UMP Local não encontrada")
+
+    from app.models.finance import FinancialPeriod
+    from app.services.storage import get_presigned_url
+    from app.core.config import get_settings
+    import re
+
+    period = db.query(FinancialPeriod).filter(
+        FinancialPeriod.id == period_id,
+        FinancialPeriod.organization_id == local_id,
+        FinancialPeriod.is_closed == True,
+    ).first()
+    if not period:
+        raise HTTPException(status_code=404, detail="Período não encontrado")
+
+    settings_obj = get_settings()
+    bucket = settings_obj.b2_bucket_name
+
+    def _presign(url):
+        if not url:
+            return None
+        match = re.search(rf'/file/{re.escape(bucket)}/(.+)$', url)
+        if not match:
+            match = re.search(rf'/{re.escape(bucket)}/(.+)$', url)
+        if not match:
+            return None
+        return get_presigned_url(match.group(1), expires_in=3600)
+
+    return {
+        "fiscal_year": period.fiscal_year,
+        "report_url": _presign(period.report_url),
+        "receipts_report_url": _presign(period.receipts_report_url),
+        "validation_code": period.validation_code,
+        "closed_at": period.closed_at.isoformat() if period.closed_at else None,
+    }
+
+
 # Federação vê uma Local específica sua
 @router.get("/{local_id}")
 def get_local_ump(

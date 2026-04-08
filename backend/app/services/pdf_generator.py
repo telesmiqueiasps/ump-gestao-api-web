@@ -331,7 +331,7 @@ def generate_financial_report(
     if signature_data:
         story.append(Spacer(1, 3*mm))
 
-        QR_SIZE = 24*mm
+        QR_SIZE = 22*mm
         qr_img = None
         if signature_data.get('qr_bytes'):
             try:
@@ -340,52 +340,74 @@ def generate_financial_report(
             except Exception:
                 pass
 
-        code       = signature_data.get('validation_code', '')
-        hash_short = signature_data.get('data_hash', '')
-        req_name   = signature_data.get('requested_by', '')
-        app_name   = signature_data.get('approved_by', '')
+        code     = signature_data.get('validation_code', '')
+        hash_val = signature_data.get('data_hash', '')
+        req_name = signature_data.get('requested_by', '')
+        app_name = signature_data.get('approved_by', '')
+        req_role = signature_data.get('req_role', 'Tesoureiro(a)')
+        app_role = signature_data.get('app_role', 'Presidente')
 
-        req_role_label = signature_data.get('req_role', 'Tesoureiro(a)')
-        app_role_label = signature_data.get('app_role', 'Presidente')
+        PAD   = 8*mm
+        INNER = W - 2*PAD
+        TEXT_W = INNER - (QR_SIZE + 4*mm if qr_img else 0)
 
-        TEXT_W = W - (QR_SIZE + 5*mm if qr_img else 0)
-
-        sig_content = Table([
-            [Paragraph('<b>DOCUMENTO ASSINADO DIGITALMENTE</b>', _ps(8, TC, bold=True))],
-            [Paragraph(f'Código: <b>{code}</b>', _ps(7, BLACK))],
-            [Paragraph(f'Hash: {hash_short[:40]}...', _ps(6, GRAY_TXT))],
-            [Paragraph(
-                f'{req_role_label}: <b>{req_name}</b>  |  {app_role_label}: <b>{app_name}</b>',
+        text_items = [
+            Paragraph('<b>DOCUMENTO ASSINADO DIGITALMENTE</b>', _ps(8, TC, bold=True)),
+            Spacer(1, 1.5*mm),
+            Paragraph(f'Código: <b>{code}</b>', _ps(7.5, BLACK)),
+            Paragraph(f'Hash: {hash_val[:38]}...', _ps(6, GRAY_TXT)),
+            Spacer(1, 1.5*mm),
+            Paragraph(
+                f'{req_role}: <b>{req_name}</b>  |  {app_role}: <b>{app_name}</b>',
                 _ps(7, BLACK)
-            )],
-            [Paragraph(f"Aprovado em: <b>{signature_data.get('approved_at', '')}</b>", _ps(7, BLACK))],
-            [Paragraph('Valide em: umpgestao.netlify.app/validar.html', _ps(6.5, GRAY_TXT))],
-        ], colWidths=[TEXT_W])
-        sig_content.setStyle(TableStyle([
-            ('TOPPADDING',    (0,0),(-1,-1), 1),
-            ('BOTTOMPADDING', (0,0),(-1,-1), 1),
+            ),
+            Paragraph(
+                f'Aprovado em: <b>{signature_data.get("approved_at","")}</b>',
+                _ps(7, BLACK)
+            ),
+            Spacer(1, 1.5*mm),
+            Paragraph('Valide em: umpgestao.netlify.app/validar.html', _ps(6.5, GRAY_TXT)),
+        ]
+
+        text_t = Table([[item] for item in text_items], colWidths=[TEXT_W])
+        text_t.setStyle(TableStyle([
+            ('TOPPADDING',    (0,0),(-1,-1), 0),
+            ('BOTTOMPADDING', (0,0),(-1,-1), 0),
             ('LEFTPADDING',   (0,0),(-1,-1), 0),
             ('RIGHTPADDING',  (0,0),(-1,-1), 0),
         ]))
 
         if qr_img:
-            inner = Table([[sig_content, Spacer(5*mm, 1), qr_img]],
-                          colWidths=[TEXT_W, 5*mm, QR_SIZE])
+            qr_t = Table([[qr_img]], colWidths=[QR_SIZE], rowHeights=[QR_SIZE])
+            qr_t.setStyle(TableStyle([
+                ('TOPPADDING',    (0,0),(-1,-1), 0),
+                ('BOTTOMPADDING', (0,0),(-1,-1), 0),
+                ('LEFTPADDING',   (0,0),(-1,-1), 0),
+                ('RIGHTPADDING',  (0,0),(-1,-1), 0),
+            ]))
+            inner_t = Table([[text_t, Spacer(4*mm, 1), qr_t]],
+                            colWidths=[TEXT_W, 4*mm, QR_SIZE])
         else:
-            inner = Table([[sig_content]], colWidths=[W - 14*mm])
+            inner_t = Table([[text_t]], colWidths=[INNER])
 
-        inner.setStyle(TableStyle([('VALIGN', (0,0),(-1,-1), 'MIDDLE')]))
+        inner_t.setStyle(TableStyle([
+            ('VALIGN',        (0,0),(-1,-1), 'MIDDLE'),
+            ('LEFTPADDING',   (0,0),(-1,-1), 0),
+            ('RIGHTPADDING',  (0,0),(-1,-1), 0),
+            ('TOPPADDING',    (0,0),(-1,-1), 0),
+            ('BOTTOMPADDING', (0,0),(-1,-1), 0),
+        ]))
 
-        outer = Table([[inner]], colWidths=[W])
-        outer.setStyle(TableStyle([
+        card = Table([[inner_t]], colWidths=[W])
+        card.setStyle(TableStyle([
             ('BOX',           (0,0),(-1,-1), 1.5, TC),
             ('BACKGROUND',    (0,0),(-1,-1), colors.HexColor('#f8fafc')),
-            ('TOPPADDING',    (0,0),(-1,-1), 6),
-            ('BOTTOMPADDING', (0,0),(-1,-1), 6),
-            ('LEFTPADDING',   (0,0),(-1,-1), 8),
-            ('RIGHTPADDING',  (0,0),(-1,-1), 8),
+            ('TOPPADDING',    (0,0),(-1,-1), PAD * 0.8),
+            ('BOTTOMPADDING', (0,0),(-1,-1), PAD * 0.8),
+            ('LEFTPADDING',   (0,0),(-1,-1), PAD),
+            ('RIGHTPADDING',  (0,0),(-1,-1), PAD),
         ]))
-        story.append(outer)
+        story.append(card)
         story.append(Spacer(1, 5*mm))
 
         # Linhas de assinatura digital com cargo
@@ -400,9 +422,9 @@ def generate_financial_report(
             ], colWidths=[SIG_W2])
 
         sig_t2 = Table([[
-            _sig_digital(req_role_label, req_name),
+            _sig_digital(req_role, req_name),
             Spacer(20*mm, 1),
-            _sig_digital(app_role_label, app_name),
+            _sig_digital(app_role, app_name),
         ]], colWidths=[SIG_W2, 20*mm, SIG_W2])
         sig_t2.setStyle(TableStyle([('VALIGN', (0,0),(-1,-1), 'TOP')]))
         story.append(sig_t2)
