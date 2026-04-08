@@ -86,17 +86,54 @@
       border: 1.5px solid var(--slate-200);
       border-radius: var(--radius-lg);
       padding: 1rem 1.25rem;
-      display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
       margin-bottom: .25rem;
     }
-    .annual-summary-item { text-align: center; flex: 1; min-width: 70px; }
-    .annual-summary-item .label { display: block; font-size: .68rem; color: var(--slate-400); margin-bottom: .15rem; }
-    .annual-summary-item .value { font-size: .95rem; font-weight: 700; color: var(--slate-700); }
+    .annual-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: .5rem;
+      margin-bottom: .75rem;
+    }
+    .annual-summary-item {
+      background: var(--slate-50);
+      border-radius: var(--radius);
+      padding: .6rem .75rem;
+      min-width: 0;
+    }
+    .annual-summary-item .label {
+      display: block;
+      font-size: .65rem;
+      color: var(--slate-400);
+      text-transform: uppercase;
+      letter-spacing: .3px;
+      margin-bottom: .2rem;
+      white-space: nowrap;
+    }
+    .annual-summary-item .value {
+      display: block;
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--slate-700);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
     .annual-summary-item .value.green { color: var(--green-600); }
     .annual-summary-item .value.red   { color: var(--red-600); }
     .annual-summary-item .value.blue  { color: var(--blue-600); }
-    .annual-summary-sep { color: var(--slate-300); font-size: 1.1rem; font-weight: 300; flex-shrink: 0; }
-    .annual-summary-status { display: flex; flex-direction: column; align-items: center; gap: .3rem; flex-shrink: 0; }
+    .annual-summary-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: .5rem;
+    }
+    .annual-actions {
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+      flex-wrap: wrap;
+    }
 
     /* ── Sem período ── */
     .no-period-box {
@@ -219,8 +256,9 @@
       .month-card { padding: .8rem .5rem; }
       .month-card-name { font-size: .85rem; }
       .month-card-balance { font-size: .72rem; }
-      .annual-summary-card { gap: .4rem; padding: .75rem; }
-      .annual-summary-sep { display: none; }
+      .annual-summary-card { padding: .75rem; }
+      .annual-summary-grid { grid-template-columns: repeat(2, 1fr); }
+      .annual-summary-item .value { font-size: .88rem; }
       .month-detail-header { gap: .5rem; }
       .month-detail-title h1 { font-size: 1.15rem; }
       .month-summary-bar { gap: .3rem; padding: .7rem .75rem; }
@@ -311,14 +349,6 @@
                 <span class="btn-icon-only">📄</span>
                 <span class="btn-label">📄 Relatório PDF</span>
               </button>
-              <button class="finances-btn btn-comprovantes" id="btn-clean-receipts" style="display:none" title="Limpar Comprovantes">
-                <span class="btn-icon-only">🗑️</span>
-                <span class="btn-label">🗑️ Limpar Comprovantes</span>
-              </button>
-              <button class="finances-btn btn-ver-relatorios" id="btn-view-reports" style="display:none" title="Ver Relatórios">
-                <span class="btn-icon-only">📁</span>
-                <span class="btn-label">📁 Ver Relatórios</span>
-              </button>
             </div>
           </div>
         </div>
@@ -328,34 +358,27 @@
         <!-- Resumo anual -->
         <div id="annual-summary" style="display:none">
           <div class="annual-summary-card">
-            <div class="annual-summary-item">
-              <span class="label">Saldo Inicial</span>
-              <span class="value" id="ann-initial">—</span>
+            <div class="annual-summary-grid">
+              <div class="annual-summary-item">
+                <span class="label">Saldo Inicial</span>
+                <span class="value" id="ann-initial">—</span>
+              </div>
+              <div class="annual-summary-item">
+                <span class="label">Entradas</span>
+                <span class="value green" id="ann-in">—</span>
+              </div>
+              <div class="annual-summary-item">
+                <span class="label">Saídas</span>
+                <span class="value red" id="ann-out">—</span>
+              </div>
+              <div class="annual-summary-item">
+                <span class="label">Saldo Final</span>
+                <span class="value blue" id="ann-final">—</span>
+              </div>
             </div>
-            <div class="annual-summary-sep">→</div>
-            <div class="annual-summary-item">
-              <span class="label">Entradas</span>
-              <span class="value green" id="ann-in">—</span>
-            </div>
-            <div class="annual-summary-sep">−</div>
-            <div class="annual-summary-item">
-              <span class="label">Saídas</span>
-              <span class="value red" id="ann-out">—</span>
-            </div>
-            <div class="annual-summary-sep">=</div>
-            <div class="annual-summary-item">
-              <span class="label">Saldo Final</span>
-              <span class="value blue" id="ann-final">—</span>
-            </div>
-            <div class="annual-summary-status">
+            <div class="annual-summary-footer">
               <span class="badge" id="period-status-badge"></span>
-              <button class="btn-encerrar" id="btn-close-period" style="display:none"><span class="btn-icon-only">🔒</span><span class="btn-label">Encerrar ano</span></button>
-              <button class="btn-encerrar" id="btn-mark-ready" style="display:none;border-color:var(--blue-200,#bfdbfe);color:var(--blue-600,#2563eb)"><span class="btn-icon-only">📋</span><span class="btn-label">Marcar como Pronto</span></button>
-              <button class="btn-encerrar" id="btn-unlock-period" style="display:none;border-color:var(--amber-200,#fde68a);color:var(--amber-700,#b45309)"><span class="btn-icon-only">🔓</span><span class="btn-label">Desbloquear</span></button>
-              <button class="finances-btn btn-ver-relatorios" id="btn-view-signed" style="display:none;font-size:.78rem" title="Ver Relatório Assinado"><span class="btn-icon-only">✅</span><span class="btn-label">✅ Ver Assinado</span></button>
-              <button class="btn btn-ghost btn-sm" id="btn-observations"
-                style="display:none;font-size:.75rem;color:var(--slate-500)"
-                title="Observações do período">📝</button>
+              <div class="annual-actions" id="annual-actions"></div>
             </div>
           </div>
         </div>
@@ -701,8 +724,6 @@
     document.getElementById('annual-summary').style.display = 'none'
     document.getElementById('months-grid').style.display = 'none'
     document.getElementById('btn-report').style.display = 'none'
-    document.getElementById('btn-view-reports').style.display = 'none'
-    document.getElementById('btn-clean-receipts').style.display = 'none'
 
     try {
       const data = await api.get(`/api/finances/transactions/by-month?year=${currentYear}`)
@@ -733,79 +754,154 @@
         document.getElementById('period-status-badge').className = 'badge badge-green'
       }
 
-      // Botão encerrar — apenas para quem pode encerrar, enquanto não encerrado
-      const btnClose = document.getElementById('btn-close-period')
-      if (!currentPeriod.is_closed && canClose) {
-        btnClose.style.display = 'inline-flex'
-        if (currentPeriod.ready_to_close) {
-          btnClose.style.background = 'linear-gradient(135deg,#1a5c2a,#2d8a40)'
-          btnClose.style.color = '#fff'
-          btnClose.style.border = 'none'
-          btnClose.querySelector('.btn-label').textContent = '🔒 Encerrar Ano'
-        } else {
-          btnClose.style.background = ''
-          btnClose.style.color = ''
-          btnClose.style.border = ''
-          btnClose.querySelector('.btn-label').textContent = 'Encerrar ano'
-        }
-      } else {
-        btnClose.style.display = 'none'
-      }
-
-      // Botão marcar pronto — apenas para tesoureiro/vice
-      const btnReady = document.getElementById('btn-mark-ready')
-      if (!currentPeriod.is_closed && canMarkReady) {
-        btnReady.style.display = 'inline-flex'
-        if (currentPeriod.ready_to_close) {
-          btnReady.querySelector('.btn-label').textContent = '✓ Pronto — Desfazer'
-          btnReady.style.background = '#f0fdf4'
-          btnReady.style.color = '#15803d'
-          btnReady.style.borderColor = '#86efac'
-          btnReady.dataset.ready = 'true'
-        } else {
-          btnReady.querySelector('.btn-label').textContent = 'Marcar como Pronto'
-          btnReady.style.background = ''
-          btnReady.style.color = ''
-          btnReady.style.borderColor = ''
-          btnReady.dataset.ready = 'false'
-        }
-      } else {
-        btnReady.style.display = 'none'
-      }
-
-      // Botão desbloquear — apenas quando bloqueado e não encerrado
-      document.getElementById('btn-unlock-period').style.display = (currentPeriod.is_locked && !currentPeriod.is_closed) ? 'inline-flex' : 'none'
-
-      // Botão ver relatório assinado
-      if (currentPeriod.is_locked && currentPeriod.signature_id) {
-        document.getElementById('btn-view-signed').style.display = 'inline-flex'
-        document.getElementById('btn-view-signed').dataset.sigId = currentPeriod.signature_id
-      } else {
-        document.getElementById('btn-view-signed').style.display = 'none'
-      }
-
-      // Botão observações — apenas período aberto
-      const obsBtn = document.getElementById('btn-observations')
-      if (!currentPeriod.is_closed) {
-        obsBtn.style.display = 'inline-flex'
-        obsBtn.title = currentPeriod.observations ? '📝 Editar observação' : '📝 Adicionar observação'
-        obsBtn.style.color = currentPeriod.observations ? 'var(--brand-orange, #f97316)' : 'var(--slate-500)'
-      } else {
-        obsBtn.style.display = 'none'
-      }
-
       // Botão gerar relatório — apenas período aberto e não bloqueado
       document.getElementById('btn-report').style.display = (!currentPeriod.is_closed && !currentPeriod.is_locked) ? 'inline-flex' : 'none'
 
-      // Botão limpar comprovantes — apenas encerrado
-      document.getElementById('btn-clean-receipts').style.display = currentPeriod.is_closed ? 'inline-flex' : 'none'
+      // Monta os botões de ação dinamicamente no annual-actions
+      const actionsDiv = document.getElementById('annual-actions')
+      actionsDiv.innerHTML = ''
 
-      // Ver relatórios finais — apenas encerrado com relatórios disponíveis
-      if (currentPeriod.is_closed && (currentPeriod.report_url || currentPeriod.receipts_report_url)) {
-        document.getElementById('btn-view-reports').style.display = 'inline-flex'
-        document.getElementById('btn-view-reports').dataset.periodId = currentPeriod.id
+      if (!currentPeriod.is_closed) {
+        // Botão de observação
+        const btnObs = document.createElement('button')
+        btnObs.className = 'btn btn-ghost btn-sm'
+        btnObs.style.cssText = 'font-size:.8rem;color:var(--slate-500);padding:.35rem .6rem'
+        btnObs.title = currentPeriod.observations ? 'Editar observação' : 'Adicionar observação'
+        btnObs.innerHTML = currentPeriod.observations ? '📝 Obs.' : '📝'
+        if (currentPeriod.observations) btnObs.style.color = 'var(--brand-orange,#e8630a)'
+        btnObs.onclick = () => {
+          const text = currentPeriod.observations || ''
+          document.getElementById('obs-text').value = text
+          document.getElementById('obs-char-count').textContent = `${text.length}/400`
+          clearAlert('obs-alert')
+          openModal('modal-observations')
+        }
+        actionsDiv.appendChild(btnObs)
+
+        // Botão marcar como pronto (tesoureiro/vice)
+        if (canMarkReady) {
+          const btnReady = document.createElement('button')
+          if (currentPeriod.ready_to_close) {
+            btnReady.className = 'btn btn-sm'
+            btnReady.style.cssText = 'background:#f0fdf4;color:var(--green-700);border:1.5px solid var(--green-300);font-size:.78rem'
+            btnReady.innerHTML = '✓ Pronto'
+            btnReady.title = 'Clique para desfazer'
+            btnReady.onclick = async () => {
+              if (!confirm('Desfazer marcação de pronto?')) return
+              try {
+                await api.post(`/api/finances/periods/${currentPeriod.id}/unmark-ready`)
+                await loadPage()
+              } catch(err) { showAlert('screen-months-alert', err.message, 'error') }
+            }
+          } else {
+            btnReady.className = 'btn btn-secondary btn-sm'
+            btnReady.style.cssText = 'font-size:.78rem'
+            btnReady.innerHTML = '📋 Marcar Pronto'
+            btnReady.onclick = async () => {
+              if (!confirm(`Marcar período ${currentYear} como pronto para encerramento?`)) return
+              try {
+                await api.post(`/api/finances/periods/${currentPeriod.id}/mark-ready`)
+                showAlert('screen-months-alert', '📋 Marcado como pronto! O Presidente pode encerrar.', 'success')
+                await loadPage()
+              } catch(err) { showAlert('screen-months-alert', err.message, 'error') }
+            }
+          }
+          actionsDiv.appendChild(btnReady)
+        }
+
+        // Botão encerrar (presidente/vice/sec.presbiterial/conselheiro)
+        if (canClose) {
+          const btnClose = document.createElement('button')
+          if (currentPeriod.ready_to_close) {
+            btnClose.className = 'btn btn-sm'
+            btnClose.style.cssText = 'background:linear-gradient(135deg,#1a5c2a,#2d8a40);color:#fff;font-size:.78rem'
+            btnClose.innerHTML = '🔒 Encerrar'
+          } else {
+            btnClose.className = 'btn-encerrar'
+            btnClose.innerHTML = '<span>🔒 Encerrar</span>'
+          }
+          btnClose.onclick = async () => {
+            if (!confirm(
+              `Encerrar definitivamente o período ${currentYear}?\n\n` +
+              `✓ Relatório financeiro assinado digitalmente\n` +
+              `✓ Relatório de comprovantes gerado\n` +
+              `✓ Ação irreversível`
+            )) return
+            btnClose.disabled = true
+            btnClose.textContent = '⏳ Gerando...'
+            showAlert('screen-months-alert', '⏳ Encerrando e gerando relatórios assinados...', 'success')
+            try {
+              await api.post(`/api/finances/periods/${currentPeriod.id}/close`)
+              clearAlert('screen-months-alert')
+              showAlert('screen-months-alert', '✅ Período encerrado! Relatórios assinados gerados.', 'success')
+              await loadPage()
+            } catch(err) {
+              clearAlert('screen-months-alert')
+              showAlert('screen-months-alert', err.message, 'error')
+              await loadPage()
+            }
+          }
+          actionsDiv.appendChild(btnClose)
+        }
+
       } else {
-        document.getElementById('btn-view-reports').style.display = 'none'
+        // Período encerrado — botões de relatórios
+        if (currentPeriod.report_url || currentPeriod.receipts_report_url) {
+          const btnReports = document.createElement('button')
+          btnReports.className = 'btn btn-sm'
+          btnReports.style.cssText = 'background:linear-gradient(135deg,#1a2a6c,#2a3f9f);color:#fff;font-size:.78rem'
+          btnReports.innerHTML = '📄 Relatórios'
+          btnReports.onclick = async () => {
+            try {
+              const data = await api.get(`/api/finances/periods/${currentPeriod.id}/report-urls`)
+              document.getElementById('modal-reports-year').textContent = data.fiscal_year
+              document.getElementById('link-fin-report').href = data.report_url || '#'
+              document.getElementById('link-rec-report').href = data.receipts_report_url || '#'
+              document.getElementById('link-fin-report').style.display = data.report_url ? 'inline-flex' : 'none'
+              document.getElementById('link-rec-report').style.display = data.receipts_report_url ? 'inline-flex' : 'none'
+              openModal('modal-view-reports')
+            } catch(err) { showAlert('screen-months-alert', err.message, 'error') }
+          }
+          actionsDiv.appendChild(btnReports)
+        }
+
+        if (currentPeriod.is_locked && currentPeriod.signature_id) {
+          const btnSigned = document.createElement('button')
+          btnSigned.className = 'btn btn-sm'
+          btnSigned.style.cssText = 'background:linear-gradient(135deg,#1a5c2a,#2d8a40);color:#fff;font-size:.78rem'
+          btnSigned.innerHTML = '✅ Assinado'
+          btnSigned.onclick = async () => {
+            try {
+              const data = await api.get(`/api/signatures/${currentPeriod.signature_id}/report-url`)
+              window.open(data.url, '_blank')
+            } catch(err) { showAlert('screen-months-alert', err.message, 'error') }
+          }
+          actionsDiv.appendChild(btnSigned)
+        }
+
+        if (currentPeriod.validation_code) {
+          const btnClean = document.createElement('button')
+          btnClean.className = 'btn btn-sm'
+          btnClean.style.cssText = 'background:linear-gradient(135deg,#7b1fa2,#9c27b0);color:#fff;font-size:.78rem'
+          btnClean.innerHTML = '🗑️ Comprovantes'
+          btnClean.onclick = () => {
+            const select = document.getElementById('clean-year-select')
+            select.innerHTML = ''
+            const thisYear = new Date().getFullYear()
+            for (let y = 2023; y <= thisYear; y++) {
+              const opt = document.createElement('option')
+              opt.value = y; opt.textContent = y
+              if (y === currentYear) opt.selected = true
+              select.appendChild(opt)
+            }
+            clearAlert('clean-alert')
+            document.getElementById('clean-success').classList.add('hidden')
+            document.getElementById('btn-confirm-clean').disabled = false
+            document.getElementById('btn-confirm-clean').textContent = 'Excluir Comprovantes'
+            openModal('modal-clean-receipts')
+          }
+          actionsDiv.appendChild(btnClean)
+        }
       }
 
       renderMonthsGrid()
@@ -983,70 +1079,7 @@
     openModal('modal-period')
   })
 
-  // ── Encerrar período ──
-  document.getElementById('btn-close-period').addEventListener('click', async () => {
-    if (!confirm(
-      `Encerrar definitivamente o período ${currentYear}?\n\n` +
-      `✓ Será gerado o relatório financeiro oficial\n` +
-      `✓ Será gerado o relatório de comprovantes\n` +
-      `✓ Ambos serão assinados digitalmente\n` +
-      `✓ O período não poderá mais ser alterado\n\n` +
-      `Esta ação é irreversível.`
-    )) return
-
-    const btn = document.getElementById('btn-close-period')
-    btn.disabled = true
-    btn.querySelector('.btn-label').textContent = '⏳ Gerando relatórios...'
-    showAlert('screen-months-alert', '⏳ Encerrando período e gerando relatórios assinados... Aguarde.', 'success')
-
-    try {
-      await api.post(`/api/finances/periods/${currentPeriod.id}/close`)
-      clearAlert('screen-months-alert')
-      showAlert('screen-months-alert', '✅ Período encerrado com sucesso! Relatórios assinados digitalmente gerados.', 'success')
-      await loadPage()
-    } catch(err) {
-      clearAlert('screen-months-alert')
-      showAlert('screen-months-alert', err.message, 'error')
-      btn.disabled = false
-      btn.querySelector('.btn-label').textContent = 'Encerrar ano'
-    }
-  })
-
-  // ── Marcar como pronto ──
-  document.getElementById('btn-mark-ready').addEventListener('click', async () => {
-    const btn = document.getElementById('btn-mark-ready')
-    const isReady = btn.dataset.ready === 'true'
-
-    if (!isReady) {
-      if (!confirm(`Marcar o período ${currentYear} como pronto para encerramento?\n\nO Presidente poderá encerrar oficialmente.`)) return
-      try {
-        await api.post(`/api/finances/periods/${currentPeriod.id}/mark-ready`)
-        showAlert('screen-months-alert', '📋 Período marcado como pronto! O Presidente pode encerrar agora.', 'success')
-        await loadPage()
-      } catch(err) {
-        showAlert('screen-months-alert', err.message, 'error')
-      }
-    } else {
-      if (!confirm('Desfazer marcação? Isso indicará que ainda há ajustes a fazer.')) return
-      try {
-        await api.post(`/api/finances/periods/${currentPeriod.id}/unmark-ready`)
-        showAlert('screen-months-alert', '↩ Marcação removida. Faça os ajustes necessários.', 'success')
-        await loadPage()
-      } catch(err) {
-        showAlert('screen-months-alert', err.message, 'error')
-      }
-    }
-  })
-
-  // ── Observações ──
-  document.getElementById('btn-observations').addEventListener('click', () => {
-    const text = currentPeriod.observations || ''
-    document.getElementById('obs-text').value = text
-    document.getElementById('obs-char-count').textContent = `${text.length}/400`
-    clearAlert('obs-alert')
-    openModal('modal-observations')
-  })
-
+  // ── Observações (modal interno) ──
   document.getElementById('obs-text').addEventListener('input', (e) => {
     const len = e.target.value.length
     document.getElementById('obs-char-count').textContent = `${len}/400`
@@ -1060,10 +1093,8 @@
       await api.put(`/api/finances/periods/${currentPeriod.id}/observations`, { observations: '' })
       currentPeriod.observations = ''
       closeModal('modal-observations')
-      const obsBtn = document.getElementById('btn-observations')
-      obsBtn.style.color = 'var(--slate-500)'
-      obsBtn.title = '📝 Adicionar observação'
       showAlert('screen-months-alert', '📝 Observação removida.', 'success')
+      await loadPage()
     } catch(err) { showAlert('obs-alert', err.message, 'error') }
   })
 
@@ -1075,35 +1106,12 @@
       await api.put(`/api/finances/periods/${currentPeriod.id}/observations`, { observations: text })
       currentPeriod.observations = text
       closeModal('modal-observations')
-      const obsBtn = document.getElementById('btn-observations')
-      obsBtn.style.color = text ? 'var(--brand-orange, #f97316)' : 'var(--slate-500)'
-      obsBtn.title = text ? '📝 Editar observação' : '📝 Adicionar observação'
       showAlert('screen-months-alert', text ? '📝 Observação salva!' : '📝 Observação removida.', 'success')
+      await loadPage()
     } catch(err) {
       showAlert('obs-alert', err.message, 'error')
     } finally {
       setLoading(btn, false, 'Salvar')
-    }
-  })
-
-  // ── Ver relatórios ──
-  document.getElementById('btn-view-reports').addEventListener('click', async () => {
-    const btn = document.getElementById('btn-view-reports')
-    const periodId = btn.dataset.periodId
-    setLoading(btn, true, 'Ver Relatórios')
-    try {
-      const data = await api.get(`/api/finances/periods/${periodId}/report-urls`)
-      // Abre modal com os dois links
-      document.getElementById('modal-reports-year').textContent = data.fiscal_year
-      document.getElementById('link-fin-report').href = data.report_url || '#'
-      document.getElementById('link-rec-report').href = data.receipts_report_url || '#'
-      document.getElementById('link-fin-report').style.display = data.report_url ? 'inline-flex' : 'none'
-      document.getElementById('link-rec-report').style.display = data.receipts_report_url ? 'inline-flex' : 'none'
-      openModal('modal-view-reports')
-    } catch(err) {
-      showAlert('screen-months-alert', err.message, 'error')
-    } finally {
-      setLoading(btn, false, 'Ver Relatórios')
     }
   })
 
@@ -1177,24 +1185,6 @@
     }
   })
 
-  // ── Limpar comprovantes ──
-  document.getElementById('btn-clean-receipts').addEventListener('click', () => {
-    const select = document.getElementById('clean-year-select')
-    select.innerHTML = ''
-    const thisYear = new Date().getFullYear()
-    for (let y = 2023; y <= thisYear; y++) {
-      const opt = document.createElement('option')
-      opt.value = y; opt.textContent = y
-      if (y === thisYear - 1) opt.selected = true
-      select.appendChild(opt)
-    }
-    clearAlert('clean-alert')
-    document.getElementById('clean-success').classList.add('hidden')
-    document.getElementById('btn-confirm-clean').disabled = false
-    document.getElementById('btn-confirm-clean').textContent = 'Excluir Comprovantes'
-    openModal('modal-clean-receipts')
-  })
-
   document.getElementById('btn-confirm-clean').addEventListener('click', async () => {
     const btn = document.getElementById('btn-confirm-clean')
     const year = document.getElementById('clean-year-select').value
@@ -1224,32 +1214,6 @@
       showAlert('screen-months-alert', 'Erro ao gerar relatório: ' + err.message, 'error')
     } finally {
       setLoading(btn, false, '📄 Relatório PDF')
-    }
-  })
-
-  // ── Desbloquear período ──
-  document.getElementById('btn-unlock-period').addEventListener('click', async () => {
-    const reason = prompt('Motivo do desbloqueio (a assinatura anterior será invalidada):')
-    if (reason === null) return
-    if (!reason.trim()) { alert('Informe o motivo.'); return }
-    try {
-      await api.post(`/api/signatures/unlock/${currentPeriod.id}`, { reason })
-      showAlert('screen-months-alert', '🔓 Período desbloqueado. Assinatura anterior invalidada.', 'success')
-      await loadPage()
-    } catch(err) {
-      showAlert('screen-months-alert', err.message || 'Erro ao desbloquear.', 'error')
-    }
-  })
-
-  // ── Ver relatório assinado ──
-  document.getElementById('btn-view-signed').addEventListener('click', async () => {
-    const sigId = document.getElementById('btn-view-signed').dataset.sigId
-    if (!sigId) return
-    try {
-      const data = await api.get(`/api/signatures/${sigId}/report-url`)
-      window.open(data.url, '_blank')
-    } catch(err) {
-      showAlert('screen-months-alert', err.message || 'Erro ao obter link.', 'error')
     }
   })
 
