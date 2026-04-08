@@ -131,14 +131,19 @@ export function setLoading(btnEl, loading, text = 'Salvar') {
 }
 
 export function initModalClose() {
-  document.querySelectorAll('.modal-overlay').forEach(overlay => {
-    overlay.addEventListener('click', e => {
-      if (e.target === overlay) overlay.classList.remove('open')
-    })
-  })
-  document.querySelectorAll('.modal-close').forEach(btn => {
-    btn.addEventListener('click', () => {
-      btn.closest('.modal-overlay')?.classList.remove('open')
-    })
+  document.addEventListener('click', (e) => {
+    // Fecha ao clicar no overlay
+    if (e.target.classList.contains('modal-overlay')) {
+      e.target.classList.remove('open')
+    }
+    // Fecha ao clicar em botão .modal-close
+    if (e.target.classList.contains('modal-close') ||
+        e.target.closest('.modal-close')) {
+      const overlay = e.target.closest('.modal-overlay')
+      if (overlay) overlay.classList.remove('open')
+    }
   })
 }
+
+window.openModal = openModal
+window.closeModal = closeModal
