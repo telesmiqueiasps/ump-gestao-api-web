@@ -38,6 +38,10 @@ class TransactionUpdate(BaseModel):
     amount: Optional[float] = None
 
 
+class PeriodObservation(BaseModel):
+    observations: str
+
+
 INCOME_TYPES = {TransactionType.outras_receitas, TransactionType.aci_recebida}
 EXPENSE_TYPES = {TransactionType.outras_despesas, TransactionType.aci_enviada}
 
@@ -548,6 +552,7 @@ def close_period(
         "fiscal_year": period.fiscal_year,
         "initial_balance": float(period.initial_balance or 0),
         "final_balance": running,
+        "observations": period.observations or "",
     }
     import logging as _logging
     _logging.getLogger(__name__).info(
@@ -775,6 +780,27 @@ def unmark_period_ready(
     return {"detail": "Marcação removida"}
 
 
+@router.put("/periods/{period_id}/observations")
+def update_period_observations(
+    period_id: UUID,
+    payload: PeriodObservation,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    period = db.query(FinancialPeriod).filter(
+        FinancialPeriod.id == period_id,
+        FinancialPeriod.organization_id == current_user.organization_id,
+    ).first()
+    if not period:
+        raise HTTPException(status_code=404, detail="Período não encontrado")
+    if period.is_closed:
+        raise HTTPException(status_code=400, detail="Período encerrado")
+
+    period.observations = payload.observations[:400]
+    db.commit()
+    return _period_out(period, db)
+
+
 @router.get("/periods-ready")
 def list_ready_periods(
     current_user: User = Depends(get_current_user),
@@ -881,6 +907,7 @@ def _period_out(p: FinancialPeriod, db) -> dict:
         "ready_by": str(p.ready_by) if p.ready_by else None,
         "validation_code": p.validation_code,
         "data_hash": p.data_hash,
+        "observations": p.observations,
     }
 
 

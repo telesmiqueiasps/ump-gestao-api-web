@@ -301,37 +301,28 @@ def generate_financial_report(
     story.append(Spacer(1, 3*mm))
 
     # ─── OBSERVAÇÕES ────────────────────────────────────────
+    obs_text = period_data.get('observations') or ''
     obs_t = Table([
-        [Paragraph('OBSERVAÇÕES:', _ps(7, GRAY_TXT, bold=True)),
-         Paragraph('OBSERVAÇÕES:', _ps(7, GRAY_TXT, bold=True))]
-    ], colWidths=[HW - 1*mm, HW - 1*mm], rowHeights=[22*mm])
+        [Paragraph('OBSERVAÇÕES:', _ps(7, GRAY_TXT, bold=True))],
+        [Paragraph(obs_text, _ps(8, BLACK)) if obs_text else Spacer(1, 8*mm)],
+    ], colWidths=[W], rowHeights=[5*mm, 14*mm])
     obs_t.setStyle(TableStyle([
         ('GRID',          (0,0),(-1,-1), 0.5, GRAY_LINE),
         ('BACKGROUND',    (0,0),(-1,-1), YELLOW_BG),
         ('VALIGN',        (0,0),(-1,-1), 'TOP'),
-        ('TOPPADDING',    (0,0),(-1,-1), 4),
+        ('TOPPADDING',    (0,0),(-1,-1), 3),
         ('LEFTPADDING',   (0,0),(-1,-1), 4),
+        ('RIGHTPADDING',  (0,0),(-1,-1), 4),
+        ('BOTTOMPADDING', (0,0),(-1,-1), 3),
     ]))
     story.append(obs_t)
-    story.append(Spacer(1, 2*mm))
-
-    link_t = Table([
-        [Paragraph('LINK DOS COMPROVANTES:', _ps(7, GRAY_TXT, bold=True))]
-    ], colWidths=[W], rowHeights=[8*mm])
-    link_t.setStyle(TableStyle([
-        ('GRID',          (0,0),(-1,-1), 0.5, GRAY_LINE),
-        ('BACKGROUND',    (0,0),(-1,-1), YELLOW_BG),
-        ('VALIGN',        (0,0),(-1,-1), 'MIDDLE'),
-        ('LEFTPADDING',   (0,0),(-1,-1), 4),
-    ]))
-    story.append(link_t)
-    story.append(Spacer(1, 8*mm))
+    story.append(Spacer(1, 3*mm))
 
     # ─── ASSINATURAS ────────────────────────────────────────
     if signature_data:
-        story.append(Spacer(1, 3*mm))
+        story.append(Spacer(1, 2*mm))
 
-        QR_SIZE = 22*mm
+        QR_SIZE = 20*mm
         qr_img = None
         if signature_data.get('qr_bytes'):
             try:
@@ -347,16 +338,16 @@ def generate_financial_report(
         req_role = signature_data.get('req_role', 'Tesoureiro(a)')
         app_role = signature_data.get('app_role', 'Presidente')
 
-        PAD   = 8*mm
+        PAD   = 5*mm
         INNER = W - 2*PAD
         TEXT_W = INNER - (QR_SIZE + 4*mm if qr_img else 0)
 
         text_items = [
             Paragraph('<b>DOCUMENTO ASSINADO DIGITALMENTE</b>', _ps(8, TC, bold=True)),
-            Spacer(1, 1.5*mm),
+            Spacer(1, 1*mm),
             Paragraph(f'Código: <b>{code}</b>', _ps(7.5, BLACK)),
             Paragraph(f'Hash: {hash_val[:38]}...', _ps(6, GRAY_TXT)),
-            Spacer(1, 1.5*mm),
+            Spacer(1, 1*mm),
             Paragraph(
                 f'{req_role}: <b>{req_name}</b>  |  {app_role}: <b>{app_name}</b>',
                 _ps(7, BLACK)
@@ -365,7 +356,7 @@ def generate_financial_report(
                 f'Aprovado em: <b>{signature_data.get("approved_at","")}</b>',
                 _ps(7, BLACK)
             ),
-            Spacer(1, 1.5*mm),
+            Spacer(1, 1*mm),
             Paragraph('Valide em: umpgestao.netlify.app/validar.html', _ps(6.5, GRAY_TXT)),
         ]
 
@@ -402,13 +393,13 @@ def generate_financial_report(
         card.setStyle(TableStyle([
             ('BOX',           (0,0),(-1,-1), 1.5, TC),
             ('BACKGROUND',    (0,0),(-1,-1), colors.HexColor('#f8fafc')),
-            ('TOPPADDING',    (0,0),(-1,-1), PAD * 0.8),
-            ('BOTTOMPADDING', (0,0),(-1,-1), PAD * 0.8),
+            ('TOPPADDING',    (0,0),(-1,-1), PAD * 0.6),
+            ('BOTTOMPADDING', (0,0),(-1,-1), PAD * 0.6),
             ('LEFTPADDING',   (0,0),(-1,-1), PAD),
             ('RIGHTPADDING',  (0,0),(-1,-1), PAD),
         ]))
         story.append(card)
-        story.append(Spacer(1, 5*mm))
+        story.append(Spacer(1, 3*mm))
 
         # Linhas de assinatura digital com cargo
         SIG_W2 = (W - 20*mm) / 2

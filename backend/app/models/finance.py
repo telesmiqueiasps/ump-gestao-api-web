@@ -25,6 +25,7 @@ class FinancialPeriod(Base):
     ready_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     validation_code = Column(String(64), nullable=True)
     data_hash = Column(Text, nullable=True)
+    observations = Column(Text, nullable=True)
 
     __table_args__ = (
         UniqueConstraint("organization_id", "fiscal_year", name="uq_period_org_year"),

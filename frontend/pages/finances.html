@@ -353,6 +353,9 @@
               <button class="btn-encerrar" id="btn-mark-ready" style="display:none;border-color:var(--blue-200,#bfdbfe);color:var(--blue-600,#2563eb)"><span class="btn-icon-only">📋</span><span class="btn-label">Marcar como Pronto</span></button>
               <button class="btn-encerrar" id="btn-unlock-period" style="display:none;border-color:var(--amber-200,#fde68a);color:var(--amber-700,#b45309)"><span class="btn-icon-only">🔓</span><span class="btn-label">Desbloquear</span></button>
               <button class="finances-btn btn-ver-relatorios" id="btn-view-signed" style="display:none;font-size:.78rem" title="Ver Relatório Assinado"><span class="btn-icon-only">✅</span><span class="btn-label">✅ Ver Assinado</span></button>
+              <button class="btn btn-ghost btn-sm" id="btn-observations"
+                style="display:none;font-size:.75rem;color:var(--slate-500)"
+                title="Observações do período">📝</button>
             </div>
           </div>
         </div>
@@ -595,6 +598,37 @@
   </div>
 </div>
 
+<!-- Modal Observações -->
+<div class="modal-overlay" id="modal-observations">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2>Observações do Período</h2>
+      <button class="modal-close">✕</button>
+    </div>
+    <div style="margin-bottom:.5rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">
+        <label style="font-size:.8rem;font-weight:500;color:var(--slate-600)">
+          Observação <span style="font-weight:400;color:var(--slate-400)">(máx. 400 caracteres)</span>
+        </label>
+        <span id="obs-char-count" style="font-size:.75rem;color:var(--slate-400)">0/400</span>
+      </div>
+      <textarea class="input" id="obs-text" rows="4"
+        placeholder="Escreva uma observação para constar no relatório financeiro..."
+        maxlength="400"
+        style="resize:none;font-size:.875rem"></textarea>
+    </div>
+    <p style="font-size:.72rem;color:var(--slate-400);margin-bottom:1rem">
+      Esta observação aparecerá no relatório financeiro do período.
+    </p>
+    <div id="obs-alert" class="hidden" style="margin-bottom:.75rem"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="btn-clear-obs" style="color:var(--red-600)">Limpar</button>
+      <button class="btn btn-secondary modal-close">Cancelar</button>
+      <button class="btn btn-primary" id="btn-save-obs">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
   import { requireAuth, isFederation, isLocalUmp, hasRole, getUser } from '../assets/js/auth.js'
   import { renderShell, renderBottomNav, canAccessPage } from '../assets/js/router.v3.js'
@@ -748,6 +782,16 @@
         document.getElementById('btn-view-signed').dataset.sigId = currentPeriod.signature_id
       } else {
         document.getElementById('btn-view-signed').style.display = 'none'
+      }
+
+      // Botão observações — apenas período aberto
+      const obsBtn = document.getElementById('btn-observations')
+      if (!currentPeriod.is_closed) {
+        obsBtn.style.display = 'inline-flex'
+        obsBtn.title = currentPeriod.observations ? '📝 Editar observação' : '📝 Adicionar observação'
+        obsBtn.style.color = currentPeriod.observations ? 'var(--brand-orange, #f97316)' : 'var(--slate-500)'
+      } else {
+        obsBtn.style.display = 'none'
       }
 
       // Botão gerar relatório — apenas período aberto e não bloqueado
@@ -991,6 +1035,54 @@
       } catch(err) {
         showAlert('screen-months-alert', err.message, 'error')
       }
+    }
+  })
+
+  // ── Observações ──
+  document.getElementById('btn-observations').addEventListener('click', () => {
+    const text = currentPeriod.observations || ''
+    document.getElementById('obs-text').value = text
+    document.getElementById('obs-char-count').textContent = `${text.length}/400`
+    clearAlert('obs-alert')
+    openModal('modal-observations')
+  })
+
+  document.getElementById('obs-text').addEventListener('input', (e) => {
+    const len = e.target.value.length
+    document.getElementById('obs-char-count').textContent = `${len}/400`
+    document.getElementById('obs-char-count').style.color =
+      len > 350 ? 'var(--red-600)' : 'var(--slate-400)'
+  })
+
+  document.getElementById('btn-clear-obs').addEventListener('click', async () => {
+    if (!confirm('Limpar a observação?')) return
+    try {
+      await api.put(`/api/finances/periods/${currentPeriod.id}/observations`, { observations: '' })
+      currentPeriod.observations = ''
+      closeModal('modal-observations')
+      const obsBtn = document.getElementById('btn-observations')
+      obsBtn.style.color = 'var(--slate-500)'
+      obsBtn.title = '📝 Adicionar observação'
+      showAlert('screen-months-alert', '📝 Observação removida.', 'success')
+    } catch(err) { showAlert('obs-alert', err.message, 'error') }
+  })
+
+  document.getElementById('btn-save-obs').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-save-obs')
+    const text = document.getElementById('obs-text').value.trim()
+    setLoading(btn, true, 'Salvar')
+    try {
+      await api.put(`/api/finances/periods/${currentPeriod.id}/observations`, { observations: text })
+      currentPeriod.observations = text
+      closeModal('modal-observations')
+      const obsBtn = document.getElementById('btn-observations')
+      obsBtn.style.color = text ? 'var(--brand-orange, #f97316)' : 'var(--slate-500)'
+      obsBtn.title = text ? '📝 Editar observação' : '📝 Adicionar observação'
+      showAlert('screen-months-alert', text ? '📝 Observação salva!' : '📝 Observação removida.', 'success')
+    } catch(err) {
+      showAlert('obs-alert', err.message, 'error')
+    } finally {
+      setLoading(btn, false, 'Salvar')
     }
   })
 
