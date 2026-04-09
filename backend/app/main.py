@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 from app.core.config import get_settings
-from app.routers import auth, federations, local_umps, users, finances, members, board, member_fees, notices, signatures
+from app.routers import auth, federations, local_umps, users, finances, members, board, member_fees, notices, signatures, meetings
 
 settings = get_settings()
 
@@ -39,6 +39,7 @@ app.include_router(board.router,        prefix="/api/board",       tags=["Direto
 app.include_router(member_fees.router,  prefix="/api/member-fees", tags=["Mensalidades e ACI"])
 app.include_router(notices.router,      prefix="/api/notices",     tags=["Avisos"])
 app.include_router(signatures.router,   prefix="/api/signatures",  tags=["Assinaturas"])
+app.include_router(meetings.router,     prefix="/api/meetings",    tags=["Reuniões"])
 
 
 @app.get("/health")
