@@ -63,6 +63,18 @@
 
       <div id="page-alert" class="hidden"></div>
 
+      <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:-.25rem">
+        <button class="filter-btn active" data-filter="active" onclick="setFilter('active')">Ativas</button>
+        <button class="filter-btn" data-filter="inactive" onclick="setFilter('inactive')">Inativas</button>
+        <button class="filter-btn" data-filter="all" onclick="setFilter('all')">Todas</button>
+        <div style="margin-left:auto">
+          <input class="input" type="text" id="search-local"
+            placeholder="🔍 Buscar local..."
+            style="width:200px;font-size:.82rem"
+            oninput="filterLocals()" />
+        </div>
+      </div>
+
       <div class="local-grid" id="local-grid">
         <div class="loading-center"><div class="spinner"></div></div>
       </div>
@@ -259,6 +271,71 @@
     initModalClose()
 
   let editId = null
+  let currentFilter = 'active'
+  let allLocals = []
+
+  window.setFilter = (filter) => {
+    currentFilter = filter
+    document.querySelectorAll('.filter-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.filter === filter)
+    })
+    filterLocals()
+  }
+
+  window.filterLocals = () => {
+    const search = document.getElementById('search-local')?.value.toLowerCase() || ''
+    let filtered = allLocals
+    if (currentFilter === 'active')   filtered = filtered.filter(l =>  l.is_active)
+    if (currentFilter === 'inactive') filtered = filtered.filter(l => !l.is_active)
+    if (search) filtered = filtered.filter(l =>
+      l.name.toLowerCase().includes(search) ||
+      (l.church_name || '').toLowerCase().includes(search)
+    )
+    renderLocals(filtered)
+  }
+
+  function renderLocals(locals) {
+    const grid = document.getElementById('local-grid')
+    if (!locals.length) {
+      grid.innerHTML = `
+        <div style="text-align:center;padding:3rem;color:var(--slate-400);grid-column:1/-1">
+          <div style="font-size:2rem;margin-bottom:.5rem">🏛️</div>
+          <p>${currentFilter === 'inactive' ? 'Nenhuma local inativa.' : 'Nenhuma local encontrada.'}</p>
+        </div>`
+      return
+    }
+    grid.innerHTML = locals.map(l => `
+      <div class="local-card ${!l.is_active ? 'inactive' : ''}">
+        <div class="local-card-header">
+          <div class="local-card-icon">⊟</div>
+          <div style="flex:1;min-width:0">
+            <div class="local-card-name">${l.name}</div>
+            <div class="local-card-church">${l.church_name || ''}</div>
+            ${!l.is_active && l.deactivated_at ? `
+              <div style="font-size:.7rem;color:var(--red-500);margin-top:.2rem">
+                Inativada em ${formatDate(l.deactivated_at.split('T')[0])}
+              </div>` : ''}
+            ${l.is_active && l.reactivated_at ? `
+              <div style="font-size:.7rem;color:var(--green-600);margin-top:.2rem">
+                Reativada em ${formatDate(l.reactivated_at.split('T')[0])}
+              </div>` : ''}
+          </div>
+          <span class="badge ${l.is_active ? 'badge-green' : 'badge-red'}">${l.is_active ? 'Ativa' : 'Inativa'}</span>
+        </div>
+        <div class="local-card-actions" style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--slate-100)">
+          ${l.is_active ? `
+            <button class="btn btn-secondary btn-sm" onclick="editLocal('${l.id}')">✎ Editar</button>
+            <button class="btn btn-secondary btn-sm" onclick="openUserModal('${l.id}','${l.name.replace(/'/g,"\\'")}')">👤 Usuários</button>
+            <button class="btn btn-ghost btn-sm" onclick="viewLocalReports('${l.id}','${l.name.replace(/'/g,"\\'")}')">📄 Relatórios</button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--red-600)"
+              onclick="deactivateLocal('${l.id}','${l.name.replace(/'/g,"\\'")}')">Desativar</button>
+          ` : `
+            <button class="btn btn-primary btn-sm" onclick="reactivateLocal('${l.id}','${l.name.replace(/'/g,"\\'")}')">✓ Reativar</button>
+          `}
+        </div>
+      </div>
+    `).join('')
+  }
 
   async function initPage() {
     try {
@@ -278,36 +355,11 @@
   }
 
   async function loadLocals() {
-    const grid = document.getElementById('local-grid')
-    grid.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>'
+    document.getElementById('local-grid').innerHTML =
+      '<div class="loading-center"><div class="spinner"></div></div>'
     try {
-      const data = await api.get('/api/federations/me/local-umps')
-      if (!data.length) {
-        grid.innerHTML = `<div class="card" style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--slate-400)">Nenhuma ${window._societyLabelSingle || 'UMP Local'} cadastrada.</div>`
-        return
-      }
-      grid.innerHTML = data.map(l => `
-        <div class="local-card ${l.is_active ? '' : 'inactive'}">
-          <div class="local-card-header">
-            <div class="flex items-center gap-3">
-              <div class="local-card-icon">⊟</div>
-              <div>
-                <div class="local-card-name">${l.name}</div>
-                <div class="local-card-church">${l.church_name ?? '—'}</div>
-              </div>
-            </div>
-            <span class="badge ${l.is_active ? 'badge-green' : 'badge-slate'}">${l.is_active ? 'Ativa' : 'Inativa'}</span>
-          </div>
-          ${l.pastor_name ? `<div class="local-card-info">Pastor: ${l.pastor_name}</div>` : ''}
-          <div class="local-card-info">Ano vigente: ${l.fiscal_year ?? '—'}</div>
-          <div class="local-card-actions">
-            <button class="btn btn-secondary btn-sm" onclick="editLocal('${l.id}')">✎ Editar</button>
-            <button class="btn btn-secondary btn-sm" onclick="openUserModal('${l.id}','${l.name.replace(/'/g,"\\'")}')">👤 Usuários</button>
-            <button class="btn btn-ghost btn-sm" onclick="viewLocalReports('${l.id}', '${l.name.replace(/'/g,"\\'")}')">📄 Relatórios</button>
-            ${l.is_active ? `<button class="btn btn-ghost btn-sm" style="color:var(--red-600)" onclick="deactivateLocal('${l.id}','${l.name}')">Desativar</button>` : ''}
-          </div>
-        </div>
-      `).join('')
+      allLocals = await api.get('/api/federations/me/local-umps')
+      filterLocals()
     } catch(err) {
       showAlert('page-alert', err.message, 'error')
     }
@@ -324,6 +376,11 @@
   })
 
   window.editLocal = async (id) => {
+    const local = allLocals.find(l => l.id === id)
+    if (local && !local.is_active) {
+      showAlert('page-alert', 'Não é possível editar uma local inativa.', 'error')
+      return
+    }
     try {
       const data = await api.get(`/api/local-umps/${id}`)
       editId = id
@@ -372,10 +429,27 @@
   })
 
   window.deactivateLocal = async (id, name) => {
-    if (!confirm(`Desativar ${name}?`)) return
+    if (!confirm(
+      `Desativar "${name}"?\n\n` +
+      `• A local ficará inativa\n` +
+      `• Todos os usuários desta local serão bloqueados\n` +
+      `• Os dados serão mantidos\n\n` +
+      `Deseja continuar?`
+    )) return
     try {
-      await api.delete(`/api/local-umps/${id}`)
-      loadLocals()
+      const result = await api.post(`/api/local-umps/${id}/deactivate`)
+      const count = result.inactivated_users?.length || 0
+      showAlert('page-alert', `✓ "${name}" desativada. ${count} usuário(s) bloqueado(s).`, 'success')
+      await loadLocals()
+    } catch(err) { showAlert('page-alert', err.message, 'error') }
+  }
+
+  window.reactivateLocal = async (id, name) => {
+    if (!confirm(`Reativar "${name}"?\n\nOs usuários voltarão a ter acesso.`)) return
+    try {
+      await api.post(`/api/local-umps/${id}/reactivate`)
+      showAlert('page-alert', `✓ "${name}" reativada com sucesso!`, 'success')
+      await loadLocals()
     } catch(err) { showAlert('page-alert', err.message, 'error') }
   }
 

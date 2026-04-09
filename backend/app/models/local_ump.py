@@ -25,6 +25,8 @@ class LocalUmp(Base):
     fiscal_year = Column(Integer)
     initial_balance = Column(Numeric(12, 2), default=0)
     is_active = Column(Boolean, default=True)
+    deactivated_at = Column(DateTime(timezone=True), nullable=True)
+    reactivated_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     federation = relationship("Federation", back_populates="local_umps")

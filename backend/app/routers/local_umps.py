@@ -257,21 +257,88 @@ def update_my_local_ump(
     return _to_out(local)
 
 
-# Federação desativa uma Local
-@router.delete("/{local_id}", status_code=status.HTTP_204_NO_CONTENT)
-def deactivate_local_ump(
+# Federação desativa uma Local (e seus usuários)
+@router.post("/{local_id}/deactivate")
+def deactivate_local(
     local_id: UUID,
     current_user: User = Depends(require_federation),
     db: Session = Depends(get_db),
 ):
+    import datetime as dt
     local = db.query(LocalUmp).filter(
         LocalUmp.id == local_id,
         LocalUmp.federation_id == current_user.organization_id,
     ).first()
     if not local:
         raise HTTPException(status_code=404, detail="UMP Local não encontrada")
+    if not local.is_active:
+        raise HTTPException(status_code=400, detail="Local já inativa")
+
+    now = dt.datetime.now(dt.timezone.utc)
     local.is_active = False
+    local.deactivated_at = now
+
+    # Inativa todos os usuários da local
+    user_ids = [
+        u.id for u in db.query(User).filter(
+            User.organization_id == local_id,
+            User.is_active == True,
+        ).all()
+    ]
+    if user_ids:
+        db.query(User).filter(User.id.in_(user_ids)).update(
+            {"is_active": False, "deactivated_at": now},
+            synchronize_session=False,
+        )
+
     db.commit()
+
+    inactivated = db.query(User).filter(User.id.in_(user_ids)).all() if user_ids else []
+    return {
+        "detail": "Local inativada com sucesso",
+        "inactivated_users": [
+            {"id": str(u.id), "full_name": u.full_name, "email": u.email}
+            for u in inactivated
+        ],
+    }
+
+
+# Federação reativa uma Local (e seus usuários)
+@router.post("/{local_id}/reactivate")
+def reactivate_local(
+    local_id: UUID,
+    current_user: User = Depends(require_federation),
+    db: Session = Depends(get_db),
+):
+    import datetime as dt
+    local = db.query(LocalUmp).filter(
+        LocalUmp.id == local_id,
+        LocalUmp.federation_id == current_user.organization_id,
+    ).first()
+    if not local:
+        raise HTTPException(status_code=404, detail="UMP Local não encontrada")
+    if local.is_active:
+        raise HTTPException(status_code=400, detail="Local já ativa")
+
+    now = dt.datetime.now(dt.timezone.utc)
+    local.is_active = True
+    local.reactivated_at = now
+
+    # Reativa todos os usuários da local
+    user_ids = [
+        u.id for u in db.query(User).filter(
+            User.organization_id == local_id,
+            User.is_active == False,
+        ).all()
+    ]
+    if user_ids:
+        db.query(User).filter(User.id.in_(user_ids)).update(
+            {"is_active": True, "deactivated_at": None},
+            synchronize_session=False,
+        )
+
+    db.commit()
+    return {"detail": "Local reativada com sucesso"}
 
 
 # Upload logo — UMP Local
@@ -370,4 +437,6 @@ def _to_out(l: LocalUmp) -> dict:
         "fiscal_year": l.fiscal_year,
         "initial_balance": float(l.initial_balance) if l.initial_balance else 0.0,
         "is_active": l.is_active,
+        "deactivated_at": l.deactivated_at.isoformat() if l.deactivated_at else None,
+        "reactivated_at": l.reactivated_at.isoformat() if l.reactivated_at else None,
     }
