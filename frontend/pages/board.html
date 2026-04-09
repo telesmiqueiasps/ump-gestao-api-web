@@ -70,6 +70,18 @@
         <div class="loading-center"><div class="spinner"></div></div>
       </div>
 
+      <!-- Seção de secretários de atividades -->
+      <div class="card" style="margin-top:0">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
+          <div>
+            <h2 style="margin:0;font-size:1rem">Secretários de Atividades</h2>
+            <p style="font-size:.78rem;color:var(--slate-500);margin-top:.15rem">Secretarias auxiliares da diretoria</p>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="btn-new-secretary">+ Secretário de Atividade</button>
+        </div>
+        <div id="secretaries-list"></div>
+      </div>
+
       <!-- Seção de usuários — só para presidente/vice da federação -->
       <div id="users-section" style="display:none">
         <div class="page-header mt-6">
@@ -128,6 +140,35 @@
     <div class="modal-footer">
       <button class="btn btn-secondary modal-close">Cancelar</button>
       <button class="btn btn-primary" id="btn-save-board">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Secretário de Atividade -->
+<div class="modal-overlay" id="modal-secretary">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2 id="modal-secretary-title">Novo Secretário de Atividade</h2>
+      <button class="modal-close">✕</button>
+    </div>
+    <div class="field mb-4">
+      <label>Nome</label>
+      <input class="input" type="text" id="sec-name" placeholder="Nome completo" />
+    </div>
+    <div class="field mb-4">
+      <label>Secretaria de Atividade</label>
+      <input class="input" type="text" id="sec-activity"
+        placeholder="Ex: Secretaria de Evangelismo" />
+    </div>
+    <div class="field mb-4">
+      <label>Contato <span style="font-size:.75rem;color:var(--slate-400);font-weight:400">(opcional)</span></label>
+      <input class="input" type="tel" id="sec-contact"
+        placeholder="(83) 99999-9999" maxlength="15" />
+    </div>
+    <div id="secretary-alert" class="hidden mb-4"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary modal-close">Cancelar</button>
+      <button class="btn btn-primary" id="btn-save-secretary">Salvar</button>
     </div>
   </div>
 </div>
@@ -238,7 +279,11 @@
     if (y === currentYear) opt.selected = true
     yearSelect.appendChild(opt)
   })
-  yearSelect.addEventListener('change', () => { currentYear = Number(yearSelect.value); loadBoard() })
+  yearSelect.addEventListener('change', async () => {
+    currentYear = Number(yearSelect.value)
+    await loadBoard()
+    await loadSecretaries()
+  })
 
   async function loadBoard() {
     const grid = document.getElementById('board-grid')
@@ -341,6 +386,131 @@
     } catch(err) { showAlert('page-alert', err.message, 'error') }
   }
 
+  // ── Secretários de Atividades ────────────────────────────────────────────────
+
+  let secEditId = null
+
+  async function loadSecretaries() {
+    try {
+      const secs = await api.get(`/api/board/activity-secretaries/?fiscal_year=${currentYear}`)
+      renderSecretaries(secs)
+    } catch {}
+  }
+
+  function renderSecretaries(secs) {
+    const list = document.getElementById('secretaries-list')
+    if (!secs.length) {
+      list.innerHTML = `
+        <div style="text-align:center;padding:1.5rem;color:var(--slate-400);font-size:.875rem">
+          <div style="font-size:1.5rem;margin-bottom:.4rem">🏛️</div>
+          Nenhum secretário de atividade cadastrado.
+        </div>`
+      return
+    }
+    list.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:.5rem">
+        ${secs.map(s => `
+          <div style="
+            display:flex;align-items:center;gap:.75rem;
+            padding:.75rem 1rem;
+            background:var(--slate-50);
+            border:1.5px solid var(--slate-200);
+            border-radius:var(--radius-lg);
+            flex-wrap:wrap;
+          ">
+            ${avatarHtml(s.member_name, 38, '.85rem')}
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;font-size:.875rem;color:var(--slate-800)">${s.member_name}</div>
+              <div style="font-size:.75rem;color:var(--blue-600);font-weight:500;margin-top:.1rem">${s.activity_name}</div>
+              ${s.contact ? `<div style="font-size:.72rem;color:var(--slate-400);margin-top:.1rem">📞 ${s.contact}</div>` : ''}
+            </div>
+            <div style="display:flex;gap:.3rem;flex-shrink:0">
+              <button class="btn btn-ghost btn-icon"
+                onclick="editSecretary('${s.id}','${s.member_name.replace(/'/g,"\\'")}','${s.activity_name.replace(/'/g,"\\'")}','${s.contact||''}')"
+                title="Editar">✎</button>
+              <button class="btn btn-ghost btn-icon danger"
+                onclick="deleteSecretary('${s.id}','${s.member_name.replace(/'/g,"\\'")}' )"
+                title="Excluir">✕</button>
+            </div>
+          </div>
+        `).join('')}
+      </div>`
+  }
+
+  document.getElementById('sec-contact').addEventListener('input', (e) => {
+    let v = e.target.value.replace(/\D/g, '')
+    if (v.length > 11) v = v.slice(0, 11)
+    if (v.length <= 10) {
+      v = v.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3')
+    } else {
+      v = v.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3')
+    }
+    e.target.value = v.replace(/-$/, '')
+  })
+
+  document.getElementById('btn-new-secretary').addEventListener('click', () => {
+    secEditId = null
+    document.getElementById('modal-secretary-title').textContent = 'Novo Secretário de Atividade'
+    document.getElementById('sec-name').value     = ''
+    document.getElementById('sec-activity').value = ''
+    document.getElementById('sec-contact').value  = ''
+    clearAlert('secretary-alert')
+    openModal('modal-secretary')
+  })
+
+  window.editSecretary = (id, name, activity, contact) => {
+    secEditId = id
+    document.getElementById('modal-secretary-title').textContent = 'Editar Secretário de Atividade'
+    document.getElementById('sec-name').value     = name
+    document.getElementById('sec-activity').value = activity
+    document.getElementById('sec-contact').value  = contact
+    clearAlert('secretary-alert')
+    openModal('modal-secretary')
+  }
+
+  window.deleteSecretary = async (id, name) => {
+    if (!confirm(`Excluir "${name}" dos secretários de atividade?`)) return
+    try {
+      await api.delete(`/api/board/activity-secretaries/${id}`)
+      await loadSecretaries()
+    } catch(err) { showAlert('page-alert', err.message, 'error') }
+  }
+
+  document.getElementById('btn-save-secretary').addEventListener('click', async () => {
+    const btn      = document.getElementById('btn-save-secretary')
+    const name     = document.getElementById('sec-name').value.trim()
+    const activity = document.getElementById('sec-activity').value.trim()
+    const contact  = document.getElementById('sec-contact').value.trim()
+
+    if (!name || !activity) {
+      showAlert('secretary-alert', 'Preencha nome e secretaria.', 'error')
+      return
+    }
+
+    setLoading(btn, true, 'Salvar')
+    clearAlert('secretary-alert')
+
+    try {
+      const payload = {
+        member_name:   name,
+        activity_name: activity,
+        contact:       contact || null,
+        fiscal_year:   currentYear,
+      }
+      if (secEditId) {
+        await api.put(`/api/board/activity-secretaries/${secEditId}`, payload)
+      } else {
+        await api.post('/api/board/activity-secretaries/', payload)
+      }
+      closeModal('modal-secretary')
+      await loadSecretaries()
+    } catch(err) {
+      showAlert('secretary-alert', err.message, 'error')
+    } finally {
+      setLoading(btn, false, 'Salvar')
+    }
+  })
+
   // ── Usuários da Federação ────────────────────────────────────────────────────
 
   async function loadFedUsers() {
@@ -419,6 +589,7 @@
   }
 
   loadBoard()
+  loadSecretaries()
   })()
 </script>
 

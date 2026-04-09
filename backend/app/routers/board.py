@@ -152,6 +152,109 @@ def remove_board_member(
     db.commit()
 
 
+from app.models.activity_secretary import ActivitySecretary
+
+
+class ActivitySecretaryCreate(BaseModel):
+    member_name: str
+    activity_name: str
+    contact: Optional[str] = None
+    fiscal_year: Optional[int] = None
+
+
+class ActivitySecretaryUpdate(BaseModel):
+    member_name: Optional[str] = None
+    activity_name: Optional[str] = None
+    contact: Optional[str] = None
+
+
+def _as_out(s: ActivitySecretary) -> dict:
+    return {
+        "id": str(s.id),
+        "organization_id": str(s.organization_id),
+        "member_name": s.member_name,
+        "activity_name": s.activity_name,
+        "contact": s.contact,
+        "fiscal_year": s.fiscal_year,
+        "is_active": s.is_active,
+    }
+
+
+@router.get("/activity-secretaries/")
+def list_activity_secretaries(
+    fiscal_year: Optional[int] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    year = fiscal_year or datetime.date.today().year
+    secs = db.query(ActivitySecretary).filter(
+        ActivitySecretary.organization_id == current_user.organization_id,
+        ActivitySecretary.fiscal_year == year,
+        ActivitySecretary.is_active == True,
+    ).order_by(ActivitySecretary.activity_name).all()
+    return [_as_out(s) for s in secs]
+
+
+@router.post("/activity-secretaries/", status_code=status.HTTP_201_CREATED)
+def create_activity_secretary(
+    payload: ActivitySecretaryCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    year = payload.fiscal_year or datetime.date.today().year
+    sec = ActivitySecretary(
+        organization_id=current_user.organization_id,
+        organization_type=current_user.organization_type.value
+            if hasattr(current_user.organization_type, 'value')
+            else str(current_user.organization_type),
+        member_name=payload.member_name,
+        activity_name=payload.activity_name,
+        contact=payload.contact,
+        fiscal_year=year,
+    )
+    db.add(sec)
+    db.commit()
+    db.refresh(sec)
+    return _as_out(sec)
+
+
+@router.put("/activity-secretaries/{sec_id}")
+def update_activity_secretary(
+    sec_id: UUID,
+    payload: ActivitySecretaryUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    sec = db.query(ActivitySecretary).filter(
+        ActivitySecretary.id == sec_id,
+        ActivitySecretary.organization_id == current_user.organization_id,
+    ).first()
+    if not sec:
+        raise HTTPException(status_code=404, detail="Secretário não encontrado")
+    for field, value in payload.model_dump(exclude_none=True).items():
+        setattr(sec, field, value)
+    db.commit()
+    db.refresh(sec)
+    return _as_out(sec)
+
+
+@router.delete("/activity-secretaries/{sec_id}",
+               status_code=status.HTTP_204_NO_CONTENT)
+def delete_activity_secretary(
+    sec_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    sec = db.query(ActivitySecretary).filter(
+        ActivitySecretary.id == sec_id,
+        ActivitySecretary.organization_id == current_user.organization_id,
+    ).first()
+    if not sec:
+        raise HTTPException(status_code=404, detail="Secretário não encontrado")
+    db.delete(sec)
+    db.commit()
+
+
 def _to_out(b: BoardMember) -> dict:
     return {
         "id": str(b.id),
