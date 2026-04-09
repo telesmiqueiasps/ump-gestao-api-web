@@ -176,7 +176,7 @@
   import { requireAuth, isFederation, isLocalUmp, hasRole, getUser } from '../assets/js/auth.js?v=9'
   import { renderShell, canAccessPage, renderBottomNav } from '../assets/js/router.v3.js?v=9'
   import { api } from '../assets/js/api.js?v=9'
-  import { showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading } from '../assets/js/utils.js?v=9'
+  import { showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading, avatarHtml } from '../assets/js/utils.js?v=9'
 
   (async () => {
     if (!requireAuth()) throw new Error()
@@ -251,10 +251,19 @@
       }
       grid.innerHTML = data.map(b => `
         <div class="board-card">
-          <div class="board-card-name">${b.member_name}</div>
-          <div class="board-card-role"><span class="badge badge-blue">${getRoleLabel(b.role)}</span></div>
-          <div class="board-card-year">Mandato ${b.fiscal_year}</div>
+          <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.6rem">
+            ${avatarHtml(b.member_name, 44, '1rem')}
+            <div style="min-width:0">
+              <div class="board-card-name">${b.member_name}</div>
+              <div class="board-card-role">
+                <span class="badge badge-blue" style="font-size:.7rem">
+                  ${getRoleLabel(b.role)}
+                </span>
+              </div>
+            </div>
+          </div>
           ${b.contact ? `<div class="board-card-contact" style="font-size:.75rem;color:var(--slate-500);margin-top:.2rem">📞 ${b.contact}</div>` : ''}
+          <div class="board-card-year">Mandato ${b.fiscal_year}</div>
           <div class="board-card-actions">
             <button class="btn btn-secondary btn-sm" onclick="editBoard('${b.id}','${b.member_name}','${b.role}',${b.fiscal_year},'${b.contact ?? ''}')">✎ Editar</button>
             <button class="btn btn-ghost btn-sm" style="color:var(--red-600)" onclick="removeBoard('${b.id}','${b.member_name}')">✕</button>

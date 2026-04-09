@@ -390,7 +390,17 @@
       }
       tbody.innerHTML = members.map(m => `
         <tr>
-          <td class="font-medium">${m.full_name}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:.6rem">
+              ${avatarHtml(m.full_name, 36, '.85rem')}
+              <div>
+                <div style="font-weight:600;font-size:.875rem">${m.full_name}</div>
+                <div style="font-size:.72rem;color:var(--slate-400)">
+                  ${m.member_type === 'ativo' ? 'Ativo' : 'Cooperador'}
+                </div>
+              </div>
+            </div>
+          </td>
           <td><span class="badge ${m.member_type === 'ativo' ? 'badge-blue' : 'badge-slate'}">${m.member_type === 'ativo' ? 'Ativo' : 'Cooperador'}</span></td>
           <td class="hide-mobile">${m.email ?? '—'}</td>
           <td class="hide-mobile">${m.phone ?? '—'}</td>
@@ -473,7 +483,11 @@
     window.openContributions = async (memberId, memberName) => {
       currentMemberId  = memberId
       currentMemberName = memberName
-      document.getElementById('modal-contrib-title').textContent   = memberName
+      document.getElementById('modal-contrib-title').innerHTML = `
+        <div style="display:flex;align-items:center;gap:.6rem">
+          ${avatarHtml(memberName, 32, '.75rem')}
+          <span>${memberName}</span>
+        </div>`
       document.getElementById('modal-contrib-subtitle').textContent = 'Gestão de mensalidades e ACI'
       switchContribTab('monthly')
       openModal('modal-contributions')

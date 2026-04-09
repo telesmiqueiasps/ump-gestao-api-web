@@ -61,6 +61,44 @@ export function getSocietyLabel(key) {
   return getSocietyInfo()[key] || key
 }
 
+export function nameToColor(name) {
+  if (!name) return '#64748b'
+  const colors = [
+    '#1a2a6c', '#1a5c2a', '#7b1fa2', '#b71c1c',
+    '#e65100', '#004d40', '#0277bd', '#558b2f',
+    '#6a1b9a', '#c62828', '#2e7d32', '#1565c0',
+    '#4527a0', '#00695c', '#f57f17', '#37474f',
+  ]
+  let hash = 0
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return colors[Math.abs(hash) % colors.length]
+}
+
+export function avatarHtml(name, size = 40, fontSize = '1rem') {
+  const initials = (name || '?')
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(n => n[0].toUpperCase())
+    .join('')
+  const bg = nameToColor(name)
+  return `
+    <div style="
+      width:${size}px;height:${size}px;
+      border-radius:50%;
+      background:${bg};
+      color:#fff;
+      display:flex;align-items:center;justify-content:center;
+      font-size:${fontSize};
+      font-weight:700;
+      flex-shrink:0;
+      user-select:none;
+      letter-spacing:-.5px;
+    ">${initials}</div>`
+}
+
 export function formatCurrency(value) {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency', currency: 'BRL'
@@ -147,3 +185,5 @@ export function initModalClose() {
 
 window.openModal = openModal
 window.closeModal = closeModal
+window.avatarHtml = avatarHtml
+window.nameToColor = nameToColor

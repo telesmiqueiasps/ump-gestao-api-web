@@ -252,7 +252,7 @@
   import { requireAuth, isFederation } from '../assets/js/auth.js?v=9'
   import { renderShell, canAccessPage, renderBottomNav } from '../assets/js/router.v3.js?v=9'
   import { api } from '../assets/js/api.js?v=9'
-  import { formatCurrency, formatDate, showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading } from '../assets/js/utils.js?v=9'
+  import { formatCurrency, formatDate, showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading, avatarHtml } from '../assets/js/utils.js?v=9'
 
   (async () => {
     if (!requireAuth()) throw new Error()
@@ -307,7 +307,7 @@
     grid.innerHTML = locals.map(l => `
       <div class="local-card ${!l.is_active ? 'inactive' : ''}">
         <div class="local-card-header">
-          <div class="local-card-icon">⊟</div>
+          ${avatarHtml(l.name, 44, '1rem')}
           <div style="flex:1;min-width:0">
             <div class="local-card-name">${l.name}</div>
             <div class="local-card-church">${l.church_name || ''}</div>
