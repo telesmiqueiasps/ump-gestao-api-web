@@ -173,8 +173,29 @@
 </div>
 
 <!-- Modal Relatórios da Local -->
+<style>
+.reports-tab {
+  padding: .45rem 1rem;
+  border: none;
+  background: none;
+  font-size: .875rem;
+  font-weight: 500;
+  color: var(--slate-500);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  font-family: inherit;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.reports-tab.active {
+  color: var(--brand-blue, #1a2a6c);
+  border-bottom-color: var(--brand-blue, #1a2a6c);
+}
+</style>
+
 <div class="modal-overlay" id="modal-local-reports">
-  <div class="modal">
+  <div class="modal modal-lg">
     <div class="modal-header">
       <div>
         <h2>Relatórios</h2>
@@ -182,11 +203,47 @@
       </div>
       <button class="modal-close">✕</button>
     </div>
-    <div id="local-reports-list">
-      <div class="loading-center"><div class="spinner"></div></div>
+
+    <!-- Abas -->
+    <div style="display:flex;gap:.5rem;border-bottom:2px solid var(--slate-100);margin-bottom:1.25rem;overflow-x:auto">
+      <button class="reports-tab active" data-tab="financeiro" onclick="switchReportsTab('financeiro')">
+        💰 Financeiro
+      </button>
+      <button class="reports-tab" data-tab="atividades" onclick="switchReportsTab('atividades')">
+        📋 Atividades
+      </button>
+      <button class="reports-tab" data-tab="estatisticas" onclick="switchReportsTab('estatisticas')">
+        📊 Estatísticas
+      </button>
     </div>
-    <div class="modal-footer" style="margin-top:1rem">
-      <button class="btn btn-ghost modal-close" style="width:100%;justify-content:center">Fechar</button>
+
+    <!-- Aba Financeiro -->
+    <div id="tab-reports-financeiro">
+      <div id="local-reports-list">
+        <div class="loading-center"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- Aba Atividades -->
+    <div id="tab-reports-atividades" style="display:none">
+      <div style="text-align:center;padding:2.5rem 1rem;color:var(--slate-400)">
+        <div style="font-size:2rem;margin-bottom:.5rem">📋</div>
+        <p style="font-weight:500;color:var(--slate-600)">Em breve</p>
+        <p style="font-size:.8rem;margin-top:.25rem">Relatórios de atividades em desenvolvimento.</p>
+      </div>
+    </div>
+
+    <!-- Aba Estatísticas -->
+    <div id="tab-reports-estatisticas" style="display:none">
+      <div style="text-align:center;padding:2.5rem 1rem;color:var(--slate-400)">
+        <div style="font-size:2rem;margin-bottom:.5rem">📊</div>
+        <p style="font-weight:500;color:var(--slate-600)">Em breve</p>
+        <p style="font-size:.8rem;margin-top:.25rem">Relatórios de estatísticas em desenvolvimento.</p>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost modal-close">Fechar</button>
     </div>
   </div>
 </div>
@@ -430,10 +487,23 @@
     } catch(err) { showAlert('user-alert', err.message, 'error') }
   }
 
+  window.switchReportsTab = (tab) => {
+    document.querySelectorAll('.reports-tab').forEach(t => {
+      t.classList.toggle('active', t.dataset.tab === tab)
+    })
+    document.getElementById('tab-reports-financeiro').style.display =
+      tab === 'financeiro' ? 'block' : 'none'
+    document.getElementById('tab-reports-atividades').style.display =
+      tab === 'atividades' ? 'block' : 'none'
+    document.getElementById('tab-reports-estatisticas').style.display =
+      tab === 'estatisticas' ? 'block' : 'none'
+  }
+
   window.viewLocalReports = async (localId, localName) => {
     document.getElementById('modal-reports-local-name').textContent = localName
     document.getElementById('local-reports-list').innerHTML =
       '<div class="loading-center"><div class="spinner"></div></div>'
+    switchReportsTab('financeiro')
     openModal('modal-local-reports')
 
     try {
