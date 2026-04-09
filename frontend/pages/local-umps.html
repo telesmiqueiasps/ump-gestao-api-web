@@ -73,44 +73,32 @@
 
 <!-- Modal -->
 <div class="modal-overlay" id="modal-local">
-  <div class="modal" style="max-height:90vh;overflow-y:auto">
+  <div class="modal modal-sm">
     <div class="modal-header">
-      <h2 id="modal-local-title">Nova Local</h2>
+      <h2 id="modal-local-title">Nova UMP Local</h2>
       <button class="modal-close">✕</button>
     </div>
+
     <div class="field mb-4">
-      <label>Nome da Sociedade</label>
-      <input class="input" type="text" id="l-name" placeholder="Ex: UMP/UPH da Igreja Central" />
+      <label>Nome da UMP Local</label>
+      <input class="input" type="text" id="l-name"
+        placeholder="Ex: UMP de Sousa" />
     </div>
-    <div class="grid-2 mb-4">
-      <div class="field">
-        <label>Igreja</label>
-        <input class="input" type="text" id="l-church" />
-      </div>
-      <div class="field">
-        <label>Pastor</label>
-        <input class="input" type="text" id="l-pastor" />
-      </div>
-    </div>
+
     <div class="field mb-4">
-      <label>Presbitério</label>
-      <input class="input" type="text" id="l-presbytery" />
+      <label>Igreja</label>
+      <input class="input" type="text" id="l-church"
+        placeholder="Ex: Igreja Presbiteriana de Sousa" />
     </div>
+
     <div class="field mb-4">
-      <label>Endereço</label>
-      <input class="input" type="text" id="l-address" />
+      <label>Presbitério <span style="font-size:.75rem;color:var(--slate-400);font-weight:400">(opcional)</span></label>
+      <input class="input" type="text" id="l-presbytery"
+        placeholder="Ex: Presbitério Oeste da Paraíba" />
     </div>
-    <div class="grid-2 mb-4">
-      <div class="field">
-        <label>Ano vigente</label>
-        <input class="input" type="number" id="l-year" />
-      </div>
-      <div class="field">
-        <label>Saldo inicial (R$)</label>
-        <input class="input" type="number" step="0.01" id="l-balance" placeholder="0,00" />
-      </div>
-    </div>
+
     <div id="local-alert" class="hidden mb-4"></div>
+
     <div class="modal-footer">
       <button class="btn btn-secondary modal-close">Cancelar</button>
       <button class="btn btn-primary" id="btn-save-local">Salvar</button>
@@ -330,11 +318,7 @@
     document.getElementById('modal-local-title').textContent = `Nova ${window._societyLabelSingle || 'UMP Local'}`
     document.getElementById('l-name').value       = ''
     document.getElementById('l-church').value     = ''
-    document.getElementById('l-pastor').value     = ''
     document.getElementById('l-presbytery').value = ''
-    document.getElementById('l-address').value    = ''
-    document.getElementById('l-year').value       = new Date().getFullYear()
-    document.getElementById('l-balance').value    = ''
     clearAlert('local-alert')
     openModal('modal-local')
   })
@@ -346,11 +330,7 @@
       document.getElementById('modal-local-title').textContent = `Editar ${window._societyLabelSingle || 'UMP Local'}`
       document.getElementById('l-name').value       = data.name ?? ''
       document.getElementById('l-church').value     = data.church_name ?? ''
-      document.getElementById('l-pastor').value     = data.pastor_name ?? ''
       document.getElementById('l-presbytery').value = data.presbytery_name ?? ''
-      document.getElementById('l-address').value    = data.address ?? ''
-      document.getElementById('l-year').value       = data.fiscal_year ?? ''
-      document.getElementById('l-balance').value    = data.initial_balance ?? ''
       clearAlert('local-alert')
       openModal('modal-local')
     } catch(err) {
@@ -361,22 +341,27 @@
   document.getElementById('btn-save-local').addEventListener('click', async () => {
     const btn  = document.getElementById('btn-save-local')
     const name = document.getElementById('l-name').value.trim()
-    if (!name) { showAlert('local-alert', `Informe o nome da ${window._societyLabelSingle || 'UMP Local'}.`, 'error'); return }
 
-    const payload = {
-      name,
-      church_name:     document.getElementById('l-church').value     || null,
-      pastor_name:     document.getElementById('l-pastor').value     || null,
-      presbytery_name: document.getElementById('l-presbytery').value || null,
-      address:         document.getElementById('l-address').value    || null,
-      fiscal_year:     Number(document.getElementById('l-year').value),
-      initial_balance: parseFloat(document.getElementById('l-balance').value || 0),
+    if (!name) {
+      showAlert('local-alert', 'O nome é obrigatório.', 'error')
+      return
     }
 
     setLoading(btn, true, 'Salvar')
+    clearAlert('local-alert')
+
+    const payload = {
+      name,
+      church_name:     document.getElementById('l-church').value.trim() || null,
+      presbytery_name: document.getElementById('l-presbytery').value.trim() || null,
+    }
+
     try {
-      if (editId) await api.put(`/api/local-umps/${editId}`, payload)
-      else        await api.post('/api/local-umps/', payload)
+      if (editId) {
+        await api.put(`/api/local-umps/${editId}`, payload)
+      } else {
+        await api.post('/api/local-umps/', payload)
+      }
       closeModal('modal-local')
       loadLocals()
     } catch(err) {
