@@ -114,6 +114,302 @@ def _section_bar(text, W, TC):
 
 
 # ═══════════════════════════════════════════════════════════════
+# REGISTRO DE ATOS (SECRETARIA)
+# ═══════════════════════════════════════════════════════════════
+
+def generate_meeting_report(
+    meeting_data: dict,
+    org_data: dict,
+    logo_bytes: bytes = None,
+    ipb_logo_bytes: bytes = None,
+    theme_color: str = '#1a2a6c',
+) -> bytes:
+    """Gera o PDF do Registro de Atos no modelo oficial."""
+
+    buf = io.BytesIO()
+    ML = MR = 15 * mm
+    MT = MB = 15 * mm
+    W = A4[0] - ML - MR
+
+    doc = SimpleDocTemplate(buf, pagesize=A4,
+        leftMargin=ML, rightMargin=MR, topMargin=MT, bottomMargin=MB)
+
+    TC = _tc(theme_color)
+    story = []
+
+    # ── Cabeçalho com logos ──────────────────────────────────
+    org_name = (org_data.get('name') or '').upper()
+
+    ipb_cell = Spacer(22 * mm, 22 * mm)
+    if ipb_logo_bytes:
+        try:
+            ipb_cell = Image(io.BytesIO(ipb_logo_bytes), width=22 * mm, height=22 * mm)
+        except Exception:
+            pass
+
+    org_cell = Spacer(22 * mm, 22 * mm)
+    if logo_bytes:
+        try:
+            org_cell = Image(io.BytesIO(logo_bytes), width=22 * mm, height=22 * mm)
+        except Exception:
+            pass
+
+    title_w = W - 44 * mm
+    title_content = Table([
+        [Paragraph('IGREJA PRESBITERIANA DO BRASIL',
+                   _ps(9, BLACK, bold=True, align=TA_CENTER))],
+        [Spacer(1, 1 * mm)],
+        [Paragraph(org_name, _ps(10, BLACK, bold=True, align=TA_CENTER))],
+    ], colWidths=[title_w])
+    title_content.setStyle(TableStyle([
+        ('TOPPADDING',    (0, 0), (-1, -1), 1),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
+    ]))
+
+    hdr = Table([[ipb_cell, title_content, org_cell]],
+                colWidths=[22 * mm, title_w, 22 * mm])
+    hdr.setStyle(TableStyle([
+        ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+        ('LEFTPADDING',   (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING',  (0, 0), (-1, -1), 0),
+        ('TOPPADDING',    (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+    ]))
+    story.append(hdr)
+    story.append(Spacer(1, 4 * mm))
+    story.append(HRFlowable(width=W, thickness=1, color=GRAY_LINE))
+    story.append(Spacer(1, 3 * mm))
+
+    # ── Tabela de identificação ──────────────────────────────
+    def fmt_dt(dt_str):
+        if not dt_str:
+            return '—'
+        try:
+            dt = datetime.datetime.fromisoformat(dt_str)
+            return dt.strftime('%d/%m/%Y %H:%M')
+        except Exception:
+            return dt_str
+
+    HW = W / 2
+    id_data = [
+        [
+            Paragraph(f'<b>Registro de Atos Nº {meeting_data.get("record_number", "")}</b>',
+                      _ps(8.5, BLACK, bold=True)),
+            Paragraph(f'<b>{meeting_data.get("meeting_type", "")}</b>',
+                      _ps(8.5, BLACK, bold=True)),
+        ],
+        [
+            Paragraph(f'<b>Início:</b> {fmt_dt(meeting_data.get("started_at"))}', _ps(8.5, BLACK)),
+            Paragraph(f'<b>Término:</b> {fmt_dt(meeting_data.get("ended_at"))}', _ps(8.5, BLACK)),
+        ],
+        [
+            Paragraph(f'<b>Local:</b> {meeting_data.get("location_name") or "—"}', _ps(8.5, BLACK)),
+            Paragraph(f'<b>Cidade/UF:</b> {meeting_data.get("city") or "—"}/{meeting_data.get("state") or "—"}', _ps(8.5, BLACK)),
+        ],
+        [
+            Paragraph(f'<b>Endereço:</b> {meeting_data.get("address") or "—"}', _ps(8.5, BLACK)),
+            Paragraph('', _ps()),
+        ],
+        [
+            Paragraph(f'<b>Presidente da Reunião:</b> {meeting_data.get("meeting_president") or "—"}', _ps(8.5, BLACK)),
+            Paragraph('', _ps()),
+        ],
+    ]
+
+    id_table = Table(id_data, colWidths=[HW, HW])
+    id_table.setStyle(TableStyle([
+        ('BOX',           (0, 0), (-1, -1), 1, BLACK),
+        ('INNERGRID',     (0, 0), (-1, -1), 0.5, GRAY_LINE),
+        ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING',    (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('LEFTPADDING',   (0, 0), (-1, -1), 5),
+        ('RIGHTPADDING',  (0, 0), (-1, -1), 5),
+        ('SPAN',          (0, 3), (-1, 3)),
+        ('SPAN',          (0, 4), (-1, 4)),
+    ]))
+    story.append(id_table)
+    story.append(Spacer(1, 4 * mm))
+
+    # ── Helpers internos ─────────────────────────────────────
+    def _sec_title(txt):
+        t = Table(
+            [[Paragraph(f'<b>{txt}</b>', _ps(9, WHITE, bold=True, align=TA_CENTER))]],
+            colWidths=[W],
+        )
+        t.setStyle(TableStyle([
+            ('BACKGROUND',    (0, 0), (-1, -1), TC),
+            ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING',    (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ('LEFTPADDING',   (0, 0), (-1, -1), 6),
+            ('RIGHTPADDING',  (0, 0), (-1, -1), 6),
+        ]))
+        return t
+
+    def _bold(txt):
+        return Paragraph(f'<b>{txt}</b>', _ps(8.5, BLACK, bold=True))
+
+    def _item(txt, indent_mm=4):
+        return Paragraph(txt, ParagraphStyle('_i',
+            fontSize=8.5, textColor=BLACK, fontName='Helvetica',
+            leading=12, leftIndent=indent_mm * mm, spaceAfter=1,
+        ))
+
+    # ── PRESENTES ────────────────────────────────────────────
+    story.append(_sec_title('PRESENTES'))
+    story.append(Spacer(1, 2 * mm))
+
+    attendees = meeting_data.get('attendees', [])
+    present = [a for a in attendees if a.get('is_present')]
+    absent  = [a for a in attendees if not a.get('is_present')]
+
+    def _cnt(tp):
+        return sum(1 for a in present if a.get('attendee_type') == tp)
+
+    total       = len(present)
+    del_count   = _cnt('delegate')
+    board_count = _cnt('board')
+    presb_count = _cnt('presbyterial')
+    act_count   = _cnt('activity_secretary')
+    vis_count   = _cnt('visitor')
+    mb_count    = _cnt('member')
+
+    parts = [f'<b>Total de presentes: {total}</b>']
+    if del_count:   parts.append(f'Delegados: {del_count}')
+    if mb_count:    parts.append(f'Sócios: {mb_count}')
+    if board_count: parts.append(f'Diretoria: {board_count}')
+    if presb_count: parts.append(f'Sec. Presbiterial: {presb_count}')
+    if act_count:   parts.append(f'Sec. Atividades: {act_count}')
+    if vis_count:   parts.append(f'Visitantes: {vis_count}')
+    story.append(Paragraph('  |  '.join(parts), ParagraphStyle('_sum',
+        fontSize=8.5, textColor=BLACK, fontName='Helvetica', leading=13)))
+    story.append(Spacer(1, 3 * mm))
+
+    # Diretoria
+    board_p = [a for a in present if a.get('attendee_type') in ('board', 'presbyterial')]
+    if board_p:
+        story.append(_bold('Diretoria:'))
+        for a in board_p:
+            story.append(_item(f'• {a["name"]}'))
+        story.append(Spacer(1, 2 * mm))
+
+    # Secretários de atividades
+    act_p = [a for a in present if a.get('attendee_type') == 'activity_secretary']
+    if act_p:
+        story.append(_bold('Secretarias:'))
+        for a in act_p:
+            story.append(_item(f'• {a["name"]}'))
+        story.append(Spacer(1, 2 * mm))
+
+    # Delegados agrupados por local
+    del_p = [a for a in present if a.get('attendee_type') == 'delegate']
+    if del_p:
+        story.append(_bold('Delegados:'))
+        by_local = {}
+        for a in del_p:
+            key = a.get('local_name') or 'Outros'
+            by_local.setdefault(key, []).append(a)
+        for local_name, dels in sorted(by_local.items()):
+            story.append(Paragraph(f'<b>{local_name}:</b>',
+                ParagraphStyle('_loc', fontSize=8.5, textColor=BLACK,
+                    fontName='Helvetica-Bold', leading=12, leftIndent=4 * mm)))
+            for d in dels:
+                story.append(_item(f'  • {d["name"]}', indent_mm=8))
+        story.append(Spacer(1, 2 * mm))
+
+    # Sócios
+    mb_p = [a for a in present if a.get('attendee_type') == 'member']
+    if mb_p:
+        story.append(_bold('Sócios:'))
+        for a in mb_p:
+            story.append(_item(f'• {a["name"]}'))
+        story.append(Spacer(1, 2 * mm))
+
+    # Visitantes
+    vis_p = [a for a in present if a.get('attendee_type') == 'visitor']
+    if vis_p:
+        story.append(_bold('Visitantes:'))
+        for a in vis_p:
+            obs = f' — {a["observation"]}' if a.get('observation') else ''
+            story.append(_item(f'• {a["name"]}{obs}'))
+        story.append(Spacer(1, 2 * mm))
+
+    # Ausentes
+    if absent:
+        story.append(_bold('Ausentes:'))
+        TYPE_LBL = {
+            'board': 'Diretoria', 'presbyterial': 'Sec. Presbiterial',
+            'activity_secretary': 'Sec. Atividades',
+            'delegate': 'Delegado', 'member': 'Sócio',
+        }
+        for a in absent:
+            suffix = f' ({TYPE_LBL[a["attendee_type"]]})' \
+                if a.get('attendee_type') in TYPE_LBL else ''
+            story.append(_item(f'• {a["name"]}{suffix}'))
+        story.append(Spacer(1, 3 * mm))
+
+    # ── Seções de texto ──────────────────────────────────────
+    SECTIONS = [
+        ('section_devotional',   'ATO DEVOCIONAL'),
+        ('section_agenda',       'PAUTA'),
+        ('section_resolutions',  'RESOLUÇÕES'),
+        ('section_observations', 'OBSERVAÇÕES'),
+        ('section_closing',      'ENCERRAMENTO'),
+    ]
+    for field, title in SECTIONS:
+        content = meeting_data.get(field)
+        if not content or not content.strip():
+            continue
+        story.append(Spacer(1, 2 * mm))
+        story.append(_sec_title(title))
+        story.append(Spacer(1, 2 * mm))
+        for line in content.split('\n'):
+            if not line.strip():
+                story.append(Spacer(1, 1 * mm))
+                continue
+            stripped = line.lstrip()
+            indent_chars = len(line) - len(stripped)
+            story.append(Paragraph(stripped, ParagraphStyle('_s',
+                fontSize=8.5, textColor=BLACK, fontName='Helvetica',
+                leading=12, leftIndent=indent_chars * 1.5 * mm, spaceAfter=1,
+            )))
+
+    # ── Linha de assinatura ──────────────────────────────────
+    story.append(Spacer(1, 10 * mm))
+
+    board_present_list = [a for a in present if a.get('attendee_type') == 'board']
+    sec_name = ''
+    for a in board_present_list:
+        if '1º Secretário' in a.get('name', '') or '1ª Secretária' in a.get('name', ''):
+            parts_n = a['name'].split(' - ')
+            sec_name = parts_n[-1] if len(parts_n) > 1 else a['name']
+            break
+
+    sig_w = W / 2 - 10 * mm
+    sig_label = sec_name.upper() if sec_name else 'Assinatura do(a) 1º(a) Secretário(a)'
+
+    sig_inner = Table([
+        [HRFlowable(width=sig_w, thickness=1, color=BLACK)],
+        [Paragraph(sig_label, _ps(7.5, GRAY_TXT, align=TA_CENTER))],
+    ], colWidths=[sig_w])
+    sig_inner.setStyle(TableStyle([
+        ('TOPPADDING',    (0, 0), (-1, -1), 2),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+        ('LEFTPADDING',   (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING',  (0, 0), (-1, -1), 0),
+    ]))
+
+    sig_row = Table([[sig_inner, Spacer(20 * mm, 1), Paragraph('', _ps())]],
+                    colWidths=[sig_w, 20 * mm, sig_w])
+    sig_row.setStyle(TableStyle([('VALIGN', (0, 0), (-1, -1), 'TOP')]))
+    story.append(sig_row)
+
+    doc.build(story)
+    return buf.getvalue()
+
+
+# ═══════════════════════════════════════════════════════════════
 # RELATÓRIO FINANCEIRO
 # ═══════════════════════════════════════════════════════════════
 
