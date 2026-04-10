@@ -264,6 +264,9 @@ def generate_meeting_report(
     present = [a for a in attendees if a.get('is_present')]
     absent  = [a for a in attendees if not a.get('is_present')]
 
+    org_type = org_data.get('organization_type', 'federation')
+    presb_label = 'Conselheiro(a)' if org_type == 'local_ump' else 'Secretário Presbiterial'
+
     def _cnt(tp):
         return sum(1 for a in present if a.get('attendee_type') == tp)
 
@@ -279,7 +282,7 @@ def generate_meeting_report(
     if del_count:   parts.append(f'Delegados: {del_count}')
     if mb_count:    parts.append(f'Sócios: {mb_count}')
     if board_count: parts.append(f'Diretoria: {board_count}')
-    if presb_count: parts.append(f'Sec. Presbiterial: {presb_count}')
+    if presb_count: parts.append(f'{presb_label}: {presb_count}')
     if act_count:   parts.append(f'Sec. Atividades: {act_count}')
     if vis_count:   parts.append(f'Visitantes: {vis_count}')
     story.append(Paragraph('  |  '.join(parts), ParagraphStyle('_sum',
@@ -287,10 +290,18 @@ def generate_meeting_report(
     story.append(Spacer(1, 3 * mm))
 
     # Diretoria
-    board_p = [a for a in present if a.get('attendee_type') in ('board', 'presbyterial')]
+    board_p = [a for a in present if a.get('attendee_type') == 'board']
     if board_p:
         story.append(_bold('Diretoria:'))
         for a in board_p:
+            story.append(_item(f'• {a["name"]}'))
+        story.append(Spacer(1, 2 * mm))
+
+    # Presbyterial / Conselheiro
+    presb_p = [a for a in present if a.get('attendee_type') == 'presbyterial']
+    if presb_p:
+        story.append(_bold(f'{presb_label}:'))
+        for a in presb_p:
             story.append(_item(f'• {a["name"]}'))
         story.append(Spacer(1, 2 * mm))
 
@@ -339,9 +350,11 @@ def generate_meeting_report(
     if absent:
         story.append(_bold('Ausentes:'))
         TYPE_LBL = {
-            'board': 'Diretoria', 'presbyterial': 'Sec. Presbiterial',
-            'activity_secretary': 'Sec. Atividades',
-            'delegate': 'Delegado', 'member': 'Sócio',
+            'board':              'Diretoria',
+            'presbyterial':       presb_label,
+            'activity_secretary': 'Secretário(a) de Atividades',
+            'delegate':           'Delegado',
+            'member':             'Sócio',
         }
         for a in absent:
             suffix = f' ({TYPE_LBL[a["attendee_type"]]})' \
@@ -376,34 +389,41 @@ def generate_meeting_report(
             )))
 
     # ── Linha de assinatura ──────────────────────────────────
-    story.append(Spacer(1, 10 * mm))
+    story.append(Spacer(1, 8 * mm))
 
-    board_present_list = [a for a in present if a.get('attendee_type') == 'board']
-    sec_name = ''
-    for a in board_present_list:
-        if '1º Secretário' in a.get('name', '') or '1ª Secretária' in a.get('name', ''):
-            parts_n = a['name'].split(' - ')
-            sec_name = parts_n[-1] if len(parts_n) > 1 else a['name']
-            break
+    sec_full = meeting_data.get('meeting_secretary', '')
+    sec_role = meeting_data.get('meeting_secretary_role', '1º Secretário(a)')
+    if ' - ' in (sec_full or ''):
+        sec_name_only = sec_full.split(' - ', 1)[1]
+    else:
+        sec_name_only = sec_full or ''
 
     sig_w = W / 2 - 10 * mm
-    sig_label = sec_name.upper() if sec_name else 'Assinatura do(a) 1º(a) Secretário(a)'
 
-    sig_inner = Table([
+    sig_block = Table([
         [HRFlowable(width=sig_w, thickness=1, color=BLACK)],
-        [Paragraph(sig_label, _ps(7.5, GRAY_TXT, align=TA_CENTER))],
+        [Paragraph(
+            sec_name_only.upper() if sec_name_only else '________________________________',
+            _ps(8.5, BLACK, bold=True, align=TA_CENTER)
+        )],
+        [Paragraph(
+            sec_role or '1º Secretário(a)',
+            _ps(8, GRAY_TXT, align=TA_CENTER)
+        )],
     ], colWidths=[sig_w])
-    sig_inner.setStyle(TableStyle([
+    sig_block.setStyle(TableStyle([
         ('TOPPADDING',    (0, 0), (-1, -1), 2),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
         ('LEFTPADDING',   (0, 0), (-1, -1), 0),
         ('RIGHTPADDING',  (0, 0), (-1, -1), 0),
     ]))
 
-    sig_row = Table([[sig_inner, Spacer(20 * mm, 1), Paragraph('', _ps())]],
-                    colWidths=[sig_w, 20 * mm, sig_w])
-    sig_row.setStyle(TableStyle([('VALIGN', (0, 0), (-1, -1), 'TOP')]))
-    story.append(sig_row)
+    sig_outer = Table([[sig_block]], colWidths=[W])
+    sig_outer.setStyle(TableStyle([
+        ('ALIGN',  (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+    ]))
+    story.append(sig_outer)
 
     doc.build(story)
     return buf.getvalue()

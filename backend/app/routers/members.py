@@ -22,6 +22,7 @@ class MemberCreate(BaseModel):
     phone: Optional[str] = None
     birth_date: Optional[datetime.date] = None
     join_date: Optional[datetime.date] = None
+    is_board_member: Optional[bool] = False
 
 
 class MemberUpdate(BaseModel):
@@ -30,6 +31,7 @@ class MemberUpdate(BaseModel):
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
     birth_date: Optional[datetime.date] = None
+    is_board_member: Optional[bool] = None
 
 
 class FeeCreate(BaseModel):
@@ -233,4 +235,5 @@ def _to_out(m: Member) -> dict:
         "birth_date": m.birth_date.isoformat() if m.birth_date else None,
         "join_date": m.join_date.isoformat() if m.join_date else None,
         "is_active": m.is_active,
+        "is_board_member": m.is_board_member or False,
     }

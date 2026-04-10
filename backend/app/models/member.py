@@ -18,6 +18,7 @@ class Member(Base):
     birth_date = Column(Date, nullable=True)
     join_date = Column(Date, server_default=func.current_date())
     is_active = Column(Boolean, default=True)
+    is_board_member = Column(Boolean, default=False)
 
     local_ump = relationship("LocalUmp", back_populates="members")
     fees = relationship("MembershipFee", back_populates="member")

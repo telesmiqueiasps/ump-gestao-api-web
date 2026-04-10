@@ -29,7 +29,7 @@ MEETING_TYPES = [
     'Outro',
 ]
 
-ROLE_LABELS = {
+ROLE_LABELS_FULL = {
     'presidente':              'Presidente',
     'vice_presidente':         'Vice-Presidente',
     '1_secretario':            '1º Secretário(a)',
@@ -39,6 +39,17 @@ ROLE_LABELS = {
     'secretario_presbiterial': 'Secretário Presbiterial',
     'conselheiro':             'Conselheiro(a)',
 }
+
+ROLE_ORDER = [
+    'presidente', 'vice_presidente', '1_secretario', '2_secretario',
+    'tesoureiro', 'secretario_executivo', 'secretario_presbiterial', 'conselheiro',
+]
+
+SPECIAL_ROLES_FED   = {'secretario_presbiterial'}
+SPECIAL_ROLES_LOCAL = {'conselheiro'}
+
+# Manter compatibilidade com código existente
+ROLE_LABELS = ROLE_LABELS_FULL
 
 
 # ── Helpers ───────────────────────────────────────────────────
@@ -87,7 +98,10 @@ def _meeting_out(m: Meeting) -> dict:
         "city": m.city,
         "state": m.state,
         "address": m.address,
-        "meeting_president": m.meeting_president,
+        "meeting_president":      m.meeting_president,
+        "meeting_president_role": m.meeting_president_role,
+        "meeting_secretary":      m.meeting_secretary,
+        "meeting_secretary_role": m.meeting_secretary_role,
         "status": m.status,
         "section_devotional":   m.section_devotional,
         "section_agenda":       m.section_agenda,
@@ -145,7 +159,10 @@ class MeetingUpdate(BaseModel):
     city: Optional[str] = None
     state: Optional[str] = None
     address: Optional[str] = None
-    meeting_president: Optional[str] = None
+    meeting_president:      Optional[str] = None
+    meeting_president_role: Optional[str] = None
+    meeting_secretary:      Optional[str] = None
+    meeting_secretary_role: Optional[str] = None
     status: Optional[str] = None
     section_devotional: Optional[str] = None
     section_agenda: Optional[str] = None
@@ -211,6 +228,37 @@ def get_prefill_data(
             result['meeting_president'] = b.member_name
             break
 
+    return result
+
+
+@router.get("/board-members")
+def get_board_for_meeting(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Retorna membros da diretoria do ano atual para uso nos selects de reunião."""
+    year = datetime.date.today().year
+    board = db.query(BoardMember).filter(
+        BoardMember.organization_id == current_user.organization_id,
+        BoardMember.fiscal_year == year,
+        BoardMember.is_active == True,
+    ).all()
+
+    def _order(b):
+        rv = b.role.value if hasattr(b.role, 'value') else str(b.role)
+        return ROLE_ORDER.index(rv) if rv in ROLE_ORDER else 99
+
+    result = []
+    for b in sorted(board, key=_order):
+        role_val = b.role.value if hasattr(b.role, 'value') else str(b.role)
+        role_label = ROLE_LABELS_FULL.get(role_val, role_val)
+        result.append({
+            "id":          str(b.id),
+            "member_name": b.member_name,
+            "role":        role_val,
+            "role_label":  role_label,
+            "display":     f"{role_label} - {b.member_name}",
+        })
     return result
 
 
@@ -358,10 +406,18 @@ def load_default_attendees(
             BoardMember.fiscal_year == year,
             BoardMember.is_active == True,
         ).all()
+        org_type_str = m.organization_type
         for b in board_members:
-            role = b.role.value if hasattr(b.role, 'value') else str(b.role)
-            role_label = ROLE_LABELS.get(role, role)
-            atype = 'presbyterial' if role == 'secretario_presbiterial' else 'board'
+            role_val   = b.role.value if hasattr(b.role, 'value') else str(b.role)
+            role_label = ROLE_LABELS_FULL.get(role_val, role_val)
+
+            if org_type_str == 'federation' and role_val in SPECIAL_ROLES_FED:
+                atype = 'presbyterial'
+            elif org_type_str == 'local_ump' and role_val in SPECIAL_ROLES_LOCAL:
+                atype = 'presbyterial'
+            else:
+                atype = 'board'
+
             a = MeetingAttendee(
                 meeting_id    = m.id,
                 attendee_type = atype,
@@ -390,11 +446,12 @@ def load_default_attendees(
             db.add(a)
             added.append(a)
 
-    # Para UMP Local: carrega sócios
+    # Para UMP Local: carrega sócios que NÃO são membros da diretoria
     if 'member' not in existing_types and m.organization_type == 'local_ump':
         members = db.query(Member).filter(
             Member.local_ump_id == current_user.organization_id,
             Member.is_active == True,
+            Member.is_board_member == False,
         ).order_by(Member.full_name).all()
         for mb in members:
             a = MeetingAttendee(
@@ -560,10 +617,11 @@ def generate_meeting_pdf(
             LocalUmp.id == current_user.organization_id).first()
 
     org_data = {
-        "name":             getattr(org_obj, 'name', '') or '',
-        "presbytery_name":  getattr(org_obj, 'presbytery_name', '') or '',
-        "logo_url":         getattr(org_obj, 'logo_url', None),
-        "theme_color":      getattr(org_obj, 'theme_color', '#1a2a6c') or '#1a2a6c',
+        "name":              getattr(org_obj, 'name', '') or '',
+        "presbytery_name":   getattr(org_obj, 'presbytery_name', '') or '',
+        "logo_url":          getattr(org_obj, 'logo_url', None),
+        "theme_color":       getattr(org_obj, 'theme_color', '#1a2a6c') or '#1a2a6c',
+        "organization_type": org_type,
     }
 
     # Logo da organização via B2
@@ -599,7 +657,10 @@ def generate_meeting_pdf(
         "city":              m.city,
         "state":             m.state,
         "address":           m.address,
-        "meeting_president": m.meeting_president,
+        "meeting_president":      m.meeting_president,
+        "meeting_president_role": m.meeting_president_role,
+        "meeting_secretary":      m.meeting_secretary,
+        "meeting_secretary_role": m.meeting_secretary_role,
         "section_devotional":   m.section_devotional,
         "section_agenda":       m.section_agenda,
         "section_resolutions":  m.section_resolutions,

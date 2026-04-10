@@ -187,6 +187,15 @@
         <input class="input" type="date" id="m-join" />
       </div>
     </div>
+    <div class="field mb-4">
+      <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-weight:500">
+        <input type="checkbox" id="m-is-board" style="width:16px;height:16px;cursor:pointer" />
+        <span>Membro da Diretoria</span>
+      </label>
+      <p style="font-size:.72rem;color:var(--slate-400);margin-top:.2rem;margin-left:1.5rem">
+        Marque se este sócio também é membro da diretoria — ele não será listado como sócio nas atas.
+      </p>
+    </div>
     <div id="member-alert" class="hidden mb-4"></div>
     <div class="modal-footer">
       <button class="btn btn-secondary modal-close">Cancelar</button>
@@ -409,7 +418,7 @@
           <td>
             <div class="row-actions">
               <button class="btn btn-ghost btn-icon" title="Contribuições" onclick="openContributions('${m.id}','${m.full_name.replace(/'/g, "\\'")}')">📋</button>
-              <button class="btn btn-ghost btn-icon" title="Editar" onclick="editMember('${m.id}','${m.full_name.replace(/'/g, "\\'")}','${m.member_type}','${m.email??''}','${m.phone??''}','${m.birth_date??''}','${m.join_date??''}')">✎</button>
+              <button class="btn btn-ghost btn-icon" title="Editar" onclick="editMember('${m.id}','${m.full_name.replace(/'/g, "\\'")}','${m.member_type}','${m.email??''}','${m.phone??''}','${m.birth_date??''}','${m.join_date??''}',${m.is_board_member?true:false})">✎</button>
               ${m.is_active ? `<button class="btn btn-ghost btn-icon danger" title="Desativar" onclick="deactivate('${m.id}','${m.full_name.replace(/'/g, "\\'")}')">✕</button>` : ''}
             </div>
           </td>
@@ -427,11 +436,12 @@
       document.getElementById('m-phone').value = ''
       document.getElementById('m-birth').value = ''
       document.getElementById('m-join').value  = new Date().toISOString().split('T')[0]
+      document.getElementById('m-is-board').checked = false
       clearAlert('member-alert')
       openModal('modal-member')
     })
 
-    window.editMember = (id, name, type, email, phone, birth, join) => {
+    window.editMember = (id, name, type, email, phone, birth, join, isBoardMember) => {
       editId = id
       document.getElementById('modal-member-title').textContent = 'Editar Sócio'
       document.getElementById('m-name').value  = name
@@ -440,6 +450,7 @@
       document.getElementById('m-phone').value = phone
       document.getElementById('m-birth').value = birth
       document.getElementById('m-join').value  = join
+      document.getElementById('m-is-board').checked = !!isBoardMember
       clearAlert('member-alert')
       openModal('modal-member')
     }
@@ -450,12 +461,13 @@
       if (!name) { showAlert('member-alert', 'Informe o nome do sócio.', 'error'); return }
 
       const payload = {
-        full_name:   name,
-        member_type: document.getElementById('m-type').value,
-        email:       document.getElementById('m-email').value || null,
-        phone:       document.getElementById('m-phone').value || null,
-        birth_date:  document.getElementById('m-birth').value || null,
-        join_date:   document.getElementById('m-join').value  || null,
+        full_name:      name,
+        member_type:    document.getElementById('m-type').value,
+        email:          document.getElementById('m-email').value || null,
+        phone:          document.getElementById('m-phone').value || null,
+        birth_date:     document.getElementById('m-birth').value || null,
+        join_date:      document.getElementById('m-join').value  || null,
+        is_board_member: document.getElementById('m-is-board').checked,
       }
 
       setLoading(btn, true, 'Salvar')
