@@ -83,7 +83,7 @@ export function canAccessPage(page) {
   return item.roles.some(r => userRoles.includes(r))
 }
 
-const MEMBER_LABELS = { UMP: 'Sócios', UPH: 'Membros', SAF: 'Associadas', UPA: 'Participantes' }
+const MEMBER_LABELS = { UMP: 'Sócios', UPH: 'Sócios', SAF: 'Associadas', UPA: 'Participantes' }
 
 function buildNavHTML(user, societyType) {
   societyType = societyType || localStorage.getItem('society_type') || 'UMP'
