@@ -450,8 +450,81 @@ def generate_activity_report(
     ML = MR = 15 * mm
     W = A4[0] - ML - MR
 
+    # Cabeçalho e rodapé em todas as páginas
+    def _make_header_footer(canvas_obj, doc_obj):
+        canvas_obj.saveState()
+        W_page = A4[0]
+        ML_page = ML
+        W_content = W_page - ML - MR
+
+        # ── Cabeçalho (a partir da 2ª página)
+        if doc_obj.page > 1:
+            canvas_obj.setStrokeColor(colors.HexColor(org_data.get('theme_color','#1a2a6c')))
+            canvas_obj.setLineWidth(0.5)
+
+            # Logo IPB
+            if ipb_logo_bytes:
+                try:
+                    from reportlab.lib.utils import ImageReader
+                    ipb_reader = ImageReader(io.BytesIO(ipb_logo_bytes))
+                    canvas_obj.drawImage(ipb_reader, ML_page, A4[1]-13*mm,
+                                         width=9*mm, height=9*mm,
+                                         preserveAspectRatio=True, mask='auto')
+                except:
+                    pass
+
+            # Logo da org
+            if logo_bytes:
+                try:
+                    from reportlab.lib.utils import ImageReader
+                    org_reader = ImageReader(io.BytesIO(logo_bytes))
+                    canvas_obj.drawImage(org_reader, W_page-MR-9*mm, A4[1]-13*mm,
+                                         width=9*mm, height=9*mm,
+                                         preserveAspectRatio=True, mask='auto')
+                except:
+                    pass
+
+            # Título central
+            canvas_obj.setFont('Helvetica-Bold', 8)
+            canvas_obj.setFillColor(colors.black)
+            canvas_obj.drawCentredString(
+                W_page/2, A4[1]-9*mm,
+                'RELATÓRIO DE ATIVIDADES'
+            )
+            canvas_obj.setFont('Helvetica', 7)
+            canvas_obj.setFillColor(colors.HexColor('#64748b'))
+            canvas_obj.drawCentredString(
+                W_page/2, A4[1]-13*mm,
+                f'Gestão {fiscal_year}  ·  {org_data.get("name","")}'
+            )
+
+            # Linha separadora do cabeçalho
+            canvas_obj.setStrokeColor(colors.HexColor('#e2e8f0'))
+            canvas_obj.line(ML_page, A4[1]-15*mm, W_page-MR, A4[1]-15*mm)
+
+        # ── Rodapé em todas as páginas ──
+        canvas_obj.setStrokeColor(colors.HexColor('#e2e8f0'))
+        canvas_obj.line(ML_page, 12*mm, W_page-MR, 12*mm)
+
+        # Lema/texto à esquerda no rodapé (configurável)
+        canvas_obj.setFont('Helvetica', 6.5)
+        canvas_obj.setFillColor(colors.HexColor('#94a3b8'))
+        footer_text = org_data.get('footer_text') or \
+            'ALEGRES NA ESPERANÇA – FORTES NA FÉ – DEDICADOS NO AMOR – UNIDOS NO TRABALHO'
+        canvas_obj.drawCentredString(W_page/2, 8*mm, footer_text)
+
+        # Número da página à direita
+        canvas_obj.setFont('Helvetica', 7)
+        canvas_obj.setFillColor(colors.HexColor('#94a3b8'))
+        canvas_obj.drawRightString(W_page-MR, 8*mm, f'Página {doc_obj.page}')
+
+        canvas_obj.restoreState()
+
     doc = SimpleDocTemplate(buf, pagesize=A4,
-        leftMargin=ML, rightMargin=MR, topMargin=15 * mm, bottomMargin=15 * mm)
+        leftMargin=ML, rightMargin=MR,
+        topMargin=20*mm,
+        bottomMargin=18*mm
+    )
 
     TC = _tc(org_data.get('theme_color', '#1a2a6c'))
     story = []
@@ -619,6 +692,22 @@ def generate_activity_report(
     # ════════════════════════════════
     story.append(section_bar_num('I', 'INTRODUÇÃO'))
     story.append(Spacer(1, 4 * mm))
+
+    # Versículo — alinhado à direita, itálico
+    if report.get('section_intro_verse') and report['section_intro_verse'].strip():
+        verse_lines = report['section_intro_verse'].strip().split('\n')
+        for line in verse_lines:
+            if line.strip():
+                story.append(Paragraph(
+                    f'<i>"{line.strip()}"</i>' if not line.strip().startswith('"')
+                    else f'<i>{line.strip()}</i>',
+                    ParagraphStyle('verse', fontSize=10, textColor=BLACK,
+                        fontName='Helvetica-Oblique', alignment=TA_RIGHT,
+                        leading=16, spaceAfter=2,
+                    )
+                ))
+        story.append(Spacer(1, 5 * mm))
+
     render_text(report.get('section_intro'))
     story.append(PageBreak())
 
@@ -735,10 +824,15 @@ def generate_activity_report(
     # ════════════════════════════════
     story.append(section_bar_num('IV', 'REGISTROS DE ATIVIDADES'))
 
+    first_activity = True
     for act in activities:
         photos = [p for p in act.get('photos_bytes', []) if p]
 
-        story.append(PageBreak())
+        if first_activity:
+            story.append(Spacer(1, 3 * mm))
+            first_activity = False
+        else:
+            story.append(PageBreak())
 
         start = _dt.date.fromisoformat(act['start_date'])
         end   = _dt.date.fromisoformat(act['end_date']) if act.get('end_date') else None
@@ -854,7 +948,33 @@ def generate_activity_report(
         story.append(Spacer(1, 4 * mm))
         render_text(final_word)
 
-    doc.build(story)
+        story.append(Spacer(1, 10 * mm))
+
+        # Nome e cargo — alinhado à direita, itálico como no modelo
+        sign_name = report.get('section_final_sign_name', '')
+        sign_role = report.get('section_final_sign_role', '')
+
+        if not sign_name:
+            pres = next((b for b in board_data if b.get('role_label') == 'Presidente'), None)
+            if pres:
+                sign_name = pres.get('member_name', '')
+                sign_role = f"Presidente da {org_data.get('name','')} {fiscal_year}"
+
+        if sign_name:
+            story.append(Paragraph(sign_name, ParagraphStyle('sig_name',
+                fontSize=10, textColor=BLACK, alignment=TA_RIGHT,
+                fontName='Helvetica-Bold', leading=14,
+            )))
+        if sign_role:
+            story.append(Paragraph(f'<i>{sign_role}</i>', ParagraphStyle('sig_role',
+                fontSize=9, textColor=colors.HexColor('#64748b'), alignment=TA_RIGHT,
+                fontName='Helvetica-Oblique', leading=12,
+            )))
+
+    doc.build(story,
+        onFirstPage=_make_header_footer,
+        onLaterPages=_make_header_footer,
+    )
     return buf.getvalue()
 
 

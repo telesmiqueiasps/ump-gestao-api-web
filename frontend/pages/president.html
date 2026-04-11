@@ -244,6 +244,18 @@
             <span class="autosave-indicator" id="ar-save-intro" style="font-size:.72rem;color:var(--slate-400)">● Salvo</span>
           </div>
           <div class="ar-section-editor">
+            <div style="margin-bottom:.75rem">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
+                <label style="font-size:.78rem;font-weight:500;color:var(--slate-600)">
+                  Versículo inicial
+                  <span style="font-weight:400;color:var(--slate-400)">(aparece alinhado à direita em itálico)</span>
+                </label>
+                <span class="autosave-indicator" id="ar-save-verse" style="font-size:.72rem;color:var(--slate-400)">● Salvo</span>
+              </div>
+              <textarea class="input" id="ar-intro-verse" rows="2"
+                placeholder='"Porque a tua graça é melhor do que a vida; os meus lábios te louvam." Salmos 63.3'
+                style="font-style:italic;font-size:.85rem;resize:none;text-align:right"></textarea>
+            </div>
             <textarea id="ar-intro" placeholder="Escreva a introdução do relatório..."></textarea>
           </div>
         </div>
@@ -301,6 +313,27 @@
           </div>
           <div class="ar-section-editor">
             <textarea id="ar-final-word" style="min-height:300px" placeholder="Escreva a palavra final do presidente..."></textarea>
+            <div style="margin-top:.75rem;display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+              <div>
+                <label style="font-size:.78rem;font-weight:500;color:var(--slate-600)">
+                  Nome (assinatura)
+                </label>
+                <input class="input" type="text" id="ar-sign-name"
+                  placeholder="Ex: Joamerson Vinícius Oliveira Vieira"
+                  style="font-size:.85rem;margin-top:.25rem" />
+              </div>
+              <div>
+                <label style="font-size:.78rem;font-weight:500;color:var(--slate-600)">
+                  Cargo (assinatura)
+                </label>
+                <input class="input" type="text" id="ar-sign-role"
+                  placeholder="Ex: Presidente da Federação Oeste 2026"
+                  style="font-size:.85rem;margin-top:.25rem" />
+              </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;margin-top:.5rem">
+              <button class="btn btn-secondary btn-sm" id="btn-save-sign">Salvar assinatura</button>
+            </div>
           </div>
         </div>
 
@@ -588,14 +621,14 @@
   async function loadActivityReport() {
     try {
       arReport = await api.get(`/api/activity-reports/report/${arCurrentYear}`)
-      fillArReport(arReport)
+      await fillArReport(arReport)
       await loadActivities()
     } catch(err) {
       showAlert('ar-alert', err.message, 'error')
     }
   }
 
-  function fillArReport(r) {
+  async function fillArReport(r) {
     document.getElementById('ar-subtitle').textContent =
       `Gestão ${r.fiscal_year} · ${r.status === 'published' ? 'Publicado' : 'Rascunho'}`
 
@@ -609,11 +642,26 @@
       r.status === 'published' ? 'inline-flex' : 'none'
 
     document.getElementById('ar-intro').value              = r.section_intro              || ''
+    document.getElementById('ar-intro-verse').value        = r.section_intro_verse        || ''
     document.getElementById('ar-raio-strong').value        = r.section_raio_x_strong       || ''
     document.getElementById('ar-raio-weak').value          = r.section_raio_x_weak         || ''
     document.getElementById('ar-raio-achieved').value      = r.section_raio_x_achieved     || ''
     document.getElementById('ar-raio-not-achieved').value  = r.section_raio_x_not_achieved || ''
     document.getElementById('ar-final-word').value         = r.section_final_word          || ''
+    document.getElementById('ar-sign-name').value          = r.section_final_sign_name     || ''
+    document.getElementById('ar-sign-role').value          = r.section_final_sign_role     || ''
+
+    // Se não tiver assinatura, pré-preenche com o presidente
+    if (!r.section_final_sign_name) {
+      try {
+        const board = await api.get('/api/meetings/board-members')
+        const pres = board.find(b => b.role === 'presidente')
+        if (pres) {
+          document.getElementById('ar-sign-name').value =
+            r.section_final_sign_name || pres.member_name
+        }
+      } catch {}
+    }
 
     const isPublished = r.status === 'published'
     document.querySelectorAll('#tab-atividades textarea').forEach(ta => {
@@ -628,6 +676,7 @@
   function setupArAutoSave() {
     const fields = [
       { id: 'ar-intro',             field: 'section_intro',               indicator: 'ar-save-intro' },
+      { id: 'ar-intro-verse',       field: 'section_intro_verse',         indicator: 'ar-save-verse' },
       { id: 'ar-raio-strong',       field: 'section_raio_x_strong',       indicator: 'ar-save-strong' },
       { id: 'ar-raio-weak',         field: 'section_raio_x_weak',         indicator: 'ar-save-weak' },
       { id: 'ar-raio-achieved',     field: 'section_raio_x_achieved',     indicator: 'ar-save-achieved' },
@@ -664,6 +713,7 @@
     try {
       allActivities = await api.get(`/api/activity-reports/activities/${arCurrentYear}`)
       renderActivities()
+      await loadPhotoUrls()
     } catch(err) {
       document.getElementById('activities-list').innerHTML =
         `<div class="alert alert-error">${err.message}</div>`
@@ -713,16 +763,23 @@
           <div class="photo-grid">
             ${(act.photos || []).map(p => `
               <div style="position:relative;display:inline-block">
-                <img src="${p.photo_url}" class="photo-thumb"
-                  onclick="removePhoto('${act.id}','${p.id}')"
+                <img
+                  data-key="${p.photo_key}"
+                  data-id="${p.id}"
+                  data-act="${act.id}"
+                  src="/assets/img/logo.png"
+                  class="photo-thumb"
                   title="Clique para remover"
-                  onerror="this.src='/assets/img/logo.png'" />
+                  style="object-fit:cover;background:var(--slate-100)"
+                  onclick="removePhoto('${act.id}','${p.id}')"
+                />
                 <div style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);
                             color:#fff;border-radius:50%;width:18px;height:18px;
                             display:flex;align-items:center;justify-content:center;
-                            font-size:.6rem;pointer-events:none">✕</div>
+                            font-size:.6rem;cursor:pointer"
+                  onclick="removePhoto('${act.id}','${p.id}')">✕</div>
               </div>`).join('')}
-            ${photoCount < 4 ? `
+          ${photoCount < 4 ? `
               <label class="photo-add-btn" title="Adicionar foto">
                 +
                 <input type="file" accept="image/png,image/jpeg,image/webp"
@@ -742,6 +799,37 @@
       if (el) el.style.display = t === tab ? 'block' : 'none'
     })
   }
+
+  async function loadPhotoUrls() {
+    const imgs = document.querySelectorAll('img[data-key]')
+    for (const img of imgs) {
+      const actId   = img.dataset.act
+      const photoId = img.dataset.id
+      try {
+        const data = await api.get(
+          `/api/activity-reports/activities/${actId}/photos/${photoId}/url`
+        )
+        img.src = data.url
+        img.style.objectFit = 'cover'
+      } catch {}
+    }
+  }
+
+  document.getElementById('btn-save-sign').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-save-sign')
+    setLoading(btn, true, 'Salvar assinatura')
+    try {
+      await api.put(`/api/activity-reports/report/${arCurrentYear}`, {
+        section_final_sign_name: document.getElementById('ar-sign-name').value.trim() || null,
+        section_final_sign_role: document.getElementById('ar-sign-role').value.trim() || null,
+      })
+      btn.textContent = '✓ Salvo!'
+      setTimeout(() => { setLoading(btn, false, 'Salvar assinatura') }, 1500)
+    } catch(err) {
+      showAlert('ar-alert', err.message, 'error')
+      setLoading(btn, false, 'Salvar assinatura')
+    }
+  })
 
   // Nova atividade
   document.getElementById('btn-new-activity').addEventListener('click', () => {
@@ -855,7 +943,7 @@
       if (!confirm('Despublicar o relatório?')) return
       try {
         arReport = await api.put(`/api/activity-reports/report/${arCurrentYear}`, { status: 'draft' })
-        fillArReport(arReport)
+        await fillArReport(arReport)
       } catch(err) { showAlert('ar-alert', err.message, 'error') }
       return
     }
@@ -874,7 +962,7 @@
     try {
       await api.post(`/api/activity-reports/report/${arCurrentYear}/publish`)
       arReport = await api.get(`/api/activity-reports/report/${arCurrentYear}`)
-      fillArReport(arReport)
+      await fillArReport(arReport)
       await loadActivities()
       clearAlert('ar-alert')
       showAlert('ar-alert', '✅ Relatório publicado com sucesso!', 'success')

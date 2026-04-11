@@ -16,7 +16,7 @@ from app.models.board import BoardMember
 from app.models.activity_secretary import ActivitySecretary
 from app.models.user import User
 from app.core.dependencies import get_current_user
-from app.services.storage import upload_file, delete_folder, _get_client
+from app.services.storage import upload_file, delete_folder, _get_client, get_presigned_url
 from app.core.config import get_settings
 
 router = APIRouter()
@@ -67,11 +67,14 @@ def _report_out(r: ActivityReport) -> dict:
         "fiscal_year":     r.fiscal_year,
         "status":          r.status,
         "section_intro":               r.section_intro,
+        "section_intro_verse":         r.section_intro_verse,
         "section_raio_x_strong":       r.section_raio_x_strong,
         "section_raio_x_weak":         r.section_raio_x_weak,
         "section_raio_x_achieved":     r.section_raio_x_achieved,
         "section_raio_x_not_achieved": r.section_raio_x_not_achieved,
         "section_final_word":          r.section_final_word,
+        "section_final_sign_name":     r.section_final_sign_name,
+        "section_final_sign_role":     r.section_final_sign_role,
         "report_url":  r.report_url,
         "updated_at":  r.updated_at.isoformat() if r.updated_at else None,
     }
@@ -202,11 +205,14 @@ def _build_activities_data(activities, with_photos=True):
 
 class ReportUpdate(BaseModel):
     section_intro:               Optional[str] = None
+    section_intro_verse:         Optional[str] = None
     section_raio_x_strong:       Optional[str] = None
     section_raio_x_weak:         Optional[str] = None
     section_raio_x_achieved:     Optional[str] = None
     section_raio_x_not_achieved: Optional[str] = None
     section_final_word:          Optional[str] = None
+    section_final_sign_name:     Optional[str] = None
+    section_final_sign_role:     Optional[str] = None
     status:                      Optional[str] = None
 
 
@@ -440,6 +446,25 @@ def delete_activity_photo(
     db.commit()
 
 
+@router.get("/activities/{activity_id}/photos/{photo_id}/url")
+def get_activity_photo_url(
+    activity_id: UUID,
+    photo_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    photo = db.query(ActivityPhoto).filter(
+        ActivityPhoto.id == photo_id,
+        ActivityPhoto.activity_id == activity_id,
+        ActivityPhoto.organization_id == current_user.organization_id,
+    ).first()
+    if not photo:
+        raise HTTPException(status_code=404, detail="Foto não encontrada")
+
+    url = get_presigned_url(photo.photo_key, expires_in=3600)
+    return {"url": url}
+
+
 # ── Gerar PDF e publicar ──────────────────────────────────────
 
 @router.post("/report/{year}/publish")
@@ -475,11 +500,14 @@ def publish_report(
         activities     = activities_data,
         report         = {
             "section_intro":              report.section_intro or '',
+            "section_intro_verse":        report.section_intro_verse or '',
             "section_raio_x_strong":      report.section_raio_x_strong or '',
             "section_raio_x_weak":        report.section_raio_x_weak or '',
             "section_raio_x_achieved":    report.section_raio_x_achieved or '',
             "section_raio_x_not_achieved":report.section_raio_x_not_achieved or '',
             "section_final_word":         report.section_final_word or '',
+            "section_final_sign_name":    report.section_final_sign_name or '',
+            "section_final_sign_role":    report.section_final_sign_role or '',
         },
         logo_bytes     = logo_bytes,
         ipb_logo_bytes = ipb_logo_bytes,
@@ -542,11 +570,14 @@ def preview_report_pdf(
         activities    = activities_data,
         report        = {
             "section_intro":              report.section_intro or '',
+            "section_intro_verse":        report.section_intro_verse or '',
             "section_raio_x_strong":      report.section_raio_x_strong or '',
             "section_raio_x_weak":        report.section_raio_x_weak or '',
             "section_raio_x_achieved":    report.section_raio_x_achieved or '',
             "section_raio_x_not_achieved":report.section_raio_x_not_achieved or '',
             "section_final_word":         report.section_final_word or '',
+            "section_final_sign_name":    report.section_final_sign_name or '',
+            "section_final_sign_role":    report.section_final_sign_role or '',
         },
         logo_bytes    = logo_bytes,
         ipb_logo_bytes= ipb_logo_bytes,
