@@ -38,6 +38,9 @@
       border-bottom-color: var(--brand-blue, #1a2a6c);
     }
     .loading-center { display:flex;justify-content:center;padding:2rem; }
+    @media (max-width: 600px) {
+      #pres-tab-nav { margin-left:-1rem !important; margin-right:-1rem !important; padding:0 1rem !important; }
+    }
   </style>
   <style>
     .sig-card {
@@ -161,7 +164,7 @@
       <div id="page-alert" style="margin-bottom:.75rem"></div>
 
       <!-- Tabs -->
-      <div style="display:flex;gap:.5rem;border-bottom:2px solid var(--slate-100);margin-bottom:1.25rem;overflow-x:auto">
+      <div id="pres-tab-nav" style="display:flex;gap:.5rem;border-bottom:2px solid var(--slate-100);position:sticky;top:0;background:#fff;z-index:10;margin-left:-1.5rem;margin-right:-1.5rem;padding:0 1.5rem;">
         <button class="pres-tab active" data-tab="financeiro" onclick="switchTab('financeiro')">💰 Financeiro</button>
         <button class="pres-tab" data-tab="atividades" onclick="switchTab('atividades')">📊 Atividades</button>
       </div>
