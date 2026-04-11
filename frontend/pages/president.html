@@ -163,7 +163,7 @@
       <!-- Tabs -->
       <div style="display:flex;gap:.5rem;border-bottom:2px solid var(--slate-100);margin-bottom:1.25rem;overflow-x:auto">
         <button class="pres-tab active" data-tab="financeiro" onclick="switchTab('financeiro')">💰 Financeiro</button>
-        <button class="pres-tab" data-tab="outros" onclick="switchTab('outros')">📋 Outros</button>
+        <button class="pres-tab" data-tab="atividades" onclick="switchTab('atividades')">📊 Atividades</button>
       </div>
 
       <!-- ABA FINANCEIRO -->
@@ -186,17 +186,164 @@
         </div>
       </div>
 
-      <!-- ABA OUTROS -->
-      <div id="tab-outros" style="display:none">
-        <div class="card" style="text-align:center;padding:2.5rem">
-          <p style="font-size:1.8rem;margin-bottom:.5rem">📋</p>
-          <p class="font-semi text-slate-700">Em breve</p>
-          <p class="text-sm text-slate-400 mt-1">Outros tipos de relatórios e aprovações em desenvolvimento.</p>
+      <!-- ABA ATIVIDADES -->
+      <div id="tab-atividades" style="display:none">
+
+        <!-- Toolbar do relatório -->
+        <div style="display:flex;align-items:center;justify-content:space-between;
+                    flex-wrap:wrap;gap:.75rem;margin-bottom:1.25rem">
+          <div>
+            <h2 style="margin:0;font-size:1rem">Relatório de Atividades</h2>
+            <p style="font-size:.78rem;color:var(--slate-500);margin-top:.15rem"
+               id="ar-subtitle">Carregando...</p>
+          </div>
+          <div style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center">
+            <select class="input" id="ar-year-select" style="width:auto;min-width:80px"></select>
+            <span class="badge" id="ar-status-badge">Rascunho</span>
+            <button class="btn btn-secondary btn-sm" id="btn-ar-preview">📄 Prévia PDF</button>
+            <button class="btn btn-sm" id="btn-ar-publish"
+              style="background:linear-gradient(135deg,#1a5c2a,#2d8a40);color:#fff">
+              ✅ Publicar
+            </button>
+            <button class="btn btn-secondary btn-sm" id="btn-ar-view"
+              style="display:none">👁️ Ver PDF</button>
+          </div>
         </div>
-      </div>
+
+        <div id="ar-alert" class="hidden" style="margin-bottom:1rem"></div>
+
+        <!-- Abas internas do relatório -->
+        <div style="display:flex;gap:0;border-bottom:2px solid var(--slate-100);
+                    overflow-x:auto;margin-bottom:1.25rem">
+          <button class="ar-tab active" data-tab="atividades-lista" onclick="switchArTab('atividades-lista')">📅 Atividades</button>
+          <button class="ar-tab" data-tab="intro" onclick="switchArTab('intro')">I. Introdução</button>
+          <button class="ar-tab" data-tab="raio-x" onclick="switchArTab('raio-x')">III. Raio X</button>
+          <button class="ar-tab" data-tab="palavra" onclick="switchArTab('palavra')">V. Palavra Final</button>
+        </div>
+
+        <!-- ABA: Lista de atividades -->
+        <div id="ar-tab-atividades-lista">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;flex-wrap:wrap;gap:.5rem">
+            <span style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--slate-400)">
+              Atividades do Ano
+            </span>
+            <button class="btn btn-primary btn-sm" id="btn-new-activity">+ Nova Atividade</button>
+          </div>
+          <div id="activities-list" style="display:flex;flex-direction:column;gap:.6rem">
+            <div class="loading-center"><div class="spinner"></div></div>
+          </div>
+        </div>
+
+        <!-- ABA: Introdução -->
+        <div id="ar-tab-intro" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+            <div>
+              <h3 style="margin:0;font-size:.95rem">I. Introdução</h3>
+              <p style="font-size:.75rem;color:var(--slate-400);margin-top:.15rem">Texto justificado — use Enter para novos parágrafos</p>
+            </div>
+            <span class="autosave-indicator" id="ar-save-intro" style="font-size:.72rem;color:var(--slate-400)">● Salvo</span>
+          </div>
+          <div class="ar-section-editor">
+            <textarea id="ar-intro" placeholder="Escreva a introdução do relatório..."></textarea>
+          </div>
+        </div>
+
+        <!-- ABA: Raio X -->
+        <div id="ar-tab-raio-x" style="display:none">
+          <div style="display:flex;flex-direction:column;gap:1rem">
+            <div class="card">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+                <h3 style="margin:0;font-size:.9rem">Pontos Fortes</h3>
+                <span class="autosave-indicator" id="ar-save-strong" style="font-size:.72rem;color:var(--slate-400)">● Salvo</span>
+              </div>
+              <div class="ar-section-editor">
+                <textarea id="ar-raio-strong" style="min-height:150px" placeholder="Descreva os pontos fortes da gestão..."></textarea>
+              </div>
+            </div>
+            <div class="card">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+                <h3 style="margin:0;font-size:.9rem">Pontos Fracos</h3>
+                <span class="autosave-indicator" id="ar-save-weak" style="font-size:.72rem;color:var(--slate-400)">● Salvo</span>
+              </div>
+              <div class="ar-section-editor">
+                <textarea id="ar-raio-weak" style="min-height:150px" placeholder="Descreva os pontos fracos da gestão..."></textarea>
+              </div>
+            </div>
+            <div class="card">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+                <h3 style="margin:0;font-size:.9rem">Objetivos Propostos Alcançados</h3>
+                <span class="autosave-indicator" id="ar-save-achieved" style="font-size:.72rem;color:var(--slate-400)">● Salvo</span>
+              </div>
+              <div class="ar-section-editor">
+                <textarea id="ar-raio-achieved" style="min-height:150px" placeholder="Liste os objetivos alcançados..."></textarea>
+              </div>
+            </div>
+            <div class="card">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+                <h3 style="margin:0;font-size:.9rem">Objetivos Propostos Não Alcançados</h3>
+                <span class="autosave-indicator" id="ar-save-not-achieved" style="font-size:.72rem;color:var(--slate-400)">● Salvo</span>
+              </div>
+              <div class="ar-section-editor">
+                <textarea id="ar-raio-not-achieved" style="min-height:150px" placeholder="Liste os objetivos não alcançados..."></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ABA: Palavra Final -->
+        <div id="ar-tab-palavra" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+            <div>
+              <h3 style="margin:0;font-size:.95rem">V. Palavra Final do Presidente</h3>
+              <p style="font-size:.75rem;color:var(--slate-400);margin-top:.15rem">Mensagem pessoal do presidente</p>
+            </div>
+            <span class="autosave-indicator" id="ar-save-word" style="font-size:.72rem;color:var(--slate-400)">● Salvo</span>
+          </div>
+          <div class="ar-section-editor">
+            <textarea id="ar-final-word" style="min-height:300px" placeholder="Escreva a palavra final do presidente..."></textarea>
+          </div>
+        </div>
+
+      </div><!-- /tab-atividades -->
     </main>
   </div>
   <div class="sidebar-overlay" id="sidebar-overlay"></div>
+</div>
+
+<!-- Modal nova/editar atividade -->
+<div class="modal-overlay" id="modal-activity">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2 id="modal-activity-title">Nova Atividade</h2>
+      <button class="modal-close">✕</button>
+    </div>
+    <div class="field mb-4">
+      <label>Título da Atividade</label>
+      <input class="input" type="text" id="act-title"
+        placeholder="Ex: Congresso XVII, DJP 2026" />
+    </div>
+    <div class="grid-2 mb-4">
+      <div class="field">
+        <label>Data de Início</label>
+        <input class="input" type="date" id="act-start" />
+      </div>
+      <div class="field">
+        <label>Data de Fim <span style="font-size:.72rem;color:var(--slate-400);font-weight:400">(opcional)</span></label>
+        <input class="input" type="date" id="act-end" />
+      </div>
+    </div>
+    <div class="field mb-4">
+      <label>Descrição <span style="font-size:.72rem;color:var(--slate-400);font-weight:400">(opcional)</span></label>
+      <textarea class="input" id="act-desc" rows="3"
+        placeholder="Descrição da atividade para o relatório..."
+        style="resize:none"></textarea>
+    </div>
+    <div id="act-alert" class="hidden mb-3"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary modal-close">Cancelar</button>
+      <button class="btn btn-primary" id="btn-save-activity">Salvar</button>
+    </div>
+  </div>
 </div>
 
 <script type="module">
@@ -233,8 +380,9 @@
 
   window.switchTab = (tab) => {
     document.querySelectorAll('.pres-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab))
-    document.getElementById('tab-financeiro').style.display = tab === 'financeiro' ? 'block' : 'none'
-    document.getElementById('tab-outros').style.display = tab === 'outros' ? 'block' : 'none'
+    document.getElementById('tab-financeiro').style.display  = tab === 'financeiro'  ? 'block' : 'none'
+    document.getElementById('tab-atividades').style.display  = tab === 'atividades'  ? 'block' : 'none'
+    if (tab === 'atividades' && !arReport) loadActivityReport()
   }
 
   function formatCurrency(v) {
@@ -376,6 +524,373 @@
 
   loadPending()
   loadHistory()
+
+  // ── Estilos do módulo de atividades ────────────────────────
+  document.head.insertAdjacentHTML('beforeend', `<style>
+    .ar-tab {
+      padding:.45rem 1rem;border:none;background:none;font-size:.82rem;
+      font-weight:500;color:var(--slate-500);cursor:pointer;
+      border-bottom:2px solid transparent;margin-bottom:-2px;
+      font-family:inherit;transition:all .15s;white-space:nowrap;
+    }
+    .ar-tab.active { color:var(--brand-blue,#1a2a6c); border-bottom-color:var(--brand-blue,#1a2a6c); }
+    .ar-section-editor {
+      background:var(--slate-50);border:1.5px solid var(--slate-200);
+      border-radius:var(--radius-lg);padding:1rem;
+    }
+    .ar-section-editor textarea {
+      width:100%;min-height:250px;border:none;background:transparent;
+      font-family:inherit;font-size:.875rem;color:var(--slate-800);
+      resize:vertical;outline:none;line-height:1.8;
+    }
+    .activity-card {
+      background:#fff;border:1.5px solid var(--slate-200);border-radius:var(--radius-lg);
+      padding:1rem 1.25rem;transition:box-shadow .15s;
+    }
+    .activity-card:hover { box-shadow:var(--shadow); }
+    .photo-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:.4rem;margin-top:.5rem; }
+    .photo-thumb {
+      width:80px;height:80px;object-fit:cover;border-radius:var(--radius);
+      border:1.5px solid var(--slate-200);cursor:pointer;transition:opacity .15s;
+    }
+    .photo-thumb:hover { opacity:.85; }
+    .photo-add-btn {
+      width:80px;height:80px;border:2px dashed var(--slate-300);border-radius:var(--radius);
+      display:flex;align-items:center;justify-content:center;cursor:pointer;
+      color:var(--slate-400);font-size:1.5rem;background:var(--slate-50);
+      transition:all .15s;
+    }
+    .photo-add-btn:hover { border-color:var(--blue-400);color:var(--blue-500);background:#eff6ff; }
+  </style>`)
+
+  // ── Relatório de Atividades ──────────────────────────────
+
+  let arCurrentYear = new Date().getFullYear()
+  let arReport = null
+  let allActivities = []
+  let actEditId = null
+  let arAutoSaveTimers = {}
+
+  // Preenche select de anos
+  const arYearSelect = document.getElementById('ar-year-select')
+  ;[arCurrentYear - 1, arCurrentYear, arCurrentYear + 1].forEach(y => {
+    const opt = document.createElement('option')
+    opt.value = y; opt.textContent = y
+    if (y === arCurrentYear) opt.selected = true
+    arYearSelect.appendChild(opt)
+  })
+  arYearSelect.addEventListener('change', () => {
+    arCurrentYear = Number(arYearSelect.value)
+    arReport = null
+    loadActivityReport()
+  })
+
+  async function loadActivityReport() {
+    try {
+      arReport = await api.get(`/api/activity-reports/report/${arCurrentYear}`)
+      fillArReport(arReport)
+      await loadActivities()
+    } catch(err) {
+      showAlert('ar-alert', err.message, 'error')
+    }
+  }
+
+  function fillArReport(r) {
+    document.getElementById('ar-subtitle').textContent =
+      `Gestão ${r.fiscal_year} · ${r.status === 'published' ? 'Publicado' : 'Rascunho'}`
+
+    const badge = document.getElementById('ar-status-badge')
+    badge.textContent = r.status === 'published' ? '✓ Publicado' : 'Rascunho'
+    badge.className = `badge ${r.status === 'published' ? 'badge-green' : 'badge-slate'}`
+
+    document.getElementById('btn-ar-publish').textContent =
+      r.status === 'published' ? 'Despublicar' : '✅ Publicar'
+    document.getElementById('btn-ar-view').style.display =
+      r.status === 'published' ? 'inline-flex' : 'none'
+
+    document.getElementById('ar-intro').value              = r.section_intro              || ''
+    document.getElementById('ar-raio-strong').value        = r.section_raio_x_strong       || ''
+    document.getElementById('ar-raio-weak').value          = r.section_raio_x_weak         || ''
+    document.getElementById('ar-raio-achieved').value      = r.section_raio_x_achieved     || ''
+    document.getElementById('ar-raio-not-achieved').value  = r.section_raio_x_not_achieved || ''
+    document.getElementById('ar-final-word').value         = r.section_final_word          || ''
+
+    const isPublished = r.status === 'published'
+    document.querySelectorAll('#tab-atividades textarea').forEach(ta => {
+      ta.disabled = isPublished
+      ta.style.opacity = isPublished ? '.7' : '1'
+    })
+    document.getElementById('btn-new-activity').disabled = isPublished
+
+    setupArAutoSave()
+  }
+
+  function setupArAutoSave() {
+    const fields = [
+      { id: 'ar-intro',             field: 'section_intro',               indicator: 'ar-save-intro' },
+      { id: 'ar-raio-strong',       field: 'section_raio_x_strong',       indicator: 'ar-save-strong' },
+      { id: 'ar-raio-weak',         field: 'section_raio_x_weak',         indicator: 'ar-save-weak' },
+      { id: 'ar-raio-achieved',     field: 'section_raio_x_achieved',     indicator: 'ar-save-achieved' },
+      { id: 'ar-raio-not-achieved', field: 'section_raio_x_not_achieved', indicator: 'ar-save-not-achieved' },
+      { id: 'ar-final-word',        field: 'section_final_word',          indicator: 'ar-save-word' },
+    ]
+    fields.forEach(({ id, field, indicator }) => {
+      const ta  = document.getElementById(id)
+      const ind = document.getElementById(indicator)
+      if (!ta || !ind) return
+      // Remove listener anterior clonando
+      const fresh = ta.cloneNode(true)
+      ta.parentNode.replaceChild(fresh, ta)
+      fresh.addEventListener('input', () => {
+        ind.textContent = '● Salvando...'
+        ind.style.color = 'var(--amber-600,#d97706)'
+        clearTimeout(arAutoSaveTimers[id])
+        arAutoSaveTimers[id] = setTimeout(async () => {
+          try {
+            await api.put(`/api/activity-reports/report/${arCurrentYear}`, { [field]: fresh.value })
+            ind.textContent = '● Salvo'
+            ind.style.color = 'var(--green-600,#16a34a)'
+            setTimeout(() => { ind.textContent = '● Salvo'; ind.style.color = 'var(--slate-400)' }, 2000)
+          } catch {
+            ind.textContent = '● Erro'
+            ind.style.color = 'var(--red-600,#dc2626)'
+          }
+        }, 1500)
+      })
+    })
+  }
+
+  async function loadActivities() {
+    try {
+      allActivities = await api.get(`/api/activity-reports/activities/${arCurrentYear}`)
+      renderActivities()
+    } catch(err) {
+      document.getElementById('activities-list').innerHTML =
+        `<div class="alert alert-error">${err.message}</div>`
+    }
+  }
+
+  function renderActivities() {
+    const list = document.getElementById('activities-list')
+    if (!allActivities.length) {
+      list.innerHTML = `
+        <div style="text-align:center;padding:2.5rem;color:var(--slate-400);
+                    border:2px dashed var(--slate-200);border-radius:var(--radius-lg)">
+          <div style="font-size:1.8rem;margin-bottom:.4rem">📅</div>
+          <p>Nenhuma atividade cadastrada.</p>
+          <p style="font-size:.75rem;margin-top:.2rem">Adicione as atividades realizadas durante o ano.</p>
+        </div>`
+      return
+    }
+
+    const monthNames = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+
+    list.innerHTML = allActivities.map(act => {
+      const startDate = new Date(act.start_date + 'T00:00:00')
+      const endDate   = act.end_date ? new Date(act.end_date + 'T00:00:00') : null
+      let dateStr = `${startDate.getDate()} de ${monthNames[startDate.getMonth()]}`
+      if (endDate && endDate.toDateString() !== startDate.toDateString())
+        dateStr += ` a ${endDate.getDate()} de ${monthNames[endDate.getMonth()]}`
+
+      const photoCount = act.photos?.length || 0
+      return `
+        <div class="activity-card">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:.7rem;color:var(--slate-400);text-transform:uppercase;
+                          letter-spacing:.3px;margin-bottom:.15rem">${dateStr}</div>
+              <div style="font-weight:600;font-size:.9rem;color:var(--slate-800)">${act.title}</div>
+              ${act.description ? `<div style="font-size:.78rem;color:var(--slate-500);margin-top:.2rem;
+                                              white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                ${act.description}</div>` : ''}
+            </div>
+            <div style="display:flex;gap:.3rem;flex-shrink:0">
+              <button class="btn btn-ghost btn-icon" onclick="editActivity('${act.id}')" title="Editar">✎</button>
+              <button class="btn btn-ghost btn-icon danger"
+                onclick="deleteActivity('${act.id}','${act.title.replace(/'/g,"\\'")}')">✕</button>
+            </div>
+          </div>
+          <div class="photo-grid">
+            ${(act.photos || []).map(p => `
+              <div style="position:relative;display:inline-block">
+                <img src="${p.photo_url}" class="photo-thumb"
+                  onclick="removePhoto('${act.id}','${p.id}')"
+                  title="Clique para remover"
+                  onerror="this.src='/assets/img/logo.png'" />
+                <div style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);
+                            color:#fff;border-radius:50%;width:18px;height:18px;
+                            display:flex;align-items:center;justify-content:center;
+                            font-size:.6rem;pointer-events:none">✕</div>
+              </div>`).join('')}
+            ${photoCount < 4 ? `
+              <label class="photo-add-btn" title="Adicionar foto">
+                +
+                <input type="file" accept="image/png,image/jpeg,image/webp"
+                  style="display:none" onchange="uploadPhoto('${act.id}', this)" />
+              </label>` : ''}
+          </div>
+          ${photoCount > 0 ? `<p style="font-size:.68rem;color:var(--slate-400);margin-top:.3rem">
+            ${photoCount}/4 foto${photoCount !== 1 ? 's' : ''} · Clique na foto para remover</p>` : ''}
+        </div>`
+    }).join('')
+  }
+
+  window.switchArTab = (tab) => {
+    document.querySelectorAll('.ar-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab))
+    ;['atividades-lista','intro','raio-x','palavra'].forEach(t => {
+      const el = document.getElementById(`ar-tab-${t}`)
+      if (el) el.style.display = t === tab ? 'block' : 'none'
+    })
+  }
+
+  // Nova atividade
+  document.getElementById('btn-new-activity').addEventListener('click', () => {
+    actEditId = null
+    document.getElementById('modal-activity-title').textContent = 'Nova Atividade'
+    document.getElementById('act-title').value = ''
+    document.getElementById('act-start').value = ''
+    document.getElementById('act-end').value   = ''
+    document.getElementById('act-desc').value  = ''
+    clearAlert('act-alert')
+    openModal('modal-activity')
+  })
+
+  window.editActivity = (id) => {
+    const act = allActivities.find(a => a.id === id)
+    if (!act) return
+    actEditId = id
+    document.getElementById('modal-activity-title').textContent = 'Editar Atividade'
+    document.getElementById('act-title').value = act.title       || ''
+    document.getElementById('act-start').value = act.start_date  || ''
+    document.getElementById('act-end').value   = act.end_date    || ''
+    document.getElementById('act-desc').value  = act.description || ''
+    clearAlert('act-alert')
+    openModal('modal-activity')
+  }
+
+  document.getElementById('btn-save-activity').addEventListener('click', async () => {
+    const btn   = document.getElementById('btn-save-activity')
+    const title = document.getElementById('act-title').value.trim()
+    const start = document.getElementById('act-start').value
+    if (!title || !start) {
+      showAlert('act-alert', 'Preencha título e data de início.', 'error'); return
+    }
+    setLoading(btn, true, 'Salvar')
+    try {
+      const payload = {
+        title,
+        description: document.getElementById('act-desc').value.trim() || null,
+        start_date:  start,
+        end_date:    document.getElementById('act-end').value || null,
+        fiscal_year: arCurrentYear,
+      }
+      if (actEditId) await api.put(`/api/activity-reports/activities/${actEditId}`, payload)
+      else           await api.post('/api/activity-reports/activities', payload)
+      closeModal('modal-activity')
+      await loadActivities()
+    } catch(err) {
+      showAlert('act-alert', err.message, 'error')
+    } finally {
+      setLoading(btn, false, 'Salvar')
+    }
+  })
+
+  window.deleteActivity = async (id, title) => {
+    if (!confirm(`Excluir "${title}"?\nAs fotos desta atividade também serão removidas.`)) return
+    try {
+      await api.delete(`/api/activity-reports/activities/${id}`)
+      await loadActivities()
+    } catch(err) { showAlert('ar-alert', err.message, 'error') }
+  }
+
+  window.uploadPhoto = async (actId, input) => {
+    const file = input.files[0]
+    if (!file) return
+    const act = allActivities.find(a => a.id === actId)
+    if (act && (act.photos || []).length >= 4) { alert('Máximo de 4 fotos por atividade.'); return }
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      await api.upload(`/api/activity-reports/activities/${actId}/photos`, fd)
+      await loadActivities()
+    } catch(err) {
+      showAlert('ar-alert', err.message, 'error')
+    } finally { input.value = '' }
+  }
+
+  window.removePhoto = async (actId, photoId) => {
+    if (!confirm('Remover esta foto?')) return
+    try {
+      await api.delete(`/api/activity-reports/activities/${actId}/photos/${photoId}`)
+      await loadActivities()
+    } catch(err) { showAlert('ar-alert', err.message, 'error') }
+  }
+
+  // Prévia PDF
+  document.getElementById('btn-ar-preview').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-ar-preview')
+    setLoading(btn, true, '📄 Prévia PDF')
+    try {
+      const token = localStorage.getItem('access_token')
+      const res = await fetch(
+        `https://ump-gestao-api.onrender.com/api/activity-reports/report/${arCurrentYear}/preview-pdf`,
+        { headers: { 'Authorization': `Bearer ${token}` } }
+      )
+      if (!res.ok) throw new Error('Erro ao gerar prévia')
+      const blob = await res.blob()
+      const objUrl = URL.createObjectURL(blob)
+      window.open(objUrl, '_blank')
+      setTimeout(() => URL.revokeObjectURL(objUrl), 10000)
+    } catch(err) {
+      showAlert('ar-alert', err.message, 'error')
+    } finally { setLoading(btn, false, '📄 Prévia PDF') }
+  })
+
+  // Publicar / Despublicar
+  document.getElementById('btn-ar-publish').addEventListener('click', async () => {
+    if (!arReport) return
+    const btn = document.getElementById('btn-ar-publish')
+
+    if (arReport.status === 'published') {
+      if (!confirm('Despublicar o relatório?')) return
+      try {
+        arReport = await api.put(`/api/activity-reports/report/${arCurrentYear}`, { status: 'draft' })
+        fillArReport(arReport)
+      } catch(err) { showAlert('ar-alert', err.message, 'error') }
+      return
+    }
+
+    if (!confirm(
+      `Publicar o Relatório de Atividades ${arCurrentYear}?\n\n` +
+      `✓ Será gerado o PDF final\n` +
+      `✓ O PDF será salvo no armazenamento\n` +
+      `✓ As fotos originais serão excluídas (economiza armazenamento)\n` +
+      `✓ As seções de texto ficarão bloqueadas\n\n` +
+      `Pode ser revertido despublicando.`
+    )) return
+
+    setLoading(btn, true, '✅ Publicar')
+    showAlert('ar-alert', '⏳ Gerando PDF e publicando... Aguarde.', 'success')
+    try {
+      await api.post(`/api/activity-reports/report/${arCurrentYear}/publish`)
+      arReport = await api.get(`/api/activity-reports/report/${arCurrentYear}`)
+      fillArReport(arReport)
+      await loadActivities()
+      clearAlert('ar-alert')
+      showAlert('ar-alert', '✅ Relatório publicado com sucesso!', 'success')
+    } catch(err) {
+      clearAlert('ar-alert')
+      showAlert('ar-alert', err.message, 'error')
+    } finally { setLoading(btn, false, '✅ Publicar') }
+  })
+
+  // Ver PDF publicado
+  document.getElementById('btn-ar-view').addEventListener('click', async () => {
+    try {
+      const data = await api.get(`/api/activity-reports/report/${arCurrentYear}/published-url`)
+      window.open(data.url, '_blank')
+    } catch(err) { showAlert('ar-alert', err.message, 'error') }
+  })
 </script>
 
 <script>

@@ -9,3 +9,4 @@ from app.models.notice import FederationNotice
 from app.models.signature import ReportSignature
 from app.models.activity_secretary import ActivitySecretary
 from app.models.meeting import Meeting, MeetingAttendee
+from app.models.activity_report import ActivityReport, Activity, ActivityPhoto

@@ -430,6 +430,435 @@ def generate_meeting_report(
 
 
 # ═══════════════════════════════════════════════════════════════
+# RELATÓRIO DE ATIVIDADES
+# ═══════════════════════════════════════════════════════════════
+
+def generate_activity_report(
+    org_data: dict,
+    fiscal_year: int,
+    board_data: list,
+    act_secs_data: list,
+    activities: list,
+    report: dict,
+    logo_bytes: bytes = None,
+    ipb_logo_bytes: bytes = None,
+) -> bytes:
+    """Gera o Relatório de Atividades no modelo oficial."""
+    import datetime as _dt
+
+    buf = io.BytesIO()
+    ML = MR = 15 * mm
+    W = A4[0] - ML - MR
+
+    doc = SimpleDocTemplate(buf, pagesize=A4,
+        leftMargin=ML, rightMargin=MR, topMargin=15 * mm, bottomMargin=15 * mm)
+
+    TC = _tc(org_data.get('theme_color', '#1a2a6c'))
+    story = []
+
+    MONTH_NAMES_PT = [
+        'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+    ]
+
+    def _p(txt, size=10, color=BLACK, bold=False, align=TA_LEFT,
+           leading=None, indent=0, space_before=0, space_after=2):
+        return Paragraph(str(txt or ''), ParagraphStyle('_',
+            fontSize=size, textColor=color,
+            fontName='Helvetica-Bold' if bold else 'Helvetica',
+            alignment=align,
+            leading=leading or size * 1.5,
+            leftIndent=indent * mm,
+            spaceBefore=space_before, spaceAfter=space_after,
+        ))
+
+    def section_hdr(txt):
+        t = Table([[_p(txt, 9, WHITE, bold=True)]], colWidths=[W])
+        t.setStyle(TableStyle([
+            ('BACKGROUND',    (0, 0), (-1, -1), TC),
+            ('TOPPADDING',    (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ('LEFTPADDING',   (0, 0), (-1, -1), 6),
+        ]))
+        return t
+
+    def section_bar_num(num, title):
+        t = Table([[_p(f'{num}. {title}', 10, WHITE, bold=True, align=TA_RIGHT)]], colWidths=[W])
+        t.setStyle(TableStyle([
+            ('BACKGROUND',    (0, 0), (-1, -1), TC),
+            ('TOPPADDING',    (0, 0), (-1, -1), 5),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+            ('RIGHTPADDING',  (0, 0), (-1, -1), 8),
+        ]))
+        return t
+
+    def render_text(text_content):
+        if not text_content:
+            return
+        for para in text_content.split('\n'):
+            stripped = para.strip()
+            if not stripped:
+                story.append(Spacer(1, 2 * mm))
+                continue
+            story.append(Paragraph(stripped, ParagraphStyle('body',
+                fontSize=10, textColor=BLACK, fontName='Helvetica',
+                alignment=4, leading=16, firstLineIndent=10 * mm,
+                spaceAfter=2, spaceBefore=0,
+            )))
+
+    # ── CABEÇALHO ────────────────────────────────────────────
+    logo_cell = _logo(logo_bytes, 22, 22) or Paragraph('', _ps())
+    ipb_cell  = _logo(ipb_logo_bytes, 22, 22) or Paragraph('', _ps())
+
+    title_w = W - 44 * mm
+    org_name   = org_data.get('name', '')
+    presbytery = org_data.get('presbytery_name', '')
+    synodal    = org_data.get('synodal_name', '')
+
+    title_block = Table([
+        [_p('RELATÓRIO DE ATIVIDADES', 14, BLACK, bold=True, align=TA_CENTER)],
+        [_p(f'Gestão {fiscal_year}', 9, GRAY_TXT, align=TA_CENTER)],
+        [_p(org_name, 9, GRAY_TXT, align=TA_CENTER)],
+        [_p(presbytery, 9, GRAY_TXT, align=TA_CENTER)],
+        [_p(synodal, 9, GRAY_TXT, align=TA_CENTER) if synodal else Spacer(1, 1)],
+    ], colWidths=[title_w])
+    title_block.setStyle(TableStyle([
+        ('TOPPADDING',    (0, 0), (-1, -1), 1),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
+    ]))
+
+    hdr = Table([[logo_cell, title_block, ipb_cell]], colWidths=[22 * mm, title_w, 22 * mm])
+    hdr.setStyle(TableStyle([
+        ('VALIGN',        (0, 0), (-1, -1), 'TOP'),
+        ('LEFTPADDING',   (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING',  (0, 0), (-1, -1), 0),
+        ('TOPPADDING',    (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+    ]))
+    story.append(hdr)
+    story.append(Spacer(1, 5 * mm))
+    story.append(HRFlowable(width=W, thickness=0.5, color=GRAY_LINE))
+    story.append(Spacer(1, 4 * mm))
+
+    # ── DADOS GERAIS ─────────────────────────────────────────
+    story.append(section_hdr('DADOS GERAIS'))
+    LW = 45 * mm
+    geral_data = [
+        [_p('Nome', 9, GRAY_TXT, align=TA_RIGHT),        _p(org_name, 9, BLACK)],
+        [_p('Presbitério', 9, GRAY_TXT, align=TA_RIGHT),  _p(presbytery, 9, BLACK)],
+        [_p('Ano da Gestão', 9, GRAY_TXT, align=TA_RIGHT),_p(str(fiscal_year), 9, BLACK)],
+    ]
+    geral_t = Table(geral_data, colWidths=[LW, W - LW])
+    geral_t.setStyle(TableStyle([
+        ('GRID',          (0, 0), (-1, -1), 0.5, GRAY_LINE),
+        ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING',    (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('LEFTPADDING',   (0, 0), (-1, -1), 6),
+        ('RIGHTPADDING',  (0, 0), (-1, -1), 6),
+        ('BACKGROUND',    (0, 0), (0, -1), GRAY_ROW),
+    ]))
+    story.append(geral_t)
+    story.append(Spacer(1, 4 * mm))
+
+    # ── DIRETORIA ─────────────────────────────────────────────
+    if board_data:
+        story.append(section_hdr('DIRETORIA'))
+        CW = [42 * mm, W - 42 * mm - 28 * mm - 28 * mm, 28 * mm, 28 * mm]
+        dir_rows = []
+        for b in board_data:
+            dir_rows.append([
+                _p(b['role_label'], 8.5, GRAY_TXT, align=TA_RIGHT),
+                _p(b['member_name'], 8.5, BLACK),
+                _p('CONTATO:', 7.5, GRAY_TXT),
+                _p(b['contact'], 8.5, BLACK),
+            ])
+        dir_t = Table(dir_rows, colWidths=CW)
+        dir_t.setStyle(TableStyle([
+            ('GRID',          (0, 0), (-1, -1), 0.5, GRAY_LINE),
+            ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING',    (0, 0), (-1, -1), 3),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+            ('LEFTPADDING',   (0, 0), (-1, -1), 5),
+            ('RIGHTPADDING',  (0, 0), (-1, -1), 5),
+            ('BACKGROUND',    (0, 0), (0, -1), GRAY_ROW),
+            ('BACKGROUND',    (2, 0), (2, -1), GRAY_ROW),
+        ]))
+        story.append(dir_t)
+        story.append(Spacer(1, 4 * mm))
+
+    # ── SECRETARIAS ───────────────────────────────────────────
+    if act_secs_data:
+        story.append(section_hdr('SECRETARIAS'))
+        CW = [42 * mm, W - 42 * mm - 28 * mm - 28 * mm, 28 * mm, 28 * mm]
+        sec_rows = []
+        for s in act_secs_data:
+            sec_rows.append([
+                _p(s['activity_name'], 8.5, GRAY_TXT, align=TA_RIGHT),
+                _p(s['member_name'], 8.5, BLACK),
+                _p('CONTATO:', 7.5, GRAY_TXT),
+                _p(s['contact'], 8.5, BLACK),
+            ])
+        sec_t = Table(sec_rows, colWidths=CW)
+        sec_t.setStyle(TableStyle([
+            ('GRID',          (0, 0), (-1, -1), 0.5, GRAY_LINE),
+            ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING',    (0, 0), (-1, -1), 3),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+            ('LEFTPADDING',   (0, 0), (-1, -1), 5),
+            ('RIGHTPADDING',  (0, 0), (-1, -1), 5),
+            ('BACKGROUND',    (0, 0), (0, -1), GRAY_ROW),
+            ('BACKGROUND',    (2, 0), (2, -1), GRAY_ROW),
+        ]))
+        story.append(sec_t)
+
+    story.append(PageBreak())
+
+    # ════════════════════════════════
+    # SEÇÃO I — INTRODUÇÃO
+    # ════════════════════════════════
+    story.append(section_bar_num('I', 'INTRODUÇÃO'))
+    story.append(Spacer(1, 4 * mm))
+    render_text(report.get('section_intro'))
+    story.append(PageBreak())
+
+    # ════════════════════════════════
+    # SEÇÃO II — ATIVIDADES REALIZADAS
+    # ════════════════════════════════
+    story.append(section_bar_num('II', 'ATIVIDADES REALIZADAS'))
+    story.append(Spacer(1, 3 * mm))
+
+    if activities:
+        HW = (W - 4 * mm) / 2
+        LLW = 18 * mm
+        VW = HW - LLW
+
+        # Agrupa por mês
+        by_month = {m: [] for m in range(1, 13)}
+        for act in activities:
+            month_num = int(act['start_date'].split('-')[1])
+            by_month[month_num].append(act)
+
+        def make_month_block(month_num, acts):
+            m_name = MONTH_NAMES_PT[month_num - 1].upper()
+            m_hdr = Table([[_p(m_name, 8.5, WHITE, bold=True)]], colWidths=[HW])
+            m_hdr.setStyle(TableStyle([
+                ('BACKGROUND',    (0, 0), (-1, -1), TC),
+                ('TOPPADDING',    (0, 0), (-1, -1), 3),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+                ('LEFTPADDING',   (0, 0), (-1, -1), 6),
+            ]))
+
+            col_hdr = Table([[
+                _p('Dia', 7.5, GRAY_TXT, bold=True, align=TA_CENTER),
+                _p('Programação', 7.5, GRAY_TXT, bold=True),
+            ]], colWidths=[LLW, VW])
+            col_hdr.setStyle(TableStyle([
+                ('GRID',          (0, 0), (-1, -1), 0.5, GRAY_LINE),
+                ('TOPPADDING',    (0, 0), (-1, -1), 2),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+                ('LEFTPADDING',   (0, 0), (-1, -1), 4),
+                ('BACKGROUND',    (0, 0), (-1, -1), GRAY_ROW),
+            ]))
+
+            act_rows = []
+            for act in acts:
+                start = _dt.date.fromisoformat(act['start_date'])
+                end   = _dt.date.fromisoformat(act['end_date']) if act.get('end_date') else None
+                day_str = f"{start.day}/{end.day}" if end and end != start else str(start.day)
+                act_rows.append([
+                    _p(day_str, 7.5, BLACK, align=TA_CENTER),
+                    _p(act['title'], 7.5, BLACK),
+                ])
+
+            while len(act_rows) < 3:
+                act_rows.append([_p('', 7.5), _p('', 7.5)])
+
+            acts_t = Table(act_rows, colWidths=[LLW, VW])
+            acts_t.setStyle(TableStyle([
+                ('GRID',           (0, 0), (-1, -1), 0.5, GRAY_LINE),
+                ('VALIGN',         (0, 0), (-1, -1), 'MIDDLE'),
+                ('TOPPADDING',     (0, 0), (-1, -1), 3),
+                ('BOTTOMPADDING',  (0, 0), (-1, -1), 3),
+                ('LEFTPADDING',    (0, 0), (-1, -1), 4),
+                ('RIGHTPADDING',   (0, 0), (-1, -1), 4),
+                ('ROWBACKGROUNDS', (0, 0), (-1, -1), [WHITE, GRAY_ROW]),
+            ]))
+
+            return Table([[m_hdr], [col_hdr], [acts_t]], colWidths=[HW])
+
+        # Renderiza em 2 colunas: Jan×Jul, Fev×Ago, ...
+        for left_m, right_m in zip(range(1, 7), range(7, 13)):
+            left_block  = make_month_block(left_m, by_month[left_m])
+            right_block = make_month_block(right_m, by_month[right_m])
+            pair = Table([[left_block, Spacer(4 * mm, 1), right_block]],
+                         colWidths=[HW, 4 * mm, HW])
+            pair.setStyle(TableStyle([
+                ('VALIGN',        (0, 0), (-1, -1), 'TOP'),
+                ('LEFTPADDING',   (0, 0), (-1, -1), 0),
+                ('RIGHTPADDING',  (0, 0), (-1, -1), 0),
+                ('TOPPADDING',    (0, 0), (-1, -1), 0),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+            ]))
+            story.append(pair)
+            story.append(Spacer(1, 3 * mm))
+    else:
+        story.append(_p('Nenhuma atividade cadastrada.', 9, GRAY_TXT, align=TA_CENTER))
+
+    story.append(PageBreak())
+
+    # ════════════════════════════════
+    # SEÇÃO III — RAIO-X
+    # ════════════════════════════════
+    story.append(section_bar_num('III', 'RAIO-X'))
+    story.append(Spacer(1, 4 * mm))
+
+    raio_x_sections = [
+        ('Pontos Fortes:',                       report.get('section_raio_x_strong')),
+        ('Pontos Fracos:',                        report.get('section_raio_x_weak')),
+        ('Objetivos Propostos Alcançados:',       report.get('section_raio_x_achieved')),
+        ('Objetivos Propostos Não Alcançados:',   report.get('section_raio_x_not_achieved')),
+    ]
+    for sub_title, content in raio_x_sections:
+        if content and content.strip():
+            story.append(Paragraph(sub_title, ParagraphStyle('sub',
+                fontSize=10, textColor=BLACK, fontName='Helvetica-Bold',
+                spaceBefore=4, spaceAfter=2, leading=14,
+            )))
+            render_text(content)
+            story.append(Spacer(1, 3 * mm))
+
+    story.append(PageBreak())
+
+    # ════════════════════════════════
+    # SEÇÃO IV — REGISTROS DE ATIVIDADES (com fotos)
+    # ════════════════════════════════
+    story.append(section_bar_num('IV', 'REGISTROS DE ATIVIDADES'))
+
+    for act in activities:
+        photos = [p for p in act.get('photos_bytes', []) if p]
+
+        story.append(PageBreak())
+
+        start = _dt.date.fromisoformat(act['start_date'])
+        end   = _dt.date.fromisoformat(act['end_date']) if act.get('end_date') else None
+        if end and end != start:
+            date_str = f"{start.day} e {end.day}/{end.month:02d}/{end.year}"
+        else:
+            date_str = start.strftime('%d/%m/%Y')
+
+        story.append(Paragraph(
+            f'{date_str} — <b>{act["title"]}</b>',
+            ParagraphStyle('act_title', fontSize=10, textColor=BLACK,
+                           fontName='Helvetica', leading=14, spaceAfter=4)
+        ))
+
+        if act.get('description'):
+            story.append(Paragraph(act['description'], ParagraphStyle('act_desc',
+                fontSize=9, textColor=BLACK, fontName='Helvetica',
+                alignment=4, leading=14, spaceAfter=6,
+            )))
+
+        if not photos:
+            story.append(Spacer(1, 4 * mm))
+            continue
+
+        try:
+            from PIL import Image as PILImage
+            PIL_available = True
+        except ImportError:
+            PIL_available = False
+
+        def _make_img(photo_bytes, max_w, max_h):
+            """Cria Image respeitando proporção."""
+            try:
+                if PIL_available:
+                    pil = PILImage.open(io.BytesIO(photo_bytes))
+                    ow, oh = pil.size
+                    ratio = min(max_w / (ow * 0.352778), max_h / (oh * 0.352778))
+                    iw = ow * 0.352778 * ratio
+                    ih = oh * 0.352778 * ratio
+                else:
+                    iw, ih = max_w, max_h
+                img = Image(io.BytesIO(photo_bytes), width=iw, height=ih)
+                img.hAlign = 'CENTER'
+                return img
+            except Exception:
+                return Spacer(1, 1)
+
+        n = len(photos)
+        MAX_H = 180 * mm
+
+        if n == 1:
+            story.append(_make_img(photos[0], W, MAX_H))
+
+        elif n == 2:
+            half = (W - 3 * mm) / 2
+            row = Table([
+                [_make_img(photos[0], half, MAX_H / 2),
+                 _make_img(photos[1], half, MAX_H / 2)]
+            ], colWidths=[half, half])
+            row.setStyle(TableStyle([
+                ('VALIGN',  (0, 0), (-1, -1), 'MIDDLE'),
+                ('ALIGN',   (0, 0), (-1, -1), 'CENTER'),
+                ('LEFTPADDING',  (0, 0), (-1, -1), 0),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ]))
+            story.append(row)
+
+        elif n == 3:
+            half = (W - 3 * mm) / 2
+            row_h = MAX_H / 2 - 3 * mm
+            top_row = Table([
+                [_make_img(photos[0], half, row_h),
+                 _make_img(photos[1], half, row_h)]
+            ], colWidths=[half, half])
+            top_row.setStyle(TableStyle([
+                ('VALIGN',  (0, 0), (-1, -1), 'MIDDLE'),
+                ('ALIGN',   (0, 0), (-1, -1), 'CENTER'),
+                ('LEFTPADDING',  (0, 0), (-1, -1), 0),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ]))
+            story.append(top_row)
+            story.append(Spacer(1, 3 * mm))
+            bot = _make_img(photos[2], W / 2, row_h)
+            bot_row = Table([[bot]], colWidths=[W])
+            bot_row.setStyle(TableStyle([('ALIGN', (0, 0), (-1, -1), 'CENTER')]))
+            story.append(bot_row)
+
+        else:  # 4 fotos — grade 2×2
+            half = (W - 3 * mm) / 2
+            row_h = MAX_H / 2 - 3 * mm
+            for i in range(0, 4, 2):
+                pair = Table([
+                    [_make_img(photos[i], half, row_h),
+                     _make_img(photos[i + 1], half, row_h)]
+                ], colWidths=[half, half])
+                pair.setStyle(TableStyle([
+                    ('VALIGN',  (0, 0), (-1, -1), 'MIDDLE'),
+                    ('ALIGN',   (0, 0), (-1, -1), 'CENTER'),
+                    ('LEFTPADDING',  (0, 0), (-1, -1), 0),
+                    ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                ]))
+                story.append(pair)
+                if i == 0:
+                    story.append(Spacer(1, 3 * mm))
+
+    # ════════════════════════════════
+    # SEÇÃO V — PALAVRA FINAL
+    # ════════════════════════════════
+    final_word = report.get('section_final_word', '')
+    if final_word and final_word.strip():
+        story.append(PageBreak())
+        story.append(section_bar_num('V', 'PALAVRA FINAL'))
+        story.append(Spacer(1, 4 * mm))
+        render_text(final_word)
+
+    doc.build(story)
+    return buf.getvalue()
+
+
+# ═══════════════════════════════════════════════════════════════
 # RELATÓRIO FINANCEIRO
 # ═══════════════════════════════════════════════════════════════
 
