@@ -397,7 +397,7 @@
 
 </div>
 
-<!-- PWA Banner -->
+<!-- Banner do PWA -->
 <div class="pwa-banner" id="pwa-banner">
   <img src="/assets/img/logo.png" class="pwa-logo" alt="Logo" />
   <div class="pwa-text">
@@ -456,7 +456,7 @@
       : 'Entrar'
   }
 
-  // ── Lógica de login com retry e wake-up ───────
+  // ── Lógica de login com tentativas e ativação do servidor ───────
 
   async function attemptLogin(email, password, attempt = 1) {
     const MAX_ATTEMPTS = 5
@@ -544,7 +544,7 @@
     await attemptLogin(email, password)
   }
 
-  // ── Event listeners ────────────────────────────
+  // ── Eventos ───────────────────────────────────
 
   btnLogin.addEventListener('click', doLogin)
 
@@ -554,7 +554,7 @@
 
   setTimeout(() => emailEl.focus(), 100)
 
-  // ── PWA Install ────────────────────────────────
+  // ── Registro do PWA ────────────────────────────────
 
   let deferredPrompt = null
 
