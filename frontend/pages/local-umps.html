@@ -226,10 +226,8 @@
 
     <!-- Aba Atividades -->
     <div id="tab-reports-atividades" style="display:none">
-      <div style="text-align:center;padding:2.5rem 1rem;color:var(--slate-400)">
-        <div style="font-size:2rem;margin-bottom:.5rem">📋</div>
-        <p style="font-weight:500;color:var(--slate-600)">Em breve</p>
-        <p style="font-size:.8rem;margin-top:.25rem">Relatórios de atividades em desenvolvimento.</p>
+      <div id="local-activity-reports-list">
+        <div class="loading-center"><div class="spinner"></div></div>
       </div>
     </div>
 
@@ -562,57 +560,112 @@
     document.getElementById('modal-reports-local-name').textContent = localName
     document.getElementById('local-reports-list').innerHTML =
       '<div class="loading-center"><div class="spinner"></div></div>'
+    document.getElementById('local-activity-reports-list').innerHTML =
+      '<div class="loading-center"><div class="spinner"></div></div>'
     switchReportsTab('financeiro')
     openModal('modal-local-reports')
 
+    // Carrega financeiros
     try {
       const reports = await api.get(`/api/local-umps/${localId}/reports`)
-
-      if (!reports.length) {
-        document.getElementById('local-reports-list').innerHTML = `
-          <div style="text-align:center;padding:2rem;color:var(--slate-400)">
-            <div style="font-size:1.8rem;margin-bottom:.5rem">📭</div>
-            <p>Nenhum relatório disponível para esta local.</p>
-            <p style="font-size:.75rem;margin-top:.25rem">Os relatórios ficam disponíveis após o encerramento do período financeiro.</p>
-          </div>`
-        return
-      }
-
-      document.getElementById('local-reports-list').innerHTML = `
-        <div style="display:flex;flex-direction:column;gap:.6rem">
-          ${reports.map(r => `
-            <div style="background:var(--slate-50);border:1.5px solid var(--slate-200);border-radius:var(--radius-lg);padding:1rem 1.25rem">
-              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem">
-                <div>
-                  <div style="font-weight:600;font-size:.9rem">Período ${r.fiscal_year}</div>
-                  <div style="font-size:.75rem;color:var(--slate-500);margin-top:.15rem">
-                    Encerrado em ${formatDate(r.closed_at?.split('T')[0])}
-                    ${r.validation_code ? ' · <span style="color:var(--green-600)">✓ Assinado digitalmente</span>' : ''}
-                  </div>
-                </div>
-                <div style="display:flex;gap:.4rem;flex-wrap:wrap">
-                  ${r.report_url ? `<button class="btn btn-secondary btn-sm" onclick="openLocalReport('${localId}','${r.id}','financial')">📄 Financeiro</button>` : ''}
-                  ${r.receipts_report_url ? `<button class="btn btn-secondary btn-sm" onclick="openLocalReport('${localId}','${r.id}','receipts')">🖼️ Comprovantes</button>` : ''}
-                </div>
-              </div>
-            </div>
-          `).join('')}
-        </div>`
+      renderFinancialReports(localId, reports)
     } catch(err) {
       document.getElementById('local-reports-list').innerHTML =
         `<div class="alert alert-error">${err.message}</div>`
     }
+
+    // Carrega atividades
+    try {
+      const actReports = await api.get(`/api/local-umps/${localId}/activity-reports`)
+      renderActivityReports(localId, actReports)
+    } catch(err) {
+      document.getElementById('local-activity-reports-list').innerHTML =
+        `<div class="alert alert-error">${err.message}</div>`
+    }
+  }
+
+  function renderFinancialReports(localId, reports) {
+    const list = document.getElementById('local-reports-list')
+    if (!reports.length) {
+      list.innerHTML = `
+        <div style="text-align:center;padding:2rem;color:var(--slate-400)">
+          <div style="font-size:1.8rem;margin-bottom:.5rem">📭</div>
+          <p>Nenhum relatório financeiro disponível.</p>
+          <p style="font-size:.75rem;margin-top:.25rem">Os relatórios ficam disponíveis após o encerramento do período financeiro.</p>
+        </div>`
+      return
+    }
+    list.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:.6rem">
+        ${reports.map(r => `
+          <div style="background:var(--slate-50);border:1.5px solid var(--slate-200);
+                      border-radius:var(--radius-lg);padding:1rem 1.25rem">
+            <div style="display:flex;align-items:center;justify-content:space-between;
+                        flex-wrap:wrap;gap:.75rem">
+              <div>
+                <div style="font-weight:600;font-size:.9rem">Período ${r.fiscal_year}</div>
+                <div style="font-size:.75rem;color:var(--slate-500);margin-top:.15rem">
+                  Encerrado em ${formatDate(r.closed_at?.split('T')[0])}
+                  ${r.validation_code ? ' · <span style="color:var(--green-600)">✓ Assinado digitalmente</span>' : ''}
+                </div>
+              </div>
+              <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+                ${r.report_url ? `<button class="btn btn-secondary btn-sm" onclick="openLocalReport('${localId}','${r.id}','financial')">📄 Financeiro</button>` : ''}
+                ${r.receipts_report_url ? `<button class="btn btn-secondary btn-sm" onclick="openLocalReport('${localId}','${r.id}','receipts')">🖼️ Comprovantes</button>` : ''}
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>`
+  }
+
+  function renderActivityReports(localId, reports) {
+    const list = document.getElementById('local-activity-reports-list')
+    if (!reports.length) {
+      list.innerHTML = `
+        <div style="text-align:center;padding:2rem;color:var(--slate-400)">
+          <div style="font-size:1.8rem;margin-bottom:.5rem">📭</div>
+          <p>Nenhum relatório de atividades disponível.</p>
+          <p style="font-size:.75rem;margin-top:.25rem">Os relatórios aparecem após publicação pela local.</p>
+        </div>`
+      return
+    }
+    list.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:.6rem">
+        ${reports.map(r => `
+          <div style="background:var(--slate-50);border:1.5px solid var(--slate-200);
+                      border-radius:var(--radius-lg);padding:1rem 1.25rem">
+            <div style="display:flex;align-items:center;justify-content:space-between;
+                        flex-wrap:wrap;gap:.75rem">
+              <div>
+                <div style="font-weight:600;font-size:.9rem">Gestão ${r.fiscal_year}</div>
+                <div style="font-size:.75rem;color:var(--green-600);margin-top:.15rem">✓ Publicado</div>
+              </div>
+              <button class="btn btn-primary btn-sm"
+                onclick="openLocalActivityReport('${localId}','${r.id}')">
+                📊 Ver Relatório
+              </button>
+            </div>
+          </div>
+        `).join('')}
+      </div>`
   }
 
   window.openLocalReport = async (localId, periodId, type) => {
     try {
       const data = await api.get(`/api/local-umps/${localId}/reports/${periodId}/urls`)
       const url = type === 'financial' ? data.report_url : data.receipts_report_url
-      if (url) {
-        window.open(url, '_blank')
-      } else {
-        alert('Relatório não disponível.')
-      }
+      if (url) window.open(url, '_blank')
+      else alert('Relatório não disponível.')
+    } catch(err) {
+      alert('Erro ao obter relatório: ' + err.message)
+    }
+  }
+
+  window.openLocalActivityReport = async (localId, reportId) => {
+    try {
+      const data = await api.get(`/api/local-umps/${localId}/activity-reports/${reportId}/url`)
+      window.open(data.url, '_blank')
     } catch(err) {
       alert('Erro ao obter relatório: ' + err.message)
     }

@@ -255,9 +255,11 @@ def update_report(
     if not report:
         raise HTTPException(status_code=404, detail="Relatório não encontrado")
 
-    if report.status == 'published' and payload.status != 'draft':
-        raise HTTPException(status_code=400,
-            detail="Relatório publicado. Despublique para editar.")
+    if report.status == 'published':
+        raise HTTPException(
+            status_code=400,
+            detail="Relatório publicado não pode ser alterado. Gere uma nova versão.",
+        )
 
     for field, value in payload.model_dump(exclude_none=True).items():
         setattr(report, field, value)

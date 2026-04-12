@@ -217,9 +217,7 @@
         <div id="ar-alert" class="hidden" style="margin-bottom:1rem"></div>
 
         <!-- Abas internas do relatório -->
-        <div id="ar-tab-nav" style="position:sticky;top:42px;background:#fff;z-index:9;
-                    margin-left:-1.5rem;margin-right:-1.5rem;padding:0 1.5rem;
-                    margin-bottom:1.25rem">
+        <div id="ar-tab-nav" style="margin-bottom:1.25rem">
           <div style="display:flex;gap:0;overflow-x:auto">
             <button class="ar-tab active" data-tab="atividades-lista" onclick="switchArTab('atividades-lista')">📅 Atividades</button>
             <button class="ar-tab" data-tab="intro" onclick="switchArTab('intro')">I. Introdução</button>
@@ -263,6 +261,10 @@
               <textarea class="input" id="ar-intro-verse" rows="2"
                 placeholder='"Porque a tua graça é melhor do que a vida; os meus lábios te louvam." Salmos 63.3'
                 style="font-style:italic;font-size:.85rem;resize:none;text-align:right"></textarea>
+            </div>
+            <div style="height:.75rem"></div>
+            <div style="font-size:.78rem;font-weight:500;color:var(--slate-600);margin-bottom:.35rem">
+              Texto da introdução
             </div>
             <textarea id="ar-intro" placeholder="Escreva a introdução do relatório..."></textarea>
           </div>
@@ -641,14 +643,18 @@
     document.getElementById('ar-subtitle').textContent =
       `Gestão ${r.fiscal_year} · ${r.status === 'published' ? 'Publicado' : 'Rascunho'}`
 
-    const badge = document.getElementById('ar-status-badge')
-    badge.textContent = r.status === 'published' ? '✓ Publicado' : 'Rascunho'
-    badge.className = `badge ${r.status === 'published' ? 'badge-green' : 'badge-slate'}`
+    const isPublished = r.status === 'published'
 
-    document.getElementById('btn-ar-publish').textContent =
-      r.status === 'published' ? 'Despublicar' : '✅ Publicar'
+    const badge = document.getElementById('ar-status-badge')
+    badge.textContent = isPublished ? '✓ Publicado' : 'Rascunho'
+    badge.className = `badge ${isPublished ? 'badge-green' : 'badge-slate'}`
+
+    document.getElementById('btn-ar-preview').style.display =
+      isPublished ? 'none' : 'inline-flex'
+    document.getElementById('btn-ar-publish').style.display =
+      isPublished ? 'none' : 'inline-flex'
     document.getElementById('btn-ar-view').style.display =
-      r.status === 'published' ? 'inline-flex' : 'none'
+      isPublished ? 'inline-flex' : 'none'
 
     document.getElementById('ar-intro').value              = r.section_intro              || ''
     document.getElementById('ar-intro-verse').value        = r.section_intro_verse        || ''
@@ -666,18 +672,42 @@
         const board = await api.get('/api/meetings/board-members')
         const pres = board.find(b => b.role === 'presidente')
         if (pres) {
-          document.getElementById('ar-sign-name').value =
-            r.section_final_sign_name || pres.member_name
+          document.getElementById('ar-sign-name').value = pres.member_name
         }
       } catch {}
     }
 
-    const isPublished = r.status === 'published'
-    document.querySelectorAll('#tab-atividades textarea').forEach(ta => {
+    // Bloqueia edição quando publicado
+    const textareas = document.querySelectorAll(
+      '#ar-tab-intro textarea, #ar-tab-raio-x textarea, #ar-tab-palavra textarea'
+    )
+    textareas.forEach(ta => {
       ta.disabled = isPublished
-      ta.style.opacity = isPublished ? '.7' : '1'
+      ta.style.opacity = isPublished ? '.65' : '1'
+      ta.style.cursor = isPublished ? 'not-allowed' : ''
     })
     document.getElementById('btn-new-activity').disabled = isPublished
+    document.getElementById('btn-save-sign').style.display =
+      isPublished ? 'none' : 'inline-flex'
+
+    // Banner informativo quando publicado
+    const existing = document.getElementById('ar-published-banner')
+    if (existing) existing.remove()
+    if (isPublished) {
+      const banner = document.createElement('div')
+      banner.id = 'ar-published-banner'
+      banner.style.cssText = `
+        background:#f0fdf4;border:1.5px solid #86efac;border-radius:var(--radius-lg);
+        padding:.75rem 1rem;margin-bottom:.75rem;font-size:.85rem;
+        color:var(--green-700,#15803d);font-weight:500;
+      `
+      banner.innerHTML = `
+        ✅ Relatório publicado definitivamente. As fotos originais foram removidas
+        para economizar armazenamento. Use o botão "👁️ Ver PDF" para acessar o relatório.
+      `
+      const toolbar = document.getElementById('tab-atividades').querySelector('div')
+      document.getElementById('tab-atividades').insertBefore(banner, toolbar)
+    }
 
     setupArAutoSave()
   }
@@ -942,19 +972,10 @@
     } finally { setLoading(btn, false, '📄 Prévia PDF') }
   })
 
-  // Publicar / Despublicar
+  // Publicar
   document.getElementById('btn-ar-publish').addEventListener('click', async () => {
     if (!arReport) return
     const btn = document.getElementById('btn-ar-publish')
-
-    if (arReport.status === 'published') {
-      if (!confirm('Despublicar o relatório?')) return
-      try {
-        arReport = await api.put(`/api/activity-reports/report/${arCurrentYear}`, { status: 'draft' })
-        await fillArReport(arReport)
-      } catch(err) { showAlert('ar-alert', err.message, 'error') }
-      return
-    }
 
     if (!confirm(
       `Publicar o Relatório de Atividades ${arCurrentYear}?\n\n` +

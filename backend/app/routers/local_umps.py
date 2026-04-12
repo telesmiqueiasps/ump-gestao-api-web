@@ -208,6 +208,77 @@ def get_local_ump(
     return _to_out(local)
 
 
+# Federação acessa relatórios de atividades de uma Local sua
+@router.get("/{local_id}/activity-reports")
+def get_local_activity_reports(
+    local_id: UUID,
+    current_user: User = Depends(require_federation),
+    db: Session = Depends(get_db),
+):
+    local = db.query(LocalUmp).filter(
+        LocalUmp.id == local_id,
+        LocalUmp.federation_id == current_user.organization_id,
+    ).first()
+    if not local:
+        raise HTTPException(status_code=404, detail="UMP Local não encontrada")
+
+    from app.models.activity_report import ActivityReport
+    reports = db.query(ActivityReport).filter(
+        ActivityReport.organization_id == local_id,
+        ActivityReport.status == 'published',
+        ActivityReport.report_url != None,
+    ).order_by(ActivityReport.fiscal_year.desc()).all()
+
+    return [
+        {
+            "id": str(r.id),
+            "fiscal_year": r.fiscal_year,
+            "report_url": r.report_url,
+            "updated_at": r.updated_at.isoformat() if r.updated_at else None,
+        }
+        for r in reports
+    ]
+
+
+@router.get("/{local_id}/activity-reports/{report_id}/url")
+def get_local_activity_report_url(
+    local_id: UUID,
+    report_id: UUID,
+    current_user: User = Depends(require_federation),
+    db: Session = Depends(get_db),
+):
+    import re
+    local = db.query(LocalUmp).filter(
+        LocalUmp.id == local_id,
+        LocalUmp.federation_id == current_user.organization_id,
+    ).first()
+    if not local:
+        raise HTTPException(status_code=404, detail="UMP Local não encontrada")
+
+    from app.models.activity_report import ActivityReport
+    from app.services.storage import get_presigned_url
+    from app.core.config import get_settings
+
+    report = db.query(ActivityReport).filter(
+        ActivityReport.id == report_id,
+        ActivityReport.organization_id == local_id,
+        ActivityReport.status == 'published',
+    ).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="Relatório não encontrado")
+
+    settings_obj = get_settings()
+    bucket = settings_obj.b2_bucket_name
+    match = re.search(rf'/file/{re.escape(bucket)}/(.+)$', report.report_url)
+    if not match:
+        match = re.search(rf'/{re.escape(bucket)}/(.+)$', report.report_url)
+    if not match:
+        raise HTTPException(status_code=400, detail="URL inválida")
+
+    url = get_presigned_url(match.group(1), expires_in=3600)
+    return {"url": url, "fiscal_year": report.fiscal_year}
+
+
 # Federação atualiza uma Local sua
 @router.put("/{local_id}")
 def update_local_ump(
