@@ -393,7 +393,7 @@
   import { requireAuth } from '../assets/js/auth.js'
   import { renderShell, renderBottomNav } from '../assets/js/router.v3.js'
   import { api } from '../assets/js/api.js'
-  import { formatDate, showAlert, clearAlert, setLoading } from '../assets/js/utils.js'
+  import { formatDate, showAlert, clearAlert, setLoading, openModal, closeModal, initModalClose } from '../assets/js/utils.js'
 
   if (!requireAuth()) throw new Error()
   await renderShell()
@@ -761,6 +761,8 @@
 
   function renderActivities() {
     const list = document.getElementById('activities-list')
+    const isPublished = arReport?.status === 'published'
+
     if (!allActivities.length) {
       list.innerHTML = `
         <div style="text-align:center;padding:2.5rem;color:var(--slate-400);
@@ -792,11 +794,13 @@
               ${act.description ? `<div style="font-size:.78rem;color:var(--slate-500);margin-top:.2rem;line-height:1.5">
                 ${act.description}</div>` : ''}
             </div>
+            ${!isPublished ? `
             <div style="display:flex;gap:.3rem;flex-shrink:0">
-              <button class="btn btn-ghost btn-icon" onclick="editActivity('${act.id}')" title="Editar">✎</button>
+              <button class="btn btn-ghost btn-icon"
+                onclick="editActivity('${act.id}')" title="Editar">✎</button>
               <button class="btn btn-ghost btn-icon danger"
-                onclick="deleteActivity('${act.id}','${act.title.replace(/'/g,"\\'")}')">✕</button>
-            </div>
+                onclick="deleteActivity('${act.id}','${act.title.replace(/'/g,"\'")}')">✕</button>
+            </div>` : ''}
           </div>
           <div class="photo-grid">
             ${(act.photos || []).map(p => `
@@ -807,25 +811,27 @@
                   data-act="${act.id}"
                   src="/assets/img/logo.png"
                   class="photo-thumb"
-                  title="Clique para remover"
+                  title="${isPublished ? 'Foto' : 'Clique no X para remover'}"
                   style="object-fit:cover;background:var(--slate-100)"
-                  onclick="removePhoto('${act.id}','${p.id}')"
                 />
+                ${!isPublished ? `
                 <div style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);
                             color:#fff;border-radius:50%;width:18px;height:18px;
                             display:flex;align-items:center;justify-content:center;
                             font-size:.6rem;cursor:pointer"
-                  onclick="removePhoto('${act.id}','${p.id}')">✕</div>
+                  onclick="removePhoto('${act.id}','${p.id}')">X</div>` : ''}
               </div>`).join('')}
-          ${photoCount < 4 ? `
+            ${!isPublished && photoCount < 4 ? `
               <label class="photo-add-btn" title="Adicionar foto">
                 +
                 <input type="file" accept="image/png,image/jpeg,image/webp"
                   style="display:none" onchange="uploadPhoto('${act.id}', this)" />
               </label>` : ''}
           </div>
-          ${photoCount > 0 ? `<p style="font-size:.68rem;color:var(--slate-400);margin-top:.3rem">
-            ${photoCount}/4 foto${photoCount !== 1 ? 's' : ''} · Clique na foto para remover</p>` : ''}
+          ${!isPublished && photoCount > 0 ? `
+            <p style="font-size:.68rem;color:var(--slate-400);margin-top:.3rem">
+              ${photoCount}/4 foto${photoCount !== 1 ? 's' : ''} · Clique no X para remover
+            </p>` : ''}
         </div>`
     }).join('')
   }
@@ -928,6 +934,14 @@
       await loadActivities()
     } catch(err) { showAlert('ar-alert', err.message, 'error') }
   }
+
+  // Fecha modal de atividade explicitamente
+  document.querySelectorAll('#modal-activity .modal-close').forEach(btn => {
+    btn.addEventListener('click', () => closeModal('modal-activity'))
+  })
+  document.getElementById('modal-activity').addEventListener('click', e => {
+    if (e.target === document.getElementById('modal-activity')) closeModal('modal-activity')
+  })
 
   window.uploadPhoto = async (actId, input) => {
     const file = input.files[0]
