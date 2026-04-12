@@ -39,7 +39,8 @@
     }
     .loading-center { display:flex;justify-content:center;padding:2rem; }
     @media (max-width: 600px) {
-      #pres-tab-nav { margin-left:-1rem !important; margin-right:-1rem !important; padding:0 1rem !important; }
+      #pres-tab-nav  { margin-left:-1rem !important; margin-right:-1rem !important; padding:0 1rem !important; }
+      #ar-tab-nav    { margin-left:-1rem !important; margin-right:-1rem !important; padding:0 1rem !important; }
     }
   </style>
   <style>
@@ -190,7 +191,7 @@
       </div>
 
       <!-- ABA ATIVIDADES -->
-      <div id="tab-atividades" style="display:none">
+      <div id="tab-atividades" style="display:none;padding-top:.75rem">
 
         <!-- Toolbar do relatório -->
         <div style="display:flex;align-items:center;justify-content:space-between;
@@ -216,12 +217,16 @@
         <div id="ar-alert" class="hidden" style="margin-bottom:1rem"></div>
 
         <!-- Abas internas do relatório -->
-        <div style="display:flex;gap:0;border-bottom:2px solid var(--slate-100);
-                    overflow-x:auto;margin-bottom:1.25rem">
-          <button class="ar-tab active" data-tab="atividades-lista" onclick="switchArTab('atividades-lista')">📅 Atividades</button>
-          <button class="ar-tab" data-tab="intro" onclick="switchArTab('intro')">I. Introdução</button>
-          <button class="ar-tab" data-tab="raio-x" onclick="switchArTab('raio-x')">III. Raio X</button>
-          <button class="ar-tab" data-tab="palavra" onclick="switchArTab('palavra')">V. Palavra Final</button>
+        <div id="ar-tab-nav" style="position:sticky;top:42px;background:#fff;z-index:9;
+                    margin-left:-1.5rem;margin-right:-1.5rem;padding:0 1.5rem;
+                    margin-bottom:1.25rem">
+          <div style="display:flex;gap:0;overflow-x:auto">
+            <button class="ar-tab active" data-tab="atividades-lista" onclick="switchArTab('atividades-lista')">📅 Atividades</button>
+            <button class="ar-tab" data-tab="intro" onclick="switchArTab('intro')">I. Introdução</button>
+            <button class="ar-tab" data-tab="raio-x" onclick="switchArTab('raio-x')">III. Raio X</button>
+            <button class="ar-tab" data-tab="palavra" onclick="switchArTab('palavra')">V. Palavra Final</button>
+            <div style="flex:1;border-bottom:2px solid var(--slate-100)"></div>
+          </div>
         </div>
 
         <!-- ABA: Lista de atividades -->
@@ -418,6 +423,7 @@
     document.querySelectorAll('.pres-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab))
     document.getElementById('tab-financeiro').style.display  = tab === 'financeiro'  ? 'block' : 'none'
     document.getElementById('tab-atividades').style.display  = tab === 'atividades'  ? 'block' : 'none'
+    document.querySelector('.page-content')?.scrollTo({ top: 0, behavior: 'smooth' })
     if (tab === 'atividades' && !arReport) loadActivityReport()
   }
 
@@ -566,8 +572,8 @@
     .ar-tab {
       padding:.45rem 1rem;border:none;background:none;font-size:.82rem;
       font-weight:500;color:var(--slate-500);cursor:pointer;
-      border-bottom:2px solid transparent;margin-bottom:-2px;
-      font-family:inherit;transition:all .15s;white-space:nowrap;
+      border-bottom:2px solid var(--slate-100);
+      font-family:inherit;transition:all .15s;white-space:nowrap;flex-shrink:0;
     }
     .ar-tab.active { color:var(--brand-blue,#1a2a6c); border-bottom-color:var(--brand-blue,#1a2a6c); }
     .ar-section-editor {
@@ -753,8 +759,7 @@
               <div style="font-size:.7rem;color:var(--slate-400);text-transform:uppercase;
                           letter-spacing:.3px;margin-bottom:.15rem">${dateStr}</div>
               <div style="font-weight:600;font-size:.9rem;color:var(--slate-800)">${act.title}</div>
-              ${act.description ? `<div style="font-size:.78rem;color:var(--slate-500);margin-top:.2rem;
-                                              white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+              ${act.description ? `<div style="font-size:.78rem;color:var(--slate-500);margin-top:.2rem;line-height:1.5">
                 ${act.description}</div>` : ''}
             </div>
             <div style="display:flex;gap:.3rem;flex-shrink:0">
