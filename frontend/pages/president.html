@@ -166,12 +166,12 @@
 
       <!-- Tabs -->
       <div id="pres-tab-nav" style="display:flex;gap:.5rem;border-bottom:2px solid var(--slate-100);position:sticky;top:0;background:#fff;z-index:10;margin-left:-1.5rem;margin-right:-1.5rem;padding:0 1.5rem;">
-        <button class="pres-tab active" data-tab="financeiro" onclick="switchTab('financeiro')">💰 Financeiro</button>
-        <button class="pres-tab" data-tab="atividades" onclick="switchTab('atividades')">📊 Atividades</button>
+        <button class="pres-tab active" data-tab="atividades" onclick="switchTab('atividades')">📊 Atividades</button>
+        <button class="pres-tab" data-tab="financeiro" onclick="switchTab('financeiro')">💰 Financeiro</button>
       </div>
 
       <!-- ABA FINANCEIRO -->
-      <div id="tab-financeiro">
+      <div id="tab-financeiro" style="display:none">
         <div style="margin-bottom:1.5rem">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
             <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--slate-400)">Aguardando Sua Aprovação</div>
@@ -191,7 +191,7 @@
       </div>
 
       <!-- ABA ATIVIDADES -->
-      <div id="tab-atividades" style="display:none;padding-top:.75rem">
+      <div id="tab-atividades" style="padding-top:.75rem">
 
         <!-- Toolbar do relatório -->
         <div style="display:flex;align-items:center;justify-content:space-between;
@@ -568,6 +568,7 @@
 
   loadPending()
   loadHistory()
+  loadActivityReport()
 
   // ── Estilos do módulo de atividades ────────────────────────
   document.head.insertAdjacentHTML('beforeend', `<style>
