@@ -568,7 +568,6 @@
 
   loadPending()
   loadHistory()
-  loadActivityReport()
 
   // ── Estilos do módulo de atividades ────────────────────────
   document.head.insertAdjacentHTML('beforeend', `<style>
@@ -629,6 +628,7 @@
     arReport = null
     loadActivityReport()
   })
+  loadActivityReport()
 
   async function loadActivityReport() {
     try {
