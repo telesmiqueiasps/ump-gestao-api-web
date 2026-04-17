@@ -298,6 +298,21 @@
       .finances-btn .btn-icon-only { display: none; }
       .btn-encerrar .btn-icon-only { display: none; }
     }
+
+    /* ── Tabela de lançamentos com scroll vertical ── */
+    #tx-section .table-wrap {
+      max-height: calc(100vh - 370px);
+      min-height: 160px;
+      overflow-y: auto;
+    }
+    #tx-section thead th {
+      position: sticky;
+      top: 0;
+      background: #fff;
+      z-index: 1;
+      /* compensa a perda de borda com border-collapse:collapse */
+      box-shadow: 0 1px 0 var(--slate-200);
+    }
   </style>
 </head>
 <body>
