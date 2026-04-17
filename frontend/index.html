@@ -411,7 +411,9 @@
 </div>
 
 <script type="module">
-  import { login, isLoggedIn } from './assets/js/auth.js'
+  import { isLoggedIn } from './assets/js/auth.js'
+
+  const API_URL = 'https://ump-gestao-api.onrender.com'
 
   // Redireciona se já logado
   if (isLoggedIn()) window.location.href = '/pages/dashboard.html'
@@ -456,7 +458,124 @@
       : 'Entrar'
   }
 
-  // ── Lógica de login com tentativas e ativação do servidor ───────
+  // ── Salvar dados e redirecionar ────────────────
+
+  async function saveAndRedirect(data) {
+    localStorage.setItem('access_token',  data.access_token)
+    localStorage.setItem('refresh_token', data.refresh_token)
+    localStorage.setItem('user', JSON.stringify({
+      id:                data.user_id,
+      full_name:         data.full_name,
+      organization_id:   data.organization_id,
+      organization_type: data.organization_type,
+      roles:             data.roles,
+    }))
+    if (data.society_type) {
+      localStorage.setItem('society_type', data.society_type)
+    } else {
+      // Busca society_type se não veio no token
+      try {
+        const { api } = await import('./assets/js/api.js')
+        const endpoint = data.organization_type === 'federation'
+          ? '/api/federations/me' : '/api/local-umps/me'
+        const orgData = await api.get(endpoint)
+        if (orgData.society_type) localStorage.setItem('society_type', orgData.society_type)
+      } catch {}
+    }
+    showStatus('Conectado! Redirecionando...', 'success')
+    setTimeout(() => { window.location.href = '/pages/dashboard.html' }, 400)
+  }
+
+  // ── Seletor de organização ─────────────────────
+
+  function formatRole(role) {
+    const map = {
+      'presidente': 'Presidente', 'vice_presidente': 'Vice-Presidente',
+      'tesoureiro': 'Tesoureiro(a)', '1_secretario': '1º Secretário(a)',
+      '2_secretario': '2º Secretário(a)', 'secretario_executivo': 'Sec. Executivo(a)',
+      'secretario_presbiterial': 'Sec. Presbiterial', 'conselheiro': 'Conselheiro(a)',
+    }
+    return map[role] || role
+  }
+
+  function showOrgSelector(data) {
+    hideStatus()
+    setLoading(false)
+    document.getElementById('login-form-fields')?.style && (document.querySelector('.login-card').style.display = 'none')
+
+    // Cria card de seleção
+    const wrapper = document.querySelector('.login-wrapper')
+    let selCard = document.getElementById('org-sel-card')
+    if (!selCard) {
+      selCard = document.createElement('div')
+      selCard.id = 'org-sel-card'
+      selCard.className = 'login-card'
+      wrapper.appendChild(selCard)
+    }
+
+    selCard.innerHTML = `
+      <div style="margin-bottom:1rem">
+        <p style="font-size:.9rem;font-weight:600;color:var(--gray800);margin-bottom:.2rem">
+          Bem-vindo, ${data.user_name}
+        </p>
+        <p style="font-size:.78rem;color:var(--gray600)">
+          Você está vinculado a mais de uma organização.<br>
+          Selecione com qual deseja entrar:
+        </p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.6rem;margin-bottom:1.25rem">
+        ${data.organizations.map(org => `
+          <button
+            style="display:flex;align-items:center;gap:.75rem;padding:.85rem 1rem;
+              background:#fff;border:2px solid var(--gray200);border-radius:12px;
+              cursor:pointer;text-align:left;font-family:inherit;width:100%;transition:all .15s;"
+            onmouseover="this.style.borderColor='#1a2a6c';this.style.background='#f8fafc'"
+            onmouseout="this.style.borderColor='var(--gray200)';this.style.background='#fff'"
+            onclick="window._selectOrg('${data.user_id}','${org.organization_id}')"
+          >
+            <div style="width:38px;height:38px;border-radius:50%;flex-shrink:0;
+              background:linear-gradient(135deg,#1a2a6c,#2a3f9f);
+              display:flex;align-items:center;justify-content:center;
+              color:#fff;font-weight:700;font-size:.9rem;">
+              ${org.org_name.charAt(0).toUpperCase()}
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;font-size:.9rem;color:var(--gray800)">${org.org_name}</div>
+              <div style="font-size:.75rem;color:var(--gray600);margin-top:.1rem;text-transform:capitalize">
+                ${org.organization_type === 'federation' ? 'Federação' : 'UMP Local'}
+                · ${formatRole(org.role)}
+              </div>
+            </div>
+            <span style="color:var(--gray400);font-size:1.1rem">›</span>
+          </button>
+        `).join('')}
+      </div>
+      <button
+        style="width:100%;padding:.5rem;background:none;border:none;
+          color:var(--gray400);font-size:.8rem;cursor:pointer;
+          font-family:inherit;text-decoration:underline;"
+        onclick="window.location.reload()"
+      >← Voltar ao login</button>
+    `
+    document.querySelector('.login-card:not(#org-sel-card)').style.display = 'none'
+  }
+
+  window._selectOrg = async (userId, orgId) => {
+    try {
+      const response = await fetch(`${API_URL}/api/auth/login/select-org`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, organization_id: orgId }),
+      })
+      const data = await response.json()
+      if (!response.ok) { showAlert(data.detail || 'Erro ao selecionar organização'); return }
+      await saveAndRedirect(data)
+    } catch {
+      showAlert('Erro de conexão. Tente novamente.')
+    }
+  }
+
+  // ── Login com tentativas ───────────────────────
 
   async function attemptLogin(email, password, attempt = 1) {
     const MAX_ATTEMPTS = 5
@@ -469,12 +588,24 @@
         showStatus(`Servidor iniciando, aguarde... (tentativa ${attempt}/${MAX_ATTEMPTS})`, 'loading')
       }
 
-      await login(email, password)
+      const response = await fetch(`${API_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+      const data = await response.json()
 
-      showStatus('Conectado! Redirecionando...', 'success')
-      setTimeout(() => {
-        window.location.href = '/pages/dashboard.html'
-      }, 400)
+      if (!response.ok) {
+        throw new Error(data.detail || 'E-mail ou senha incorretos.')
+      }
+
+      // Múltiplas organizações — mostra seletor
+      if (data.requires_org_selection) {
+        showOrgSelector(data)
+        return
+      }
+
+      await saveAndRedirect(data)
 
     } catch (err) {
       const msg = err.message || ''
@@ -498,7 +629,6 @@
         msg.toLowerCase().includes('não encontrado')
       )
 
-      // Erro de credenciais — não tenta de novo
       if (isAuthError || (!isNetworkError && attempt > 1)) {
         hideStatus()
         setLoading(false)
@@ -506,7 +636,6 @@
         return
       }
 
-      // Erro de rede — tenta de novo se ainda tiver tentativas
       if (isNetworkError && attempt < MAX_ATTEMPTS) {
         const delay = RETRY_DELAYS[attempt] || 5000
         showStatus(
@@ -519,7 +648,6 @@
         return attemptLogin(email, password, attempt + 1)
       }
 
-      // Esgotou tentativas
       hideStatus()
       setLoading(false)
       if (isNetworkError) {

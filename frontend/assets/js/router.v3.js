@@ -271,6 +271,26 @@ export async function renderShell() {
     })
   }
 
+  // Botão de troca de organização (apenas se tiver múltiplas)
+  try {
+    const { api } = await import('./api.js')
+    const myOrgs = await api.get('/api/users/my-organizations')
+    if (myOrgs.length > 1) {
+      const headerRight = document.querySelector('.header-right')
+      if (headerRight && !document.getElementById('btn-switch-org')) {
+        const switchBtn = document.createElement('button')
+        switchBtn.id = 'btn-switch-org'
+        switchBtn.title = 'Trocar de organização'
+        switchBtn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:1rem;padding:.35rem .5rem;color:var(--slate-500);line-height:1'
+        switchBtn.innerHTML = '🔄'
+        switchBtn.addEventListener('click', () => showOrgSwitchModal(myOrgs))
+        const avatar = headerRight.querySelector('.header-avatar')
+        if (avatar) headerRight.insertBefore(switchBtn, avatar)
+        else headerRight.appendChild(switchBtn)
+      }
+    }
+  } catch {}
+
   checkNoticesBadge()
   initMobileMenu()
   return societyType
@@ -388,6 +408,107 @@ export function renderBottomNav(currentPage, societyType) {
       }).join('')}
     </div>
   `
+}
+
+// ── Troca de organização ────────────────────────────────────────────────────
+
+function _formatRoleLabel(role) {
+  const map = {
+    'presidente': 'Presidente', 'vice_presidente': 'Vice-Presidente',
+    'tesoureiro': 'Tesoureiro(a)', '1_secretario': '1º Secretário(a)',
+    '2_secretario': '2º Secretário(a)', 'secretario_executivo': 'Sec. Executivo(a)',
+    'secretario_presbiterial': 'Sec. Presbiterial', 'conselheiro': 'Conselheiro(a)',
+  }
+  return map[role] || role
+}
+
+window.showOrgSwitchModal = function(orgs) {
+  document.getElementById('modal-switch-org')?.remove()
+
+  const currentOrgId = getUser()?.organization_id
+
+  const modal = document.createElement('div')
+  modal.id = 'modal-switch-org'
+  modal.className = 'modal-overlay'
+  modal.style.display = 'flex'
+  modal.innerHTML = `
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <div>
+          <h2>Trocar de Organização</h2>
+          <p style="font-size:.78rem;color:var(--slate-500);margin-top:.15rem">
+            Selecione a organização para entrar
+          </p>
+        </div>
+        <button class="modal-close" onclick="document.getElementById('modal-switch-org').remove()">✕</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.5rem">
+        ${orgs.map(org => {
+          const isCurrent = org.organization_id === currentOrgId
+          return `
+            <button
+              style="display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;
+                background:${isCurrent ? '#f0f9ff' : '#fff'};
+                border:2px solid ${isCurrent ? '#1a2a6c' : 'var(--slate-200)'};
+                border-radius:10px;cursor:${isCurrent ? 'default' : 'pointer'};
+                text-align:left;font-family:inherit;width:100%;transition:all .15s;"
+              ${isCurrent ? 'disabled' : `onclick="window._switchToOrg('${org.organization_id}')"`}
+            >
+              <div style="width:36px;height:36px;border-radius:50%;flex-shrink:0;
+                background:linear-gradient(135deg,#1a2a6c,#2a3f9f);
+                display:flex;align-items:center;justify-content:center;
+                color:#fff;font-weight:700;font-size:.85rem;">
+                ${(org.org_name || '?').charAt(0).toUpperCase()}
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:600;font-size:.875rem;color:var(--slate-800)">${org.org_name}</div>
+                <div style="font-size:.72rem;color:var(--slate-500);margin-top:.1rem">
+                  ${org.organization_type === 'federation' ? 'Federação' : 'UMP Local'}
+                  · ${_formatRoleLabel(org.role)}
+                </div>
+              </div>
+              ${isCurrent
+                ? '<span style="font-size:.7rem;color:#1a2a6c;font-weight:600">atual</span>'
+                : '<span style="color:var(--slate-300)">›</span>'}
+            </button>`
+        }).join('')}
+      </div>
+    </div>`
+
+  document.body.appendChild(modal)
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove() })
+}
+
+window._switchToOrg = async function(orgId) {
+  const user = getUser()
+  try {
+    const response = await fetch(
+      'https://ump-gestao-api.onrender.com/api/auth/login/select-org',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: user.id, organization_id: orgId }),
+      }
+    )
+    const data = await response.json()
+    if (!response.ok) { alert(data.detail || 'Erro ao trocar organização'); return }
+
+    localStorage.setItem('access_token',  data.access_token)
+    localStorage.setItem('refresh_token', data.refresh_token)
+    localStorage.setItem('user', JSON.stringify({
+      id:                data.user_id,
+      full_name:         data.full_name,
+      organization_id:   data.organization_id,
+      organization_type: data.organization_type,
+      roles:             data.roles,
+    }))
+    if (data.society_type) localStorage.setItem('society_type', data.society_type)
+
+    document.getElementById('modal-switch-org')?.remove()
+    window.location.href = '/pages/dashboard.html'
+  } catch {
+    alert('Erro de conexão. Tente novamente.')
+  }
 }
 
 export function initMobileMenu() {

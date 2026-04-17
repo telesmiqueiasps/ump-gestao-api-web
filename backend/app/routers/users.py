@@ -151,6 +151,142 @@ def deactivate_user(
     db.commit()
 
 
+class ExtraOrgPayload(BaseModel):
+    user_email: str
+    organization_id: UUID
+    organization_type: str
+    role: str
+    fiscal_year: Optional[int] = None
+
+
+@router.post("/link-org")
+def link_user_to_org(
+    payload: ExtraOrgPayload,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Vincula um usuário existente a uma organização adicional"""
+    from app.models.user_organization import UserOrganization
+
+    year = datetime.date.today().year
+    ur = db.query(UserRole).filter(
+        UserRole.user_id     == current_user.id,
+        UserRole.fiscal_year == year,
+        UserRole.is_active   == True,
+    ).first()
+    user_role = ur.role.value if ur and hasattr(ur.role, 'value') else str(ur.role) if ur else ''
+    allowed = {'presidente', 'vice_presidente', 'secretario_presbiterial', 'conselheiro'}
+    if user_role not in allowed:
+        raise HTTPException(status_code=403, detail="Sem permissão")
+
+    target_user = db.query(User).filter(
+        User.email == payload.user_email.lower().strip()
+    ).first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado com este email")
+
+    fiscal_year = payload.fiscal_year or year
+
+    existing = db.query(UserOrganization).filter(
+        UserOrganization.user_id         == target_user.id,
+        UserOrganization.organization_id == payload.organization_id,
+        UserOrganization.fiscal_year     == fiscal_year,
+    ).first()
+    if existing:
+        existing.is_active = True
+        existing.role      = payload.role
+        db.commit()
+        return {"detail": "Vínculo atualizado com sucesso", "user_name": target_user.full_name}
+
+    uo = UserOrganization(
+        user_id           = target_user.id,
+        organization_id   = payload.organization_id,
+        organization_type = payload.organization_type,
+        role              = payload.role,
+        fiscal_year       = fiscal_year,
+    )
+    db.add(uo)
+    db.commit()
+    return {
+        "detail":    f"Usuário {target_user.full_name} vinculado com sucesso",
+        "user_name": target_user.full_name,
+    }
+
+
+@router.delete("/link-org/{user_org_id}", status_code=204)
+def unlink_user_from_org(
+    user_org_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from app.models.user_organization import UserOrganization
+    uo = db.query(UserOrganization).filter(
+        UserOrganization.id == user_org_id
+    ).first()
+    if not uo:
+        raise HTTPException(status_code=404, detail="Vínculo não encontrado")
+    uo.is_active = False
+    db.commit()
+
+
+@router.get("/my-organizations")
+def list_my_organizations(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Lista todas as organizações do usuário logado"""
+    from app.models.user_organization import UserOrganization
+    from app.models.federation import Federation
+    from app.models.local_ump import LocalUmp
+
+    year     = datetime.date.today().year
+    org_type = current_user.organization_type.value \
+        if hasattr(current_user.organization_type, 'value') \
+        else str(current_user.organization_type)
+
+    if org_type == 'federation':
+        obj = db.query(Federation).filter(Federation.id == current_user.organization_id).first()
+    else:
+        obj = db.query(LocalUmp).filter(LocalUmp.id == current_user.organization_id).first()
+
+    ur = db.query(UserRole).filter(
+        UserRole.user_id     == current_user.id,
+        UserRole.fiscal_year == year,
+        UserRole.is_active   == True,
+    ).first()
+    role_str = ur.role.value if ur and hasattr(ur.role, 'value') \
+               else str(ur.role) if ur else 'membro'
+
+    orgs = [{
+        "id":                None,
+        "organization_id":   str(current_user.organization_id),
+        "organization_type": org_type,
+        "org_name":          obj.name if obj else '',
+        "role":              role_str,
+        "is_primary":        True,
+    }]
+
+    extras = db.query(UserOrganization).filter(
+        UserOrganization.user_id   == current_user.id,
+        UserOrganization.is_active == True,
+    ).all()
+    for eo in extras:
+        if eo.organization_type == 'federation':
+            obj2 = db.query(Federation).filter(Federation.id == eo.organization_id).first()
+        else:
+            obj2 = db.query(LocalUmp).filter(LocalUmp.id == eo.organization_id).first()
+        orgs.append({
+            "id":                str(eo.id),
+            "organization_id":   str(eo.organization_id),
+            "organization_type": eo.organization_type,
+            "org_name":          obj2.name if obj2 else '',
+            "role":              eo.role,
+            "is_primary":        False,
+        })
+
+    return orgs
+
+
 def _to_out(u: User) -> dict:
     latest_role = max(u.roles, key=lambda r: r.fiscal_year, default=None) if u.roles else None
     return {

@@ -19,7 +19,8 @@ class User(Base):
     deactivated_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    roles = relationship("UserRole", back_populates="user")
+    roles                = relationship("UserRole", back_populates="user")
+    extra_organizations  = relationship("UserOrganization", foreign_keys="UserOrganization.user_id")
 
 
 class UserRole(Base):
