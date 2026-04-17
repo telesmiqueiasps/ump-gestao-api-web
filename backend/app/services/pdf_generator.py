@@ -1729,142 +1729,166 @@ def generate_uph_stat_report(
     org_data: dict,
     fiscal_year: int,
     stat: dict,
+    logo_bytes: bytes = None,
+    ipb_logo_bytes: bytes = None,
 ) -> bytes:
-    """Gera o Relatório de Estatística no modelo oficial da CNHP/UPH"""
+    """Gera o Relatório de Estatística exatamente no modelo oficial CNHP"""
 
     buf = io.BytesIO()
-    ML = MR = 15 * mm
+    ML = MR = 12 * mm
     W  = A4[0] - ML - MR
 
     doc = SimpleDocTemplate(buf, pagesize=A4,
-        leftMargin=ML, rightMargin=MR, topMargin=15 * mm, bottomMargin=15 * mm)
+        leftMargin=ML, rightMargin=MR, topMargin=12 * mm, bottomMargin=12 * mm)
 
-    YELLOW    = colors.HexColor('#FFC000')
-    YELLOW_LT = colors.HexColor('#FFE699')
-    DARK      = colors.HexColor('#1F3864')
-    BK        = colors.black
-    GY        = colors.HexColor('#F2F2F2')
+    # ── Cores exatas do modelo ──────────────────────────────
+    YELLOW     = colors.HexColor('#FFC000')   # amarelo cabeçalhos
+    YELLOW_ROW = colors.HexColor('#FFE699')   # amarelo linhas alternadas
+    BLUE_HDR   = colors.HexColor('#1F3864')   # azul escuro cabeçalhos seção
+    BLUE_LT    = colors.HexColor('#BDD7EE')   # azul claro linhas seção
+    WHITE      = colors.white
+    BLACK      = colors.black
 
-    def _p(txt, size=9, color=BK, bold=False, align=TA_LEFT, italic=False):
+    story = []
+
+    def _p(txt, size=8.5, color=BLACK, bold=False, align=TA_LEFT,
+           italic=False, leading=None):
         font = 'Helvetica-BoldOblique' if bold and italic else \
                'Helvetica-Bold' if bold else \
                'Helvetica-Oblique' if italic else 'Helvetica'
         return Paragraph(str(txt or ''), ParagraphStyle('_',
             fontSize=size, textColor=color, fontName=font,
-            alignment=align, leading=size * 1.4, wordWrap='LTR',
+            alignment=align,
+            leading=leading or max(size * 1.35, 10),
+            wordWrap='LTR', spaceAfter=0, spaceBefore=0,
         ))
 
-    story = []
+    # ── Cabeçalho com logos ──────────────────────────────────
+    LOGO_W   = 28 * mm
+    LOGO_H   = 28 * mm
+    CENTER_W = W - 2 * LOGO_W
 
-    # ── Cabeçalho principal ──────────────────────────────────
-    hdr_logo  = _p('UPH',  14, DARK, bold=True, align=TA_CENTER)
-    hdr_ipb   = _p('IGREJA\nPRESBITERIANA\ndoBRASIL', 8, DARK, bold=True, align=TA_CENTER)
+    uph_logo_cell = _p('UPH', 10, BLUE_HDR, bold=True, align=TA_CENTER)
+    if logo_bytes:
+        try:
+            uph_logo_cell = Image(io.BytesIO(logo_bytes), width=LOGO_W, height=LOGO_H)
+        except Exception:
+            pass
 
-    hdr_title = Table([
-        [_p('CONFEDERAÇÃO NACIONAL DE', 10, DARK, bold=True, align=TA_CENTER)],
-        [_p('HOMENS PRESBITERIANOS - CNHP', 10, DARK, bold=True, align=TA_CENTER)],
-        [Spacer(1, 2 * mm)],
-        [_p('RELATÓRIO DE ESTATÍSTICA', 12, DARK, bold=True, align=TA_CENTER)],
-    ], colWidths=[W - 50 * mm])
-    hdr_title.setStyle(TableStyle([
+    ipb_logo_cell = _p('IPB', 10, BLUE_HDR, bold=True, align=TA_CENTER)
+    if ipb_logo_bytes:
+        try:
+            ipb_logo_cell = Image(io.BytesIO(ipb_logo_bytes), width=LOGO_W, height=LOGO_H)
+        except Exception:
+            pass
+
+    center_block = Table([
+        [_p('CONFEDERAÇÃO NACIONAL DE', 11, BLUE_HDR, bold=True, align=TA_CENTER)],
+        [_p('HOMENS PRESBITERIANOS - CNHP', 11, BLUE_HDR, bold=True, align=TA_CENTER)],
+        [Spacer(1, 3 * mm)],
+        [_p('RELATÓRIO DE ESTATÍSTICA', 13, BLUE_HDR, bold=True, align=TA_CENTER)],
+    ], colWidths=[CENTER_W])
+    center_block.setStyle(TableStyle([
         ('TOPPADDING',    (0, 0), (-1, -1), 1),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
+        ('LEFTPADDING',   (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING',  (0, 0), (-1, -1), 0),
     ]))
 
-    hdr_outer = Table([[
-        Table([[hdr_logo]], colWidths=[25 * mm]),
-        hdr_title,
-        Table([[hdr_ipb]], colWidths=[25 * mm]),
-    ]], colWidths=[25 * mm, W - 50 * mm, 25 * mm])
-    hdr_outer.setStyle(TableStyle([
-        ('BOX',           (0, 0), (-1, -1), 1.5, BK),
-        ('INNERGRID',     (0, 0), (-1, -1), 0.5, BK),
+    hdr_t = Table(
+        [[uph_logo_cell, center_block, ipb_logo_cell]],
+        colWidths=[LOGO_W, CENTER_W, LOGO_W]
+    )
+    hdr_t.setStyle(TableStyle([
+        ('BOX',           (0, 0), (-1, -1), 1.5, BLACK),
+        ('INNERGRID',     (0, 0), (-1, -1), 0.5, BLACK),
         ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+        ('ALIGN',         (0, 0), (0, 0),  'CENTER'),
+        ('ALIGN',         (2, 0), (2, 0),  'CENTER'),
         ('TOPPADDING',    (0, 0), (-1, -1), 4),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-        ('LEFTPADDING',   (0, 0), (-1, -1), 4),
-        ('RIGHTPADDING',  (0, 0), (-1, -1), 4),
+        ('LEFTPADDING',   (0, 0), (-1, -1), 3),
+        ('RIGHTPADDING',  (0, 0), (-1, -1), 3),
     ]))
-    story.append(hdr_outer)
+    story.append(hdr_t)
 
-    # ── Linha de identificação do nível e ano ────────────────
-    org_type = org_data.get('organization_type', 'local_ump')
-    is_fed   = org_type == 'federation'
-
-    level_row = Table([[
+    # ── Linha UPH/FEDERAÇÃO/CONF + ANO ──────────────────────
+    ANO_W   = 50 * mm
+    row_nivel = Table([[
         _p('UPH, FEDERAÇÃO, CONFEDERAÇÃO SINODAL,\nCONFEDERAÇÃO NACIONAL',
-           8, DARK, bold=True, align=TA_CENTER),
+           9, BLUE_HDR, bold=True, align=TA_CENTER),
         Table([[
-            _p('ANO', 8, DARK, bold=True),
-            _p(f'  {fiscal_year}', 8, BK, bold=True),
-        ]], colWidths=[15 * mm, 25 * mm]),
-    ]], colWidths=[W - 40 * mm, 40 * mm])
-    level_row.setStyle(TableStyle([
-        ('BOX',           (0, 0), (-1, -1), 1, BK),
-        ('INNERGRID',     (0, 0), (-1, -1), 0.5, BK),
+            _p('ANO', 8, BLUE_HDR, bold=True),
+            _p(f'  {fiscal_year}  ►', 9, BLACK, bold=True),
+        ]], colWidths=[15 * mm, ANO_W - 15 * mm]),
+    ]], colWidths=[W - ANO_W, ANO_W])
+    row_nivel.setStyle(TableStyle([
+        ('BOX',           (0, 0), (-1, -1), 1, BLACK),
+        ('INNERGRID',     (0, 0), (-1, -1), 0.5, BLACK),
         ('BACKGROUND',    (0, 0), (-1, -1), YELLOW),
         ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
         ('TOPPADDING',    (0, 0), (-1, -1), 3),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
         ('LEFTPADDING',   (0, 0), (-1, -1), 4),
     ]))
-    story.append(level_row)
+    story.append(row_nivel)
 
     # ── Seções de identificação ──────────────────────────────
-    def id_section(label, value, bg=YELLOW_LT):
-        t = Table([[
-            _p(label, 8, DARK, bold=True),
-            _p(value, 8, BK),
-        ]], colWidths=[80 * mm, W - 80 * mm])
-        t.setStyle(TableStyle([
-            ('BOX',           (0, 0), (-1, -1), 0.5, BK),
-            ('INNERGRID',     (0, 0), (-1, -1), 0.5, BK),
-            ('BACKGROUND',    (0, 0), (0, 0),   bg),
-            ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
-            ('TOPPADDING',    (0, 0), (-1, -1), 3),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
-            ('LEFTPADDING',   (0, 0), (-1, -1), 4),
-        ]))
-        return t
-
-    def section_hdr(txt, level_num):
-        t = Table([[
-            _p(f'{level_num}) {txt}', 8, DARK, bold=True, align=TA_CENTER)
-        ]], colWidths=[W])
-        t.setStyle(TableStyle([
-            ('BOX',           (0, 0), (-1, -1), 0.5, BK),
-            ('BACKGROUND',    (0, 0), (-1, -1), YELLOW),
-            ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
-            ('TOPPADDING',    (0, 0), (-1, -1), 3),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
-        ]))
-        return t
-
+    is_fed   = org_data.get('organization_type') == 'federation'
     org_name = org_data.get('name', '')
     fed_name = org_data.get('federation_name', '') if not is_fed else org_name
     syn_name = org_data.get('synodal_name', '')
 
-    story.append(section_hdr('UPH (ENVIAR À FEDERAÇÃO)', 1))
-    story.append(id_section('NOME DA UPH:', org_name if not is_fed else ''))
-    story.append(section_hdr('FEDERAÇÃO PARA A CONFEDERAÇÃO SINODAL', 2))
-    story.append(id_section('NOME E SIGLA DA FEDERAÇÃO:', fed_name))
-    story.append(section_hdr('CONFEDERAÇÃO SINODAL PARA A CONFEDERAÇÃO NACIONAL', 3))
-    story.append(id_section('NOME E SIGLA DA CONFED. SINODAL:', syn_name))
-    story.append(section_hdr('CONFEDERAÇÃO NACIONAL. ATUALIZADO EM', 4))
+    def id_section_hdr(num, txt):
+        t = Table([[
+            _p(f'{num})  {txt}', 8, WHITE, bold=True, align=TA_CENTER)
+        ]], colWidths=[W])
+        t.setStyle(TableStyle([
+            ('BOX',           (0, 0), (-1, -1), 0.5, BLACK),
+            ('BACKGROUND',    (0, 0), (-1, -1), BLUE_HDR),
+            ('TOPPADDING',    (0, 0), (-1, -1), 2),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+        ]))
+        return t
 
-    # ── Cabeçalho da tabela de estatísticas ─────────────────
-    col_widths = [W * 0.45, W * 0.14, W * 0.14, W * 0.14, W * 0.13]
+    def id_section_row(label, value):
+        t = Table([[
+            _p(label, 8, BLUE_HDR, bold=True),
+            _p(f'  {value}', 8, BLACK),
+        ]], colWidths=[70 * mm, W - 70 * mm])
+        t.setStyle(TableStyle([
+            ('BOX',           (0, 0), (-1, -1), 0.5, BLACK),
+            ('INNERGRID',     (0, 0), (-1, -1), 0.5, BLACK),
+            ('BACKGROUND',    (0, 0), (0, 0),   BLUE_LT),
+            ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING',    (0, 0), (-1, -1), 2),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+            ('LEFTPADDING',   (0, 0), (-1, -1), 4),
+        ]))
+        return t
+
+    story.append(id_section_hdr(1, 'UPH (ENVIAR À FEDERAÇÃO)'))
+    story.append(id_section_row('NOME DA UPH:  ─────────────────────►',
+                                org_name if not is_fed else ''))
+    story.append(id_section_hdr(2, 'FEDERAÇÃO PARA A CONFEDERAÇÃO SINODAL'))
+    story.append(id_section_row('NOME E SIGLA DA FEDERAÇÃO:  ──────►', fed_name))
+    story.append(id_section_hdr(3, 'CONFEDERAÇÃO SINODAL PARA A CONFEDERAÇÃO NACIONAL'))
+    story.append(id_section_row('NOME E SIGLA DA CONFED. SINODAL ──►', syn_name))
+    story.append(id_section_hdr(4, 'CONFEDERAÇÃO NACIONAL. ATUALIZADO EM  ─────────────────►'))
+
+    # ── Cabeçalho da tabela de itens ────────────────────────
+    CW = [W * 0.44, W * 0.135, W * 0.135, W * 0.145, W * 0.145]
 
     thead = Table([[
-        _p('ITEM',                  8, DARK, bold=True, align=TA_CENTER),
-        _p('QUANT.\nANO\nATUAL',    7, DARK, bold=True, align=TA_CENTER),
-        _p('Δ% ANO\nATUAL',         7, DARK, bold=True, align=TA_CENTER),
-        _p('QUANT.\nANO\nANTERIOR', 7, DARK, bold=True, align=TA_CENTER),
-        _p('Δ%\nVARIAÇÃO',          7, DARK, bold=True, align=TA_CENTER),
-    ]], colWidths=col_widths)
+        _p('ITEM',                  8,   BLACK, bold=True, align=TA_CENTER),
+        _p('QUANT.\nANO\nATUAL',    7.5, BLACK, bold=True, align=TA_CENTER),
+        _p('Δ% ANO\nATUAL',         7.5, BLACK, bold=True, align=TA_CENTER),
+        _p('QUANT.\nANO\nANTERIOR', 7.5, BLACK, bold=True, align=TA_CENTER),
+        _p('Δ%\nVARIAÇÃO',          7.5, BLACK, bold=True, align=TA_CENTER),
+    ]], colWidths=CW)
     thead.setStyle(TableStyle([
-        ('BOX',           (0, 0), (-1, -1), 0.5, BK),
-        ('INNERGRID',     (0, 0), (-1, -1), 0.5, BK),
+        ('BOX',           (0, 0), (-1, -1), 0.8, BLACK),
+        ('INNERGRID',     (0, 0), (-1, -1), 0.5, BLACK),
         ('BACKGROUND',    (0, 0), (-1, -1), YELLOW),
         ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
         ('TOPPADDING',    (0, 0), (-1, -1), 3),
@@ -1874,111 +1898,155 @@ def generate_uph_stat_report(
     ]))
     story.append(thead)
 
-    # ── Linhas dos itens ─────────────────────────────────────
-    items = [
-        (1, 'Quantidade de Homens na igreja',         None),
-        (2, 'Quantidade de Homens na UPH',            '60%'),
-        (3, 'Quantidade de Oficiais na igreja',       None),
-        (4, 'Quantidade de Oficiais sócios da UPH',  None),
-        (5, 'Quantidade de Congregações',             None),
-        (6, 'Quantidade de Igrejas',                  None),
-        (7, 'Quantidade de UPHs',                     '50%'),
+    # ── Itens da tabela ──────────────────────────────────────
+    items_def = [
+        (1,  'Quantidade de Homens na igreja',           None,  False),
+        (2,  'Quantidade de Homens na UPH',              '60%', False),
+        (3,  'Quantidade de Oficiais na igreja',         None,  False),
+        (4,  'Quantidade de Oficiais sócios da UPH',    None,  False),
+        (5,  'Quantidade de Congregações',               None,  False),
+        (6,  'Quantidade de Igrejas',                    None,  True),
+        (7,  'Quantidade de UPHs',                       '50%', True),
+        (8,  'Quantidade de Presbitérios',               None,  True),
+        (9,  'Quantidade de Federações',                 None,  True),
+        (10, 'Quantidade de Sínodos',                    None,  True),
+        (11, 'Quantidade de Confederações Sinodais',     None,  True),
     ]
 
-    for num, desc, nota in items:
-        cur  = stat.get(f'item{num}_current', 0) or 0
+    def fmt_num(n):
+        return str(n) if n else ''
+
+    def fmt_dlt(d, prev):
+        if d is None or prev == 0:
+            return ''
+        sign = '+' if d > 0 else ''
+        return f'{sign}{d:.1f}%'
+
+    for num, desc, nota, _fed_only in items_def:
+        cur  = stat.get(f'item{num}_current',  0) or 0
         prev = stat.get(f'item{num}_previous', 0) or 0
         dlt  = stat.get(f'item{num}_delta')
 
-        def fmt_num(n):
-            return str(n) if n else ''
+        bg = YELLOW_ROW if num % 2 == 0 else WHITE
 
-        def fmt_delta(d, p):
-            if d is None or p == 0:
-                return ''
-            return f'{d:+.1f}%'
+        dlt_str   = fmt_dlt(dlt, prev)
+        dlt_color = BLACK
+        if dlt_str:
+            dlt_color = colors.HexColor('#375623') if (dlt or 0) >= 0 \
+                        else colors.HexColor('#9C0006')
 
-        delta_color = BK
-        if dlt is not None and prev > 0:
-            delta_color = colors.HexColor('#166534') if dlt >= 0 else colors.HexColor('#991b1b')
-
-        desc_content = f'{num}. {desc}'
         if nota:
-            desc_content += f'   <font size="7" color="#1F3864"><b>{nota}</b></font>'
+            desc_para = Paragraph(
+                f'{num}. {desc}&nbsp;&nbsp;<b>{nota}</b>',
+                ParagraphStyle('item', fontSize=8.5, textColor=BLACK,
+                               fontName='Helvetica', leading=11,
+                               leftIndent=3, spaceAfter=0, spaceBefore=0)
+            )
+        else:
+            desc_para = Paragraph(
+                f'{num}. {desc}',
+                ParagraphStyle('item', fontSize=8.5, textColor=BLACK,
+                               fontName='Helvetica', leading=11,
+                               leftIndent=3, spaceAfter=0, spaceBefore=0)
+            )
 
-        row_data = [
-            Paragraph(desc_content, ParagraphStyle('item',
-                fontSize=8, textColor=BK, fontName='Helvetica',
-                leading=11, leftIndent=3,
-            )),
-            _p(fmt_num(cur),          8, BK,          align=TA_CENTER),
-            _p('',                    8, BK,          align=TA_CENTER),
-            _p(fmt_num(prev),         8, BK,          align=TA_CENTER),
-            _p(fmt_delta(dlt, prev),  8, delta_color, align=TA_CENTER),
-        ]
-
-        row_bg = YELLOW_LT if num % 2 == 0 else colors.white
-        row_t = Table([row_data], colWidths=col_widths)
-        row_t.setStyle(TableStyle([
-            ('BOX',           (0, 0), (-1, -1), 0.5, BK),
-            ('INNERGRID',     (0, 0), (-1, -1), 0.5, BK),
-            ('BACKGROUND',    (0, 0), (-1, -1), row_bg),
+        row = Table([[
+            desc_para,
+            _p(fmt_num(cur),  8.5, BLACK,     align=TA_CENTER),
+            _p('',            8.5, BLACK,     align=TA_CENTER),
+            _p(fmt_num(prev), 8.5, BLACK,     align=TA_CENTER),
+            _p(dlt_str,       8.5, dlt_color, bold=bool(dlt_str), align=TA_CENTER),
+        ]], colWidths=CW)
+        row.setStyle(TableStyle([
+            ('BOX',           (0, 0), (-1, -1), 0.5, BLACK),
+            ('INNERGRID',     (0, 0), (-1, -1), 0.5, BLACK),
+            ('BACKGROUND',    (0, 0), (-1, -1), bg),
             ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
-            ('TOPPADDING',    (0, 0), (-1, -1), 4),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ('TOPPADDING',    (0, 0), (-1, -1), 3),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
             ('LEFTPADDING',   (0, 0), (-1, -1), 3),
             ('RIGHTPADDING',  (0, 0), (-1, -1), 3),
         ]))
-        story.append(row_t)
+        story.append(row)
 
-    # ── Orientações ──────────────────────────────────────────
-    story.append(Spacer(1, 2 * mm))
+    # ── Bloco de orientações ─────────────────────────────────
+    story.append(Spacer(1, 1.5 * mm))
 
-    orient_hdr = Table([[
-        _p('PREENCHIMENTO, ENCAMINHAMENTO, ORIENTAÇÕES',
-           8, DARK, bold=True, align=TA_CENTER),
-    ], [
-        _p('(NÃO PREENCHER À MÃO)', 8, DARK, bold=True, align=TA_CENTER),
-    ]], colWidths=[W])
-    orient_hdr.setStyle(TableStyle([
-        ('BOX',           (0, 0), (-1, -1), 0.5, BK),
-        ('BACKGROUND',    (0, 0), (-1, -1), YELLOW),
-        ('TOPPADDING',    (0, 0), (-1, -1), 2),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
-    ]))
-    story.append(orient_hdr)
-
-    orient_items = [
-        '1) A UPH preenche os itens 1 a 5 e informa à Federação',
-        '2) A Federação soma os itens 1 a 5 dos relatórios das UPHs, transcreve, preenche os itens 6 e 7 e informa à Confederação Sinodal',
-        '3) A Sinodal soma os itens 1 a 7 dos relatórios das Federações, transcreve, preenche os itens 8 e 9 e informa à Confederação Nacional',
-        '4) A CNHP, através da Sec. de Estatística, soma os itens 1 a 9, transcreve, preenche os 10 e 11 e informa às Confederações Sinodais, estas às Federações, e estas às UPHs',
-    ]
-    for i, txt in enumerate(orient_items):
-        bg = YELLOW_LT if i % 2 == 0 else colors.white
-        ot = Table([[_p(txt, 7.5, BK, align=TA_CENTER)]], colWidths=[W])
-        ot.setStyle(TableStyle([
-            ('BOX',           (0, 0), (-1, -1), 0.3, BK),
+    def orient_row(txt, bg, text_color=BLACK, bold=False, italic=False,
+                   size=8, align=TA_CENTER, link=False):
+        font_name = 'Helvetica-Bold' if bold else \
+                    'Helvetica-Oblique' if italic else 'Helvetica'
+        if link:
+            content = Paragraph(
+                f'<u><font color="#0070C0">{txt}</font></u>',
+                ParagraphStyle('_', fontSize=size, fontName=font_name,
+                               alignment=align, leading=size * 1.4,
+                               spaceAfter=0, spaceBefore=0)
+            )
+        else:
+            content = Paragraph(
+                txt,
+                ParagraphStyle('_', fontSize=size, textColor=text_color,
+                               fontName=font_name, alignment=align,
+                               leading=size * 1.4, spaceAfter=0, spaceBefore=0)
+            )
+        t = Table([[content]], colWidths=[W])
+        t.setStyle(TableStyle([
+            ('BOX',           (0, 0), (-1, -1), 0.3, BLACK),
             ('BACKGROUND',    (0, 0), (-1, -1), bg),
             ('TOPPADDING',    (0, 0), (-1, -1), 2),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
-            ('LEFTPADDING',   (0, 0), (-1, -1), 6),
+            ('LEFTPADDING',   (0, 0), (-1, -1), 5),
+            ('RIGHTPADDING',  (0, 0), (-1, -1), 5),
         ]))
-        story.append(ot)
+        return t
 
-    verse_t = Table([[
-        _p('"Portanto, meus amados irmãos, sede firmes e sempre abundantes na '
-           'obra do Senhor, sabendo que, no Senhor, o vosso trabalho não é vão". '
-           '(I Co 15.58)', 7.5, BK, italic=True, align=TA_CENTER)
-    ]], colWidths=[W])
-    verse_t.setStyle(TableStyle([
-        ('BOX',           (0, 0), (-1, -1), 0.3, BK),
-        ('BACKGROUND',    (0, 0), (-1, -1), YELLOW_LT),
-        ('TOPPADDING',    (0, 0), (-1, -1), 3),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
-        ('LEFTPADDING',   (0, 0), (-1, -1), 6),
-    ]))
-    story.append(verse_t)
+    story.append(orient_row(
+        'PREENCHIMENTO, ENCAMINHAMENTO, ORIENTAÇÕES',
+        YELLOW, BLACK, bold=True, size=8.5
+    ))
+    story.append(orient_row(
+        '(NÃO PREENCHER À MÃO)',
+        YELLOW, BLACK, bold=True, size=8.5
+    ))
+    story.append(orient_row(
+        '1) A UPH preenche os itens 1 a 5 e informa à Federação',
+        WHITE, BLACK, size=8
+    ))
+    story.append(orient_row(
+        '2) A Federação soma os itens 1 a 5 dos relatórios das UPHs, transcreve, '
+        'preenche os itens 6 e 7 e informa à Confederação Sinodal',
+        YELLOW_ROW, BLACK, size=8
+    ))
+    story.append(orient_row(
+        '3) A Sinodal soma os itens 1 a 7 dos relatórios das Federações, transcreve, '
+        'preenche os itens 8 e 9 e informa à Confederação Nacional',
+        WHITE, BLACK, size=8
+    ))
+    story.append(orient_row(
+        '4) A CNHP, através da Sec. de Estatística, soma os itens 1 a 9, transcreve, '
+        'preenche os 10 e 11 e informa às Confederações Sinodais, estas às Federações, '
+        'e estas às UPHs',
+        YELLOW_ROW, BLACK, size=8
+    ))
+    story.append(orient_row(
+        'Veja no site da CNHP: Cem Oportunidades para a UPH - www.uph.org.br',
+        WHITE, BLACK, size=8, link=True
+    ))
+    story.append(orient_row(
+        'Utilize as Cem Oportunidades no planejamento de atividades da UPH, Federação e '
+        'Confederação e não deixe de informar no Formulário Padrão de Atividades que foram realizados.',
+        YELLOW_ROW, BLACK, size=8
+    ))
+    story.append(orient_row(
+        'Acesse o Formulário Padronizado de Atividades da UPH no site da Secretaria Executiva',
+        WHITE, BLACK, size=8, link=True
+    ))
+    story.append(orient_row(
+        '"Portanto, meus amados irmãos, sede firmes e sempre abundantes na obra do Senhor, '
+        'sabendo que, no Senhor, o vosso trabalho não é vão". (I Co 15.58)',
+        YELLOW_ROW, BLACK, italic=True, size=7.5
+    ))
 
     doc.build(story)
     return buf.getvalue()

@@ -159,10 +159,22 @@ def generate_stat_pdf(
             "organization_type": "local_ump",
         }
 
+    import os
+    ipb_logo_bytes = None
+    try:
+        ipb_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'ipb_logo.png')
+        if os.path.exists(ipb_path):
+            with open(ipb_path, 'rb') as f:
+                ipb_logo_bytes = f.read()
+    except Exception:
+        pass
+
     pdf_bytes = generate_uph_stat_report(
-        org_data    = org_data,
-        fiscal_year = year,
-        stat        = _stat_out(stat),
+        org_data       = org_data,
+        fiscal_year    = year,
+        stat           = _stat_out(stat),
+        logo_bytes     = None,
+        ipb_logo_bytes = ipb_logo_bytes,
     )
 
     filename = f"Relatorio_Estatistica_UPH_{year}.pdf"
