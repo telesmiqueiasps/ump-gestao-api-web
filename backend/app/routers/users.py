@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import func as sqlfunc
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from uuid import UUID
@@ -39,17 +40,19 @@ def create_user(
     payload: UserCreate,
     db: Session = Depends(get_db),
 ):
-    # Verificações removidas temporariamente para permitir criação sem autenticação
-
-    existing = db.query(User).filter(User.email == payload.email).first()
+    # Permite mesmo email em orgs diferentes, mas bloqueia duplicata na mesma org
+    existing = db.query(User).filter(
+        sqlfunc.lower(User.email) == payload.email.lower().strip(),
+        User.organization_id == payload.organization_id,
+    ).first()
     if existing:
-        raise HTTPException(status_code=400, detail="E-mail já cadastrado")
+        raise HTTPException(status_code=400, detail="E-mail já cadastrado nesta organização")
 
     user = User(
         organization_id=payload.organization_id,
         organization_type=payload.organization_type,
         full_name=payload.full_name,
-        email=payload.email,
+        email=payload.email.lower().strip(),
         password_hash=hash_password(payload.password),
     )
     db.add(user)
@@ -77,7 +80,7 @@ def update_me(
     return _to_out(current_user)
 
 
-# Troca de senha
+# Troca de senha — propaga para todos os registros com o mesmo email
 @router.post("/me/change-password", status_code=status.HTTP_204_NO_CONTENT)
 def change_password(
     payload: ChangePassword,
@@ -87,7 +90,11 @@ def change_password(
     from app.core.security import verify_password
     if not verify_password(payload.current_password, current_user.password_hash):
         raise HTTPException(status_code=400, detail="Senha atual incorreta")
-    current_user.password_hash = hash_password(payload.new_password)
+
+    new_hash = hash_password(payload.new_password)
+    db.query(User).filter(
+        sqlfunc.lower(User.email) == current_user.email.lower()
+    ).update({"password_hash": new_hash}, synchronize_session=False)
     db.commit()
 
 
@@ -151,140 +158,53 @@ def deactivate_user(
     db.commit()
 
 
-class ExtraOrgPayload(BaseModel):
-    user_email: str
-    organization_id: UUID
-    organization_type: str
-    role: str
-    fiscal_year: Optional[int] = None
-
-
-@router.post("/link-org")
-def link_user_to_org(
-    payload: ExtraOrgPayload,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """Vincula um usuário existente a uma organização adicional"""
-    from app.models.user_organization import UserOrganization
-
-    year = datetime.date.today().year
-    ur = db.query(UserRole).filter(
-        UserRole.user_id     == current_user.id,
-        UserRole.fiscal_year == year,
-        UserRole.is_active   == True,
-    ).first()
-    user_role = ur.role.value if ur and hasattr(ur.role, 'value') else str(ur.role) if ur else ''
-    allowed = {'presidente', 'vice_presidente', 'secretario_presbiterial', 'conselheiro'}
-    if user_role not in allowed:
-        raise HTTPException(status_code=403, detail="Sem permissão")
-
-    target_user = db.query(User).filter(
-        User.email == payload.user_email.lower().strip()
-    ).first()
-    if not target_user:
-        raise HTTPException(status_code=404, detail="Usuário não encontrado com este email")
-
-    fiscal_year = payload.fiscal_year or year
-
-    existing = db.query(UserOrganization).filter(
-        UserOrganization.user_id         == target_user.id,
-        UserOrganization.organization_id == payload.organization_id,
-        UserOrganization.fiscal_year     == fiscal_year,
-    ).first()
-    if existing:
-        existing.is_active = True
-        existing.role      = payload.role
-        db.commit()
-        return {"detail": "Vínculo atualizado com sucesso", "user_name": target_user.full_name}
-
-    uo = UserOrganization(
-        user_id           = target_user.id,
-        organization_id   = payload.organization_id,
-        organization_type = payload.organization_type,
-        role              = payload.role,
-        fiscal_year       = fiscal_year,
-    )
-    db.add(uo)
-    db.commit()
-    return {
-        "detail":    f"Usuário {target_user.full_name} vinculado com sucesso",
-        "user_name": target_user.full_name,
-    }
-
-
-@router.delete("/link-org/{user_org_id}", status_code=204)
-def unlink_user_from_org(
-    user_org_id: UUID,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    from app.models.user_organization import UserOrganization
-    uo = db.query(UserOrganization).filter(
-        UserOrganization.id == user_org_id
-    ).first()
-    if not uo:
-        raise HTTPException(status_code=404, detail="Vínculo não encontrado")
-    uo.is_active = False
-    db.commit()
-
 
 @router.get("/my-organizations")
 def list_my_organizations(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Lista todas as organizações do usuário logado"""
-    from app.models.user_organization import UserOrganization
+    """Lista todas as organizações do usuário logado, buscando pelo email."""
     from app.models.federation import Federation
     from app.models.local_ump import LocalUmp
 
-    year     = datetime.date.today().year
-    org_type = current_user.organization_type.value \
-        if hasattr(current_user.organization_type, 'value') \
-        else str(current_user.organization_type)
+    year = datetime.date.today().year
 
-    if org_type == 'federation':
-        obj = db.query(Federation).filter(Federation.id == current_user.organization_id).first()
-    else:
-        obj = db.query(LocalUmp).filter(LocalUmp.id == current_user.organization_id).first()
-
-    ur = db.query(UserRole).filter(
-        UserRole.user_id     == current_user.id,
-        UserRole.fiscal_year == year,
-        UserRole.is_active   == True,
-    ).first()
-    role_str = ur.role.value if ur and hasattr(ur.role, 'value') \
-               else str(ur.role) if ur else 'membro'
-
-    orgs = [{
-        "id":                None,
-        "organization_id":   str(current_user.organization_id),
-        "organization_type": org_type,
-        "org_name":          obj.name if obj else '',
-        "role":              role_str,
-        "is_primary":        True,
-    }]
-
-    extras = db.query(UserOrganization).filter(
-        UserOrganization.user_id   == current_user.id,
-        UserOrganization.is_active == True,
+    # Busca todos os registros de usuário com o mesmo email (um por org)
+    all_users = db.query(User).filter(
+        sqlfunc.lower(User.email) == current_user.email.lower(),
+        User.is_active == True,
     ).all()
-    for eo in extras:
-        if eo.organization_type == 'federation':
-            obj2 = db.query(Federation).filter(Federation.id == eo.organization_id).first()
+
+    result = []
+    for u in all_users:
+        org_type = u.organization_type.value \
+            if hasattr(u.organization_type, 'value') \
+            else str(u.organization_type)
+
+        if org_type == 'federation':
+            obj = db.query(Federation).filter(Federation.id == u.organization_id).first()
         else:
-            obj2 = db.query(LocalUmp).filter(LocalUmp.id == eo.organization_id).first()
-        orgs.append({
-            "id":                str(eo.id),
-            "organization_id":   str(eo.organization_id),
-            "organization_type": eo.organization_type,
-            "org_name":          obj2.name if obj2 else '',
-            "role":              eo.role,
-            "is_primary":        False,
+            obj = db.query(LocalUmp).filter(LocalUmp.id == u.organization_id).first()
+
+        ur = db.query(UserRole).filter(
+            UserRole.user_id     == u.id,
+            UserRole.fiscal_year == year,
+            UserRole.is_active   == True,
+        ).first()
+        role_str = ur.role.value if ur and hasattr(ur.role, 'value') \
+                   else str(ur.role) if ur else 'membro'
+
+        result.append({
+            "user_id":           str(u.id),
+            "organization_id":   str(u.organization_id),
+            "organization_type": org_type,
+            "org_name":          obj.name if obj else '',
+            "role":              role_str,
+            "is_current":        str(u.id) == str(current_user.id),
         })
 
-    return orgs
+    return result
 
 
 def _to_out(u: User) -> dict:

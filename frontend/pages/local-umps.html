@@ -166,71 +166,12 @@
     </div>
     <div id="user-alert" class="hidden mb-4"></div>
 
-    <!-- Checkbox: também acessa a federação -->
-    <div class="field mb-4" style="background:var(--blue-50);border:1.5px solid var(--blue-100);
-         border-radius:var(--radius-lg);padding:.75rem 1rem">
-      <label style="display:flex;align-items:flex-start;gap:.6rem;cursor:pointer">
-        <input type="checkbox" id="u-also-federation"
-          style="width:16px;height:16px;margin-top:2px;flex-shrink:0;cursor:pointer" />
-        <div>
-          <span style="font-weight:500;font-size:.875rem;color:var(--slate-700)">
-            Este usuário também acessa a Federação
-          </span>
-          <p style="font-size:.72rem;color:var(--slate-500);margin-top:.15rem">
-            Ao marcar, o mesmo login dará acesso tanto a esta UMP Local
-            quanto à Federação. Informe o cargo dele na Federação:
-          </p>
-        </div>
-      </label>
-      <div id="federation-role-wrap" style="display:none;margin-top:.6rem;margin-left:1.6rem">
-        <label style="font-size:.78rem;font-weight:500;color:var(--slate-600)">
-          Cargo na Federação
-        </label>
-        <select class="input" id="u-federation-role" style="margin-top:.25rem;font-size:.85rem">
-          <option value="presidente">Presidente</option>
-          <option value="vice_presidente">Vice-Presidente</option>
-          <option value="1_secretario">1º Secretário(a)</option>
-          <option value="2_secretario">2º Secretário(a)</option>
-          <option value="tesoureiro">Tesoureiro(a)</option>
-          <option value="secretario_executivo">Sec. Executivo(a)</option>
-          <option value="secretario_presbiterial">Sec. Presbiterial</option>
-          <option value="conselheiro">Conselheiro(a)</option>
-        </select>
-      </div>
-    </div>
 
     <div class="modal-footer">
       <button class="btn btn-secondary modal-close">Cancelar</button>
       <button class="btn btn-primary" id="btn-save-user">Criar usuário</button>
     </div>
 
-    <!-- Vincular usuário existente -->
-    <div style="border-top:1px solid var(--slate-100);padding-top:.75rem;margin-top:.75rem">
-      <div style="font-size:.75rem;font-weight:600;color:var(--slate-500);
-                  text-transform:uppercase;letter-spacing:.4px;margin-bottom:.5rem">
-        Vincular usuário existente
-      </div>
-      <p style="font-size:.78rem;color:var(--slate-400);margin-bottom:.6rem">
-        Permite que um usuário já cadastrado em outra organização acesse esta também.
-      </p>
-      <div style="display:flex;gap:.4rem;flex-wrap:wrap">
-        <input class="input" type="email" id="link-user-email"
-          placeholder="Email do usuário"
-          style="flex:1;min-width:160px;font-size:.82rem" />
-        <select class="input" id="link-user-role" style="min-width:130px;font-size:.82rem">
-          <option value="presidente">Presidente</option>
-          <option value="vice_presidente">Vice-Presidente</option>
-          <option value="1_secretario">1º Secretário(a)</option>
-          <option value="2_secretario">2º Secretário(a)</option>
-          <option value="tesoureiro" selected>Tesoureiro(a)</option>
-          <option value="secretario_executivo">Sec. Executivo</option>
-          <option value="secretario_presbiterial">Sec. Presbiterial</option>
-          <option value="conselheiro">Conselheiro(a)</option>
-        </select>
-        <button class="btn btn-primary btn-sm" id="btn-link-user">Vincular</button>
-      </div>
-      <div id="link-user-alert" class="hidden" style="margin-top:.5rem"></div>
-    </div>
   </div>
 </div>
 
@@ -556,8 +497,6 @@
     document.getElementById('u-email').value     = ''
     document.getElementById('u-password').value  = ''
     document.getElementById('u-role').value      = ''
-    document.getElementById('u-also-federation').checked = false
-    document.getElementById('federation-role-wrap').style.display = 'none'
     clearAlert('user-alert')
     openModal('modal-users')
     loadUsers()
@@ -588,31 +527,12 @@
     try {
       await api.post('/api/users/', payload)
 
-      // Vínculo extra com a federação
-      const alsoFed = document.getElementById('u-also-federation').checked
-      if (alsoFed) {
-        const fedRole = document.getElementById('u-federation-role').value
-        try {
-          const fedData = await api.get('/api/federations/me')
-          await api.post('/api/users/link-org', {
-            user_email:        email,
-            organization_id:   fedData.id,
-            organization_type: 'federation',
-            role:              fedRole,
-            fiscal_year:       new Date().getFullYear(),
-          })
-        } catch(err) {
-          console.warn('Vínculo com federação não criado:', err.message)
-        }
-      }
 
       showAlert('user-alert', 'Usuário criado com sucesso!', 'success')
       document.getElementById('u-full-name').value = ''
       document.getElementById('u-email').value     = ''
       document.getElementById('u-password').value  = ''
       document.getElementById('u-role').value      = ''
-      document.getElementById('u-also-federation').checked = false
-      document.getElementById('federation-role-wrap').style.display = 'none'
       loadUsers()
     } catch(err) {
       showAlert('user-alert', err.message, 'error')
@@ -620,44 +540,6 @@
       setLoading(btn, false, 'Criar usuário')
     }
   })
-
-  document.getElementById('u-also-federation').addEventListener('change', (e) => {
-    document.getElementById('federation-role-wrap').style.display =
-      e.target.checked ? 'block' : 'none'
-  })
-
-  document.getElementById('btn-link-user').addEventListener('click', async () => {
-    const btn   = document.getElementById('btn-link-user')
-    const email = document.getElementById('link-user-email').value.trim()
-    const role  = document.getElementById('link-user-role').value
-
-    if (!email) { showAlert('link-user-alert', 'Informe o email do usuário.', 'error'); return }
-
-    setLoading(btn, true, 'Vincular')
-    try {
-      const result = await api.post('/api/users/link-org', {
-        user_email:        email,
-        organization_id:   currentLocalId,
-        organization_type: 'local_ump',
-        role,
-        fiscal_year:       new Date().getFullYear(),
-      })
-      showAlert('link-user-alert', `✓ ${result.detail}`, 'success')
-      document.getElementById('link-user-email').value = ''
-    } catch(err) {
-      showAlert('link-user-alert', err.message, 'error')
-    } finally {
-      setLoading(btn, false, 'Vincular')
-    }
-  })
-
-  window.deactivateUser = async (userId, userName) => {
-    if (!confirm(`Desativar o usuário "${userName}"?`)) return
-    try {
-      await api.delete(`/api/users/${userId}`)
-      loadUsers()
-    } catch(err) { showAlert('user-alert', err.message, 'error') }
-  }
 
   window.switchReportsTab = (tab) => {
     document.querySelectorAll('.reports-tab').forEach(t => {
@@ -775,6 +657,14 @@
     } catch(err) {
       alert('Erro ao obter relatório: ' + err.message)
     }
+  }
+
+  window.deactivateUser = async (userId, userName) => {
+    if (!confirm(`Desativar o usuário "${userName}"?`)) return
+    try {
+      await api.delete(`/api/users/${userId}`)
+      loadUsers()
+    } catch(err) { showAlert('user-alert', err.message, 'error') }
   }
 
   window.openLocalActivityReport = async (localId, reportId) => {

@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from pydantic import BaseModel, EmailStr
 from uuid import UUID
 from app.db.session import get_db
 from app.models.user import User, UserRole
-from app.models.user_organization import UserOrganization
 from app.core.security import verify_password, create_access_token, create_refresh_token, decode_token
 import datetime
 
@@ -33,7 +33,6 @@ class RefreshRequest(BaseModel):
 
 class OrgSelectPayload(BaseModel):
     user_id: UUID
-    organization_id: UUID
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -88,61 +87,68 @@ def _build_token_response(db, user: User, org_id, org_type: str, roles: list[str
 
 @router.post("/login")
 def login(payload: LoginRequest, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == payload.email).first()
+    # Busca todos os users com este email (mesmo email pode existir em orgs diferentes)
+    users_found = db.query(User).filter(
+        func.lower(User.email) == payload.email.lower().strip()
+    ).all()
 
-    if not user or not verify_password(payload.password, user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="E-mail ou senha incorretos",
-        )
+    if not users_found:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="E-mail ou senha incorretos")
 
-    if not user.is_active:
+    # Valida senha no primeiro encontrado (mesma senha compartilhada entre todos)
+    if not verify_password(payload.password, users_found[0].password_hash):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="E-mail ou senha incorretos")
+
+    active_users = [u for u in users_found if u.is_active]
+    if not active_users:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Sua conta está inativa. Entre em contato com sua federação.",
         )
 
-    year     = datetime.date.today().year
-    org_type = _org_type_str(user.organization_type)
+    # Um único usuário ativo: entra direto
+    if len(active_users) == 1:
+        user     = active_users[0]
+        year     = datetime.date.today().year
+        org_type = _org_type_str(user.organization_type)
+        active_roles_q = db.query(UserRole).filter(
+            UserRole.user_id     == user.id,
+            UserRole.is_active   == True,
+            UserRole.fiscal_year == year,
+        ).all()
+        roles_list = [r.role.value for r in active_roles_q]
+        return _build_token_response(db, user, user.organization_id, org_type, roles_list)
 
-    # Roles da org principal
-    active_roles_q = db.query(UserRole).filter(
-        UserRole.user_id     == user.id,
-        UserRole.is_active   == True,
-        UserRole.fiscal_year == year,
-    ).all()
-    roles_list = [r.role.value for r in active_roles_q]
-    main_role  = roles_list[0] if roles_list else 'membro'
-
-    # Busca orgs extras
-    extra_orgs = db.query(UserOrganization).filter(
-        UserOrganization.user_id   == user.id,
-        UserOrganization.is_active == True,
-    ).all()
-
-    if extra_orgs:
-        orgs = [{
-            "organization_id":   str(user.organization_id),
+    # Múltiplos usuários ativos: retorna lista para seleção
+    from app.models.federation import Federation
+    from app.models.local_ump import LocalUmp
+    year = datetime.date.today().year
+    orgs = []
+    for u in active_users:
+        org_type = _org_type_str(u.organization_type)
+        if org_type == 'federation':
+            obj = db.query(Federation).filter(Federation.id == u.organization_id).first()
+        else:
+            obj = db.query(LocalUmp).filter(LocalUmp.id == u.organization_id).first()
+        ur = db.query(UserRole).filter(
+            UserRole.user_id     == u.id,
+            UserRole.fiscal_year == year,
+            UserRole.is_active   == True,
+        ).first()
+        role_str = ur.role.value if ur and hasattr(ur.role, 'value') \
+                   else str(ur.role) if ur else 'membro'
+        orgs.append({
+            "user_id":           str(u.id),
+            "organization_id":   str(u.organization_id),
             "organization_type": org_type,
-            "org_name":          _get_org_name(db, user.organization_id, org_type),
-            "role":              main_role,
-        }]
-        for eo in extra_orgs:
-            orgs.append({
-                "organization_id":   str(eo.organization_id),
-                "organization_type": eo.organization_type,
-                "org_name":          _get_org_name(db, eo.organization_id, eo.organization_type),
-                "role":              eo.role,
-            })
-        return {
-            "requires_org_selection": True,
-            "user_id":     str(user.id),
-            "user_name":   user.full_name,
-            "organizations": orgs,
-        }
-
-    # Fluxo normal — org única
-    return _build_token_response(db, user, user.organization_id, org_type, roles_list)
+            "org_name":          obj.name if obj else org_type,
+            "role":              role_str,
+        })
+    return {
+        "requires_org_selection": True,
+        "user_name":   users_found[0].full_name,
+        "organizations": orgs,
+    }
 
 
 # ── POST /login/select-org ────────────────────────────────────────────────────
@@ -157,32 +163,15 @@ def login_select_org(
         raise HTTPException(status_code=401, detail="Usuário inválido")
 
     year     = datetime.date.today().year
-    org_id   = payload.organization_id
-    org_type = None
-    roles    = []
+    org_type = _org_type_str(user.organization_type)
+    active_roles_q = db.query(UserRole).filter(
+        UserRole.user_id     == user.id,
+        UserRole.fiscal_year == year,
+        UserRole.is_active   == True,
+    ).all()
+    roles = [r.role.value for r in active_roles_q]
 
-    if str(user.organization_id) == str(org_id):
-        # Org principal
-        org_type = _org_type_str(user.organization_type)
-        active_roles_q = db.query(UserRole).filter(
-            UserRole.user_id     == user.id,
-            UserRole.fiscal_year == year,
-            UserRole.is_active   == True,
-        ).all()
-        roles = [r.role.value for r in active_roles_q]
-    else:
-        # Org extra
-        uo = db.query(UserOrganization).filter(
-            UserOrganization.user_id         == user.id,
-            UserOrganization.organization_id == org_id,
-            UserOrganization.is_active       == True,
-        ).first()
-        if not uo:
-            raise HTTPException(status_code=403, detail="Sem acesso a esta organização")
-        org_type = uo.organization_type
-        roles    = [uo.role]
-
-    return _build_token_response(db, user, org_id, org_type, roles)
+    return _build_token_response(db, user, user.organization_id, org_type, roles)
 
 
 # ── POST /refresh ─────────────────────────────────────────────────────────────
@@ -213,7 +202,7 @@ def refresh(payload: RefreshRequest, db: Session = Depends(get_db)):
     ).all()
     roles_list = [r.role.value for r in active_roles]
 
-    # Usa a org que estava no token, caso seja uma org extra
+    # Usa a org que estava no token
     token_org_id   = decoded.get("organization_id", str(user.organization_id))
     token_org_type = decoded.get("organization_type", _org_type_str(user.organization_type))
 

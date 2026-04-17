@@ -425,7 +425,7 @@ function _formatRoleLabel(role) {
 window.showOrgSwitchModal = function(orgs) {
   document.getElementById('modal-switch-org')?.remove()
 
-  const currentOrgId = getUser()?.organization_id
+  const currentUserId = getUser()?.id
 
   const modal = document.createElement('div')
   modal.id = 'modal-switch-org'
@@ -444,7 +444,8 @@ window.showOrgSwitchModal = function(orgs) {
       </div>
       <div style="display:flex;flex-direction:column;gap:.5rem">
         ${orgs.map(org => {
-          const isCurrent = org.organization_id === currentOrgId
+          const isCurrent = org.is_current || org.user_id === currentUserId
+          const orgUserId = org.user_id
           return `
             <button
               style="display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;
@@ -452,7 +453,7 @@ window.showOrgSwitchModal = function(orgs) {
                 border:2px solid ${isCurrent ? '#1a2a6c' : 'var(--slate-200)'};
                 border-radius:10px;cursor:${isCurrent ? 'default' : 'pointer'};
                 text-align:left;font-family:inherit;width:100%;transition:all .15s;"
-              ${isCurrent ? 'disabled' : `onclick="window._switchToOrg('${org.organization_id}')"`}
+              ${isCurrent ? 'disabled' : `onclick="window.switchToOrg('${orgUserId}')"`}
             >
               <div style="width:36px;height:36px;border-radius:50%;flex-shrink:0;
                 background:linear-gradient(135deg,#1a2a6c,#2a3f9f);
@@ -479,15 +480,14 @@ window.showOrgSwitchModal = function(orgs) {
   modal.addEventListener('click', e => { if (e.target === modal) modal.remove() })
 }
 
-window.switchToOrg = window._switchToOrg = async function(orgId) {
-  const user = getUser()
+window.switchToOrg = window._switchToOrg = async function(userId) {
   try {
     const response = await fetch(
       'https://ump-gestao-api.onrender.com/api/auth/login/select-org',
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: user.id, organization_id: orgId }),
+        body: JSON.stringify({ user_id: userId }),
       }
     )
     const data = await response.json()
