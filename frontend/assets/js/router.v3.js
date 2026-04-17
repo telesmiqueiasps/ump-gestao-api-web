@@ -479,7 +479,7 @@ window.showOrgSwitchModal = function(orgs) {
   modal.addEventListener('click', e => { if (e.target === modal) modal.remove() })
 }
 
-window._switchToOrg = async function(orgId) {
+window.switchToOrg = window._switchToOrg = async function(orgId) {
   const user = getUser()
   try {
     const response = await fetch(
@@ -493,6 +493,14 @@ window._switchToOrg = async function(orgId) {
     const data = await response.json()
     if (!response.ok) { alert(data.detail || 'Erro ao trocar organização'); return }
 
+    // Limpa todo o localStorage exceto as chaves que serão reescritas
+    const keep = new Set(['access_token', 'refresh_token', 'user', 'society_type'])
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i)
+      if (!keep.has(key)) localStorage.removeItem(key)
+    }
+
+    // Salva novos dados da org selecionada
     localStorage.setItem('access_token',  data.access_token)
     localStorage.setItem('refresh_token', data.refresh_token)
     localStorage.setItem('user', JSON.stringify({
@@ -502,7 +510,7 @@ window._switchToOrg = async function(orgId) {
       organization_type: data.organization_type,
       roles:             data.roles,
     }))
-    if (data.society_type) localStorage.setItem('society_type', data.society_type)
+    localStorage.setItem('society_type', data.society_type || 'UMP')
 
     document.getElementById('modal-switch-org')?.remove()
     window.location.href = '/pages/dashboard.html'
