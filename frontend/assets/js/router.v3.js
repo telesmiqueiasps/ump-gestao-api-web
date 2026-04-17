@@ -61,7 +61,7 @@ const NAV_ITEMS = [
     roles: ['presidente','vice_presidente','conselheiro','secretario_presbiterial']
   },
   {
-    page: 'statistics', label: 'Estatísticas', icon: '/assets/img/dashboard.png',
+    page: 'statistics', label: 'Estatísticas', icon: '/assets/img/estatistica.png',
     path: '/pages/statistics.html',
     uphOnly: true,
     roles: ['presidente','vice_presidente','tesoureiro','1_secretario','2_secretario',
