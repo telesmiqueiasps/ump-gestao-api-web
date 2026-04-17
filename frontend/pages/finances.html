@@ -297,6 +297,7 @@
     @media (min-width: 601px) {
       .finances-btn .btn-icon-only { display: none; }
       .btn-encerrar .btn-icon-only { display: none; }
+      .receipt-eye-btn { display: none; }
     }
 
     /* ── Tabela de lançamentos com scroll vertical ── */
@@ -560,10 +561,10 @@
       <div class="field">
         <label>Tipo</label>
         <select class="input" id="tx-type">
-          <option value="outras_receitas">Outras Receitas</option>
-          <option value="outras_despesas">Outras Despesas</option>
-          <option value="aci_recebida">ACI Recebida</option>
-          <option value="aci_enviada">ACI Enviada</option>
+          <option value="outras_receitas" style="color:#16a34a">Outras Receitas</option>
+          <option value="outras_despesas" style="color:#dc2626">Outras Despesas</option>
+          <option value="aci_recebida"    style="color:#16a34a">ACI Recebida</option>
+          <option value="aci_enviada"     style="color:#dc2626">ACI Enviada</option>
         </select>
       </div>
     </div>
@@ -1023,6 +1024,7 @@
                     title="${t.description}">${t.description}</span>
               ${hasReceipt ? `
                 <button
+                  class="receipt-eye-btn"
                   style="flex-shrink:0;background:none;border:none;cursor:pointer;
                          color:var(--blue-500);font-size:.9rem;padding:.1rem .2rem;
                          line-height:1;border-radius:4px;transition:background .15s"
@@ -1074,6 +1076,7 @@
       document.getElementById('modal-tx-title').textContent = 'Editar Lançamento'
       document.getElementById('tx-date').value = t.transaction_date
       document.getElementById('tx-type').value = t.transaction_type
+      syncTxTypeColor()
       document.getElementById('tx-desc').value = t.description
       document.getElementById('tx-amount').value = t.amount
       document.getElementById('tx-receipt-field').style.display = 'none'
@@ -1148,6 +1151,12 @@
     }
   })
 
+  // ── Cor do select de tipo ──
+  const txTypeColors = { outras_receitas: '#16a34a', aci_recebida: '#16a34a', outras_despesas: '#dc2626', aci_enviada: '#dc2626' }
+  const txTypeEl = document.getElementById('tx-type')
+  function syncTxTypeColor() { txTypeEl.style.color = txTypeColors[txTypeEl.value] || '' }
+  txTypeEl.addEventListener('change', syncTxTypeColor)
+
   // ── Novo lançamento ──
   document.getElementById('btn-new-tx').addEventListener('click', () => {
     editId = null
@@ -1159,6 +1168,7 @@
       ? today.getDate() : 1
     document.getElementById('tx-date').value = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`
     document.getElementById('tx-type').value = 'outras_receitas'
+    syncTxTypeColor()
     document.getElementById('tx-desc').value = ''
     document.getElementById('tx-amount').value = ''
     document.getElementById('tx-receipt-field').style.display = 'block'
