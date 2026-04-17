@@ -10,3 +10,4 @@ from app.models.signature import ReportSignature
 from app.models.activity_secretary import ActivitySecretary
 from app.models.meeting import Meeting, MeetingAttendee
 from app.models.activity_report import ActivityReport, Activity, ActivityPhoto
+from app.models.uph_statistic import UphStatistic

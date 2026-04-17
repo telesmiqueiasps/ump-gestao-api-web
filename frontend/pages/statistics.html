@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Estatísticas — Gestão UPH</title>
+  <link rel="icon" type="image/png" href="/assets/img/logo.png" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="stylesheet" href="../assets/css/main.css?v=9" />
+  <link rel="stylesheet" href="../assets/css/components.css?v=9" />
+  <link rel="stylesheet" href="../assets/css/layout.css?v=9" />
+  <style>
+    .stat-input-row {
+      display: grid;
+      grid-template-columns: 1fr 70px 70px 60px;
+      gap: .5rem;
+      align-items: center;
+      padding: .6rem .75rem;
+      border-radius: var(--radius);
+      background: #fff;
+      border: 1.5px solid var(--slate-200);
+      transition: border-color .15s;
+    }
+    .stat-input-row:focus-within {
+      border-color: var(--blue-300);
+    }
+    .stat-input-row .item-label {
+      font-size: .85rem;
+      color: var(--slate-700);
+      font-weight: 500;
+    }
+    .stat-input-row .item-note {
+      font-size: .7rem;
+      color: var(--blue-600);
+      font-weight: 600;
+    }
+    .stat-num-input {
+      width: 70px;
+      text-align: center;
+      border: 1.5px solid var(--slate-200);
+      border-radius: var(--radius);
+      padding: .35rem .5rem;
+      font-size: .875rem;
+      font-family: inherit;
+      font-weight: 600;
+      color: var(--slate-800);
+      transition: border-color .15s;
+    }
+    .stat-num-input:focus {
+      outline: none;
+      border-color: var(--blue-400);
+    }
+    .stat-num-input:disabled {
+      background: var(--slate-50);
+      color: var(--slate-400);
+      cursor: not-allowed;
+    }
+    .stat-delta {
+      width: 60px;
+      text-align: center;
+      font-size: .8rem;
+      font-weight: 700;
+      padding: .35rem .4rem;
+      border-radius: var(--radius);
+    }
+    .stat-delta.positive { color: var(--green-700); background: #f0fdf4; }
+    .stat-delta.negative { color: var(--red-700);   background: #fef2f2; }
+    .stat-delta.neutral  { color: var(--slate-400); background: var(--slate-50); }
+    .stat-col-header {
+      font-size: .68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      color: var(--slate-400);
+      text-align: center;
+    }
+    .section-divider {
+      background: linear-gradient(135deg, #1F3864, #2a4f8f);
+      color: #fff;
+      font-size: .75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      padding: .4rem .75rem;
+      border-radius: var(--radius);
+      margin-top: .25rem;
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <img src="/assets/img/logo.png" class="sidebar-brand-logo" alt="Logo" />
+      <div class="sidebar-brand-text"><h1>GESTÃO FPOPB</h1><p>Plataforma de Gestão</p></div>
+    </div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer">v1.0.0</div>
+  </aside>
+
+  <div class="main-area">
+    <header class="header">
+      <div class="header-left">
+        <button class="btn-menu" id="btn-menu">☰</button>
+        <div class="header-org"><span class="header-org-name" id="header-org-name"></span></div>
+      </div>
+      <div class="header-right">
+        <div class="header-user">
+          <div class="header-user-name" id="header-name"></div>
+          <div class="header-user-role" id="header-role"></div>
+        </div>
+        <div class="header-avatar" id="header-avatar"></div>
+        <button class="btn-logout" id="btn-logout" title="Sair">⏻</button>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header">
+        <div class="page-header-info">
+          <h1>📊 Estatísticas UPH</h1>
+          <p>Relatório Anual de Estatística</p>
+        </div>
+        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+          <select class="input" id="year-select" style="width:auto;min-width:80px"></select>
+          <span class="badge" id="save-indicator"
+            style="font-size:.72rem;color:var(--slate-400)">● Salvo</span>
+          <button class="btn btn-secondary btn-sm" id="btn-pdf">📄 Gerar PDF</button>
+        </div>
+      </div>
+
+      <div id="page-alert" class="hidden"></div>
+
+      <div class="card">
+        <!-- Cabeçalho das colunas -->
+        <div style="display:grid;grid-template-columns:1fr 70px 70px 60px;gap:.5rem;
+                    padding:.4rem .75rem;margin-bottom:.25rem">
+          <div></div>
+          <div class="stat-col-header">Ano Atual</div>
+          <div class="stat-col-header">Ano Ant.</div>
+          <div class="stat-col-header">Δ%</div>
+        </div>
+
+        <!-- Itens 1-5: locais -->
+        <div id="items-local" style="display:flex;flex-direction:column;gap:.4rem"></div>
+
+        <!-- Itens 6-7: apenas federação -->
+        <div id="items-federation" style="display:none;flex-direction:column;gap:.4rem;margin-top:.5rem">
+          <div class="section-divider">📋 Dados da Federação</div>
+        </div>
+      </div>
+
+      <!-- Consolidado das locais (apenas federação) -->
+      <div id="locals-section" style="display:none">
+        <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;
+                    letter-spacing:.5px;color:var(--slate-400);margin-bottom:.5rem">
+          Estatísticas por Local
+        </div>
+        <div id="locals-list" style="display:flex;flex-direction:column;gap:.5rem">
+          <div class="loading-center"><div class="spinner"></div></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<script type="module">
+  import { requireAuth, isFederation, isLocalUmp, getUser } from '../assets/js/auth.js'
+  import { renderShell, renderBottomNav } from '../assets/js/router.v3.js'
+  import { api } from '../assets/js/api.js'
+  import { showAlert, clearAlert, setLoading } from '../assets/js/utils.js'
+
+  if (!requireAuth()) throw new Error()
+  await renderShell()
+  renderBottomNav('statistics')
+  document.querySelector('[data-page="statistics"]')?.classList.add('active')
+
+  // Só permite acesso para UPH
+  const societyType = localStorage.getItem('society_type') || 'UMP'
+  if (societyType !== 'UPH') {
+    window.location.href = '/pages/dashboard.html'
+    throw new Error('Acesso restrito a UPH')
+  }
+
+  // ── Estado ──────────────────────────────────────────────
+  let currentYear = new Date().getFullYear()
+  let currentStat = null
+  let autoSaveTimer = null
+  const isFed = isFederation()
+
+  const LOCAL_ITEMS = [
+    { num: 1, label: 'Quantidade de Homens na igreja',         note: null },
+    { num: 2, label: 'Quantidade de Homens na UPH',            note: '60%' },
+    { num: 3, label: 'Quantidade de Oficiais na igreja',       note: null },
+    { num: 4, label: 'Quantidade de Oficiais sócios da UPH',  note: null },
+    { num: 5, label: 'Quantidade de Congregações',             note: null },
+  ]
+
+  const FED_ITEMS = [
+    { num: 6, label: 'Quantidade de Igrejas', note: null },
+    { num: 7, label: 'Quantidade de UPHs',    note: '50%' },
+  ]
+
+  // ── Select de ano ────────────────────────────────────────
+  const yearSel = document.getElementById('year-select')
+  ;[currentYear - 1, currentYear, currentYear + 1].forEach(y => {
+    const opt = document.createElement('option')
+    opt.value = y
+    opt.textContent = y
+    if (y === currentYear) opt.selected = true
+    yearSel.appendChild(opt)
+  })
+  yearSel.addEventListener('change', () => {
+    currentYear = Number(yearSel.value)
+    loadStat()
+  })
+
+  // ── Renderiza campos ─────────────────────────────────────
+  function deltaHtml(dlt, prev) {
+    if (dlt === null || dlt === undefined || prev === 0) {
+      return '<span class="stat-delta neutral">—</span>'
+    }
+    const cls  = dlt > 0 ? 'positive' : dlt < 0 ? 'negative' : 'neutral'
+    const sign = dlt > 0 ? '+' : ''
+    return `<span class="stat-delta ${cls}">${sign}${dlt}%</span>`
+  }
+
+  function renderItemGroup(containerId, items, stat) {
+    const container = document.getElementById(containerId)
+    const divider   = container.querySelector('.section-divider')
+
+    const rows = items.map(({ num, label, note }) => {
+      const cur  = stat?.[`item${num}_current`]  || 0
+      const prev = stat?.[`item${num}_previous`] || 0
+      const dlt  = stat?.[`item${num}_delta`]
+
+      return `
+        <div class="stat-input-row">
+          <div>
+            <span class="item-label">${num}. ${label}</span>
+            ${note ? `<span class="item-note" style="margin-left:.5rem">${note}</span>` : ''}
+          </div>
+          <input type="number" min="0" class="stat-num-input"
+            id="item${num}_current" value="${cur || ''}"
+            placeholder="0" oninput="scheduleAutoSave()" />
+          <input type="number" min="0" class="stat-num-input"
+            id="item${num}_previous" value="${prev || ''}"
+            placeholder="0" oninput="scheduleAutoSave()" />
+          <div id="delta${num}">${deltaHtml(dlt, prev)}</div>
+        </div>`
+    }).join('')
+
+    container.innerHTML = (divider ? divider.outerHTML : '') + rows
+  }
+
+  function renderFields(stat) {
+    renderItemGroup('items-local', LOCAL_ITEMS, stat)
+    if (isFed) {
+      document.getElementById('items-federation').style.display = 'flex'
+      renderItemGroup('items-federation', FED_ITEMS, stat)
+    }
+  }
+
+  // ── Auto-save ────────────────────────────────────────────
+  window.scheduleAutoSave = () => {
+    const ind = document.getElementById('save-indicator')
+    ind.textContent = '● Salvando...'
+    ind.style.color = 'var(--amber-600)'
+    clearTimeout(autoSaveTimer)
+    autoSaveTimer = setTimeout(saveStat, 1500)
+  }
+
+  async function saveStat() {
+    const ind = document.getElementById('save-indicator')
+    const payload = {}
+
+    const allItems = [...LOCAL_ITEMS, ...FED_ITEMS]
+    allItems.forEach(({ num }) => {
+      const curEl  = document.getElementById(`item${num}_current`)
+      const prevEl = document.getElementById(`item${num}_previous`)
+      if (curEl)  payload[`item${num}_current`]  = parseInt(curEl.value)  || 0
+      if (prevEl) payload[`item${num}_previous`] = parseInt(prevEl.value) || 0
+    })
+
+    try {
+      currentStat = await api.put(`/api/uph-statistics/${currentYear}`, payload)
+      ind.textContent = '● Salvo'
+      ind.style.color = 'var(--green-600)'
+      setTimeout(() => { ind.textContent = '● Salvo'; ind.style.color = 'var(--slate-400)' }, 2000)
+      updateDeltas()
+    } catch {
+      ind.textContent = '● Erro'
+      ind.style.color = 'var(--red-600)'
+    }
+  }
+
+  function updateDeltas() {
+    if (!currentStat) return
+    const allItems = [...LOCAL_ITEMS, ...FED_ITEMS]
+    allItems.forEach(({ num }) => {
+      const dlt  = currentStat[`item${num}_delta`]
+      const prev = currentStat[`item${num}_previous`] || 0
+      const el   = document.getElementById(`delta${num}`)
+      if (el) el.innerHTML = deltaHtml(dlt, prev)
+    })
+  }
+
+  // ── Estatísticas das locais (federação) ──────────────────
+  async function loadLocalsStats() {
+    if (!isFed) return
+    document.getElementById('locals-section').style.display = 'block'
+    try {
+      const data = await api.get(`/api/uph-statistics/${currentYear}/locals`)
+      const list = document.getElementById('locals-list')
+
+      if (!data.length) {
+        list.innerHTML = '<p style="color:var(--slate-400);font-size:.875rem">Nenhuma local cadastrada.</p>'
+        return
+      }
+
+      list.innerHTML = data.map(({ local_name, stat }) => {
+        if (!stat) {
+          return `
+            <div class="card" style="padding:.75rem 1rem">
+              <div style="font-weight:600;font-size:.875rem">${local_name}</div>
+              <div style="font-size:.75rem;color:var(--slate-400);margin-top:.2rem">Sem dados preenchidos</div>
+            </div>`
+        }
+        const cells = [1, 2, 3, 4, 5].map(n => `
+          <div>
+            <div style="font-size:.65rem;color:var(--slate-400)">${n}. ${LOCAL_ITEMS[n-1].label.split(' ').slice(-2).join(' ')}</div>
+            <div style="font-size:.875rem;font-weight:600">${stat[`item${n}_current`] || '—'}</div>
+          </div>`).join('')
+
+        return `
+          <div class="card" style="padding:.75rem 1rem">
+            <div style="font-weight:600;font-size:.875rem;margin-bottom:.5rem">${local_name}</div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:.5rem">${cells}</div>
+          </div>`
+      }).join('')
+    } catch (err) {
+      document.getElementById('locals-list').innerHTML =
+        `<div class="alert alert-error">${err.message}</div>`
+    }
+  }
+
+  // ── Carregar tudo ────────────────────────────────────────
+  async function loadStat() {
+    try {
+      currentStat = await api.get(`/api/uph-statistics/${currentYear}`)
+      renderFields(currentStat)
+      await loadLocalsStats()
+    } catch (err) {
+      showAlert('page-alert', err.message, 'error')
+    }
+  }
+
+  // ── Gerar PDF ────────────────────────────────────────────
+  document.getElementById('btn-pdf').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-pdf')
+    setLoading(btn, true, '📄 Gerar PDF')
+    try {
+      const token = localStorage.getItem('access_token')
+      const url = `https://ump-gestao-api.onrender.com/api/uph-statistics/${currentYear}/pdf`
+      const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (!response.ok) throw new Error('Erro ao gerar PDF')
+      const blob = await response.blob()
+      const objUrl = URL.createObjectURL(blob)
+      window.open(objUrl, '_blank')
+      setTimeout(() => URL.revokeObjectURL(objUrl), 10000)
+    } catch (err) {
+      showAlert('page-alert', err.message, 'error')
+    } finally {
+      setLoading(btn, false, '📄 Gerar PDF')
+    }
+  })
+
+  // ── Inicializa ───────────────────────────────────────────
+  loadStat()
+</script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations()
+      .then(regs => Promise.all(regs.map(r => r.unregister())))
+      .then(() => navigator.serviceWorker.register('/sw.js?v=9').catch(console.error))
+  }
+</script>
+</body>
+</html>
