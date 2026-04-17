@@ -12,9 +12,9 @@ const ROLE_LABELS = {
   conselheiro:             'Conselheiro',
 }
 
-const ORG_LABELS = {
-  federation: 'Federação',
-  local_ump:  'UMP Local',
+function getOrgLabel(orgType, societyType) {
+  if (orgType === 'federation') return `Federação ${societyType || 'UMP'}`
+  return `${societyType || 'UMP'} Local`
 }
 
 const NAV_ITEMS = [
@@ -155,7 +155,7 @@ export async function renderShell() {
   document.getElementById('sidebar-nav').innerHTML = buildNavHTML(user, societyType)
   document.getElementById('header-name').textContent = user.full_name
   document.getElementById('header-role').textContent =
-    `${ORG_LABELS[user.organization_type] || ''}${roleLabel ? ' · ' + roleLabel : ''}`
+    `${getOrgLabel(user.organization_type, societyType)}${roleLabel ? ' · ' + roleLabel : ''}`
   document.getElementById('header-avatar').textContent =
     user.full_name?.charAt(0).toUpperCase() || '?'
 
