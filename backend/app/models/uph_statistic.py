@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func, text
 from app.db.session import Base
@@ -26,5 +26,5 @@ class UphStatistic(Base):
     item7_current     = Column(Integer, default=0)
     item7_previous    = Column(Integer, default=0)
     created_by        = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
-    created_at        = Column(func.now().__class__, server_default=func.now())
-    updated_at        = Column(func.now().__class__, server_default=func.now(), onupdate=func.now())
+    created_at        = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at        = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
