@@ -549,6 +549,8 @@
     document.getElementById('board-email-check-indicator').innerHTML = ''
     document.getElementById('board-password-wrap').style.display = 'block'
     document.getElementById('fu-password').required = true
+    document.getElementById('btn-save-fed-user').disabled = false
+    document.getElementById('btn-save-fed-user').style.opacity = '1'
     clearAlert('fed-user-alert')
     openModal('modal-fed-user')
   })
@@ -592,10 +594,33 @@
     if (!email || !email.includes('@')) return
 
     const indicator = document.getElementById('board-email-check-indicator')
+    const saveBtn   = document.getElementById('btn-save-fed-user')
     indicator.innerHTML = '<span style="color:var(--slate-400);font-size:.75rem">🔍 Verificando...</span>'
 
     try {
-      const data = await api.get(`/api/users/check-email?email=${encodeURIComponent(email)}`)
+      const orgId = getUser()?.organization_id ?? ''
+      const data = await api.get(
+        `/api/users/check-email?email=${encodeURIComponent(email)}&organization_id=${orgId}&organization_type=federation`
+      )
+
+      if (!data.can_register) {
+        indicator.innerHTML = `
+          <div style="
+            background:var(--red-50);border:1.5px solid var(--red-200);
+            border-radius:var(--radius);padding:.5rem .75rem;
+            font-size:.78rem;color:var(--red-700);margin-top:.25rem;
+          ">
+            <strong>✕ Cadastro não permitido</strong><br>
+            ${data.error}
+          </div>`
+        saveBtn.disabled = true
+        saveBtn.style.opacity = '.5'
+        document.getElementById('board-password-wrap').style.display = 'none'
+        return
+      }
+
+      saveBtn.disabled = false
+      saveBtn.style.opacity = '1'
 
       if (data.exists) {
         indicator.innerHTML = `

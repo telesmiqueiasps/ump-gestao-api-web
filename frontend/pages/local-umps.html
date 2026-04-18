@@ -499,6 +499,8 @@
     document.getElementById('email-check-indicator').innerHTML = ''
     document.getElementById('u-password-wrap').style.display = 'block'
     document.getElementById('u-password').required = true
+    document.getElementById('btn-save-user').disabled = false
+    document.getElementById('btn-save-user').style.opacity = '1'
     clearAlert('user-alert')
     openModal('modal-users')
     loadUsers()
@@ -540,6 +542,8 @@
       document.getElementById('email-check-indicator').innerHTML = ''
       document.getElementById('u-password-wrap').style.display = 'block'
       document.getElementById('u-password').required = true
+      document.getElementById('btn-save-user').disabled = false
+      document.getElementById('btn-save-user').style.opacity = '1'
       loadUsers()
     } catch(err) {
       showAlert('user-alert', err.message, 'error')
@@ -553,10 +557,32 @@
     if (!email || !email.includes('@')) return
 
     const indicator = document.getElementById('email-check-indicator')
+    const saveBtn   = document.getElementById('btn-save-user')
     indicator.innerHTML = '<span style="color:var(--slate-400);font-size:.75rem">🔍 Verificando...</span>'
 
     try {
-      const data = await api.get(`/api/users/check-email?email=${encodeURIComponent(email)}`)
+      const data = await api.get(
+        `/api/users/check-email?email=${encodeURIComponent(email)}&organization_id=${currentLocalId}&organization_type=local_ump`
+      )
+
+      if (!data.can_register) {
+        indicator.innerHTML = `
+          <div style="
+            background:var(--red-50);border:1.5px solid var(--red-200);
+            border-radius:var(--radius);padding:.5rem .75rem;
+            font-size:.78rem;color:var(--red-700);margin-top:.25rem;
+          ">
+            <strong>✕ Cadastro não permitido</strong><br>
+            ${data.error}
+          </div>`
+        saveBtn.disabled = true
+        saveBtn.style.opacity = '.5'
+        document.getElementById('u-password-wrap').style.display = 'none'
+        return
+      }
+
+      saveBtn.disabled = false
+      saveBtn.style.opacity = '1'
 
       if (data.exists) {
         indicator.innerHTML = `
@@ -578,8 +604,7 @@
             </span>
           </div>`
 
-        const pwWrap = document.getElementById('u-password-wrap')
-        pwWrap.style.display = 'none'
+        document.getElementById('u-password-wrap').style.display = 'none'
         document.getElementById('u-password').value = '__USE_EXISTING__'
         document.getElementById('u-password').required = false
 
@@ -588,8 +613,7 @@
       } else {
         indicator.innerHTML = '<span style="color:var(--green-600);font-size:.75rem">✓ Email disponível</span>'
 
-        const pwWrap = document.getElementById('u-password-wrap')
-        pwWrap.style.display = 'block'
+        document.getElementById('u-password-wrap').style.display = 'block'
         const pwField = document.getElementById('u-password')
         if (pwField.value === '__USE_EXISTING__') pwField.value = ''
         pwField.required = true

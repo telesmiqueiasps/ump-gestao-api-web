@@ -282,7 +282,7 @@ export async function renderShell() {
         switchBtn.id = 'btn-switch-org'
         switchBtn.title = 'Trocar de organização'
         switchBtn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:1rem;padding:.35rem .5rem;color:var(--slate-500);line-height:1'
-        switchBtn.innerHTML = '🔄'
+        switchBtn.innerHTML = '<img src="/assets/img/trocar.png" alt="Trocar" style="width:20px;height:20px;display:block" />'
         switchBtn.addEventListener('click', () => showOrgSwitchModal(myOrgs))
         const avatar = headerRight.querySelector('.header-avatar')
         if (avatar) headerRight.insertBefore(switchBtn, avatar)

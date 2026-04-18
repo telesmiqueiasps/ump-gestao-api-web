@@ -37,35 +37,70 @@ class ChangePassword(BaseModel):
 @router.get("/check-email")
 def check_email(
     email: str,
+    organization_id: str,
+    organization_type: str,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Verifica se email já existe e retorna info da organização."""
+    """Verifica se email já existe, bloqueia duplicatas no mesmo tipo de org."""
     from app.models.federation import Federation
     from app.models.local_ump import LocalUmp
 
-    existing = db.query(User).filter(
+    existing_users = db.query(User).filter(
         sqlfunc.lower(User.email) == email.lower().strip()
-    ).first()
+    ).all()
 
-    if not existing:
-        return {"exists": False}
+    if not existing_users:
+        return {"exists": False, "can_register": True}
 
-    org_type = existing.organization_type.value \
+    for existing in existing_users:
+        existing_org_type = existing.organization_type.value \
+            if hasattr(existing.organization_type, 'value') \
+            else str(existing.organization_type)
+
+        # Mesma organização — bloqueia
+        if str(existing.organization_id) == str(organization_id):
+            return {
+                "exists": True,
+                "can_register": False,
+                "error": "Este email já está cadastrado nesta organização.",
+            }
+
+        # Mesmo tipo de organização — bloqueia
+        if existing_org_type == organization_type:
+            if existing_org_type == 'federation':
+                obj = db.query(Federation).filter(
+                    Federation.id == existing.organization_id).first()
+                org_name = obj.name if obj else 'outra Federação'
+            else:
+                obj = db.query(LocalUmp).filter(
+                    LocalUmp.id == existing.organization_id).first()
+                org_name = obj.name if obj else 'outra UMP Local'
+
+            tipo_plural = 'federações' if existing_org_type == 'federation' else 'UMPs Locais'
+            return {
+                "exists": True,
+                "can_register": False,
+                "error": f"Este email já está cadastrado em {org_name}. "
+                         f"Não é permitido o mesmo email em duas {tipo_plural}.",
+            }
+
+    # Email existe mas em tipo diferente (fed+local) — permitido
+    existing = existing_users[0]
+    existing_org_type = existing.organization_type.value \
         if hasattr(existing.organization_type, 'value') \
         else str(existing.organization_type)
 
-    if org_type == 'federation':
+    if existing_org_type == 'federation':
         obj = db.query(Federation).filter(Federation.id == existing.organization_id).first()
-        org_name = obj.name if obj else 'Federação'
     else:
         obj = db.query(LocalUmp).filter(LocalUmp.id == existing.organization_id).first()
-        org_name = obj.name if obj else 'UMP Local'
 
     return {
         "exists": True,
-        "org_name": org_name,
-        "org_type": org_type,
+        "can_register": True,
+        "org_name": obj.name if obj else '',
+        "org_type": existing_org_type,
         "full_name": existing.full_name,
     }
 
@@ -76,22 +111,37 @@ def create_user(
     payload: UserCreate,
     db: Session = Depends(get_db),
 ):
-    # Bloqueia duplicata na mesma org
-    existing_in_org = db.query(User).filter(
-        sqlfunc.lower(User.email) == payload.email.lower().strip(),
-        User.organization_id == payload.organization_id,
-    ).first()
-    if existing_in_org:
-        raise HTTPException(status_code=400, detail="E-mail já cadastrado nesta organização")
-
-    # Reutiliza senha de usuário existente com o mesmo email (outra org)
-    existing_any = db.query(User).filter(
+    existing_users = db.query(User).filter(
         sqlfunc.lower(User.email) == payload.email.lower().strip()
-    ).first()
+    ).all()
 
-    if existing_any:
-        password_hash = existing_any.password_hash
-    else:
+    password_hash = None
+    for existing in existing_users:
+        existing_org_type = existing.organization_type.value \
+            if hasattr(existing.organization_type, 'value') \
+            else str(existing.organization_type)
+
+        if str(existing.organization_id) == str(payload.organization_id):
+            raise HTTPException(
+                status_code=400,
+                detail="Este email já está cadastrado nesta organização."
+            )
+
+        payload_org_type = payload.organization_type.value \
+            if hasattr(payload.organization_type, 'value') \
+            else str(payload.organization_type)
+
+        if existing_org_type == payload_org_type:
+            raise HTTPException(
+                status_code=400,
+                detail="Não é permitido o mesmo email em organizações do mesmo tipo."
+            )
+
+        # Reutiliza senha do usuário existente (tipo diferente)
+        if password_hash is None:
+            password_hash = existing.password_hash
+
+    if password_hash is None:
         if not payload.password:
             raise HTTPException(status_code=400, detail="Senha obrigatória para novo usuário")
         password_hash = hash_password(payload.password)
