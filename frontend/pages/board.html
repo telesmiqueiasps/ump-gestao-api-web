@@ -187,8 +187,9 @@
     <div class="field mb-4">
       <label>E-mail</label>
       <input class="input" type="email" id="fu-email" placeholder="email@exemplo.com" />
+      <div id="board-email-check-indicator" style="margin-top:.2rem"></div>
     </div>
-    <div class="field mb-4">
+    <div class="field mb-4" id="board-password-wrap">
       <label>Senha</label>
       <input class="input" type="password" id="fu-password" placeholder="Mínimo 6 caracteres" />
     </div>
@@ -545,6 +546,9 @@
     document.getElementById('fu-email').value     = ''
     document.getElementById('fu-password').value  = ''
     document.getElementById('fu-role').value      = ''
+    document.getElementById('board-email-check-indicator').innerHTML = ''
+    document.getElementById('board-password-wrap').style.display = 'block'
+    document.getElementById('fu-password').required = true
     clearAlert('fed-user-alert')
     openModal('modal-fed-user')
   })
@@ -553,20 +557,23 @@
     const btn      = document.getElementById('btn-save-fed-user')
     const fullName = document.getElementById('fu-full-name').value.trim()
     const email    = document.getElementById('fu-email').value.trim()
-    const password = document.getElementById('fu-password').value
+    const pwValue  = document.getElementById('fu-password').value
     const role     = document.getElementById('fu-role').value
+    const usingExisting = pwValue === '__USE_EXISTING__'
 
-    if (!fullName)           { showAlert('fed-user-alert', 'Informe o nome completo.', 'error'); return }
-    if (!email)              { showAlert('fed-user-alert', 'Informe o e-mail.', 'error'); return }
-    if (password.length < 6) { showAlert('fed-user-alert', 'A senha deve ter no mínimo 6 caracteres.', 'error'); return }
-    if (!role)               { showAlert('fed-user-alert', 'Selecione o cargo.', 'error'); return }
+    if (!fullName) { showAlert('fed-user-alert', 'Informe o nome completo.', 'error'); return }
+    if (!email)    { showAlert('fed-user-alert', 'Informe o e-mail.', 'error'); return }
+    if (!usingExisting && pwValue.length < 6) {
+      showAlert('fed-user-alert', 'A senha deve ter no mínimo 6 caracteres.', 'error'); return
+    }
+    if (!role) { showAlert('fed-user-alert', 'Selecione o cargo.', 'error'); return }
 
     setLoading(btn, true, 'Criar usuário')
     try {
       await api.post('/api/users/', {
         full_name:         fullName,
         email,
-        password,
+        password:          usingExisting ? null : pwValue,
         role,
         organization_id:   getUser().organization_id,
         organization_type: 'federation',
@@ -577,6 +584,51 @@
       showAlert('fed-user-alert', err.message, 'error')
     } finally {
       setLoading(btn, false, 'Criar usuário')
+    }
+  })
+
+  document.getElementById('fu-email')?.addEventListener('blur', async () => {
+    const email = document.getElementById('fu-email').value.trim()
+    if (!email || !email.includes('@')) return
+
+    const indicator = document.getElementById('board-email-check-indicator')
+    indicator.innerHTML = '<span style="color:var(--slate-400);font-size:.75rem">🔍 Verificando...</span>'
+
+    try {
+      const data = await api.get(`/api/users/check-email?email=${encodeURIComponent(email)}`)
+
+      if (data.exists) {
+        indicator.innerHTML = `
+          <div style="
+            background:var(--blue-50);border:1.5px solid var(--blue-200);
+            border-radius:var(--radius);padding:.5rem .75rem;
+            font-size:.78rem;color:var(--blue-700);margin-top:.25rem;
+          ">
+            <strong>✓ Email já cadastrado</strong> em
+            <strong>${data.org_name}</strong>
+            (${data.org_type === 'federation' ? 'Federação' : 'UMP Local'})
+            como <strong>${data.full_name}</strong>.<br>
+            <span style="color:var(--blue-600)">
+              A senha atual será mantida — não é necessário preencher uma nova.
+            </span>
+          </div>`
+
+        document.getElementById('board-password-wrap').style.display = 'none'
+        document.getElementById('fu-password').value = '__USE_EXISTING__'
+        document.getElementById('fu-password').required = false
+
+        const nameField = document.getElementById('fu-full-name')
+        if (nameField && !nameField.value.trim()) nameField.value = data.full_name
+      } else {
+        indicator.innerHTML = '<span style="color:var(--green-600);font-size:.75rem">✓ Email disponível</span>'
+
+        document.getElementById('board-password-wrap').style.display = 'block'
+        const pw = document.getElementById('fu-password')
+        if (pw.value === '__USE_EXISTING__') pw.value = ''
+        pw.required = true
+      }
+    } catch {
+      indicator.innerHTML = ''
     }
   })
 
