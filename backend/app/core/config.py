@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     app_env: str = "development"
     frontend_url: str = "http://localhost:5173"
 
+    # Admin
+    admin_federation_id: str = ""
+
     class Config:
         env_file = ".env"
         case_sensitive = False

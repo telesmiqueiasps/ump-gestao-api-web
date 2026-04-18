@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <title>Admin — UMP Gestão</title>
+  <link rel="icon" type="image/png" href="/assets/img/logo.png"/>
+  <link rel="stylesheet" href="../assets/css/main.css?v=9"/>
+  <link rel="stylesheet" href="../assets/css/components.css?v=9"/>
+  <link rel="stylesheet" href="../assets/css/layout.v2.css?v=9"/>
+  <style>
+    .user-card {
+      background:#fff;border:1.5px solid var(--slate-200);
+      border-radius:var(--radius-lg);padding:1rem 1.25rem;
+      transition:box-shadow .15s;
+    }
+    .user-card:hover { box-shadow:var(--shadow); }
+    .org-chip {
+      display:inline-flex;align-items:center;gap:.3rem;
+      padding:.2rem .6rem;border-radius:99px;font-size:.72rem;font-weight:600;
+    }
+    .org-chip.federation { background:#eff6ff;color:#1d4ed8; }
+    .org-chip.local_ump  { background:#f0fdf4;color:#166534; }
+    .inactive-overlay { opacity:.5; }
+    .admin-tab {
+      padding:.5rem 1.25rem;border:none;background:none;
+      font-size:.875rem;font-weight:500;color:var(--slate-500);
+      cursor:pointer;border-bottom:2px solid transparent;
+      margin-bottom:-2px;font-family:inherit;transition:all .15s;
+    }
+    .admin-tab.active { color:#1a2a6c;border-bottom-color:#1a2a6c; }
+    .password-reveal {
+      background:var(--green-50);border:1.5px solid var(--green-200);
+      border-radius:var(--radius-lg);padding:.75rem 1rem;
+      font-family:monospace;font-size:1rem;font-weight:700;
+      color:var(--green-800);letter-spacing:.05em;
+      display:flex;align-items:center;justify-content:space-between;
+      gap:.5rem;margin-top:.5rem;
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <img src="/assets/img/logo.png" class="sidebar-brand-logo" alt="Logo"/>
+      <div class="sidebar-brand-text">
+        <h1>UMP Gestão</h1>
+        <p style="color:#f97316;font-weight:700">⚙️ Admin</p>
+      </div>
+    </div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer">v1.0.0 — Dev Panel</div>
+  </aside>
+
+  <div class="main-area">
+    <header class="header">
+      <div class="header-left">
+        <button class="btn-menu" id="btn-menu">☰</button>
+        <div style="font-size:.8rem;font-weight:700;color:#f97316">
+          ⚙️ PAINEL DO DESENVOLVEDOR
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="header-user">
+          <div class="header-user-name" id="header-name"></div>
+          <div class="header-user-role" id="header-role"></div>
+        </div>
+        <div class="header-avatar" id="header-avatar"></div>
+        <button class="btn-logout" id="btn-logout" title="Sair">
+          <img src="/assets/img/sair.png" alt="Sair" style="width:20px;height:20px;display:block"/>
+        </button>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header">
+        <div class="page-header-info">
+          <h1>⚙️ Painel Admin</h1>
+          <p>Gestão de usuários, organizações e configurações do sistema</p>
+        </div>
+      </div>
+
+      <div id="page-alert" class="hidden"></div>
+
+      <!-- Abas -->
+      <div style="display:flex;border-bottom:2px solid var(--slate-100);
+                  margin-bottom:1.25rem;overflow-x:auto">
+        <button class="admin-tab active" data-tab="users"
+          onclick="switchAdminTab('users')">👥 Usuários</button>
+        <button class="admin-tab" data-tab="federations"
+          onclick="switchAdminTab('federations')">🏛️ Federações</button>
+      </div>
+
+      <!-- ABA: Usuários -->
+      <div id="admin-tab-users">
+        <div style="display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap">
+          <input class="input" type="text" id="search-users"
+            placeholder="🔍 Buscar por nome ou email..."
+            style="flex:1;min-width:200px"
+            oninput="debounceSearch()" />
+          <span id="users-count"
+            style="font-size:.78rem;color:var(--slate-400);
+                   align-self:center;white-space:nowrap"></span>
+        </div>
+        <div id="users-list" style="display:flex;flex-direction:column;gap:.6rem">
+          <div class="loading-center"><div class="spinner"></div></div>
+        </div>
+      </div>
+
+      <!-- ABA: Federações -->
+      <div id="admin-tab-federations" style="display:none">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:1rem">
+          <button class="btn btn-primary" id="btn-open-new-fed">+ Nova Federação</button>
+        </div>
+        <div id="feds-list" style="display:flex;flex-direction:column;gap:.6rem">
+          <div class="loading-center"><div class="spinner"></div></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<!-- Modal Reset Senha -->
+<div class="modal-overlay" id="modal-reset-pw">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <div>
+        <h2>Redefinir Senha</h2>
+        <p style="font-size:.78rem;color:var(--slate-500);margin-top:.15rem"
+           id="reset-pw-email"></p>
+      </div>
+      <button class="modal-close">✕</button>
+    </div>
+    <div class="field mb-4">
+      <label>Nova senha
+        <span style="font-size:.72rem;color:var(--slate-400);font-weight:400">
+          (deixe em branco para gerar automaticamente)
+        </span>
+      </label>
+      <input class="input" type="text" id="new-password-input"
+        placeholder="Deixe vazio para gerar senha aleatória" />
+    </div>
+    <div id="password-result" style="display:none">
+      <p style="font-size:.78rem;color:var(--slate-600);margin-bottom:.25rem">
+        ✅ Senha definida — copie e envie ao usuário:
+      </p>
+      <div class="password-reveal">
+        <span id="password-reveal-text"></span>
+        <button onclick="copyPassword()"
+          style="background:none;border:none;cursor:pointer;
+                 color:var(--green-700);font-size:.8rem;font-weight:600">
+          📋 Copiar
+        </button>
+      </div>
+    </div>
+    <div id="reset-pw-alert" class="hidden mb-3"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary modal-close">Fechar</button>
+      <button class="btn btn-primary" id="btn-confirm-reset">🔑 Redefinir</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Nova Federação -->
+<div class="modal-overlay" id="modal-new-fed">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2>Nova Federação</h2>
+      <button class="modal-close">✕</button>
+    </div>
+
+    <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;
+                letter-spacing:.5px;color:var(--slate-400);margin-bottom:.6rem">
+      Dados da Federação
+    </div>
+    <div class="grid-2 mb-4">
+      <div class="field">
+        <label>Nome</label>
+        <input class="input" type="text" id="fed-name"
+          placeholder="Ex: Federação Norte da Paraíba"/>
+      </div>
+      <div class="field">
+        <label>Presbitério</label>
+        <input class="input" type="text" id="fed-presbytery"
+          placeholder="Ex: Presbitério Norte da Paraíba"/>
+      </div>
+    </div>
+    <div class="grid-2 mb-4">
+      <div class="field">
+        <label>Sinodal <span style="font-size:.72rem;color:var(--slate-400)">(opcional)</span></label>
+        <input class="input" type="text" id="fed-synodal"
+          placeholder="Ex: Conf. Sinodal da Paraíba"/>
+      </div>
+      <div class="field">
+        <label>Tipo</label>
+        <select class="input" id="fed-society-type">
+          <option value="UMP">UMP</option>
+          <option value="UPH">UPH</option>
+          <option value="SAF">SAF</option>
+          <option value="UPA">UPA</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;
+                margin-bottom:.6rem;margin-top:.5rem">
+      <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;
+                  letter-spacing:.5px;color:var(--slate-400)">
+        Usuários Iniciais
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="addFedUser()">+ Usuário</button>
+    </div>
+    <div id="fed-users-list" style="display:flex;flex-direction:column;gap:.5rem"></div>
+
+    <div id="new-fed-alert" class="hidden mt-4"></div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary modal-close">Cancelar</button>
+      <button class="btn btn-primary" id="btn-create-fed">🏛️ Criar Federação</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { requireAuth } from '../assets/js/auth.js'
+  import { renderShell } from '../assets/js/router.v3.js'
+  import { api } from '../assets/js/api.js'
+  import { showAlert, clearAlert, setLoading,
+           openModal, closeModal, initModalClose,
+           avatarHtml } from '../assets/js/utils.js'
+
+  if (!requireAuth()) throw new Error()
+  await renderShell()
+  initModalClose()
+
+  // Verifica acesso admin
+  try {
+    await api.get('/api/admin/users?search=__check__')
+  } catch(err) {
+    document.querySelector('.page-content').innerHTML = `
+      <div style="text-align:center;padding:4rem;color:var(--slate-400)">
+        <div style="font-size:3rem;margin-bottom:1rem">🔒</div>
+        <h2 style="color:var(--slate-600)">Acesso Restrito</h2>
+        <p>Este painel é exclusivo para o desenvolvedor.</p>
+        <a href="/pages/dashboard.html" class="btn btn-primary" style="margin-top:1rem">
+          Voltar ao Dashboard
+        </a>
+      </div>`
+    throw new Error('Not admin')
+  }
+
+  // ── Estado ──────────────────────────────────────────────────
+  let resetUserId = null
+  let fedUserCount = 0
+  let searchTimer = null
+
+  const ROLES = [
+    {v:'presidente',             l:'Presidente'},
+    {v:'vice_presidente',        l:'Vice-Presidente'},
+    {v:'1_secretario',           l:'1º Secretário(a)'},
+    {v:'2_secretario',           l:'2º Secretário(a)'},
+    {v:'tesoureiro',             l:'Tesoureiro(a)'},
+    {v:'secretario_executivo',   l:'Sec. Executivo(a)'},
+    {v:'secretario_presbiterial',l:'Sec. Presbiterial'},
+    {v:'conselheiro',            l:'Conselheiro(a)'},
+  ]
+
+  // ── Abas ──────────────────────────────────────────────────────
+  window.switchAdminTab = (tab) => {
+    document.querySelectorAll('.admin-tab').forEach(t =>
+      t.classList.toggle('active', t.dataset.tab === tab))
+    document.getElementById('admin-tab-users').style.display =
+      tab === 'users' ? 'block' : 'none'
+    document.getElementById('admin-tab-federations').style.display =
+      tab === 'federations' ? 'block' : 'none'
+    if (tab === 'federations') loadFederations()
+  }
+
+  // ── Usuários ──────────────────────────────────────────────────
+  async function loadUsers(search = '') {
+    const list = document.getElementById('users-list')
+    list.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>'
+    try {
+      const params = search ? `?search=${encodeURIComponent(search)}` : ''
+      const users = await api.get(`/api/admin/users${params}`)
+      document.getElementById('users-count').textContent =
+        `${users.length} usuário${users.length !== 1 ? 's' : ''}`
+      renderUsers(users)
+    } catch(err) {
+      list.innerHTML = `<div class="alert alert-error">${err.message}</div>`
+    }
+  }
+
+  function renderUsers(users) {
+    const list = document.getElementById('users-list')
+    if (!users.length) {
+      list.innerHTML = `
+        <div style="text-align:center;padding:3rem;color:var(--slate-400)">
+          <div style="font-size:2rem;margin-bottom:.5rem">👥</div>
+          <p>Nenhum usuário encontrado.</p>
+        </div>`
+      return
+    }
+    list.innerHTML = users.map(u => `
+      <div class="user-card ${!u.is_active ? 'inactive-overlay' : ''}">
+        <div style="display:flex;align-items:flex-start;gap:.75rem;flex-wrap:wrap">
+          ${avatarHtml(u.full_name, 40, '.9rem')}
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+              <span style="font-weight:600;font-size:.95rem;color:var(--slate-800)">
+                ${u.full_name}
+              </span>
+              ${!u.is_active ? '<span class="badge badge-red">Inativo</span>' : ''}
+            </div>
+            <div style="font-size:.78rem;color:var(--slate-500);margin-top:.1rem">
+              ${u.email}
+            </div>
+            <div style="display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.4rem">
+              ${u.all_orgs.map(org => `
+                <span class="org-chip ${org.organization_type}" title="${org.org_name}">
+                  ${org.organization_type === 'federation' ? '🏛️' : '🏠'}
+                  ${org.org_name}${!org.is_active ? ' (inativo)' : ''}
+                </span>
+              `).join('')}
+            </div>
+            ${u.roles.length ? `
+              <div style="font-size:.72rem;color:var(--slate-400);margin-top:.3rem">
+                ${u.roles.map(r => `${r.role_label} (${r.fiscal_year})`).join(' · ')}
+              </div>` : ''}
+          </div>
+          <div style="display:flex;gap:.35rem;flex-shrink:0;flex-wrap:wrap">
+            <button class="btn btn-secondary btn-sm"
+              onclick="openResetPw('${u.id}','${u.email}')">
+              🔑 Senha
+            </button>
+            <button class="btn btn-sm ${u.is_active ? 'btn-ghost' : 'btn-primary'}"
+              style="${u.is_active ? 'color:var(--red-600);border-color:var(--red-200)' : ''}"
+              onclick="toggleActive('${u.id}', ${u.is_active})">
+              ${u.is_active ? '🚫 Desativar' : '✓ Ativar'}
+            </button>
+          </div>
+        </div>
+      </div>
+    `).join('')
+  }
+
+  window.debounceSearch = () => {
+    clearTimeout(searchTimer)
+    searchTimer = setTimeout(() => {
+      loadUsers(document.getElementById('search-users').value.trim())
+    }, 400)
+  }
+
+  // ── Reset de senha ────────────────────────────────────────────
+  window.openResetPw = (userId, email) => {
+    resetUserId = userId
+    document.getElementById('reset-pw-email').textContent = email
+    document.getElementById('new-password-input').value = ''
+    document.getElementById('password-result').style.display = 'none'
+    document.getElementById('btn-confirm-reset').style.display = 'inline-flex'
+    clearAlert('reset-pw-alert')
+    openModal('modal-reset-pw')
+  }
+
+  document.getElementById('btn-confirm-reset').addEventListener('click', async () => {
+    const btn  = document.getElementById('btn-confirm-reset')
+    const newPw = document.getElementById('new-password-input').value.trim()
+    setLoading(btn, true, '🔑 Redefinir')
+    try {
+      const result = await api.post(
+        `/api/admin/users/${resetUserId}/reset-password`,
+        { new_password: newPw || null }
+      )
+      document.getElementById('password-reveal-text').textContent = result.new_password
+      document.getElementById('password-result').style.display = 'block'
+      document.getElementById('btn-confirm-reset').style.display = 'none'
+      clearAlert('reset-pw-alert')
+    } catch(err) {
+      showAlert('reset-pw-alert', err.message, 'error')
+    } finally {
+      setLoading(btn, false, '🔑 Redefinir')
+    }
+  })
+
+  window.copyPassword = () => {
+    const pw = document.getElementById('password-reveal-text').textContent
+    navigator.clipboard.writeText(pw).then(() => {
+      const btn = document.querySelector('[onclick="copyPassword()"]')
+      btn.textContent = '✓ Copiado!'
+      setTimeout(() => { btn.textContent = '📋 Copiar' }, 2000)
+    })
+  }
+
+  // ── Ativar/Desativar ──────────────────────────────────────────
+  window.toggleActive = async (userId, isActive) => {
+    const action = isActive ? 'desativar' : 'ativar'
+    if (!confirm(`Deseja ${action} este usuário?\n${isActive
+      ? 'Todos os vínculos do mesmo email serão desativados.'
+      : 'Todos os vínculos do mesmo email serão reativados.'}`)) return
+    try {
+      const result = await api.post(`/api/admin/users/${userId}/toggle-active`)
+      showAlert('page-alert', result.detail, 'success')
+      await loadUsers(document.getElementById('search-users').value.trim())
+    } catch(err) {
+      showAlert('page-alert', err.message, 'error')
+    }
+  }
+
+  // ── Federações ────────────────────────────────────────────────
+  async function loadFederations() {
+    const list = document.getElementById('feds-list')
+    list.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>'
+    try {
+      const feds = await api.get('/api/admin/federations')
+      if (!feds.length) {
+        list.innerHTML = `<div style="text-align:center;padding:2rem;
+          color:var(--slate-400)">Nenhuma federação cadastrada.</div>`
+        return
+      }
+      list.innerHTML = feds.map(f => `
+        <div class="card" style="display:flex;align-items:center;
+             justify-content:space-between;flex-wrap:wrap;gap:.75rem">
+          <div>
+            <div style="font-weight:600;font-size:.95rem">${f.name}</div>
+            <div style="font-size:.78rem;color:var(--slate-500);margin-top:.15rem">
+              ${f.presbytery_name}
+              · <span class="badge badge-blue" style="font-size:.68rem">${f.society_type}</span>
+              · ${f.user_count} usuário${f.user_count !== 1 ? 's' : ''}
+            </div>
+          </div>
+          <div style="font-family:monospace;font-size:.7rem;color:var(--slate-400)">
+            ${f.id}
+          </div>
+        </div>
+      `).join('')
+    } catch(err) {
+      list.innerHTML = `<div class="alert alert-error">${err.message}</div>`
+    }
+  }
+
+  // ── Nova Federação ────────────────────────────────────────────
+  window.addFedUser = () => {
+    fedUserCount++
+    const idx = fedUserCount
+    const roleOptions = ROLES.map(r =>
+      `<option value="${r.v}">${r.l}</option>`
+    ).join('')
+
+    const row = document.createElement('div')
+    row.id = `fed-user-${idx}`
+    row.style.cssText = `background:var(--slate-50);border:1.5px solid var(--slate-200);
+      border-radius:var(--radius-lg);padding:.75rem;position:relative`
+    row.innerHTML = `
+      <button onclick="document.getElementById('fed-user-${idx}').remove()"
+        style="position:absolute;top:.5rem;right:.5rem;background:none;border:none;
+               cursor:pointer;color:var(--slate-400);font-size:.9rem">✕</button>
+      <div class="grid-2 mb-3">
+        <div class="field">
+          <label style="font-size:.78rem">Nome</label>
+          <input class="input" type="text" data-field="name"
+            placeholder="Nome completo" style="font-size:.85rem"/>
+        </div>
+        <div class="field">
+          <label style="font-size:.78rem">Email</label>
+          <input class="input" type="email" data-field="email"
+            placeholder="email@exemplo.com" style="font-size:.85rem"/>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label style="font-size:.78rem">Senha</label>
+          <input class="input" type="text" data-field="password"
+            placeholder="Mínimo 6 caracteres" style="font-size:.85rem"/>
+        </div>
+        <div class="field">
+          <label style="font-size:.78rem">Cargo</label>
+          <select class="input" data-field="role" style="font-size:.85rem">
+            ${roleOptions}
+          </select>
+        </div>
+      </div>`
+    document.getElementById('fed-users-list').appendChild(row)
+  }
+
+  document.getElementById('btn-open-new-fed').addEventListener('click', () => {
+    document.getElementById('fed-name').value = ''
+    document.getElementById('fed-presbytery').value = ''
+    document.getElementById('fed-synodal').value = ''
+    document.getElementById('fed-society-type').value = 'UMP'
+    document.getElementById('fed-users-list').innerHTML = ''
+    fedUserCount = 0
+    clearAlert('new-fed-alert')
+    addFedUser()
+    openModal('modal-new-fed')
+  })
+
+  document.getElementById('btn-create-fed').addEventListener('click', async () => {
+    const btn        = document.getElementById('btn-create-fed')
+    const name       = document.getElementById('fed-name').value.trim()
+    const presbytery = document.getElementById('fed-presbytery').value.trim()
+
+    if (!name || !presbytery) {
+      showAlert('new-fed-alert', 'Nome e presbitério são obrigatórios.', 'error')
+      return
+    }
+
+    const userRows = document.querySelectorAll('#fed-users-list > div')
+    const users = []
+    let valid = true
+    userRows.forEach(row => {
+      const name_  = row.querySelector('[data-field="name"]')?.value.trim()
+      const email  = row.querySelector('[data-field="email"]')?.value.trim()
+      const pw     = row.querySelector('[data-field="password"]')?.value.trim()
+      const role   = row.querySelector('[data-field="role"]')?.value
+      if (!name_ || !email || !pw) { valid = false; return }
+      users.push({ full_name: name_, email, password: pw, role })
+    })
+
+    if (!valid) {
+      showAlert('new-fed-alert', 'Preencha todos os campos dos usuários.', 'error')
+      return
+    }
+
+    setLoading(btn, true, '🏛️ Criar Federação')
+    try {
+      const result = await api.post('/api/admin/federations', {
+        federation: {
+          name:            name,
+          presbytery_name: presbytery,
+          synodal_name:    document.getElementById('fed-synodal').value.trim() || null,
+          society_type:    document.getElementById('fed-society-type').value,
+        },
+        users,
+      })
+      closeModal('modal-new-fed')
+      showAlert('page-alert',
+        `✅ Federação "${result.federation.name}" criada com ${result.users.length} usuário(s)!`,
+        'success')
+      loadFederations()
+    } catch(err) {
+      showAlert('new-fed-alert', err.message, 'error')
+    } finally {
+      setLoading(btn, false, '🏛️ Criar Federação')
+    }
+  })
+
+  // ── Mobile ────────────────────────────────────────────────────
+  const btnMenu = document.getElementById('btn-menu')
+  const sidebar = document.querySelector('.sidebar')
+  const overlay = document.getElementById('sidebar-overlay')
+  btnMenu?.addEventListener('click', () => {
+    sidebar.classList.toggle('open')
+    overlay.classList.toggle('open')
+  })
+  overlay?.addEventListener('click', () => {
+    sidebar.classList.remove('open')
+    overlay.classList.remove('open')
+  })
+
+  // ── Inicializa ────────────────────────────────────────────────
+  loadUsers()
+</script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations()
+      .then(regs => Promise.all(regs.map(r => r.unregister())))
+      .then(() => navigator.serviceWorker.register('/sw.js?v=9').catch(console.error))
+  }
+</script>
+</body>
+</html>

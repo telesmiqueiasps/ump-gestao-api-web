@@ -93,6 +93,9 @@ export function canAccessPage(page) {
 
 const MEMBER_LABELS = { UMP: 'Sócios', UPH: 'Sócios', SAF: 'Associadas', UPA: 'Participantes' }
 
+// ID da federação administradora — preencha após criar via painel admin
+const ADMIN_FEDERATION_ID = ''
+
 function buildNavHTML(user, societyType) {
   societyType = societyType || localStorage.getItem('society_type') || 'UMP'
   const userRoles = user?.roles ?? []
@@ -125,7 +128,16 @@ function buildNavHTML(user, societyType) {
           ${label}
         </button>
       `
-    }).join('')
+    }).join('') +
+    (ADMIN_FEDERATION_ID && user?.organization_id === ADMIN_FEDERATION_ID
+      ? `<button class="nav-item" data-page="admin"
+           onclick="window.location.href='/pages/admin.html'"
+           style="color:#f97316">
+           <span style="width:24px;height:24px;display:inline-flex;
+                        align-items:center;justify-content:center;font-size:1rem">⚙️</span>
+           Admin
+         </button>`
+      : '')
 }
 
 export async function renderShell() {
