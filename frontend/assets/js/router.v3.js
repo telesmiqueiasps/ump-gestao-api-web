@@ -94,7 +94,7 @@ export function canAccessPage(page) {
 const MEMBER_LABELS = { UMP: 'Sócios', UPH: 'Sócios', SAF: 'Associadas', UPA: 'Participantes' }
 
 // ID da federação administradora — preencha após criar via painel admin
-const ADMIN_FEDERATION_ID = ''
+const ADMIN_FEDERATION_ID = 'cf5aaa60-0fd1-4ee5-a0cd-a37849b87a09'
 
 function buildNavHTML(user, societyType) {
   societyType = societyType || localStorage.getItem('society_type') || 'UMP'
