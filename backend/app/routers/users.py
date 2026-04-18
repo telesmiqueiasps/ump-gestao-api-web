@@ -17,7 +17,7 @@ router = APIRouter()
 class UserCreate(BaseModel):
     full_name: str
     email: EmailStr
-    password: str
+    password: Optional[str] = None   # opcional quando email já existe em outra org
     organization_id: UUID
     organization_type: OrgType
     role: BoardRole
@@ -34,26 +34,74 @@ class ChangePassword(BaseModel):
     new_password: str
 
 
+@router.get("/check-email")
+def check_email(
+    email: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Verifica se email já existe e retorna info da organização."""
+    from app.models.federation import Federation
+    from app.models.local_ump import LocalUmp
+
+    existing = db.query(User).filter(
+        sqlfunc.lower(User.email) == email.lower().strip()
+    ).first()
+
+    if not existing:
+        return {"exists": False}
+
+    org_type = existing.organization_type.value \
+        if hasattr(existing.organization_type, 'value') \
+        else str(existing.organization_type)
+
+    if org_type == 'federation':
+        obj = db.query(Federation).filter(Federation.id == existing.organization_id).first()
+        org_name = obj.name if obj else 'Federação'
+    else:
+        obj = db.query(LocalUmp).filter(LocalUmp.id == existing.organization_id).first()
+        org_name = obj.name if obj else 'UMP Local'
+
+    return {
+        "exists": True,
+        "org_name": org_name,
+        "org_type": org_type,
+        "full_name": existing.full_name,
+    }
+
+
 # Federação cria usuário para si ou para uma Local sua
 @router.post("/", status_code=status.HTTP_201_CREATED)
 def create_user(
     payload: UserCreate,
     db: Session = Depends(get_db),
 ):
-    # Permite mesmo email em orgs diferentes, mas bloqueia duplicata na mesma org
-    existing = db.query(User).filter(
+    # Bloqueia duplicata na mesma org
+    existing_in_org = db.query(User).filter(
         sqlfunc.lower(User.email) == payload.email.lower().strip(),
         User.organization_id == payload.organization_id,
     ).first()
-    if existing:
+    if existing_in_org:
         raise HTTPException(status_code=400, detail="E-mail já cadastrado nesta organização")
+
+    # Reutiliza senha de usuário existente com o mesmo email (outra org)
+    existing_any = db.query(User).filter(
+        sqlfunc.lower(User.email) == payload.email.lower().strip()
+    ).first()
+
+    if existing_any:
+        password_hash = existing_any.password_hash
+    else:
+        if not payload.password:
+            raise HTTPException(status_code=400, detail="Senha obrigatória para novo usuário")
+        password_hash = hash_password(payload.password)
 
     user = User(
         organization_id=payload.organization_id,
         organization_type=payload.organization_type,
         full_name=payload.full_name,
         email=payload.email.lower().strip(),
-        password_hash=hash_password(payload.password),
+        password_hash=password_hash,
     )
     db.add(user)
     db.flush()

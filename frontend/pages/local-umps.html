@@ -142,15 +142,14 @@
       <label>Nome completo</label>
       <input class="input" type="text" id="u-full-name" placeholder="Nome completo" />
     </div>
-    <div class="grid-2 mb-4">
-      <div class="field">
-        <label>E-mail</label>
-        <input class="input" type="email" id="u-email" placeholder="email@exemplo.com" />
-      </div>
-      <div class="field">
-        <label>Senha</label>
-        <input class="input" type="password" id="u-password" placeholder="Mínimo 6 caracteres" />
-      </div>
+    <div class="field mb-4">
+      <label>E-mail</label>
+      <input class="input" type="email" id="u-email" placeholder="email@exemplo.com" />
+      <div id="email-check-indicator" style="margin-top:.2rem"></div>
+    </div>
+    <div class="field mb-4" id="u-password-wrap">
+      <label>Senha</label>
+      <input class="input" type="password" id="u-password" placeholder="Mínimo 6 caracteres" />
     </div>
     <div class="field mb-4">
       <label>Cargo</label>
@@ -497,6 +496,9 @@
     document.getElementById('u-email').value     = ''
     document.getElementById('u-password').value  = ''
     document.getElementById('u-role').value      = ''
+    document.getElementById('email-check-indicator').innerHTML = ''
+    document.getElementById('u-password-wrap').style.display = 'block'
+    document.getElementById('u-password').required = true
     clearAlert('user-alert')
     openModal('modal-users')
     loadUsers()
@@ -506,18 +508,21 @@
     const btn      = document.getElementById('btn-save-user')
     const fullName = document.getElementById('u-full-name').value.trim()
     const email    = document.getElementById('u-email').value.trim()
-    const password = document.getElementById('u-password').value
+    const pwValue  = document.getElementById('u-password').value
     const role     = document.getElementById('u-role').value
+    const usingExisting = pwValue === '__USE_EXISTING__'
 
-    if (!fullName)          { showAlert('user-alert', 'Informe o nome completo.', 'error'); return }
-    if (!email)             { showAlert('user-alert', 'Informe o e-mail.', 'error'); return }
-    if (password.length < 6){ showAlert('user-alert', 'A senha deve ter no mínimo 6 caracteres.', 'error'); return }
-    if (!role)              { showAlert('user-alert', 'Selecione o cargo.', 'error'); return }
+    if (!fullName) { showAlert('user-alert', 'Informe o nome completo.', 'error'); return }
+    if (!email)    { showAlert('user-alert', 'Informe o e-mail.', 'error'); return }
+    if (!usingExisting && pwValue.length < 6) {
+      showAlert('user-alert', 'A senha deve ter no mínimo 6 caracteres.', 'error'); return
+    }
+    if (!role) { showAlert('user-alert', 'Selecione o cargo.', 'error'); return }
 
     const payload = {
       full_name:         fullName,
       email,
-      password,
+      password:          usingExisting ? null : pwValue,
       role,
       organization_id:   currentLocalId,
       organization_type: 'local_ump',
@@ -527,17 +532,70 @@
     try {
       await api.post('/api/users/', payload)
 
-
       showAlert('user-alert', 'Usuário criado com sucesso!', 'success')
       document.getElementById('u-full-name').value = ''
       document.getElementById('u-email').value     = ''
       document.getElementById('u-password').value  = ''
       document.getElementById('u-role').value      = ''
+      document.getElementById('email-check-indicator').innerHTML = ''
+      document.getElementById('u-password-wrap').style.display = 'block'
+      document.getElementById('u-password').required = true
       loadUsers()
     } catch(err) {
       showAlert('user-alert', err.message, 'error')
     } finally {
       setLoading(btn, false, 'Criar usuário')
+    }
+  })
+
+  document.getElementById('u-email').addEventListener('blur', async () => {
+    const email = document.getElementById('u-email').value.trim()
+    if (!email || !email.includes('@')) return
+
+    const indicator = document.getElementById('email-check-indicator')
+    indicator.innerHTML = '<span style="color:var(--slate-400);font-size:.75rem">🔍 Verificando...</span>'
+
+    try {
+      const data = await api.get(`/api/users/check-email?email=${encodeURIComponent(email)}`)
+
+      if (data.exists) {
+        indicator.innerHTML = `
+          <div style="
+            background:var(--blue-50);
+            border:1.5px solid var(--blue-200);
+            border-radius:var(--radius);
+            padding:.5rem .75rem;
+            font-size:.78rem;
+            color:var(--blue-700);
+            margin-top:.25rem;
+          ">
+            <strong>✓ Email já cadastrado</strong> em
+            <strong>${data.org_name}</strong>
+            (${data.org_type === 'federation' ? 'Federação' : 'UMP Local'})
+            como <strong>${data.full_name}</strong>.<br>
+            <span style="color:var(--blue-600)">
+              A senha atual será mantida — não é necessário preencher uma nova.
+            </span>
+          </div>`
+
+        const pwWrap = document.getElementById('u-password-wrap')
+        pwWrap.style.display = 'none'
+        document.getElementById('u-password').value = '__USE_EXISTING__'
+        document.getElementById('u-password').required = false
+
+        const nameField = document.getElementById('u-full-name')
+        if (nameField && !nameField.value.trim()) nameField.value = data.full_name
+      } else {
+        indicator.innerHTML = '<span style="color:var(--green-600);font-size:.75rem">✓ Email disponível</span>'
+
+        const pwWrap = document.getElementById('u-password-wrap')
+        pwWrap.style.display = 'block'
+        const pwField = document.getElementById('u-password')
+        if (pwField.value === '__USE_EXISTING__') pwField.value = ''
+        pwField.required = true
+      }
+    } catch {
+      indicator.innerHTML = ''
     }
   })
 
