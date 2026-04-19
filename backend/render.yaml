@@ -27,30 +27,26 @@ services:
         value: production
       - key: FRONTEND_URL
         sync: false
-```
+      - key: ADMIN_FEDERATION_ID
+        sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_EMAIL
+        sync: false
 
-Crie em `render.yaml` na raiz do projeto.
-
----
-
-### Arquivo 26 — `.gitignore`
-```
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
-.env
-.venv/
-venv/
-env/
-
-# Alembic
-alembic/versions/*.pyc
-
-# IDEs
-.vscode/
-.idea/
-
-# OS
-.DS_Store
-Thumbs.db
+  - type: cron
+    name: ump-push-reminders
+    env: python
+    schedule: "0 * * * *"
+    buildCommand: pip install -r requirements.txt
+    startCommand: >
+      python -c "
+      import requests;
+      r = requests.post(
+        'https://ump-gestao-api.onrender.com/api/push/send-reminders',
+        timeout=30
+      );
+      print(r.status_code, r.text)
+      "

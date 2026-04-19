@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     # Admin
     admin_federation_id: str = ""
 
+    # VAPID (Push Notifications)
+    vapid_public_key:  str = ""
+    vapid_private_key: str = ""
+    vapid_email:       str = "admin@umpgestao.netlify.app"
+
     class Config:
         env_file = ".env"
         case_sensitive = False

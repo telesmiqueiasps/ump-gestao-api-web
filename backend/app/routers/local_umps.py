@@ -39,6 +39,7 @@ class LocalUmpUpdate(BaseModel):
     society_type: Optional[str] = None
     pix_key: Optional[str] = None
     reminder_day: Optional[int] = None
+    reminder_hour: Optional[int] = None
     member_portal_enabled: Optional[bool] = None
 
 
@@ -325,6 +326,9 @@ def update_my_local_ump(
 
     if "reminder_day" in restricted:
         restricted["reminder_day"] = max(1, min(28, restricted["reminder_day"]))
+
+    if "reminder_hour" in restricted:
+        restricted["reminder_hour"] = max(0, min(23, restricted["reminder_hour"]))
 
     for field, value in restricted.items():
         setattr(local, field, value)
@@ -629,6 +633,7 @@ def _to_out(l: LocalUmp) -> dict:
         "pix_key":               l.pix_key,
         "pix_qr_url":            l.pix_qr_url,
         "reminder_day":          l.reminder_day or 5,
+        "reminder_hour":         l.reminder_hour if l.reminder_hour is not None else 9,
         "member_portal_enabled": l.member_portal_enabled if l.member_portal_enabled is not None else True,
         "portal_url":            f"https://umpgestao.netlify.app/socio.html?org={str(l.id)}",
     }

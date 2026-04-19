@@ -201,15 +201,22 @@
             <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--slate-400);margin-bottom:.75rem">
               PIX e Portal do Sócio
             </div>
+            <div class="field mb-4">
+              <label>Chave PIX</label>
+              <input class="input" type="text" id="p-pix-key" placeholder="CPF, CNPJ, email, telefone ou chave aleatória" />
+            </div>
             <div class="grid-2 mb-4">
               <div class="field">
-                <label>Chave PIX</label>
-                <input class="input" type="text" id="p-pix-key" placeholder="CPF, CNPJ, email, telefone ou chave aleatória" />
+                <label>Dia do lembrete</label>
+                <input class="input" type="number" id="p-reminder-day"
+                  min="1" max="28" placeholder="Ex: 5"
+                  style="max-width:100px"/>
+                <p style="font-size:.72rem;color:var(--slate-400);margin-top:.25rem">Dia do mês (1-28)</p>
               </div>
               <div class="field">
-                <label>Dia do lembrete mensal</label>
-                <input class="input" type="number" id="p-reminder-day" min="1" max="28" placeholder="Ex: 5" style="max-width:100px" />
-                <p style="font-size:.72rem;color:var(--slate-400);margin-top:.25rem">Dia do mês para lembrete (1-28)</p>
+                <label>Hora do lembrete</label>
+                <select class="input" id="p-reminder-hour" style="max-width:130px"></select>
+                <p style="font-size:.72rem;color:var(--slate-400);margin-top:.25rem">Horário de Brasília (UTC-3)</p>
               </div>
             </div>
             <div class="field mb-4">
@@ -378,6 +385,18 @@
         document.getElementById('p-reminder-day').value       = data.reminder_day || 5
         document.getElementById('p-portal-url').value         = data.portal_url || ''
         document.getElementById('p-portal-enabled').checked   = data.member_portal_enabled !== false
+        ;(function(){
+          const sel = document.getElementById('p-reminder-hour')
+          if (sel && sel.options.length === 0) {
+            for (let h = 0; h < 24; h++) {
+              const opt = document.createElement('option')
+              opt.value = h
+              opt.textContent = String(h).padStart(2,'0') + ':00'
+              sel.appendChild(opt)
+            }
+          }
+          if (sel) sel.value = data.reminder_hour ?? 9
+        })()
         if (data.pix_qr_url) loadPixQrPreview()
       }
     } catch(err) {
@@ -466,6 +485,7 @@
     if (!isFederation()) {
       payload.pix_key               = document.getElementById('p-pix-key')?.value.trim() || null
       payload.reminder_day          = parseInt(document.getElementById('p-reminder-day')?.value) || 5
+      payload.reminder_hour         = parseInt(document.getElementById('p-reminder-hour')?.value) || 9
       payload.member_portal_enabled = document.getElementById('p-portal-enabled')?.checked ?? true
     }
     payload.theme_color = document.getElementById(colorFieldId)?.value || '#1a2a6c'

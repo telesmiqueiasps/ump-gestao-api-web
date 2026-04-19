@@ -271,6 +271,7 @@
         showScreen('app')
         setupYearSelect()
         loadYear()
+        setupPushNotifications()
         return
       } catch {
         clearSession()
@@ -339,6 +340,7 @@
       showScreen('app')
       setupYearSelect()
       loadYear()
+      setupPushNotifications()
     } catch(err) {
       showLoginAlert(err.message || 'Erro ao entrar.', 'error')
     } finally {
@@ -524,19 +526,91 @@
     return data
   }
 
-  async function fetchAuth(path) {
-    const r = await fetch(API + path, { headers: { 'Authorization': `Bearer ${token}` } })
+  async function fetchAuth(path, options = {}) {
+    const r = await fetch(API + path, {
+      ...options,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        ...(options.headers || {}),
+      },
+    })
     const data = await r.json()
     if (r.status === 401) { clearSession(); window.location.reload() }
     if (!r.ok) throw new Error(data.detail || 'Erro')
     return data
   }
 
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4)
+    const base64  = (base64String + padding)
+      .replace(/-/g, '+').replace(/_/g, '/')
+    const raw     = window.atob(base64)
+    return new Uint8Array([...raw].map(c => c.charCodeAt(0)))
+  }
+
+  async function setupPushNotifications() {
+    if (!('Notification' in window) || !('serviceWorker' in navigator)) return
+    if (!token) return
+
+    let vapidKey
+    try {
+      const data = await fetchPublic('/api/push/vapid-public-key')
+      vapidKey = data.public_key
+      if (!vapidKey) return
+    } catch { return }
+
+    if (Notification.permission === 'denied') return
+
+    let permission = Notification.permission
+    if (permission === 'default') {
+      permission = await Notification.requestPermission()
+    }
+    if (permission !== 'granted') return
+
+    try {
+      const reg = await navigator.serviceWorker.ready
+      let sub = await reg.pushManager.getSubscription()
+
+      if (!sub) {
+        const keyBytes = urlBase64ToUint8Array(vapidKey)
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: keyBytes,
+        })
+      }
+
+      const subJson = sub.toJSON()
+      await fetchAuth('/api/push/subscribe', {
+        method: 'POST',
+        body: JSON.stringify({
+          endpoint: subJson.endpoint,
+          p256dh:   subJson.keys.p256dh,
+          auth:     subJson.keys.auth,
+        })
+      })
+
+      console.log('Push notifications ativas')
+    } catch(err) {
+      console.warn('Push setup error:', err)
+    }
+  }
+
   init()
 </script>
 <script>
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js?v=9').catch(console.error)
+    navigator.serviceWorker.getRegistrations().then(regs => {
+      return Promise.all(
+        regs.filter(r => r.scope.includes('socio') ||
+                         (r.active && r.active.scriptURL.includes('sw-socio')))
+            .map(r => r.unregister())
+      )
+    }).then(() => {
+      return navigator.serviceWorker.register('/sw-socio.js?v=1')
+    }).then(reg => {
+      console.log('SW Socio registrado:', reg.scope)
+    }).catch(err => console.error('SW Socio erro:', err))
   }
 </script>
 </body>

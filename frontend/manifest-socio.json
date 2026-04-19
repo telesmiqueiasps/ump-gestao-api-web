@@ -1,0 +1,25 @@
+{
+  "name": "Portal do Sócio UMP",
+  "short_name": "Sócio UMP",
+  "description": "Acompanhe suas mensalidades e ACI",
+  "start_url": "/socio.html",
+  "scope": "/socio.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f1f5f9",
+  "theme_color": "#1a2a6c",
+  "icons": [
+    {
+      "src": "/assets/img/192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/img/512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
