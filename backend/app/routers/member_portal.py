@@ -11,7 +11,7 @@ from app.db.session import get_db
 from app.models.member import Member
 from app.models.local_ump import LocalUmp
 from app.models.member_fees import MemberMonthlyFee, MemberAciContribution
-from app.core.security import create_access_token
+from app.core.security import create_access_token, decode_token
 from app.services.storage import _get_client
 from app.core.config import get_settings
 
@@ -100,24 +100,20 @@ def get_portal_member(
     credentials: HTTPAuthorizationCredentials = Security(bearer),
     db: Session = Depends(get_db),
 ):
-    from jose import jwt, JWTError
-    settings = get_settings()
-    try:
-        payload = jwt.decode(
-            credentials.credentials,
-            settings.jwt_secret_key,
-            algorithms=["HS256"]
-        )
-        if payload.get("type") != "member_portal":
-            raise HTTPException(status_code=401, detail="Token inválido")
-        member_id = payload.get("sub")
-        org_id    = payload.get("org_id")
-    except JWTError:
+    from app.core.security import decode_token
+    payload = decode_token(credentials.credentials)
+    if not payload:
         raise HTTPException(status_code=401, detail="Token inválido ou expirado")
+
+    member_id = payload.get("sub")
+    org_id    = payload.get("org_id")
+
+    if not member_id or not org_id:
+        raise HTTPException(status_code=401, detail="Token inválido para o portal")
 
     member = db.query(Member).filter(Member.id == member_id).first()
     if not member or not member.is_active:
-        raise HTTPException(status_code=401, detail="Sócio inativo")
+        raise HTTPException(status_code=401, detail="Sócio inativo ou não encontrado")
     return member, org_id
 
 
