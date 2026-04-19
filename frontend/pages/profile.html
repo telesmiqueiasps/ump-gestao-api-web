@@ -196,6 +196,54 @@
             <label>Saldo Inicial do Ano</label>
             <input class="input" type="text" id="local-balance" readonly style="background:var(--slate-50);color:var(--slate-500)" />
           </div>
+          <!-- PIX e Portal do Sócio -->
+          <div style="border-top:1.5px solid var(--slate-100);padding-top:1.25rem;margin-top:.5rem;margin-bottom:1rem">
+            <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--slate-400);margin-bottom:.75rem">
+              PIX e Portal do Sócio
+            </div>
+            <div class="grid-2 mb-4">
+              <div class="field">
+                <label>Chave PIX</label>
+                <input class="input" type="text" id="p-pix-key" placeholder="CPF, CNPJ, email, telefone ou chave aleatória" />
+              </div>
+              <div class="field">
+                <label>Dia do lembrete mensal</label>
+                <input class="input" type="number" id="p-reminder-day" min="1" max="28" placeholder="Ex: 5" style="max-width:100px" />
+                <p style="font-size:.72rem;color:var(--slate-400);margin-top:.25rem">Dia do mês para lembrete (1-28)</p>
+              </div>
+            </div>
+            <div class="field mb-4">
+              <label>QR Code PIX</label>
+              <div style="display:flex;align-items:flex-start;gap:1rem;flex-wrap:wrap">
+                <div id="pix-qr-preview" style="width:120px;height:120px;border:2px dashed var(--slate-200);border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--slate-50);flex-shrink:0;">
+                  <span style="font-size:2rem">💳</span>
+                </div>
+                <div style="flex:1;min-width:160px">
+                  <button class="btn btn-secondary btn-sm" id="btn-generate-pix-qr" style="margin-bottom:.4rem;width:100%">✨ Gerar QR Code da chave PIX</button>
+                  <div style="font-size:.72rem;color:var(--slate-400);margin-bottom:.4rem;text-align:center">ou</div>
+                  <label class="btn btn-ghost btn-sm" style="cursor:pointer;display:block;text-align:center;border:1.5px dashed var(--slate-300)">
+                    📁 Upload do QR Code
+                    <input type="file" accept="image/png,image/jpeg" id="pix-qr-upload" style="display:none" onchange="uploadPixQr(this)" />
+                  </label>
+                  <p style="font-size:.7rem;color:var(--slate-400);margin-top:.4rem">PNG ou JPG · máx 5MB</p>
+                </div>
+              </div>
+            </div>
+            <div class="field mb-4">
+              <label>Link do Portal dos Sócios</label>
+              <div style="display:flex;gap:.4rem;align-items:center">
+                <input class="input" type="text" id="p-portal-url" readonly style="font-size:.78rem;color:var(--slate-500);background:var(--slate-50);flex:1" />
+                <button class="btn btn-secondary btn-sm" id="btn-copy-portal" onclick="copyPortalUrl()">📋 Copiar</button>
+              </div>
+              <p style="font-size:.72rem;color:var(--slate-400);margin-top:.25rem">Compartilhe este link com os sócios.</p>
+            </div>
+            <div class="field">
+              <label style="display:flex;align-items:center;gap:.6rem;cursor:pointer">
+                <input type="checkbox" id="p-portal-enabled" style="width:16px;height:16px" />
+                <span style="font-weight:500">Portal do sócio ativo</span>
+              </label>
+            </div>
+          </div>
           <div class="field mb-4">
             <label>Tipo de Sociedade</label>
             <div style="display:flex;gap:.5rem;flex-wrap:wrap" id="local-society-selector">
@@ -326,6 +374,11 @@
         document.getElementById('local-org-date').value       = data.organization_date ?? ''
         document.getElementById('local-year').value           = data.fiscal_year ?? ''
         document.getElementById('local-balance').value        = formatCurrency(data.initial_balance)
+        document.getElementById('p-pix-key').value            = data.pix_key || ''
+        document.getElementById('p-reminder-day').value       = data.reminder_day || 5
+        document.getElementById('p-portal-url').value         = data.portal_url || ''
+        document.getElementById('p-portal-enabled').checked   = data.member_portal_enabled !== false
+        if (data.pix_qr_url) loadPixQrPreview()
       }
     } catch(err) {
       showAlert('page-alert', err.message, 'error')
@@ -410,6 +463,11 @@
         organization_date: document.getElementById('local-org-date').value || null,
       }
     }
+    if (!isFederation()) {
+      payload.pix_key               = document.getElementById('p-pix-key')?.value.trim() || null
+      payload.reminder_day          = parseInt(document.getElementById('p-reminder-day')?.value) || 5
+      payload.member_portal_enabled = document.getElementById('p-portal-enabled')?.checked ?? true
+    }
     payload.theme_color = document.getElementById(colorFieldId)?.value || '#1a2a6c'
     payload.society_type = selectedSocietyType
 
@@ -424,7 +482,62 @@
     } finally {
       setLoading(btn, false, 'Salvar alterações')
     }
-  })
+  // ── PIX QR Code ──────────────────────────────────────────
+  async function loadPixQrPreview() {
+    try {
+      const resp = await api.get('/api/local-umps/me/pix-qr-base64')
+      if (resp.base64) {
+        document.getElementById('pix-qr-preview').innerHTML =
+          `<img src="${resp.base64}" style="width:100%;height:100%;object-fit:contain"/>`
+      }
+    } catch {}
+  }
+
+  const btnGenPix = document.getElementById('btn-generate-pix-qr')
+  if (btnGenPix) {
+    btnGenPix.addEventListener('click', async () => {
+      const pixKey = document.getElementById('p-pix-key').value.trim()
+      if (!pixKey) { alert('Salve a chave PIX antes de gerar o QR Code.'); return }
+      setLoading(btnGenPix, true, '✨ Gerar QR Code da chave PIX')
+      try {
+        const result = await api.post('/api/local-umps/me/pix-qr/generate')
+        document.getElementById('pix-qr-preview').innerHTML =
+          `<img src="${result.base64}" style="width:100%;height:100%;object-fit:contain"/>`
+        showAlert('profile-alert', '✅ QR Code gerado com sucesso!', 'success')
+      } catch(err) {
+        alert(err.message)
+      } finally {
+        setLoading(btnGenPix, false, '✨ Gerar QR Code da chave PIX')
+      }
+    })
+  }
+
+  window.uploadPixQr = async (input) => {
+    const file = input.files[0]
+    if (!file) return
+    const fd = new FormData()
+    fd.append('file', file)
+    try {
+      const result = await api.upload('/api/local-umps/me/pix-qr', fd)
+      document.getElementById('pix-qr-preview').innerHTML =
+        `<img src="${result.base64}" style="width:100%;height:100%;object-fit:contain"/>`
+      showAlert('profile-alert', '✅ QR Code salvo!', 'success')
+    } catch(err) {
+      alert(err.message)
+    } finally {
+      input.value = ''
+    }
+  }
+
+  window.copyPortalUrl = () => {
+    const url = document.getElementById('p-portal-url').value
+    navigator.clipboard.writeText(url).then(() => {
+      const btn = document.getElementById('btn-copy-portal')
+      btn.textContent = '✓ Copiado!'
+      setTimeout(() => btn.textContent = '📋 Copiar', 2000)
+    })
+  }
+
   })()
 </script>
 

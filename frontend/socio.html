@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <meta name="theme-color" content="#1a2a6c"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+  <title>Portal do Sócio</title>
+  <link rel="icon" type="image/png" href="/assets/img/logo.png"/>
+  <link rel="manifest" href="/manifest-socio.json"/>
+  <style>
+    * { box-sizing:border-box;margin:0;padding:0; }
+    body {
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+      background:#f1f5f9;
+      min-height:100vh;
+      color:#1e293b;
+    }
+    :root {
+      --brand:#1a2a6c;
+      --green:#166534;
+      --green-bg:#f0fdf4;
+      --red:#991b1b;
+      --red-bg:#fef2f2;
+      --slate-400:#94a3b8;
+      --slate-500:#64748b;
+      --slate-600:#475569;
+      --slate-700:#334155;
+      --slate-800:#1e293b;
+      --radius:10px;
+      --radius-lg:16px;
+      --shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);
+    }
+    .container {
+      max-width:420px;
+      margin:0 auto;
+      padding:1rem;
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+    }
+    .login-wrap {
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      gap:1.5rem;
+    }
+    .login-header { text-align:center; }
+    .login-logo {
+      width:72px;height:72px;border-radius:50%;
+      object-fit:contain;margin:0 auto .75rem;
+      display:block;background:#fff;padding:4px;
+      box-shadow:var(--shadow);
+    }
+    .login-org-name { font-size:1.15rem;font-weight:700;color:var(--brand); }
+    .login-subtitle { font-size:.8rem;color:var(--slate-500);margin-top:.2rem; }
+    .card {
+      background:#fff;border-radius:var(--radius-lg);
+      padding:1.25rem;box-shadow:var(--shadow);
+    }
+    .field { margin-bottom:1rem; }
+    .field label {
+      display:block;font-size:.8rem;font-weight:600;
+      color:var(--slate-600);margin-bottom:.35rem;
+    }
+    .input {
+      width:100%;padding:.7rem 1rem;border:1.5px solid #e2e8f0;
+      border-radius:var(--radius);font-size:1rem;
+      font-family:inherit;color:var(--slate-800);
+      transition:border-color .15s;outline:none;
+      -webkit-appearance:none;
+    }
+    .input:focus { border-color:var(--brand); }
+    .btn {
+      width:100%;padding:.8rem;border:none;border-radius:var(--radius);
+      font-size:1rem;font-weight:600;cursor:pointer;
+      font-family:inherit;transition:all .15s;
+      display:flex;align-items:center;justify-content:center;gap:.5rem;
+    }
+    .btn-primary { background:var(--brand);color:#fff; }
+    .btn-primary:hover { background:#152260; }
+    .btn-primary:disabled { opacity:.6;cursor:not-allowed; }
+    .alert {
+      padding:.75rem 1rem;border-radius:var(--radius);
+      font-size:.85rem;margin-bottom:.75rem;
+    }
+    .alert-error  { background:#fef2f2;color:#991b1b;border:1px solid #fecaca; }
+    .alert-success{ background:#f0fdf4;color:#166534;border:1px solid #bbf7d0; }
+    .app-header {
+      background:var(--brand);color:#fff;
+      padding:1rem;border-radius:0 0 var(--radius-lg) var(--radius-lg);
+      margin:-1rem -1rem 1rem;
+      display:flex;align-items:center;justify-content:space-between;
+    }
+    .app-header-name { font-weight:700;font-size:1rem; }
+    .app-header-org  { font-size:.75rem;opacity:.75; }
+    .btn-logout-small {
+      background:rgba(255,255,255,.15);border:none;
+      color:#fff;padding:.4rem .7rem;border-radius:8px;
+      font-size:.75rem;cursor:pointer;font-family:inherit;
+    }
+    .tabs {
+      display:flex;border-bottom:2px solid #e2e8f0;
+      margin-bottom:1rem;
+    }
+    .tab {
+      flex:1;padding:.65rem;border:none;background:none;
+      font-size:.875rem;font-weight:500;color:var(--slate-500);
+      cursor:pointer;border-bottom:2px solid transparent;
+      margin-bottom:-2px;font-family:inherit;transition:all .15s;
+    }
+    .tab.active { color:var(--brand);border-bottom-color:var(--brand); }
+    .months-grid {
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:.5rem;
+    }
+    .month-chip {
+      border-radius:var(--radius);padding:.6rem .4rem;
+      text-align:center;font-size:.78rem;
+      border:1.5px solid transparent;
+    }
+    .month-chip.paid    { background:var(--green-bg);color:var(--green);border-color:#bbf7d0; }
+    .month-chip.unpaid  { background:#fff;color:var(--slate-600);border-color:#e2e8f0; }
+    .month-chip.no-record { background:#f8fafc;color:var(--slate-400);border-color:#f1f5f9; }
+    .month-chip .month-name   { font-weight:600;display:block;margin-bottom:.2rem; }
+    .month-chip .month-status { font-size:.65rem;display:block; }
+    .pix-card {
+      background:linear-gradient(135deg,#f0fdf4,#dcfce7);
+      border:1.5px solid #bbf7d0;
+      border-radius:var(--radius-lg);
+      padding:1.25rem;text-align:center;
+      margin-top:1rem;
+    }
+    .pix-qr {
+      width:160px;height:160px;object-fit:contain;
+      border-radius:var(--radius);margin:0 auto .75rem;
+      display:block;background:#fff;padding:6px;box-shadow:var(--shadow);
+    }
+    .pix-key {
+      font-family:monospace;font-size:.9rem;
+      background:#fff;border-radius:8px;
+      padding:.5rem .75rem;color:var(--green);font-weight:600;
+      word-break:break-all;margin-bottom:.5rem;
+    }
+    .spinner {
+      width:24px;height:24px;border:3px solid rgba(255,255,255,.3);
+      border-top-color:#fff;border-radius:50%;
+      animation:spin .7s linear infinite;margin:0 auto;
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .year-select {
+      background:#fff;border:1.5px solid #e2e8f0;
+      border-radius:var(--radius);padding:.45rem .75rem;
+      font-size:.875rem;font-family:inherit;color:var(--slate-700);
+      outline:none;cursor:pointer;
+    }
+  </style>
+</head>
+<body>
+<div class="container" id="app">
+  <!-- Carregando -->
+  <div id="screen-loading" style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1rem">
+    <div style="width:32px;height:32px;border:3px solid #e2e8f0;border-top-color:var(--brand);border-radius:50%;animation:spin .7s linear infinite"></div>
+    <p style="color:var(--slate-400);font-size:.875rem">Carregando...</p>
+  </div>
+
+  <!-- Login -->
+  <div id="screen-login" style="display:none;flex-direction:column;justify-content:center">
+    <div class="login-wrap">
+      <div class="login-header">
+        <img id="login-logo" src="/assets/img/logo.png" class="login-logo" alt="Logo"/>
+        <div class="login-org-name" id="login-org-name">Portal do Sócio</div>
+        <div class="login-subtitle" id="login-org-church"></div>
+      </div>
+      <div class="card">
+        <div id="login-alert" style="display:none"></div>
+        <div class="field">
+          <label>Celular</label>
+          <input class="input" type="tel" id="login-phone"
+            placeholder="(83) 99999-9999"
+            inputmode="numeric" maxlength="15"
+            oninput="maskPhone(this)"/>
+        </div>
+        <div class="field">
+          <label>PIN — Dia e mês do seu nascimento</label>
+          <input class="input" type="tel" id="login-pin"
+            placeholder="Ex: 1503 para 15/03"
+            inputmode="numeric" maxlength="4"
+            style="letter-spacing:.2em;font-size:1.2rem;text-align:center"/>
+          <p style="font-size:.72rem;color:var(--slate-400);margin-top:.3rem">
+            Dia (2 dígitos) + mês (2 dígitos) do nascimento
+          </p>
+        </div>
+        <button class="btn btn-primary" id="btn-login" onclick="doLogin()">Entrar</button>
+      </div>
+      <p style="text-align:center;font-size:.72rem;color:var(--slate-400)">
+        Não consegue acessar? Fale com a diretoria.
+      </p>
+    </div>
+  </div>
+
+  <!-- App principal -->
+  <div id="screen-app" style="display:none;flex-direction:column">
+    <div class="app-header">
+      <div>
+        <div class="app-header-name" id="app-member-name"></div>
+        <div class="app-header-org" id="app-org-name"></div>
+      </div>
+      <button class="btn-logout-small" onclick="doLogout()">Sair</button>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+      <span style="font-size:.8rem;font-weight:600;color:var(--slate-500)">Exercício</span>
+      <select class="year-select" id="year-select" onchange="loadYear()"></select>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="fees" onclick="switchTab('fees')">📅 Mensalidades</button>
+      <button class="tab" data-tab="aci" onclick="switchTab('aci')">🤝 ACI</button>
+      <button class="tab" data-tab="pix" onclick="switchTab('pix')">💳 Pagar</button>
+    </div>
+
+    <div id="tab-fees">
+      <div id="fees-summary" style="margin-bottom:.75rem"></div>
+      <div id="months-grid" class="months-grid"></div>
+    </div>
+
+    <div id="tab-aci" style="display:none">
+      <div id="aci-content"></div>
+    </div>
+
+    <div id="tab-pix" style="display:none">
+      <div id="pix-content">
+        <div style="text-align:center;padding:2rem;color:var(--slate-400)">
+          <div style="font-size:2rem;margin-bottom:.5rem">💳</div>
+          <p>Dados de pagamento não configurados.</p>
+          <p style="font-size:.78rem;margin-top:.25rem">Fale com a diretoria.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = 'https://ump-gestao-api.onrender.com'
+  const MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+
+  let orgId      = null
+  let token      = null
+  let orgData    = null
+  let memberData = null
+  let currentYear = new Date().getFullYear()
+
+  async function init() {
+    const params = new URLSearchParams(window.location.search)
+    orgId = params.get('org')
+
+    const savedToken  = localStorage.getItem('portal_token')
+    const savedOrgId  = localStorage.getItem('portal_org_id')
+    const savedMember = localStorage.getItem('portal_member')
+
+    if (savedToken && savedOrgId === orgId && savedMember) {
+      token      = savedToken
+      memberData = JSON.parse(savedMember)
+      try {
+        await loadMemberData()
+        showScreen('app')
+        setupYearSelect()
+        loadYear()
+        return
+      } catch {
+        clearSession()
+      }
+    }
+
+    if (!orgId) {
+      showScreen('login')
+      return
+    }
+
+    try {
+      orgData = await fetchPublic(`/api/member-portal/org/${orgId}`)
+      document.documentElement.style.setProperty('--brand', orgData.theme_color || '#1a2a6c')
+      document.getElementById('login-org-name').textContent    = orgData.name
+      document.getElementById('login-org-church').textContent  = orgData.church_name || ''
+      document.title = `Portal — ${orgData.name}`
+      if (orgData.logo_b64) document.getElementById('login-logo').src = orgData.logo_b64
+      if (!orgData.portal_enabled) {
+        showScreen('login')
+        showLoginAlert('Portal temporariamente desativado.', 'error')
+        document.getElementById('btn-login').disabled = true
+        return
+      }
+    } catch {
+      showLoginAlert('Organização não encontrada.', 'error')
+    }
+
+    showScreen('login')
+  }
+
+  function maskPhone(input) {
+    let v = input.value.replace(/\D/g,'')
+    if (v.length > 11) v = v.slice(0,11)
+    if (v.length <= 10) {
+      v = v.replace(/(\d{2})(\d{4})(\d{0,4})/,'($1) $2-$3')
+    } else {
+      v = v.replace(/(\d{2})(\d{5})(\d{0,4})/,'($1) $2-$3')
+    }
+    input.value = v.replace(/-$/,'')
+  }
+
+  async function doLogin() {
+    const phone = document.getElementById('login-phone').value
+    const pin   = document.getElementById('login-pin').value.trim()
+
+    if (!phone || !pin) { showLoginAlert('Preencha o celular e o PIN.', 'error'); return }
+    if (pin.length !== 4) { showLoginAlert('PIN deve ter 4 dígitos (dia+mês).', 'error'); return }
+
+    const btn = document.getElementById('btn-login')
+    btn.disabled = true
+    btn.innerHTML = '<div class="spinner"></div>'
+
+    try {
+      const data = await fetchPublic('/api/member-portal/login', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ org_id: orgId, phone: phone.replace(/\D/g,''), pin })
+      })
+      token      = data.access_token
+      memberData = data.member
+      localStorage.setItem('portal_token',  token)
+      localStorage.setItem('portal_org_id', orgId)
+      localStorage.setItem('portal_member', JSON.stringify(memberData))
+      await loadMemberData()
+      showScreen('app')
+      setupYearSelect()
+      loadYear()
+    } catch(err) {
+      showLoginAlert(err.message || 'Erro ao entrar.', 'error')
+    } finally {
+      btn.disabled = false
+      btn.innerHTML = 'Entrar'
+    }
+  }
+
+  async function loadMemberData() {
+    const data = await fetchAuth('/api/member-portal/me')
+    memberData = { ...memberData, ...data }
+    document.getElementById('app-member-name').textContent = memberData.full_name || ''
+    document.getElementById('app-org-name').textContent    = memberData.org_name  || ''
+    localStorage.setItem('portal_member', JSON.stringify(memberData))
+    renderPix()
+  }
+
+  function setupYearSelect() {
+    const sel = document.getElementById('year-select')
+    sel.innerHTML = ''
+    const y = new Date().getFullYear()
+    for (let i = y; i >= y-2; i--) {
+      const opt = document.createElement('option')
+      opt.value = i; opt.textContent = i
+      sel.appendChild(opt)
+    }
+    currentYear = y
+  }
+
+  function loadYear() {
+    currentYear = parseInt(document.getElementById('year-select').value)
+    loadFees()
+    loadAci()
+  }
+
+  async function loadFees() {
+    try {
+      const fees = await fetchAuth(`/api/member-portal/fees/${currentYear}`)
+      renderFees(fees)
+    } catch {}
+  }
+
+  function renderFees(fees) {
+    const paid   = fees.filter(f => f.is_paid).length
+    const total  = fees.filter(f => f.has_record).length
+    const unpaid = fees.filter(f => f.has_record && !f.is_paid).length
+
+    document.getElementById('fees-summary').innerHTML = `
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.5rem">
+        <div style="flex:1;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--radius);padding:.6rem;text-align:center">
+          <div style="font-size:1.25rem;font-weight:700;color:#166534">${paid}</div>
+          <div style="font-size:.7rem;color:#166534">Pagas</div>
+        </div>
+        <div style="flex:1;background:#fef2f2;border:1px solid #fecaca;border-radius:var(--radius);padding:.6rem;text-align:center">
+          <div style="font-size:1.25rem;font-weight:700;color:#991b1b">${unpaid}</div>
+          <div style="font-size:.7rem;color:#991b1b">Pendentes</div>
+        </div>
+        <div style="flex:1;background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--radius);padding:.6rem;text-align:center">
+          <div style="font-size:1.25rem;font-weight:700;color:#1d4ed8">${total}</div>
+          <div style="font-size:.7rem;color:#1d4ed8">Registradas</div>
+        </div>
+      </div>`
+
+    document.getElementById('months-grid').innerHTML = fees.map(f => `
+      <div class="month-chip ${f.is_paid ? 'paid' : f.has_record ? 'unpaid' : 'no-record'}">
+        <span class="month-name">${MONTHS[f.month-1]}</span>
+        <span class="month-status">${f.is_paid ? '✓ Paga' : f.has_record ? '⚠ Pendente' : '—'}</span>
+      </div>`).join('')
+  }
+
+  async function loadAci() {
+    try {
+      const aci = await fetchAuth(`/api/member-portal/aci/${currentYear}`)
+      renderAci(aci)
+    } catch {}
+  }
+
+  function renderAci(aci) {
+    const pct = aci.aci_year_value > 0
+      ? Math.min(100, (aci.total_paid / aci.aci_year_value * 100)).toFixed(0) : 0
+    const fmt = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})
+
+    document.getElementById('aci-content').innerHTML = `
+      <div class="card">
+        <div style="font-weight:600;font-size:.95rem;margin-bottom:1rem;color:var(--brand)">ACI ${aci.fiscal_year}</div>
+        <div style="margin-bottom:1rem">
+          <div style="display:flex;justify-content:space-between;font-size:.78rem;color:var(--slate-500);margin-bottom:.3rem">
+            <span>Progresso</span><span>${pct}%</span>
+          </div>
+          <div style="height:8px;background:#e2e8f0;border-radius:99px;overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#166534,#16a34a);border-radius:99px;transition:width .5s"></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:1rem">
+          <div style="background:var(--green-bg);border:1px solid #bbf7d0;border-radius:var(--radius);padding:.65rem;text-align:center">
+            <div style="font-size:.65rem;color:var(--green);margin-bottom:.2rem">Contribuído</div>
+            <div style="font-weight:700;color:var(--green);font-size:.95rem">${fmt(aci.total_paid)}</div>
+          </div>
+          <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:var(--radius);padding:.65rem;text-align:center">
+            <div style="font-size:.65rem;color:var(--red);margin-bottom:.2rem">Restante</div>
+            <div style="font-weight:700;color:var(--red);font-size:.95rem">${fmt(aci.remaining)}</div>
+          </div>
+        </div>
+        ${aci.contributions.length ? `
+          <div style="font-size:.78rem;font-weight:600;color:var(--slate-600);margin-bottom:.5rem">Contribuições registradas</div>
+          ${aci.contributions.map(c => `
+            <div style="display:flex;justify-content:space-between;padding:.5rem 0;border-top:1px solid #f1f5f9;font-size:.85rem">
+              <span style="color:var(--slate-500)">${new Date(c.payment_date+'T00:00:00').toLocaleDateString('pt-BR')}</span>
+              <span style="font-weight:600;color:var(--green)">${fmt(c.amount)}</span>
+            </div>`).join('')}
+        ` : `<p style="text-align:center;color:var(--slate-400);font-size:.85rem;padding:1rem 0">Nenhuma contribuição ACI registrada.</p>`}
+      </div>`
+  }
+
+  function renderPix() {
+    const container = document.getElementById('pix-content')
+    if (!memberData?.pix_key && !memberData?.pix_qr_b64) {
+      container.innerHTML = `
+        <div style="text-align:center;padding:2rem;color:var(--slate-400)">
+          <div style="font-size:2rem;margin-bottom:.5rem">💳</div>
+          <p>Dados de pagamento não configurados.</p>
+          <p style="font-size:.78rem;margin-top:.25rem">Fale com a diretoria.</p>
+        </div>`
+      return
+    }
+    container.innerHTML = `
+      <div class="pix-card">
+        <div style="font-weight:700;font-size:1rem;color:var(--green);margin-bottom:.75rem">💳 Pagar via PIX</div>
+        ${memberData.pix_qr_b64 ? `<img src="${memberData.pix_qr_b64}" class="pix-qr" alt="QR Code PIX"/>` : ''}
+        ${memberData.pix_key ? `
+          <div class="pix-key">${memberData.pix_key}</div>
+          <button onclick="copyPix()" style="background:#166534;color:#fff;border:none;border-radius:var(--radius);padding:.5rem 1.5rem;font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;width:100%;margin-top:.25rem">
+            📋 Copiar chave PIX
+          </button>` : ''}
+        <p style="font-size:.72rem;color:var(--green);margin-top:.75rem;opacity:.8">
+          Após o pagamento, a diretoria confirmará em até 24h.
+        </p>
+      </div>`
+  }
+
+  window.copyPix = () => {
+    navigator.clipboard.writeText(memberData.pix_key).then(() => {
+      const btn = document.querySelector('[onclick="copyPix()"]')
+      if (btn) { btn.textContent = '✓ Copiado!'; setTimeout(() => btn.textContent = '📋 Copiar chave PIX', 2000) }
+    })
+  }
+
+  window.switchTab = (tab) => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab))
+    document.getElementById('tab-fees').style.display = tab === 'fees' ? 'block' : 'none'
+    document.getElementById('tab-aci').style.display  = tab === 'aci'  ? 'block' : 'none'
+    document.getElementById('tab-pix').style.display  = tab === 'pix'  ? 'block' : 'none'
+  }
+
+  window.doLogout = () => { clearSession(); window.location.reload() }
+
+  function clearSession() {
+    localStorage.removeItem('portal_token')
+    localStorage.removeItem('portal_org_id')
+    localStorage.removeItem('portal_member')
+    token = null; memberData = null
+  }
+
+  function showScreen(name) {
+    document.getElementById('screen-loading').style.display = 'none'
+    const login = document.getElementById('screen-login')
+    const appEl = document.getElementById('screen-app')
+    login.style.display = name === 'login' ? 'flex' : 'none'
+    appEl.style.display  = name === 'app'   ? 'flex' : 'none'
+  }
+
+  function showLoginAlert(msg, type) {
+    const el = document.getElementById('login-alert')
+    el.className = `alert alert-${type}`
+    el.textContent = msg
+    el.style.display = 'block'
+  }
+
+  async function fetchPublic(path, options = {}) {
+    const r = await fetch(API + path, options)
+    const data = await r.json()
+    if (!r.ok) throw new Error(data.detail || 'Erro na requisição')
+    return data
+  }
+
+  async function fetchAuth(path) {
+    const r = await fetch(API + path, { headers: { 'Authorization': `Bearer ${token}` } })
+    const data = await r.json()
+    if (r.status === 401) { clearSession(); window.location.reload() }
+    if (!r.ok) throw new Error(data.detail || 'Erro')
+    return data
+  }
+
+  init()
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js?v=9').catch(console.error)
+  }
+</script>
+</body>
+</html>

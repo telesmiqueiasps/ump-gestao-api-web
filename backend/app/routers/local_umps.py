@@ -37,6 +37,9 @@ class LocalUmpUpdate(BaseModel):
     initial_balance: Optional[float] = None
     theme_color: Optional[str] = None
     society_type: Optional[str] = None
+    pix_key: Optional[str] = None
+    reminder_day: Optional[int] = None
+    member_portal_enabled: Optional[bool] = None
 
 
 # Federação cria uma UMP Local
@@ -320,6 +323,9 @@ def update_my_local_ump(
     restricted.pop("initial_balance", None)
     restricted.pop("fiscal_year", None)
 
+    if "reminder_day" in restricted:
+        restricted["reminder_day"] = max(1, min(28, restricted["reminder_day"]))
+
     for field, value in restricted.items():
         setattr(local, field, value)
 
@@ -491,6 +497,116 @@ def get_logo_url_local(
         raise HTTPException(status_code=500, detail=f"Erro ao baixar logo: {str(e)}")
 
 
+@router.post("/me/pix-qr")
+async def upload_pix_qr(
+    file: UploadFile = File(...),
+    current_user: User = Depends(require_local_ump),
+    db: Session = Depends(get_db),
+):
+    local = db.query(LocalUmp).filter(LocalUmp.id == current_user.organization_id).first()
+
+    contents = await file.read()
+    if len(contents) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Arquivo muito grande. Máx 5MB.")
+
+    allowed = ["image/png", "image/jpeg", "image/webp"]
+    if file.content_type not in allowed:
+        raise HTTPException(status_code=400, detail="Formato inválido")
+
+    if local.pix_qr_key:
+        try:
+            from app.services.storage import delete_folder
+            delete_folder(local.pix_qr_key)
+        except:
+            pass
+
+    key = f"pix-qr/{current_user.organization_id}/{file.filename}"
+    url = upload_file(contents, key, file.content_type)
+
+    local.pix_qr_url = url
+    local.pix_qr_key = key
+    db.commit()
+
+    import base64
+    b64 = base64.b64encode(contents).decode('utf-8')
+    return {
+        "url": url,
+        "base64": f"data:{file.content_type};base64,{b64}"
+    }
+
+
+@router.post("/me/pix-qr/generate")
+async def generate_pix_qr(
+    current_user: User = Depends(require_local_ump),
+    db: Session = Depends(get_db),
+):
+    local = db.query(LocalUmp).filter(LocalUmp.id == current_user.organization_id).first()
+
+    if not local.pix_key:
+        raise HTTPException(status_code=400,
+            detail="Cadastre a chave PIX antes de gerar o QR Code")
+
+    import qrcode as _qrcode
+    import io as _io
+    import base64
+
+    qr = _qrcode.QRCode(
+        version=1,
+        error_correction=_qrcode.constants.ERROR_CORRECT_M,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(local.pix_key)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+
+    buf = _io.BytesIO()
+    img.save(buf, format='PNG')
+    png_bytes = buf.getvalue()
+
+    if local.pix_qr_key:
+        try:
+            from app.services.storage import delete_folder
+            delete_folder(local.pix_qr_key)
+        except:
+            pass
+
+    key = f"pix-qr/{current_user.organization_id}/pix_qr.png"
+    url = upload_file(png_bytes, key, 'image/png')
+
+    local.pix_qr_url = url
+    local.pix_qr_key = key
+    db.commit()
+
+    b64 = base64.b64encode(png_bytes).decode('utf-8')
+    return {
+        "url": url,
+        "base64": f"data:image/png;base64,{b64}"
+    }
+
+
+@router.get("/me/pix-qr-base64")
+def get_pix_qr_base64(
+    current_user: User = Depends(require_local_ump),
+    db: Session = Depends(get_db),
+):
+    from app.services.storage import _get_client
+    from app.core.config import get_settings
+    local = db.query(LocalUmp).filter(LocalUmp.id == current_user.organization_id).first()
+    if not local or not local.pix_qr_key:
+        raise HTTPException(status_code=404, detail="QR Code não encontrado")
+    settings_obj = get_settings()
+    b2 = _get_client()
+    try:
+        import base64
+        resp = b2.get_object(Bucket=settings_obj.b2_bucket_name, Key=local.pix_qr_key)
+        content = resp['Body'].read()
+        ct = resp.get('ContentType', 'image/png')
+        return {"base64": f"data:{ct};base64,{base64.b64encode(content).decode()}"}
+    except:
+        raise HTTPException(status_code=404, detail="QR Code não encontrado")
+
+
 def _to_out(l: LocalUmp) -> dict:
     return {
         "id": str(l.id),
@@ -510,4 +626,9 @@ def _to_out(l: LocalUmp) -> dict:
         "is_active": l.is_active,
         "deactivated_at": l.deactivated_at.isoformat() if l.deactivated_at else None,
         "reactivated_at": l.reactivated_at.isoformat() if l.reactivated_at else None,
+        "pix_key":               l.pix_key,
+        "pix_qr_url":            l.pix_qr_url,
+        "reminder_day":          l.reminder_day or 5,
+        "member_portal_enabled": l.member_portal_enabled if l.member_portal_enabled is not None else True,
+        "portal_url":            f"https://umpgestao.netlify.app/socio.html?org={str(l.id)}",
     }

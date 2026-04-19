@@ -174,7 +174,7 @@
       </div>
       <div class="field">
         <label>Telefone <span class="text-slate-400" style="font-weight:400">(opcional)</span></label>
-        <input class="input" type="text" id="m-phone" placeholder="opcional" />
+        <input class="input" type="tel" id="m-phone" placeholder="(83) 99999-9999" maxlength="15" />
       </div>
     </div>
     <div class="grid-2 mb-4">
@@ -707,6 +707,18 @@
       if (document.querySelector('.contrib-tab[data-tab="aci"]').classList.contains('active')) {
         await loadAciContributions()
       }
+    })
+
+    // Máscara de telefone
+    document.getElementById('m-phone').addEventListener('input', (e) => {
+      let v = e.target.value.replace(/\D/g,'')
+      if (v.length > 11) v = v.slice(0,11)
+      if (v.length <= 10) {
+        v = v.replace(/(\d{2})(\d{4})(\d{0,4})/,'($1) $2-$3')
+      } else {
+        v = v.replace(/(\d{2})(\d{5})(\d{0,4})/,'($1) $2-$3')
+      }
+      e.target.value = v.replace(/-$/,'')
     })
 
     // ── Init ──
