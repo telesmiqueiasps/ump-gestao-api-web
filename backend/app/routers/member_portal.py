@@ -105,7 +105,7 @@ def get_portal_member(
     try:
         payload = jwt.decode(
             credentials.credentials,
-            settings.secret_key,
+            settings.jwt_secret_key,
             algorithms=["HS256"]
         )
         if payload.get("type") != "member_portal":
