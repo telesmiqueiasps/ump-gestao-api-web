@@ -191,10 +191,11 @@ def send_reminders(
     import datetime as dt
     from app.models.member_fees import MemberMonthlyFee
 
-    now_utc   = dt.datetime.now(dt.timezone.utc)
-    now_br    = now_utc - dt.timedelta(hours=3)
-    today_day = now_br.day
-    now_hour  = now_br.hour
+    now_utc    = dt.datetime.now(dt.timezone.utc)
+    now_br     = now_utc - dt.timedelta(hours=3)
+    today_day  = now_br.day
+    now_hour   = now_br.hour
+    now_minute = now_br.minute
 
     locals_ = db.query(LocalUmp).filter(
         LocalUmp.is_active == True,
@@ -204,8 +205,9 @@ def send_reminders(
 
     sent = 0
     for local in locals_:
-        reminder_hour = getattr(local, 'reminder_hour', 9) or 9
-        if reminder_hour != now_hour:
+        reminder_hour   = getattr(local, 'reminder_hour', 9) or 9
+        reminder_minute = getattr(local, 'reminder_minute', 0) or 0
+        if reminder_hour != now_hour or reminder_minute != now_minute:
             continue
 
         current_month = dt.date(now_br.year, now_br.month, 1)

@@ -29,6 +29,7 @@ class LocalUmp(Base):
     pix_qr_key            = Column(Text, nullable=True)
     reminder_day          = Column(Integer, default=5)
     reminder_hour         = Column(Integer, default=9)
+    reminder_minute       = Column(Integer, default=0)
     member_portal_enabled = Column(Boolean, default=True)
     is_active = Column(Boolean, default=True)
     deactivated_at = Column(DateTime(timezone=True), nullable=True)
