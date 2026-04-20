@@ -153,18 +153,14 @@ def send_push_to_subscription(sub_data: dict, message: dict):
         settings = get_settings()
 
         private_key = settings.vapid_private_key.strip()
+        private_key = private_key.replace('-----BEGIN EC PRIVATE KEY-----', '')
+        private_key = private_key.replace('-----END EC PRIVATE KEY-----', '')
+        private_key = private_key.replace('\n', '')
+        private_key = private_key.replace('\r', '')
+        private_key = private_key.replace(' ', '')
+        private_key = private_key.strip()
 
-        if 'BEGIN EC PRIVATE KEY' in private_key:
-            import re
-            content = re.sub(
-                r'-----BEGIN EC PRIVATE KEY-----|-----END EC PRIVATE KEY-----|\\n|\s',
-                '', private_key
-            )
-            private_key = (
-                '-----BEGIN EC PRIVATE KEY-----\n' +
-                '\n'.join(content[i:i+64] for i in range(0, len(content), 64)) +
-                '\n-----END EC PRIVATE KEY-----'
-            )
+        print(f"Using VAPID private key (first 20 chars): {private_key[:20]}")
 
         webpush(
             subscription_info={

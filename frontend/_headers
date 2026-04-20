@@ -26,3 +26,12 @@
 
 /manifest.json
   Cache-Control: no-cache, no-store, must-revalidate
+
+/manifest-socio.json
+  Content-Type: application/manifest+json
+  Cache-Control: no-cache
+
+/sw-socio.js
+  Content-Type: application/javascript
+  Cache-Control: no-cache, no-store, must-revalidate
+  Service-Worker-Allowed: /

@@ -7,8 +7,11 @@
   <meta name="mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+  <meta name="application-name" content="Portal do Sócio UMP"/>
+  <meta name="apple-mobile-web-app-title" content="Sócio UMP"/>
   <title>Portal do Sócio</title>
   <link rel="icon" type="image/png" href="/assets/img/logo.png"/>
+  <link rel="apple-touch-icon" href="/assets/img/logo.png"/>
   <link rel="manifest" href="/manifest-socio.json"/>
   <style>
     * { box-sizing:border-box;margin:0;padding:0; }
@@ -624,17 +627,22 @@
 </script>
 <script>
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(regs => {
-      return Promise.all(
-        regs.filter(r => r.scope.includes('socio') ||
-                         (r.active && r.active.scriptURL.includes('sw-socio')))
-            .map(r => r.unregister())
-      )
-    }).then(() => {
-      return navigator.serviceWorker.register('/sw-socio.js?v=1')
-    }).then(reg => {
-      console.log('SW Socio registrado:', reg.scope)
-    }).catch(err => console.error('SW Socio erro:', err))
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw-socio.js', { scope: '/' })
+        .then(reg => {
+          console.log('SW Socio registrado:', reg.scope)
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' &&
+                  navigator.serviceWorker.controller) {
+                newWorker.postMessage('skipWaiting')
+              }
+            })
+          })
+        })
+        .catch(err => console.error('SW Socio erro:', err))
+    })
   }
 </script>
 </body>

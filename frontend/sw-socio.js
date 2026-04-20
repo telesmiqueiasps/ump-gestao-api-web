@@ -1,7 +1,14 @@
 const CACHE_NAME = 'ump-socio-v1'
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(self.skipWaiting())
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => {
+      return cache.addAll([
+        '/socio.html',
+        '/assets/img/logo.png',
+      ])
+    }).then(() => self.skipWaiting())
+  )
 })
 
 self.addEventListener('activate', (event) => {
