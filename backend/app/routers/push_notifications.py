@@ -105,6 +105,42 @@ def unsubscribe_push(
     return {"detail": "Inscrições removidas"}
 
 
+@router.post("/test-push")
+def test_push(
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    member: Member = Depends(_get_portal_member),
+):
+    """Envia notificação de teste para o sócio logado"""
+    subs = db.query(PushSubscription).filter(
+        PushSubscription.member_id == member.id
+    ).all()
+
+    if not subs:
+        raise HTTPException(
+            status_code=404,
+            detail="Nenhuma subscription encontrada. "
+                   "Certifique-se de ter dado permissão de notificação no portal."
+        )
+
+    message = {
+        "title": "Teste de Notificação",
+        "body":  "Se você está vendo isso, as notificações estão funcionando!",
+        "url":   "/socio.html",
+    }
+
+    for sub in subs:
+        background_tasks.add_task(
+            send_push_to_subscription,
+            {"endpoint": sub.endpoint,
+             "p256dh":   sub.p256dh,
+             "auth":     sub.auth},
+            message,
+        )
+
+    return {"detail": f"Notificação de teste enfileirada para {len(subs)} dispositivo(s)"}
+
+
 @router.get("/vapid-public-key")
 def get_vapid_public_key():
     settings = get_settings()
