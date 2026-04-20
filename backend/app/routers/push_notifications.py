@@ -151,6 +151,19 @@ def send_push_to_subscription(sub_data: dict, message: dict):
     try:
         from pywebpush import webpush, WebPushException
         settings = get_settings()
+
+        private_key = settings.vapid_private_key
+        if '\\n' in private_key:
+            private_key = private_key.replace('\\n', '\n')
+        if 'BEGIN EC PRIVATE KEY' in private_key and '\n' not in private_key:
+            private_key = (
+                private_key
+                .replace('-----BEGIN EC PRIVATE KEY-----',
+                         '-----BEGIN EC PRIVATE KEY-----\n')
+                .replace('-----END EC PRIVATE KEY-----',
+                         '\n-----END EC PRIVATE KEY-----')
+            )
+
         webpush(
             subscription_info={
                 "endpoint": sub_data["endpoint"],
@@ -160,7 +173,7 @@ def send_push_to_subscription(sub_data: dict, message: dict):
                 },
             },
             data=json.dumps(message),
-            vapid_private_key=settings.vapid_private_key,
+            vapid_private_key=private_key,
             vapid_claims={
                 "sub": f"mailto:{settings.vapid_email}",
             },

@@ -271,6 +271,7 @@
   async function init() {
     const params = new URLSearchParams(window.location.search)
     orgId = params.get('org')
+    console.log('orgId:', orgId)
 
     const savedToken  = localStorage.getItem('portal_token')
     const savedOrgId  = localStorage.getItem('portal_org_id')
