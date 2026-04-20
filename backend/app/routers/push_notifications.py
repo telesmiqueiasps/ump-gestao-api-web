@@ -187,7 +187,6 @@ def send_reminders(
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ):
-    """Chamado pelo cron job — envia lembretes para orgs cujo dia+hora bate agora"""
     import datetime as dt
     from app.models.member_fees import MemberMonthlyFee
 
@@ -197,18 +196,38 @@ def send_reminders(
     now_hour   = now_br.hour
     now_minute = now_br.minute
 
+    print(f"[CRON] Executando: UTC={now_utc.strftime('%H:%M')} "
+          f"BR={now_br.strftime('%d/%m %H:%M')} "
+          f"dia={today_day} hora={now_hour} min={now_minute}")
+
     locals_ = db.query(LocalUmp).filter(
         LocalUmp.is_active == True,
         LocalUmp.member_portal_enabled == True,
-        LocalUmp.reminder_day == today_day,
     ).all()
+
+    print(f"[CRON] {len(locals_)} local(is) ativa(s) com portal habilitado")
 
     sent = 0
     for local in locals_:
+        reminder_day    = getattr(local, 'reminder_day', 5) or 5
         reminder_hour   = getattr(local, 'reminder_hour', 9) or 9
         reminder_minute = getattr(local, 'reminder_minute', 0) or 0
-        if reminder_hour != now_hour or reminder_minute != now_minute:
+
+        print(f"[CRON] Local '{local.name}': "
+              f"dia={reminder_day} hora={reminder_hour} min={reminder_minute} | "
+              f"hoje={today_day} agora={now_hour}:{now_minute:02d} | "
+              f"bate_dia={reminder_day==today_day} "
+              f"bate_hora={reminder_hour==now_hour} "
+              f"bate_min={reminder_minute==now_minute}")
+
+        if reminder_day != today_day:
             continue
+        if reminder_hour != now_hour:
+            continue
+        if reminder_minute != now_minute:
+            continue
+
+        print(f"[CRON] ✅ Horário bate para '{local.name}' — buscando pendentes...")
 
         current_month = dt.date(now_br.year, now_br.month, 1)
         pending_fees = db.query(MemberMonthlyFee).filter(
@@ -217,21 +236,26 @@ def send_reminders(
             MemberMonthlyFee.is_paid == False,
         ).all()
 
+        print(f"[CRON] {len(pending_fees)} mensalidade(s) pendente(s)")
+
         member_ids_pending = {str(f.member_id) for f in pending_fees}
         if not member_ids_pending:
+            print(f"[CRON] Sem pendentes, pulando.")
             continue
 
         subs = db.query(PushSubscription).filter(
             PushSubscription.local_ump_id == local.id,
         ).all()
 
+        print(f"[CRON] {len(subs)} subscription(s) encontrada(s)")
+
         for sub in subs:
             if str(sub.member_id) not in member_ids_pending:
                 continue
             message = {
                 "title": f"Lembrete — {local.name}",
-                "body":  f"Sua mensalidade de {now_br.strftime('%B/%Y')} "
-                          f"está pendente. Acesse o portal para ver detalhes.",
+                "body":  f"Sua mensalidade de "
+                         f"{now_br.strftime('%B/%Y')} está pendente.",
                 "url":   f"https://umpgestao.netlify.app/socio.html?org={local.id}",
             }
             background_tasks.add_task(
@@ -242,5 +266,29 @@ def send_reminders(
                 message,
             )
             sent += 1
+            print(f"[CRON] 📤 Notificação enfileirada para membro {sub.member_id}")
 
-    return {"detail": f"{sent} notificações enfileiradas"}
+    print(f"[CRON] Total enfileirado: {sent}")
+    return {
+        "detail": f"{sent} notificações enfileiradas",
+        "debug": {
+            "now_br": now_br.strftime('%d/%m/%Y %H:%M'),
+            "day":    today_day,
+            "hour":   now_hour,
+            "minute": now_minute,
+        },
+    }
+
+
+@router.get("/debug-time")
+def debug_time():
+    import datetime as dt
+    now_utc = dt.datetime.now(dt.timezone.utc)
+    now_br  = now_utc - dt.timedelta(hours=3)
+    return {
+        "utc":    now_utc.strftime('%d/%m/%Y %H:%M:%S'),
+        "br":     now_br.strftime('%d/%m/%Y %H:%M:%S'),
+        "day":    now_br.day,
+        "hour":   now_br.hour,
+        "minute": now_br.minute,
+    }
