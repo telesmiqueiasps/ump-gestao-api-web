@@ -496,12 +496,10 @@
 
   window.testPush = async () => {
     try {
-      const result = await fetchAuth('/api/push/test-push', { method: 'POST' })
-      alert('\u2705 ' + result.detail + '
-
-Aguarde alguns segundos...')
+      const r = await fetchAuth('/api/push/test-push', { method: 'POST' })
+      alert(r.detail)
     } catch(err) {
-      alert('\u274c Erro: ' + err.message)
+      alert('Erro: ' + err.message)
     }
   }
 
