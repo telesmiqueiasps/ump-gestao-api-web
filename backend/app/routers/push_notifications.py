@@ -188,7 +188,6 @@ def send_reminders(
     db: Session = Depends(get_db),
 ):
     import datetime as dt
-    from app.models.member_fees import MemberMonthlyFee
 
     now_utc    = dt.datetime.now(dt.timezone.utc)
     now_br     = now_utc - dt.timedelta(hours=3)
@@ -227,21 +226,7 @@ def send_reminders(
         if reminder_minute != now_minute:
             continue
 
-        print(f"[CRON] ✅ Horário bate para '{local.name}' — buscando pendentes...")
-
-        current_month = dt.date(now_br.year, now_br.month, 1)
-        pending_fees = db.query(MemberMonthlyFee).filter(
-            MemberMonthlyFee.local_ump_id == local.id,
-            MemberMonthlyFee.reference_month == current_month,
-            MemberMonthlyFee.is_paid == False,
-        ).all()
-
-        print(f"[CRON] {len(pending_fees)} mensalidade(s) pendente(s)")
-
-        member_ids_pending = {str(f.member_id) for f in pending_fees}
-        if not member_ids_pending:
-            print(f"[CRON] Sem pendentes, pulando.")
-            continue
+        print(f"[CRON] ✅ Horário bate para '{local.name}' — buscando sócios...")
 
         subs = db.query(PushSubscription).filter(
             PushSubscription.local_ump_id == local.id,
@@ -249,13 +234,21 @@ def send_reminders(
 
         print(f"[CRON] {len(subs)} subscription(s) encontrada(s)")
 
+        if not subs:
+            print(f"[CRON] Sem subscriptions, pulando.")
+            continue
+
+        month_name = [
+            'Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+            'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'
+        ][now_br.month - 1]
+
         for sub in subs:
-            if str(sub.member_id) not in member_ids_pending:
-                continue
             message = {
-                "title": f"Lembrete — {local.name}",
-                "body":  f"Sua mensalidade de "
-                         f"{now_br.strftime('%B/%Y')} está pendente.",
+                "title": f"💰 Lembrete de Mensalidade",
+                "body":  f"Olá! Não esqueça de contribuir com sua "
+                         f"mensalidade de {month_name}/{now_br.year}. "
+                         f"Acesse o portal para mais detalhes.",
                 "url":   f"https://umpgestao.netlify.app/socio.html?org={local.id}",
             }
             background_tasks.add_task(
