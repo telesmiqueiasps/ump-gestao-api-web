@@ -161,15 +161,6 @@
       font-size:.875rem;font-family:inherit;color:var(--slate-700);
       outline:none;cursor:pointer;
     }
-    #btn-test-push {
-      width:100%;padding:.7rem;
-      border:1.5px dashed #6366f1;
-      border-radius:10px;
-      background:#f5f3ff;
-      color:#4f46e5;
-      font-size:.85rem;font-weight:600;
-      cursor:pointer;font-family:inherit;
-    }
   </style>
 </head>
 <body>
@@ -279,10 +270,6 @@
     <div id="tab-fees">
       <div id="fees-summary" style="margin-bottom:.75rem"></div>
       <div id="months-grid" class="months-grid"></div>
-      <div id="test-push-wrap" style="display:none;margin-top:1rem">
-        <button id="btn-test-push" onclick="testPush()">🔔 Testar Notificação</button>
-        <p style="text-align:center;font-size:.7rem;color:#94a3b8;margin-top:.3rem">Botão temporário de teste</p>
-      </div>
     </div>
 
     <div id="tab-aci" style="display:none">
@@ -553,15 +540,6 @@
       </div>`
   }
 
-  window.testPush = async () => {
-    try {
-      const r = await fetchAuth('/api/push/test-push', { method: 'POST' })
-      alert(r.detail)
-    } catch(err) {
-      alert('Erro: ' + err.message)
-    }
-  }
-
   window.copyPix = () => {
     navigator.clipboard.writeText(memberData.pix_key).then(() => {
       const btn = document.querySelector('[onclick="copyPix()"]')
@@ -697,7 +675,6 @@
         })
       })
 
-      document.getElementById('test-push-wrap').style.display = 'block'
       console.log('Push notifications ativas')
     } catch(err) {
       console.warn('Push setup error:', err)

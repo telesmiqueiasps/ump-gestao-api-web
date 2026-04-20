@@ -57,27 +57,42 @@ self.addEventListener('push', (event) => {
   if (!event.data) return
   const data = event.data.json()
 
+  const options = {
+    body:     data.body  || 'Você tem uma mensagem da sua UMP.',
+    icon:     data.icon  || '/assets/img/logo.png',
+    badge:    data.badge || '/assets/img/logo.png',
+    tag:      'mensalidade-lembrete',
+    renotify: false,
+    vibrate:  [200, 100, 200],
+    data:     { url: data.url || '/socio.html' },
+    actions:  [
+      { action: 'open',  title: '📱 Abrir Portal' },
+      { action: 'close', title: '✕ Fechar' },
+    ],
+  }
+
   event.waitUntil(
-    self.registration.showNotification(data.title || 'Portal do Sócio', {
-      body:    data.body  || 'Você tem mensalidades pendentes.',
-      icon:    '/assets/img/192-maskable.png',
-      badge:   '/assets/img/192-maskable.png',
-      tag:     'mensalidade-lembrete',
-      renotify: true,
-      data:    { url: data.url || '/socio.html' },
-    })
+    self.registration.showNotification(
+      data.title || '💰 Lembrete de Mensalidade',
+      options
+    )
   )
 })
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
+
+  if (event.action === 'close') return
+
   const url = event.notification.data?.url || '/socio.html'
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then(windowClients => {
         for (const client of windowClients) {
-          if (client.url.includes('socio') && 'focus' in client) {
-            return client.focus()
+          if ('focus' in client) {
+            client.focus()
+            client.navigate(url)
+            return
           }
         }
         if (clients.openWindow) return clients.openWindow(url)

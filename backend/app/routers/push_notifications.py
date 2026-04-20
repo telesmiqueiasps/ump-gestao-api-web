@@ -155,12 +155,7 @@ def send_push_to_subscription(sub_data: dict, message: dict):
         private_key = settings.vapid_private_key.strip()
         private_key = private_key.replace('-----BEGIN EC PRIVATE KEY-----', '')
         private_key = private_key.replace('-----END EC PRIVATE KEY-----', '')
-        private_key = private_key.replace('\n', '')
-        private_key = private_key.replace('\r', '')
-        private_key = private_key.replace(' ', '')
-        private_key = private_key.strip()
-
-        print(f"Using VAPID private key (first 20 chars): {private_key[:20]}")
+        private_key = private_key.replace('\n', '').replace('\r', '').replace(' ', '').strip()
 
         webpush(
             subscription_info={
@@ -178,7 +173,22 @@ def send_push_to_subscription(sub_data: dict, message: dict):
         )
         return True
     except Exception as e:
-        print(f"Push error: {e}")
+        err_str = str(e)
+        print(f"Push error: {err_str}")
+
+        if '410' in err_str or '404' in err_str or 'Gone' in err_str:
+            try:
+                from app.db.session import SessionLocal
+                db = SessionLocal()
+                db.query(PushSubscription).filter(
+                    PushSubscription.endpoint == sub_data["endpoint"]
+                ).delete()
+                db.commit()
+                db.close()
+                print(f"Subscription expirada removida: {sub_data['endpoint'][:50]}...")
+            except Exception as db_err:
+                print(f"Erro ao remover subscription: {db_err}")
+
         return False
 
 
@@ -244,12 +254,25 @@ def send_reminders(
         ][now_br.month - 1]
 
         for sub in subs:
+            member = db.query(Member).filter(
+                Member.id == sub.member_id
+            ).first()
+
+            first_name = ''
+            if member and member.full_name:
+                first_name = member.full_name.split()[0]
+
             message = {
-                "title": f"💰 Lembrete de Mensalidade",
-                "body":  f"Olá! Não esqueça de contribuir com sua "
-                         f"mensalidade de {month_name}/{now_br.year}. "
-                         f"Acesse o portal para mais detalhes.",
+                "title": "💰 Mensalidade — " + local.name,
+                "body": (
+                    f"Olá{', ' + first_name if first_name else ''}! "
+                    f"Lembrete de contribuição referente a "
+                    f"{month_name} de {now_br.year}. "
+                    f"Toque para acessar o portal."
+                ),
                 "url":   f"https://umpgestao.netlify.app/socio.html?org={local.id}",
+                "icon":  "/assets/img/logo.png",
+                "badge": "/assets/img/logo.png",
             }
             background_tasks.add_task(
                 send_push_to_subscription,
