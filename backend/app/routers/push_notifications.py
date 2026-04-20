@@ -280,6 +280,15 @@ def send_reminders(
     }
 
 
+@router.get("/send-reminders")
+def send_reminders_get(
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
+    """Versão GET para testes manuais — mesma lógica do POST"""
+    return send_reminders(background_tasks, db)
+
+
 @router.get("/debug-time")
 def debug_time():
     import datetime as dt
