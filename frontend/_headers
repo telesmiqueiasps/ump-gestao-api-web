@@ -6,6 +6,10 @@
   Cache-Control: no-cache, no-store, must-revalidate
   Pragma: no-cache
 
+/socio.html
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+
 /pages/*.html
   Cache-Control: no-cache, no-store, must-revalidate
   Pragma: no-cache

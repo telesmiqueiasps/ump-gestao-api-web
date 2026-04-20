@@ -1,1 +1,11 @@
+# Portal do sócio — deve ser acessado diretamente
+/socio.html  /socio.html  200
+
+# SW do sócio
+/sw-socio.js  /sw-socio.js  200
+
+# Manifest do sócio
+/manifest-socio.json  /manifest-socio.json  200
+
+# Todo o resto vai para o app principal
 /*  /index.html  200

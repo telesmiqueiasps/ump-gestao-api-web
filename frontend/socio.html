@@ -215,6 +215,46 @@
     </div>
   </div>
 
+  <!-- Sem organização -->
+  <div id="screen-no-org" style="display:none;flex:1;
+       flex-direction:column;justify-content:center;align-items:center;
+       text-align:center;padding:2rem;gap:1.25rem">
+
+    <img src="/assets/img/logo.png"
+      style="width:72px;height:72px;border-radius:50%;
+             object-fit:contain;opacity:.6"/>
+
+    <div>
+      <h2 style="font-size:1.1rem;color:var(--slate-700);margin-bottom:.4rem">
+        Portal do Sócio UMP
+      </h2>
+      <p style="font-size:.85rem;color:var(--slate-500);line-height:1.5">
+        Para acessar, use o link específico<br>
+        compartilhado pela sua diretoria.
+      </p>
+    </div>
+
+    <div style="background:#fff;border-radius:var(--radius-lg);
+                padding:1.25rem;box-shadow:var(--shadow);width:100%">
+      <p style="font-size:.78rem;color:var(--slate-600);margin-bottom:.75rem;font-weight:500">
+        Já acessou antes neste aparelho?
+      </p>
+      <button onclick="tryLastOrg()" style="
+        width:100%;padding:.7rem;
+        background:var(--brand);color:#fff;
+        border:none;border-radius:var(--radius);
+        font-size:.875rem;font-weight:600;
+        cursor:pointer;font-family:inherit;
+      ">
+        🔄 Tentar última organização acessada
+      </button>
+    </div>
+
+    <p style="font-size:.72rem;color:var(--slate-400)">
+      Solicite o link à diretoria da sua UMP Local.
+    </p>
+  </div>
+
   <!-- App principal -->
   <div id="screen-app" style="display:none;flex-direction:column">
     <div class="app-header">
@@ -273,40 +313,54 @@
 
   async function init() {
     const params = new URLSearchParams(window.location.search)
-    orgId = params.get('org')
-    console.log('orgId:', orgId)
+    const orgFromUrl = params.get('org')
+
+    if (orgFromUrl) {
+      localStorage.setItem('portal_org_id_default', orgFromUrl)
+      orgId = orgFromUrl
+    } else {
+      orgId = localStorage.getItem('portal_org_id_default')
+    }
 
     const savedToken  = localStorage.getItem('portal_token')
     const savedOrgId  = localStorage.getItem('portal_org_id')
     const savedMember = localStorage.getItem('portal_member')
 
-    if (savedToken && savedOrgId === orgId && savedMember) {
-      token      = savedToken
-      memberData = JSON.parse(savedMember)
-      try {
-        await loadMemberData()
-        showScreen('app')
-        setupYearSelect()
-        loadYear()
-        setupPushNotifications()
-        return
-      } catch {
+    if (savedToken && savedOrgId && savedMember) {
+      if (orgId && savedOrgId !== orgId) {
         clearSession()
+      } else {
+        orgId      = savedOrgId
+        token      = savedToken
+        memberData = JSON.parse(savedMember)
+        try {
+          await loadMemberData()
+          showScreen('app')
+          setupYearSelect()
+          loadYear()
+          setupPushNotifications()
+          return
+        } catch {
+          clearSession()
+        }
       }
     }
 
     if (!orgId) {
-      showScreen('login')
+      showScreen('no-org')
       return
     }
 
     try {
       orgData = await fetchPublic(`/api/member-portal/org/${orgId}`)
-      document.documentElement.style.setProperty('--brand', orgData.theme_color || '#1a2a6c')
-      document.getElementById('login-org-name').textContent    = orgData.name
-      document.getElementById('login-org-church').textContent  = orgData.church_name || ''
+      document.documentElement.style.setProperty(
+        '--brand', orgData.theme_color || '#1a2a6c')
+      document.getElementById('login-org-name').textContent   = orgData.name
+      document.getElementById('login-org-church').textContent = orgData.church_name || ''
       document.title = `Portal — ${orgData.name}`
-      if (orgData.logo_b64) document.getElementById('login-logo').src = orgData.logo_b64
+      if (orgData.logo_b64) {
+        document.getElementById('login-logo').src = orgData.logo_b64
+      }
       if (!orgData.portal_enabled) {
         showScreen('login')
         showLoginAlert('Portal temporariamente desativado.', 'error')
@@ -314,7 +368,8 @@
         return
       }
     } catch {
-      showLoginAlert('Organização não encontrada.', 'error')
+      showScreen('no-org')
+      return
     }
 
     showScreen('login')
@@ -527,15 +582,41 @@
     localStorage.removeItem('portal_token')
     localStorage.removeItem('portal_org_id')
     localStorage.removeItem('portal_member')
+    // NÃO remove portal_org_id_default — lembra a local
     token = null; memberData = null
+  }
+
+  window.tryLastOrg = async () => {
+    const lastOrg = localStorage.getItem('portal_org_id_default')
+    if (!lastOrg) {
+      alert('Nenhuma organização encontrada. Use o link da sua diretoria.')
+      return
+    }
+    orgId = lastOrg
+    try {
+      orgData = await fetchPublic(`/api/member-portal/org/${orgId}`)
+      document.documentElement.style.setProperty(
+        '--brand', orgData.theme_color || '#1a2a6c')
+      document.getElementById('login-org-name').textContent   = orgData.name
+      document.getElementById('login-org-church').textContent = orgData.church_name || ''
+      document.title = `Portal — ${orgData.name}`
+      if (orgData.logo_b64) {
+        document.getElementById('login-logo').src = orgData.logo_b64
+      }
+      showScreen('login')
+    } catch {
+      alert('Organização não encontrada. Use o link da sua diretoria.')
+    }
   }
 
   function showScreen(name) {
     document.getElementById('screen-loading').style.display = 'none'
-    const login = document.getElementById('screen-login')
-    const appEl = document.getElementById('screen-app')
-    login.style.display = name === 'login' ? 'flex' : 'none'
-    appEl.style.display  = name === 'app'   ? 'flex' : 'none'
+    document.getElementById('screen-login').style.display  =
+      name === 'login'  ? 'flex' : 'none'
+    document.getElementById('screen-app').style.display    =
+      name === 'app'    ? 'flex' : 'none'
+    document.getElementById('screen-no-org').style.display =
+      name === 'no-org' ? 'flex' : 'none'
   }
 
   function showLoginAlert(msg, type) {
