@@ -152,16 +152,18 @@ def send_push_to_subscription(sub_data: dict, message: dict):
         from pywebpush import webpush, WebPushException
         settings = get_settings()
 
-        private_key = settings.vapid_private_key
-        if '\\n' in private_key:
-            private_key = private_key.replace('\\n', '\n')
-        if 'BEGIN EC PRIVATE KEY' in private_key and '\n' not in private_key:
+        private_key = settings.vapid_private_key.strip()
+
+        if 'BEGIN EC PRIVATE KEY' in private_key:
+            import re
+            content = re.sub(
+                r'-----BEGIN EC PRIVATE KEY-----|-----END EC PRIVATE KEY-----|\\n|\s',
+                '', private_key
+            )
             private_key = (
-                private_key
-                .replace('-----BEGIN EC PRIVATE KEY-----',
-                         '-----BEGIN EC PRIVATE KEY-----\n')
-                .replace('-----END EC PRIVATE KEY-----',
-                         '\n-----END EC PRIVATE KEY-----')
+                '-----BEGIN EC PRIVATE KEY-----\n' +
+                '\n'.join(content[i:i+64] for i in range(0, len(content), 64)) +
+                '\n-----END EC PRIVATE KEY-----'
             )
 
         webpush(
