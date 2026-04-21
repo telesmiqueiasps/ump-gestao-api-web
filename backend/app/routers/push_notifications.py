@@ -253,6 +253,23 @@ def send_reminders(
             'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'
         ][now_br.month - 1]
 
+        # Gera URL pública temporária da logo se existir
+        image_url = None
+        if local.logo_url:
+            try:
+                from app.services.storage import get_presigned_url
+                import re as _re
+                _settings = get_settings()
+                _bucket = _settings.b2_bucket_name
+                _match = _re.search(
+                    rf'/file/{_re.escape(_bucket)}/(.+)$',
+                    local.logo_url
+                )
+                if _match:
+                    image_url = get_presigned_url(_match.group(1), expires_in=3600)
+            except Exception:
+                pass
+
         for sub in subs:
             member = db.query(Member).filter(
                 Member.id == sub.member_id
@@ -263,16 +280,17 @@ def send_reminders(
                 first_name = member.full_name.split()[0]
 
             message = {
-                "title": "💰 Mensalidade — " + local.name,
+                "title": f"💰 {local.name}",
                 "body": (
                     f"Olá{', ' + first_name if first_name else ''}! "
-                    f"Lembrete de contribuição referente a "
-                    f"{month_name} de {now_br.year}. "
+                    f"Não esqueça sua contribuição de "
+                    f"{month_name}/{now_br.year}. "
                     f"Toque para acessar o portal."
                 ),
                 "url":   f"https://umpgestao.netlify.app/socio.html?org={local.id}",
                 "icon":  "/assets/img/logo.png",
                 "badge": "/assets/img/logo.png",
+                "image": image_url,
             }
             background_tasks.add_task(
                 send_push_to_subscription,

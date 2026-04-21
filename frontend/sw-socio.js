@@ -58,16 +58,19 @@ self.addEventListener('push', (event) => {
   const data = event.data.json()
 
   const options = {
-    body:     data.body  || 'Você tem uma mensagem da sua UMP.',
-    icon:     data.icon  || '/assets/img/logo.png',
-    badge:    data.badge || '/assets/img/logo.png',
-    tag:      'mensalidade-lembrete',
-    renotify: false,
-    vibrate:  [200, 100, 200],
-    data:     { url: data.url || '/socio.html' },
-    actions:  [
+    body:      data.body  || 'Você tem uma mensagem da sua UMP.',
+    icon:      data.icon  || '/assets/img/logo.png',
+    badge:     data.badge || '/assets/img/logo.png',
+    image:     data.image || null,
+    tag:       'mensalidade-lembrete',
+    renotify:  false,
+    vibrate:   [300, 100, 300, 100, 300],
+    timestamp: Date.now(),
+    silent:    false,
+    data:      { url: data.url || '/socio.html' },
+    actions:   [
       { action: 'open',  title: '📱 Abrir Portal' },
-      { action: 'close', title: '✕ Fechar' },
+      { action: 'close', title: 'Fechar' },
     ],
   }
 
