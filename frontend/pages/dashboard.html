@@ -233,15 +233,28 @@
 
   // Carregar dados
   async function loadDashboard() {
-    // Período financeiro
-    try {
-      const data = await api.get(`/api/finances/transactions?year=${year}`)
+    const requests = [
+      api.get(`/api/finances/transactions?year=${year}`),
+      api.get(`/api/board/?fiscal_year=${year}`),
+    ]
+    if (isLocalUmp()) {
+      requests.push(api.get('/api/members/?active_only=true'))
+      requests.push(api.get(`/api/member-fees/aci-summary?year=${year}`))
+    }
+    if (isFederation()) {
+      requests.push(api.get('/api/federations/me/local-umps'))
+    }
+
+    const results = await Promise.allSettled(requests)
+
+    // Período financeiro (index 0)
+    if (results[0].status === 'fulfilled') {
+      const data = results[0].value
       const period = data.period
       const txs = data.transactions ?? []
 
       const totalIn  = txs.filter(t => ['outras_receitas','aci_recebida'].includes(t.transaction_type)).reduce((s,t) => s + Number(t.amount), 0)
       const totalOut = txs.filter(t => ['outras_despesas','aci_enviada'].includes(t.transaction_type)).reduce((s,t) => s + Number(t.amount), 0)
-
       const aciIn  = txs.filter(t => t.transaction_type === 'aci_recebida').reduce((s,t) => s + Number(t.amount), 0)
       const aciOut = txs.filter(t => t.transaction_type === 'aci_enviada').reduce((s,t) => s + Number(t.amount), 0)
 
@@ -260,53 +273,53 @@
       document.getElementById('period-out').textContent = formatCurrency(totalOut)
       document.getElementById('period-final').textContent = formatCurrency(period.final_balance)
       document.getElementById('period-final').className = `value ${period.final_balance >= 0 ? 'blue' : 'red'}`
-
       document.getElementById('period-card').style.display = 'block'
-    } catch {
+    } else {
       document.getElementById('no-period-alert').style.display = 'block'
-      document.getElementById('stat-balance').textContent    = '—'
+      document.getElementById('stat-balance').textContent = '—'
       document.getElementById('stat-in').textContent      = '—'
       document.getElementById('stat-out').textContent     = '—'
       document.getElementById('stat-aci-in').textContent  = '—'
       document.getElementById('stat-aci-out').textContent = '—'
     }
 
-    // Diretoria
-    try {
-      const board = await api.get(`/api/board/?fiscal_year=${year}`)
-      document.getElementById('stat-board').textContent = board.length
-    } catch { document.getElementById('stat-board').textContent = '0' }
+    // Diretoria (index 1)
+    if (results[1].status === 'fulfilled') {
+      document.getElementById('stat-board').textContent = results[1].value.length
+    } else {
+      document.getElementById('stat-board').textContent = '0'
+    }
 
-    // Sócios (local)
+    // Sócios e ACI (apenas UMP Local, indexes 2 e 3)
     if (isLocalUmp()) {
-      try {
-        const members = await api.get('/api/members/?active_only=true')
-        document.getElementById('stat-members').textContent = members.length
-      } catch { document.getElementById('stat-members').textContent = '0' }
+      if (results[2].status === 'fulfilled') {
+        document.getElementById('stat-members').textContent = results[2].value.length
+      } else {
+        document.getElementById('stat-members').textContent = '0'
+      }
 
-      // ACI summary
-      try {
-        const aciSummary = await api.get(`/api/member-fees/aci-summary?year=${year}`)
+      if (results[3].status === 'fulfilled') {
+        const aciSummary = results[3].value
         document.getElementById('aci-summary-card').style.display = 'block'
-        document.getElementById('aci-summary-year').textContent        = year
-        document.getElementById('aci-total-label').textContent         = formatCurrency(aciSummary.total_to_collect)
-        document.getElementById('aci-members-label').textContent       = `${aciSummary.total_members} sócios × ${formatCurrency(aciSummary.aci_year_value)}`
-        document.getElementById('aci-collected-label').textContent     = formatCurrency(aciSummary.total_collected)
+        document.getElementById('aci-summary-year').textContent         = year
+        document.getElementById('aci-total-label').textContent          = formatCurrency(aciSummary.total_to_collect)
+        document.getElementById('aci-members-label').textContent        = `${aciSummary.total_members} sócios × ${formatCurrency(aciSummary.aci_year_value)}`
+        document.getElementById('aci-collected-label').textContent      = formatCurrency(aciSummary.total_collected)
         document.getElementById('aci-remaining-dash-label').textContent = formatCurrency(aciSummary.remaining)
-        document.getElementById('aci-dash-bar').style.width            = `${Math.min(100, aciSummary.progress_percent)}%`
+        document.getElementById('aci-dash-bar').style.width             = `${Math.min(100, aciSummary.progress_percent)}%`
         const badge = document.getElementById('aci-summary-badge')
         badge.textContent = aciSummary.is_complete ? '✓ Meta atingida' : `${aciSummary.progress_percent}% arrecadado`
         badge.className   = `badge ${aciSummary.is_complete ? 'badge-green' : 'badge-amber'}`
-      } catch {}
-
+      }
     }
 
-    // Locais (federação)
+    // Locais (apenas Federação, index 2)
     if (isFederation()) {
-      try {
-        const locals = await api.get('/api/federations/me/local-umps')
-        document.getElementById('stat-locals').textContent = locals.length
-      } catch { document.getElementById('stat-locals').textContent = '0' }
+      if (results[2].status === 'fulfilled') {
+        document.getElementById('stat-locals').textContent = results[2].value.length
+      } else {
+        document.getElementById('stat-locals').textContent = '0'
+      }
     }
   }
 

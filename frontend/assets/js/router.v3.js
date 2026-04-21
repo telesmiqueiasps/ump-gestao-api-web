@@ -140,6 +140,48 @@ function buildNavHTML(user, societyType) {
       : '')
 }
 
+// ── Cache de perfil (5 min) ────────────────────────────────────────────────
+const _PROFILE_KEY  = 'cached_profile'
+const _PROFILE_TIME = 'cached_profile_time'
+const _PROFILE_TTL  = 5 * 60 * 1000
+
+async function _getProfile(api, endpoint) {
+  const cached = localStorage.getItem(_PROFILE_KEY)
+  const cachedTime = localStorage.getItem(_PROFILE_TIME)
+  if (cached && cachedTime && (Date.now() - parseInt(cachedTime)) < _PROFILE_TTL)
+    return JSON.parse(cached)
+  const data = await api.get(endpoint)
+  localStorage.setItem(_PROFILE_KEY, JSON.stringify(data))
+  localStorage.setItem(_PROFILE_TIME, Date.now().toString())
+  return data
+}
+
+// ── Cache de logo (1 hora) ─────────────────────────────────────────────────
+const _LOGO_KEY  = 'cached_logo_b64'
+const _LOGO_TIME = 'cached_logo_time'
+const _LOGO_TTL  = 60 * 60 * 1000
+
+async function _getLogoB64(api, orgType) {
+  const cached = localStorage.getItem(_LOGO_KEY)
+  const cachedTime = localStorage.getItem(_LOGO_TIME)
+  if (cached && cachedTime && (Date.now() - parseInt(cachedTime)) < _LOGO_TTL)
+    return cached
+  try {
+    const endpoint = orgType === 'federation'
+      ? '/api/federations/me/logo-url'
+      : '/api/local-umps/me/logo-url'
+    const data = await api.get(endpoint)
+    const b64 = data.base64 || null
+    if (b64) {
+      localStorage.setItem(_LOGO_KEY, b64)
+      localStorage.setItem(_LOGO_TIME, Date.now().toString())
+    }
+    return b64
+  } catch {
+    return cached || null
+  }
+}
+
 export async function renderShell() {
   const user = getUser()
   if (!user) return
@@ -155,7 +197,7 @@ export async function renderShell() {
     const { api } = await import('./api.js')
     const orgType = user.organization_type
     const endpoint = orgType === 'federation' ? '/api/federations/me' : '/api/local-umps/me'
-    const data = await api.get(endpoint)
+    const data = await _getProfile(api, endpoint)
     orgName = data.name || ''
     societyType = data.society_type || 'UMP'
     localStorage.setItem('society_type', societyType)
@@ -304,6 +346,13 @@ export async function renderShell() {
   } catch {}
 
   checkNoticesBadge()
+  import('./api.js').then(({ api: _a }) =>
+    _getLogoB64(_a, user.organization_type).then(b64 => {
+      if (!b64) return
+      const logoEl = document.querySelector('.sidebar-brand-logo')
+      if (logoEl) logoEl.src = b64
+    }).catch(() => {})
+  )
   initMobileMenu()
   return societyType
 }

@@ -722,8 +722,7 @@
     })
 
     // ── Init ──
-    await loadFeesConfig()
-    loadMembers()
+    await Promise.all([loadFeesConfig(), loadMembers()])
   })()
 </script>
 

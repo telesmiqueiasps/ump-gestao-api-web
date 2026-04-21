@@ -758,7 +758,7 @@
     }
   }
 
-  initPage().then(() => loadLocals())
+  Promise.all([initPage(), loadLocals()])
   })()
 </script>
 

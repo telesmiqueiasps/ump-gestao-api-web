@@ -324,22 +324,25 @@
   let localsList = []
 
   async function loadFedData() {
-    try {
-      const anniversaries = await api.get('/api/local-umps/anniversaries')
-      renderAnniversaries(anniversaries)
-    } catch {}
+    const [annRes, noticesRes, localsRes] = await Promise.allSettled([
+      api.get('/api/local-umps/anniversaries'),
+      api.get('/api/notices/sent'),
+      api.get('/api/federations/me/local-umps'),
+    ])
 
-    await loadSentNotices()
-
+    if (annRes.status === 'fulfilled') renderAnniversaries(annRes.value)
+    if (noticesRes.status === 'fulfilled') renderSentNotices(noticesRes.value)
     try {
-      localsList = await api.get('/api/federations/me/local-umps')
-      const select = document.getElementById('notice-target-local')
-      localsList.forEach(l => {
-        const opt = document.createElement('option')
-        opt.value = l.id
-        opt.textContent = l.name
-        select.appendChild(opt)
-      })
+      if (localsRes.status === 'fulfilled') {
+        localsList = localsRes.value
+        const select = document.getElementById('notice-target-local')
+        localsList.forEach(l => {
+          const opt = document.createElement('option')
+          opt.value = l.id
+          opt.textContent = l.name
+          select.appendChild(opt)
+        })
+      }
     } catch {}
   }
 
@@ -478,16 +481,18 @@
   // ════════════════════════════════════════
 
   async function loadLocalData() {
-    await checkSocietyAnniversary()
-
-    try {
-      const birthdays = await api.get('/api/members/birthdays')
-      renderBirthdays(birthdays)
-    } catch {
-      document.getElementById('birthdays-loading').style.display = 'none'
-    }
-
-    await loadReceivedNotices()
+    await Promise.allSettled([
+      checkSocietyAnniversary(),
+      (async () => {
+        try {
+          const birthdays = await api.get('/api/members/birthdays')
+          renderBirthdays(birthdays)
+        } catch {
+          document.getElementById('birthdays-loading').style.display = 'none'
+        }
+      })(),
+      loadReceivedNotices(),
+    ])
   }
 
   async function checkSocietyAnniversary() {

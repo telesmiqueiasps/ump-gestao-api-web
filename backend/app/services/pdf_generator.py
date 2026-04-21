@@ -1,6 +1,8 @@
 import io
 import re
 import datetime
+import gc
+from PIL import Image as _PILImage
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.units import mm
@@ -69,6 +71,21 @@ def _logo(logo_bytes, w_mm, h_mm):
         return img
     except:
         return None
+
+
+def _resize_image(img_bytes: bytes, max_width: int = 800) -> bytes:
+    try:
+        pil = _PILImage.open(io.BytesIO(img_bytes))
+        if pil.mode in ('RGBA', 'P', 'LA'):
+            pil = pil.convert('RGB')
+        if pil.width > max_width:
+            ratio = max_width / pil.width
+            pil = pil.resize((max_width, int(pil.height * ratio)), _PILImage.LANCZOS)
+        buf = io.BytesIO()
+        pil.save(buf, format='JPEG', quality=75, optimize=True)
+        return buf.getvalue()
+    except Exception:
+        return img_bytes
 
 
 def _download_b2(client, bucket, url):
@@ -426,6 +443,7 @@ def generate_meeting_report(
     story.append(sig_outer)
 
     doc.build(story)
+    gc.collect()
     return buf.getvalue()
 
 
@@ -975,6 +993,7 @@ def generate_activity_report(
         onFirstPage=_make_header_footer,
         onLaterPages=_make_header_footer,
     )
+    gc.collect()
     return buf.getvalue()
 
 
@@ -1456,6 +1475,7 @@ def generate_financial_report(
         ))
 
     doc.build(story)
+    gc.collect()
     return buf.getvalue()
 
 
@@ -1676,8 +1696,8 @@ def generate_receipts_report(
                           str(t.get('receipt_url','')).lower().endswith('.pdf'))
                 if img_bytes and not is_pdf:
                     try:
-                        from PIL import Image as PILImg
-                        pil = PILImg.open(io.BytesIO(img_bytes))
+                        img_bytes = _resize_image(img_bytes, max_width=900)
+                        pil = _PILImage.open(io.BytesIO(img_bytes))
                         ow, oh = pil.size
                         MAX_W = W
                         MAX_H = 190*mm

@@ -513,6 +513,10 @@
 
     try {
       await api.put(updateEndpoint, payload)
+      localStorage.removeItem('cached_profile')
+      localStorage.removeItem('cached_profile_time')
+      localStorage.removeItem('cached_logo_b64')
+      localStorage.removeItem('cached_logo_time')
       setSocietyType(selectedSocietyType)
       const ok = document.getElementById('save-success')
       ok.style.display = 'inline'

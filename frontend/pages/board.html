@@ -282,8 +282,7 @@
   })
   yearSelect.addEventListener('change', async () => {
     currentYear = Number(yearSelect.value)
-    await loadBoard()
-    await loadSecretaries()
+    await Promise.all([loadBoard(), loadSecretaries()])
   })
 
   async function loadBoard() {
@@ -665,8 +664,7 @@
     } catch(err) { showAlert('page-alert', err.message, 'error') }
   }
 
-  loadBoard()
-  loadSecretaries()
+  Promise.all([loadBoard(), loadSecretaries()])
   })()
 </script>
 

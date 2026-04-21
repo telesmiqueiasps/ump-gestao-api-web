@@ -553,8 +553,7 @@
     try {
       await api.post(`/api/finances/periods/${periodId}/close`)
       showAlert('page-alert', '✅ Período encerrado! Relatórios assinados gerados com sucesso.', 'success')
-      await loadPending()
-      await loadHistory()
+      await Promise.all([loadPending(), loadHistory()])
     } catch(err) {
       showAlert('page-alert', err.message, 'error')
       await loadPending()
@@ -566,8 +565,7 @@
     loadHistory()
   })
 
-  loadPending()
-  loadHistory()
+  Promise.all([loadPending(), loadHistory()])
 
   // ── Estilos do módulo de atividades ────────────────────────
   document.head.insertAdjacentHTML('beforeend', `<style>
