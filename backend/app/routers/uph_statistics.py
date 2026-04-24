@@ -146,9 +146,12 @@ def generate_stat_pdf(
     if not stat:
         raise HTTPException(status_code=404, detail="Estatística não encontrada")
 
+    import os, re
     from app.models.federation import Federation
     from app.models.local_ump import LocalUmp
     from app.services.pdf_generator import generate_uph_stat_report
+    from app.services.storage import _get_client
+    from app.core.config import get_settings
 
     org_type = current_user.organization_type.value \
         if hasattr(current_user.organization_type, 'value') \
@@ -161,6 +164,7 @@ def generate_stat_pdf(
             "name": obj.name if obj else '',
             "presbytery_name": obj.presbytery_name if obj else '',
             "synodal_name": getattr(obj, 'synodal_name', '') or '',
+            "logo_url": obj.logo_url if obj else None,
             "organization_type": "federation",
         }
     else:
@@ -173,10 +177,10 @@ def generate_stat_pdf(
             "presbytery_name": obj.presbytery_name if obj else '',
             "federation_name": fed.name if fed else '',
             "synodal_name": fed.synodal_name if fed and hasattr(fed, 'synodal_name') else '',
+            "logo_url": obj.logo_url if obj else None,
             "organization_type": "local_ump",
         }
 
-    import os
     ipb_logo_bytes = None
     try:
         ipb_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'ipb_logo.png')
@@ -186,11 +190,27 @@ def generate_stat_pdf(
     except Exception:
         pass
 
+    logo_bytes = None
+    logo_url = org_data.get('logo_url')
+    if logo_url:
+        try:
+            settings_obj = get_settings()
+            bucket = settings_obj.b2_bucket_name
+            b2 = _get_client()
+            match = re.search(rf'/file/{re.escape(bucket)}/(.+)$', logo_url)
+            if not match:
+                match = re.search(rf'/{re.escape(bucket)}/(.+)$', logo_url)
+            if match:
+                resp = b2.get_object(Bucket=bucket, Key=match.group(1))
+                logo_bytes = resp['Body'].read()
+        except Exception:
+            pass
+
     pdf_bytes = generate_uph_stat_report(
         org_data       = org_data,
         fiscal_year    = year,
         stat           = _stat_out(stat),
-        logo_bytes     = None,
+        logo_bytes     = logo_bytes,
         ipb_logo_bytes = ipb_logo_bytes,
     )
 

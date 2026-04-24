@@ -1770,7 +1770,7 @@ def generate_uph_stat_report(
     BLACK      = colors.black
     DARK       = colors.HexColor('#1a1a1a')
 
-    GREEN_SECTION  = colors.HexColor('#E2EFDA')  # itens 1-5 (UPH local)
+    GREEN_SECTION  = colors.HexColor('#C6E0B4')  # itens 1-5 (UPH local)
     BLUE_SECTION   = colors.HexColor('#DDEEFF')  # itens 6-7 (federação)
     PINK_SECTION   = colors.HexColor('#FCE4D6')  # itens 8-9 (sinodal)
     PURPLE_SECTION = colors.HexColor('#EAD1DC')  # itens 10-11 (nacional)
@@ -1865,20 +1865,21 @@ def generate_uph_stat_report(
     ANO_W   = 50 * mm
     row_nivel = Table([[
         _p('UPH, FEDERAÇÃO, CONFEDERAÇÃO SINODAL,\nCONFEDERAÇÃO NACIONAL',
-           9, BLUE_HDR, bold=True, align=TA_CENTER),
-        Table([[
-            _p('ANO', 8, BLUE_HDR, bold=True),
-            _p(f'  {fiscal_year}  ►', 9, BLACK, bold=True),
-        ]], colWidths=[15 * mm, ANO_W - 15 * mm]),
-    ]], colWidths=[W - ANO_W, ANO_W])
+           9, DARK, bold=True, align=TA_CENTER),
+        _p('ANO', 8, DARK, bold=True, align=TA_CENTER),
+        _p(str(fiscal_year), 9, BLACK, bold=True, align=TA_CENTER),
+    ]], colWidths=[W - 50*mm, 18*mm, 32*mm])
     row_nivel.setStyle(TableStyle([
         ('BOX',           (0, 0), (-1, -1), 1, BLACK),
         ('INNERGRID',     (0, 0), (-1, -1), 0.5, BLACK),
-        ('BACKGROUND',    (0, 0), (-1, -1), YELLOW),
+        ('BACKGROUND',    (0, 0), (0, 0),   YELLOW),
+        ('BACKGROUND',    (1, 0), (1, 0),   YELLOW),
+        ('BACKGROUND',    (2, 0), (2, 0),   WHITE),
         ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING',    (0, 0), (-1, -1), 3),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ('TOPPADDING',    (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
         ('LEFTPADDING',   (0, 0), (-1, -1), 4),
+        ('RIGHTPADDING',  (0, 0), (-1, -1), 4),
     ]))
     story.append(row_nivel)
 
@@ -1919,12 +1920,28 @@ def generate_uph_stat_report(
         return t
 
     story.append(id_section_hdr(1, 'UPH (ENVIAR À FEDERAÇÃO)'))
-    story.append(id_section_row(1, 'NOME DA UPH:  ►', org_name if not is_fed else ''))
+    story.append(id_section_row(1, 'NOME DA UPH: --->', org_name if not is_fed else ''))
     story.append(id_section_hdr(2, 'FEDERAÇÃO PARA A CONFEDERAÇÃO SINODAL'))
-    story.append(id_section_row(2, 'NOME E SIGLA DA FEDERAÇÃO:  ►', fed_name))
+    story.append(id_section_row(2, 'NOME E SIGLA DA FEDERAÇÃO: --->', fed_name))
     story.append(id_section_hdr(3, 'CONFEDERAÇÃO SINODAL PARA A CONFEDERAÇÃO NACIONAL'))
-    story.append(id_section_row(3, 'NOME E SIGLA DA CONFED. SINODAL ►', syn_name))
-    story.append(id_section_hdr(4, 'CONFEDERAÇÃO NACIONAL. ATUALIZADO EM  ►'))
+    story.append(id_section_row(3, 'NOME E SIGLA DA CONFED. SINODAL --->', syn_name))
+    sec4 = Table([[
+        _p('4)  CONFEDERAÇÃO NACIONAL. ATUALIZADO EM --->',
+           8, WHITE, bold=True, align=TA_LEFT),
+        _p('', 8, BLACK),
+    ]], colWidths=[W - 45*mm, 45*mm])
+    sec4.setStyle(TableStyle([
+        ('BOX',           (0, 0), (-1, -1), 0.5, BLACK),
+        ('INNERGRID',     (0, 0), (-1, -1), 0.5, BLACK),
+        ('BACKGROUND',    (0, 0), (0, 0),   SECTION_COLORS.get(4, BLUE_HDR)),
+        ('BACKGROUND',    (1, 0), (1, 0),   WHITE),
+        ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING',    (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ('LEFTPADDING',   (0, 0), (-1, -1), 5),
+        ('RIGHTPADDING',  (0, 0), (-1, -1), 4),
+    ]))
+    story.append(sec4)
 
     # ── Cabeçalho da tabela de itens ────────────────────────
     CW = [W * 0.44, W * 0.135, W * 0.135, W * 0.145, W * 0.145]
@@ -1951,12 +1968,12 @@ def generate_uph_stat_report(
     # ── Itens da tabela ──────────────────────────────────────
     items_def = [
         (1,  'Quantidade de Homens na igreja',           None,  False),
-        (2,  'Quantidade de Homens na UPH',              '60%', False),
+        (2,  'Quantidade de Homens na UPH',              None, False),
         (3,  'Quantidade de Oficiais na igreja',         None,  False),
         (4,  'Quantidade de Oficiais sócios da UPH',    None,  False),
         (5,  'Quantidade de Congregações',               None,  False),
         (6,  'Quantidade de Igrejas',                    None,  True),
-        (7,  'Quantidade de UPHs',                       '50%', True),
+        (7,  'Quantidade de UPHs',                       None, True),
         (8,  'Quantidade de Presbitérios',               None,  True),
         (9,  'Quantidade de Federações',                 None,  True),
         (10, 'Quantidade de Sínodos',                    None,  True),
