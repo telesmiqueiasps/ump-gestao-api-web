@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ump-socio-v1'
+const CACHE_NAME = 'ump-socio-v2'
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

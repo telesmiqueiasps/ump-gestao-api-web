@@ -1,0 +1,24 @@
+/sw-socio.js
+  Content-Type: application/javascript
+  Cache-Control: no-cache, no-store, must-revalidate
+  Service-Worker-Allowed: /
+
+/manifest-socio.json
+  Content-Type: application/manifest+json
+  Cache-Control: no-cache
+
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+
+/socio.html
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/assets/js/*
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/assets/css/*
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/assets/img/*
+  Cache-Control: public, max-age=604800

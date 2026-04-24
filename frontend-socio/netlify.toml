@@ -1,0 +1,8 @@
+[build]
+  command = "bash build.sh"
+  publish = "."
+
+[[redirects]]
+  from = "/*"
+  to = "/socio.html"
+  status = 200

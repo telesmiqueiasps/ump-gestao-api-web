@@ -287,7 +287,7 @@ def send_reminders(
                     f"{month_name}/{now_br.year}. "
                     f"Toque para acessar o portal."
                 ),
-                "url":   f"https://umpgestao.netlify.app/socio.html?org={local.id}",
+                "url":   f"https://ump-socio.netlify.app/socio.html?org={local.id}",
                 "icon":  "/assets/img/logo.png",
                 "badge": "/assets/img/logo.png",
                 "image": image_url,

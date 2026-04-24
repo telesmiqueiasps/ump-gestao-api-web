@@ -640,5 +640,5 @@ def _to_out(l: LocalUmp) -> dict:
         "reminder_hour":         l.reminder_hour if l.reminder_hour is not None else 9,
         "reminder_minute":       l.reminder_minute if l.reminder_minute is not None else 0,
         "member_portal_enabled": l.member_portal_enabled if l.member_portal_enabled is not None else True,
-        "portal_url":            f"https://umpgestao.netlify.app/socio.html?org={str(l.id)}",
+        "portal_url":            f"https://ump-socio.netlify.app/socio.html?org={str(l.id)}",
     }
