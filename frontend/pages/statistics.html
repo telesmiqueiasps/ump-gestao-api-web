@@ -227,14 +227,26 @@
     return `<span class="stat-delta ${cls}">${sign}${dlt}%</span>`
   }
 
+  const RELATION_MAP = { 2: 'rel_1_2', 4: 'rel_3_4', 7: 'rel_6_7' }
+
+  function renderRelation(pct) {
+    if (pct === null || pct === undefined) return '<span class="stat-delta neutral">—</span>'
+    const cls = pct >= 60 ? 'positive' : pct >= 30 ? 'neutral' : 'negative'
+    return `<span class="stat-delta ${cls}">${pct.toFixed(1)}%</span>`
+  }
+
   function renderItemGroup(containerId, items, stat) {
     const container = document.getElementById(containerId)
     const divider   = container.querySelector('.section-divider')
 
     const rows = items.map(({ num, label, note }) => {
-      const cur  = stat?.[`item${num}_current`]  || 0
-      const prev = stat?.[`item${num}_previous`] || 0
-      const dlt  = stat?.[`item${num}_delta`]
+      const cur    = stat?.[`item${num}_current`]  || 0
+      const prev   = stat?.[`item${num}_previous`] || 0
+      const dlt    = stat?.[`item${num}_delta`]
+      const relKey = RELATION_MAP[num]
+      const deltaContent = relKey && stat?.[relKey] !== null && stat?.[relKey] !== undefined
+        ? renderRelation(stat[relKey])
+        : deltaHtml(dlt, prev)
 
       return `
         <div class="stat-input-row">
@@ -248,7 +260,7 @@
           <input type="number" min="0" class="stat-num-input"
             id="item${num}_previous" value="${prev || ''}"
             placeholder="0" oninput="scheduleAutoSave()" />
-          <div id="delta${num}">${deltaHtml(dlt, prev)}</div>
+          <div id="delta${num}">${deltaContent}</div>
         </div>`
     }).join('')
 
@@ -300,10 +312,59 @@
     if (!currentStat) return
     const allItems = [...LOCAL_ITEMS, ...FED_ITEMS]
     allItems.forEach(({ num }) => {
-      const dlt  = currentStat[`item${num}_delta`]
-      const prev = currentStat[`item${num}_previous`] || 0
-      const el   = document.getElementById(`delta${num}`)
-      if (el) el.innerHTML = deltaHtml(dlt, prev)
+      const el = document.getElementById(`delta${num}`)
+      if (!el) return
+      const relKey = RELATION_MAP[num]
+      if (relKey && currentStat[relKey] !== null && currentStat[relKey] !== undefined) {
+        el.innerHTML = renderRelation(currentStat[relKey])
+      } else {
+        const dlt  = currentStat[`item${num}_delta`]
+        const prev = currentStat[`item${num}_previous`] || 0
+        el.innerHTML = deltaHtml(dlt, prev)
+      }
+    })
+  }
+
+  // ── Consolidação (apenas federação) ─────────────────────
+  if (isFed) {
+    const consolidateDiv = document.createElement('div')
+    consolidateDiv.style.cssText = 'margin-top:1rem'
+    consolidateDiv.innerHTML = `
+      <div style="background:#eff6ff;border:1.5px solid #bfdbfe;
+           border-radius:var(--radius-lg);padding:1rem 1.25rem">
+        <div style="display:flex;align-items:center;justify-content:space-between;
+                    flex-wrap:wrap;gap:.75rem">
+          <div>
+            <div style="font-weight:600;font-size:.875rem;color:#1d4ed8">
+              📊 Consolidar dados das locais
+            </div>
+            <div style="font-size:.75rem;color:#3b82f6;margin-top:.2rem">
+              Soma automaticamente os itens 1–5 de todas as UMPs Locais
+            </div>
+          </div>
+          <button class="btn btn-sm" id="btn-consolidate"
+            style="background:#1d4ed8;color:#fff">
+            🔄 Consolidar agora
+          </button>
+        </div>
+      </div>`
+    document.querySelector('.page-content').appendChild(consolidateDiv)
+
+    document.getElementById('btn-consolidate').addEventListener('click', async () => {
+      const btn = document.getElementById('btn-consolidate')
+      btn.disabled = true
+      btn.textContent = '⏳ Consolidando...'
+      try {
+        const result = await api.post(`/api/uph-statistics/consolidate/${currentYear}`)
+        showAlert('page-alert', `✅ ${result.detail}`, 'success')
+        currentStat = result.stat
+        renderFields(currentStat)
+      } catch (err) {
+        showAlert('page-alert', err.message, 'error')
+      } finally {
+        btn.disabled = false
+        btn.textContent = '🔄 Consolidar agora'
+      }
     })
   }
 
@@ -321,23 +382,56 @@
       }
 
       list.innerHTML = data.map(({ local_name, stat }) => {
-        if (!stat) {
-          return `
-            <div class="card" style="padding:.75rem 1rem">
-              <div style="font-weight:600;font-size:.875rem">${local_name}</div>
-              <div style="font-size:.75rem;color:var(--slate-400);margin-top:.2rem">Sem dados preenchidos</div>
-            </div>`
-        }
-        const cells = [1, 2, 3, 4, 5].map(n => `
-          <div>
-            <div style="font-size:.65rem;color:var(--slate-400)">${n}. ${LOCAL_ITEMS[n-1].label.split(' ').slice(-2).join(' ')}</div>
-            <div style="font-size:.875rem;font-weight:600">${stat[`item${n}_current`] || '—'}</div>
-          </div>`).join('')
+        if (!stat) return `
+          <div class="card" style="padding:.75rem 1rem;opacity:.6">
+            <div style="font-weight:600;font-size:.875rem">${local_name}</div>
+            <div style="font-size:.75rem;color:var(--slate-400)">Sem dados preenchidos</div>
+          </div>`
+
+        const fmt    = n => n || '—'
+        const fmtPct = p => (p !== null && p !== undefined) ? p.toFixed(1) + '%' : '—'
 
         return `
           <div class="card" style="padding:.75rem 1rem">
-            <div style="font-weight:600;font-size:.875rem;margin-bottom:.5rem">${local_name}</div>
-            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:.5rem">${cells}</div>
+            <div style="font-weight:600;font-size:.875rem;margin-bottom:.6rem;
+                        color:var(--slate-800)">${local_name}</div>
+            <div style="overflow-x:auto">
+              <table style="width:100%;border-collapse:collapse;font-size:.75rem">
+                <thead>
+                  <tr style="background:var(--slate-50)">
+                    <th style="text-align:left;padding:.3rem .5rem;color:var(--slate-500);font-weight:600">Item</th>
+                    <th style="text-align:center;padding:.3rem .5rem;color:var(--slate-500);font-weight:600">Atual</th>
+                    <th style="text-align:center;padding:.3rem .5rem;color:var(--slate-500);font-weight:600">Anterior</th>
+                    <th style="text-align:center;padding:.3rem .5rem;color:var(--slate-500);font-weight:600">Δ% Var.</th>
+                    <th style="text-align:center;padding:.3rem .5rem;color:var(--slate-500);font-weight:600">Relação</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${[1,2,3,4,5].map(n => {
+                    const cur    = stat[`item${n}_current`]  || 0
+                    const prev   = stat[`item${n}_previous`] || 0
+                    const dlt    = stat[`item${n}_delta`]
+                    const relKey = { 2: 'rel_1_2', 4: 'rel_3_4' }[n]
+                    const rel    = relKey ? stat[relKey] : null
+                    const dltHtml = dlt !== null && dlt !== undefined && prev > 0
+                      ? `<span style="color:${dlt >= 0 ? 'var(--green-600)' : 'var(--red-600)'}">${dlt > 0 ? '+' : ''}${dlt}%</span>`
+                      : '—'
+                    return `
+                      <tr style="border-top:1px solid var(--slate-100)">
+                        <td style="padding:.3rem .5rem;color:var(--slate-600)">${LOCAL_ITEMS[n-1].label.split(' ').slice(-3).join(' ')}</td>
+                        <td style="text-align:center;padding:.3rem .5rem;font-weight:600">${fmt(cur)}</td>
+                        <td style="text-align:center;padding:.3rem .5rem;color:var(--slate-400)">${fmt(prev)}</td>
+                        <td style="text-align:center;padding:.3rem .5rem">${dltHtml}</td>
+                        <td style="text-align:center;padding:.3rem .5rem">
+                          ${rel !== null && rel !== undefined
+                            ? `<span style="color:${rel >= 60 ? 'var(--green-600)' : 'var(--amber-600)'};font-weight:600">${rel.toFixed(1)}%</span>`
+                            : '—'}
+                        </td>
+                      </tr>`
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
           </div>`
       }).join('')
     } catch (err) {

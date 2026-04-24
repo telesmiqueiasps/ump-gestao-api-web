@@ -1942,12 +1942,29 @@ def generate_uph_stat_report(
         sign = '+' if d > 0 else ''
         return f'{sign}{d:.1f}%'
 
+    def _rel_pct(num, den):
+        if not den or den == 0:
+            return ''
+        return f'{(num / den * 100):.1f}%'
+
+    _RELATIONS = {
+        2: ('item2_current', 'item1_current'),
+        4: ('item4_current', 'item3_current'),
+        7: ('item7_current', 'item6_current'),
+    }
+
     for num, desc, nota, _fed_only in items_def:
         cur  = stat.get(f'item{num}_current',  0) or 0
         prev = stat.get(f'item{num}_previous', 0) or 0
         dlt  = stat.get(f'item{num}_delta')
 
         bg = YELLOW_ROW if num % 2 == 0 else WHITE
+
+        if num in _RELATIONS:
+            n_field, d_field = _RELATIONS[num]
+            ano_atual_pct = _rel_pct(stat.get(n_field, 0) or 0, stat.get(d_field, 0) or 0)
+        else:
+            ano_atual_pct = ''
 
         dlt_str   = fmt_dlt(dlt, prev)
         dlt_color = BLACK
@@ -1972,10 +1989,10 @@ def generate_uph_stat_report(
 
         row = Table([[
             desc_para,
-            _p(fmt_num(cur),  8.5, BLACK,     align=TA_CENTER),
-            _p('',            8.5, BLACK,     align=TA_CENTER),
-            _p(fmt_num(prev), 8.5, BLACK,     align=TA_CENTER),
-            _p(dlt_str,       8.5, dlt_color, bold=bool(dlt_str), align=TA_CENTER),
+            _p(fmt_num(cur),    8.5, BLACK,     align=TA_CENTER),
+            _p(ano_atual_pct,   8.5, BLACK,     align=TA_CENTER),
+            _p(fmt_num(prev),   8.5, BLACK,     align=TA_CENTER),
+            _p(dlt_str,         8.5, dlt_color, bold=bool(dlt_str), align=TA_CENTER),
         ]], colWidths=CW)
         row.setStyle(TableStyle([
             ('BOX',           (0, 0), (-1, -1), 0.5, BLACK),
