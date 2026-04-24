@@ -12,7 +12,7 @@
   <style>
     .stat-input-row {
       display: grid;
-      grid-template-columns: 1fr 70px 70px 60px;
+      grid-template-columns: 1fr 70px 70px 70px 70px;
       gap: .5rem;
       align-items: center;
       padding: .6rem .75rem;
@@ -132,12 +132,13 @@
 
       <div class="card">
         <!-- Cabeçalho das colunas -->
-        <div style="display:grid;grid-template-columns:1fr 70px 70px 60px;gap:.5rem;
+        <div style="display:grid;grid-template-columns:1fr 70px 70px 70px 70px;gap:.5rem;
                     padding:.4rem .75rem;margin-bottom:.25rem">
           <div></div>
           <div class="stat-col-header">Ano Atual</div>
           <div class="stat-col-header">Ano Ant.</div>
-          <div class="stat-col-header">Δ%</div>
+          <div class="stat-col-header">Relação</div>
+          <div class="stat-col-header">Crescim.</div>
         </div>
 
         <!-- Itens 1-5: locais -->
@@ -218,23 +219,6 @@
   })
 
   // ── Renderiza campos ─────────────────────────────────────
-  function deltaHtml(dlt, prev) {
-    if (dlt === null || dlt === undefined || prev === 0) {
-      return '<span class="stat-delta neutral">—</span>'
-    }
-    const cls  = dlt > 0 ? 'positive' : dlt < 0 ? 'negative' : 'neutral'
-    const sign = dlt > 0 ? '+' : ''
-    return `<span class="stat-delta ${cls}">${sign}${dlt}%</span>`
-  }
-
-  const RELATION_MAP = { 2: 'rel_1_2', 4: 'rel_3_4', 7: 'rel_6_7' }
-
-  function renderRelation(pct) {
-    if (pct === null || pct === undefined) return '<span class="stat-delta neutral">—</span>'
-    const cls = pct >= 60 ? 'positive' : pct >= 30 ? 'neutral' : 'negative'
-    return `<span class="stat-delta ${cls}">${pct.toFixed(1)}%</span>`
-  }
-
   function renderItemGroup(containerId, items, stat) {
     const container = document.getElementById(containerId)
     const divider   = container.querySelector('.section-divider')
@@ -243,10 +227,21 @@
       const cur    = stat?.[`item${num}_current`]  || 0
       const prev   = stat?.[`item${num}_previous`] || 0
       const dlt    = stat?.[`item${num}_delta`]
-      const relKey = RELATION_MAP[num]
-      const deltaContent = relKey && stat?.[relKey] !== null && stat?.[relKey] !== undefined
-        ? renderRelation(stat[relKey])
-        : deltaHtml(dlt, prev)
+      const relKey = { 2: 'rel_1_2', 4: 'rel_3_4', 7: 'rel_6_7' }[num]
+      const rel    = relKey ? stat?.[relKey] : null
+
+      let relHtml = '<span class="stat-delta neutral">—</span>'
+      if (rel !== null && rel !== undefined) {
+        const cls = rel >= 60 ? 'positive' : rel >= 30 ? 'neutral' : 'negative'
+        relHtml = `<span class="stat-delta ${cls}">${rel.toFixed(1)}%</span>`
+      }
+
+      let growHtml = '<span class="stat-delta neutral">—</span>'
+      if (dlt !== null && dlt !== undefined && prev > 0) {
+        const cls  = dlt > 0 ? 'positive' : dlt < 0 ? 'negative' : 'neutral'
+        const sign = dlt > 0 ? '+' : ''
+        growHtml = `<span class="stat-delta ${cls}">${sign}${dlt}%</span>`
+      }
 
       return `
         <div class="stat-input-row">
@@ -260,7 +255,8 @@
           <input type="number" min="0" class="stat-num-input"
             id="item${num}_previous" value="${prev || ''}"
             placeholder="0" oninput="scheduleAutoSave()" />
-          <div id="delta${num}">${deltaContent}</div>
+          <div id="rel${num}">${relHtml}</div>
+          <div id="delta${num}">${growHtml}</div>
         </div>`
     }).join('')
 
@@ -312,15 +308,30 @@
     if (!currentStat) return
     const allItems = [...LOCAL_ITEMS, ...FED_ITEMS]
     allItems.forEach(({ num }) => {
-      const el = document.getElementById(`delta${num}`)
-      if (!el) return
-      const relKey = RELATION_MAP[num]
-      if (relKey && currentStat[relKey] !== null && currentStat[relKey] !== undefined) {
-        el.innerHTML = renderRelation(currentStat[relKey])
-      } else {
-        const dlt  = currentStat[`item${num}_delta`]
-        const prev = currentStat[`item${num}_previous`] || 0
-        el.innerHTML = deltaHtml(dlt, prev)
+      const dlt  = currentStat[`item${num}_delta`]
+      const prev = currentStat[`item${num}_previous`] || 0
+
+      const dltEl = document.getElementById(`delta${num}`)
+      if (dltEl) {
+        if (dlt !== null && dlt !== undefined && prev > 0) {
+          const cls  = dlt > 0 ? 'positive' : dlt < 0 ? 'negative' : 'neutral'
+          const sign = dlt > 0 ? '+' : ''
+          dltEl.innerHTML = `<span class="stat-delta ${cls}">${sign}${dlt}%</span>`
+        } else {
+          dltEl.innerHTML = '<span class="stat-delta neutral">—</span>'
+        }
+      }
+
+      const relKey = { 2: 'rel_1_2', 4: 'rel_3_4', 7: 'rel_6_7' }[num]
+      const relEl  = document.getElementById(`rel${num}`)
+      if (relEl && relKey) {
+        const rel = currentStat[relKey]
+        if (rel !== null && rel !== undefined) {
+          const cls = rel >= 60 ? 'positive' : rel >= 30 ? 'neutral' : 'negative'
+          relEl.innerHTML = `<span class="stat-delta ${cls}">${rel.toFixed(1)}%</span>`
+        } else {
+          relEl.innerHTML = '<span class="stat-delta neutral">—</span>'
+        }
       }
     })
   }

@@ -1944,57 +1944,140 @@ def generate_uph_stat_report(
 
     def _rel_pct(num, den):
         if not den or den == 0:
-            return ''
-        return f'{(num / den * 100):.1f}%'
+            return None
+        return round((num / den) * 100, 1)
 
-    _RELATIONS = {
-        2: ('item2_current', 'item1_current'),
-        4: ('item4_current', 'item3_current'),
-        7: ('item7_current', 'item6_current'),
-    }
+    def make_pair_rows(item_a, item_b, rel_value, items_def, stat, CW):
+        def get_item_data(num):
+            for n, desc, nota, _ in items_def:
+                if n == num:
+                    cur  = stat.get(f'item{num}_current',  0) or 0
+                    prev = stat.get(f'item{num}_previous', 0) or 0
+                    dlt  = stat.get(f'item{num}_delta')
+                    return desc, nota, cur, prev, dlt
+            return '', None, 0, 0, None
 
-    for num, desc, nota, _fed_only in items_def:
-        cur  = stat.get(f'item{num}_current',  0) or 0
-        prev = stat.get(f'item{num}_previous', 0) or 0
-        dlt  = stat.get(f'item{num}_delta')
+        desc_a, nota_a, cur_a, prev_a, dlt_a = get_item_data(item_a)
+        desc_b, nota_b, cur_b, prev_b, dlt_b = get_item_data(item_b)
 
-        bg = YELLOW_ROW if num % 2 == 0 else WHITE
+        bg_a = YELLOW_ROW if item_a % 2 == 0 else WHITE
+        bg_b = YELLOW_ROW if item_b % 2 == 0 else WHITE
 
-        if num in _RELATIONS:
-            n_field, d_field = _RELATIONS[num]
-            ano_atual_pct = _rel_pct(stat.get(n_field, 0) or 0, stat.get(d_field, 0) or 0)
-        else:
-            ano_atual_pct = ''
+        def make_desc_para(num, desc, nota):
+            txt = f'{num}. {desc}&nbsp;&nbsp;<b>{nota}</b>' if nota else f'{num}. {desc}'
+            return Paragraph(txt, ParagraphStyle('item', fontSize=8.5, textColor=BLACK,
+                                                  fontName='Helvetica', leading=11,
+                                                  leftIndent=3, spaceAfter=0, spaceBefore=0))
 
-        dlt_str   = fmt_dlt(dlt, prev)
-        dlt_color = BLACK
+        def _dlt_color(s):
+            if not s: return BLACK
+            return colors.HexColor('#166534') if not s.startswith('-') \
+                   else colors.HexColor('#991b1b')
+
+        rel_str   = f'{rel_value:.1f}%' if rel_value is not None else ''
+        dlt_str_a = fmt_dlt(dlt_a, prev_a)
+        dlt_str_b = fmt_dlt(dlt_b, prev_b)
+
+        pair_data = [
+            [
+                make_desc_para(item_a, desc_a, nota_a),
+                _p(fmt_num(cur_a)  if cur_a  else '', 8.5, BLACK, align=TA_CENTER),
+                _p(rel_str, 8.5, BLACK, bold=bool(rel_str), align=TA_CENTER),
+                _p(fmt_num(prev_a) if prev_a else '', 8.5, BLACK, align=TA_CENTER),
+                _p(dlt_str_a, 8.5, _dlt_color(dlt_str_a), bold=bool(dlt_str_a), align=TA_CENTER),
+            ],
+            [
+                make_desc_para(item_b, desc_b, nota_b),
+                _p(fmt_num(cur_b)  if cur_b  else '', 8.5, BLACK, align=TA_CENTER),
+                _p('', 8.5, BLACK, align=TA_CENTER),
+                _p(fmt_num(prev_b) if prev_b else '', 8.5, BLACK, align=TA_CENTER),
+                _p(dlt_str_b, 8.5, _dlt_color(dlt_str_b), bold=bool(dlt_str_b), align=TA_CENTER),
+            ],
+        ]
+
+        pair_t = Table(pair_data, colWidths=CW)
+        pair_t.setStyle(TableStyle([
+            ('BOX',           (0, 0), (-1, -1), 0.5, BLACK),
+            ('INNERGRID',     (0, 0), (-1, -1), 0.5, BLACK),
+            ('SPAN',          (2, 0), (2, 1)),
+            ('VALIGN',        (2, 0), (2, 1), 'MIDDLE'),
+            ('ALIGN',         (2, 0), (2, 1), 'CENTER'),
+            ('BACKGROUND',    (0, 0), (-1, 0), bg_a),
+            ('BACKGROUND',    (0, 1), (-1, 1), bg_b),
+            ('BACKGROUND',    (2, 0), (2, 1), bg_a),
+            ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING',    (0, 0), (-1, -1), 3),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+            ('LEFTPADDING',   (0, 0), (-1, -1), 3),
+            ('RIGHTPADDING',  (0, 0), (-1, -1), 3),
+        ]))
+        return pair_t
+
+    rel_1_2 = _rel_pct(stat.get('item2_current', 0) or 0, stat.get('item1_current', 0) or 0)
+    rel_3_4 = _rel_pct(stat.get('item4_current', 0) or 0, stat.get('item3_current', 0) or 0)
+    rel_6_7 = _rel_pct(stat.get('item7_current', 0) or 0, stat.get('item6_current', 0) or 0)
+
+    story.append(make_pair_rows(1, 2, rel_1_2, items_def, stat, CW))
+    story.append(make_pair_rows(3, 4, rel_3_4, items_def, stat, CW))
+
+    # Item 5 avulso
+    for num, desc, nota, _ in items_def:
+        if num != 5:
+            continue
+        cur  = stat.get('item5_current',  0) or 0
+        prev = stat.get('item5_previous', 0) or 0
+        dlt  = stat.get('item5_delta')
+        dlt_str = fmt_dlt(dlt, prev)
+        dlt_color_5 = BLACK
         if dlt_str:
-            dlt_color = colors.HexColor('#375623') if (dlt or 0) >= 0 \
-                        else colors.HexColor('#9C0006')
-
-        if nota:
-            desc_para = Paragraph(
-                f'{num}. {desc}&nbsp;&nbsp;<b>{nota}</b>',
-                ParagraphStyle('item', fontSize=8.5, textColor=BLACK,
-                               fontName='Helvetica', leading=11,
-                               leftIndent=3, spaceAfter=0, spaceBefore=0)
-            )
-        else:
-            desc_para = Paragraph(
-                f'{num}. {desc}',
-                ParagraphStyle('item', fontSize=8.5, textColor=BLACK,
-                               fontName='Helvetica', leading=11,
-                               leftIndent=3, spaceAfter=0, spaceBefore=0)
-            )
-
-        row = Table([[
+            dlt_color_5 = colors.HexColor('#166534') if not dlt_str.startswith('-') \
+                          else colors.HexColor('#991b1b')
+        desc_para = Paragraph(
+            f'5. {desc}&nbsp;&nbsp;<b>{nota}</b>' if nota else f'5. {desc}',
+            ParagraphStyle('item', fontSize=8.5, textColor=BLACK,
+                           fontName='Helvetica', leading=11,
+                           leftIndent=3, spaceAfter=0, spaceBefore=0)
+        )
+        row5 = Table([[
             desc_para,
-            _p(fmt_num(cur),    8.5, BLACK,     align=TA_CENTER),
-            _p(ano_atual_pct,   8.5, BLACK,     align=TA_CENTER),
-            _p(fmt_num(prev),   8.5, BLACK,     align=TA_CENTER),
-            _p(dlt_str,         8.5, dlt_color, bold=bool(dlt_str), align=TA_CENTER),
+            _p(fmt_num(cur)  if cur  else '', 8.5, BLACK, align=TA_CENTER),
+            _p('', 8.5, BLACK, align=TA_CENTER),
+            _p(fmt_num(prev) if prev else '', 8.5, BLACK, align=TA_CENTER),
+            _p(dlt_str, 8.5, dlt_color_5, bold=bool(dlt_str), align=TA_CENTER),
         ]], colWidths=CW)
-        row.setStyle(TableStyle([
+        row5.setStyle(TableStyle([
+            ('BOX',           (0, 0), (-1, -1), 0.5, BLACK),
+            ('INNERGRID',     (0, 0), (-1, -1), 0.5, BLACK),
+            ('BACKGROUND',    (0, 0), (-1, -1), WHITE),
+            ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING',    (0, 0), (-1, -1), 3),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+            ('LEFTPADDING',   (0, 0), (-1, -1), 3),
+            ('RIGHTPADDING',  (0, 0), (-1, -1), 3),
+        ]))
+        story.append(row5)
+
+    story.append(make_pair_rows(6, 7, rel_6_7, items_def, stat, CW))
+
+    for num in [8, 9, 10, 11]:
+        desc_map = {
+            8:  'Quantidade de Presbitérios',
+            9:  'Quantidade de Federações',
+            10: 'Quantidade de Sínodos',
+            11: 'Quantidade de Confederações Sinodais',
+        }
+        bg = YELLOW_ROW if num % 2 == 0 else WHITE
+        row_n = Table([[
+            Paragraph(f'{num}. {desc_map[num]}',
+                ParagraphStyle('item', fontSize=8.5, textColor=BLACK,
+                               fontName='Helvetica', leading=11, leftIndent=3,
+                               spaceAfter=0, spaceBefore=0)),
+            _p('', 8.5, BLACK, align=TA_CENTER),
+            _p('', 8.5, BLACK, align=TA_CENTER),
+            _p('', 8.5, BLACK, align=TA_CENTER),
+            _p('', 8.5, BLACK, align=TA_CENTER),
+        ]], colWidths=CW)
+        row_n.setStyle(TableStyle([
             ('BOX',           (0, 0), (-1, -1), 0.5, BLACK),
             ('INNERGRID',     (0, 0), (-1, -1), 0.5, BLACK),
             ('BACKGROUND',    (0, 0), (-1, -1), bg),
@@ -2004,7 +2087,7 @@ def generate_uph_stat_report(
             ('LEFTPADDING',   (0, 0), (-1, -1), 3),
             ('RIGHTPADDING',  (0, 0), (-1, -1), 3),
         ]))
-        story.append(row)
+        story.append(row_n)
 
     # ── Bloco de orientações ─────────────────────────────────
     story.append(Spacer(1, 1.5 * mm))
