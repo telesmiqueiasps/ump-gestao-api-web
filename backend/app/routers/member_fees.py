@@ -268,17 +268,37 @@ def delete_monthly_fee(
     if not fee:
         raise HTTPException(status_code=404, detail="Mensalidade não encontrada")
 
-    receipt_url = fee.receipt_url
+    receipt_url   = fee.receipt_url
     transaction_id = fee.transaction_id
 
+    # 1. Deleta o fee primeiro
     db.delete(fee)
     db.flush()
 
-    _delete_receipt_from_b2(receipt_url, settings_obj)
+    # 2. Deleta a transação vinculada (se houver)
     if transaction_id:
-        _delete_linked_transaction(db, transaction_id, settings_obj)
+        tx = db.query(FinancialTransaction).filter(
+            FinancialTransaction.id == transaction_id
+        ).first()
+        if tx:
+            tx_receipt = tx.receipt_url
+            db.delete(tx)
+            db.flush()
+            # Remove comprovante da transação do B2 (fora do commit)
+            try:
+                _delete_receipt_from_b2(tx_receipt, settings_obj)
+            except Exception as e:
+                print(f"Erro ao deletar comprovante da transação do B2: {e}")
 
+    # 3. Commit de tudo junto
     db.commit()
+
+    # 4. Remove comprovante do fee do B2 APÓS commit
+    # (B2 fora da transação do banco para não causar rollback)
+    try:
+        _delete_receipt_from_b2(receipt_url, settings_obj)
+    except Exception as e:
+        print(f"Erro ao deletar comprovante do fee do B2: {e}")
 
 
 # ── ACI ───────────────────────────────────────────────────────
