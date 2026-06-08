@@ -72,6 +72,16 @@ const NAV_ITEMS = [
     path: '/pages/notices.html',
     roles: null
   },
+  { type: 'divider', roles: null },
+  {
+    page: 'sisvoto',
+    label: 'SISVOTO',
+    icon: '🗳️',
+    path: '/pages/sisvoto.html',
+    roles: ['presidente','vice_presidente','tesoureiro',
+            '1_secretario','2_secretario','secretario_executivo',
+            'secretario_presbiterial','conselheiro'],
+  },
 ]
 
 // Expõe navigate globalmente para os onclick do HTML
@@ -110,6 +120,9 @@ function buildNavHTML(user, societyType) {
       return item.roles.some(r => userRoles.includes(r))
     })
     .map(item => {
+      if (item.type === 'divider') {
+        return '<hr style="border:none;border-top:1px solid rgba(255,255,255,.1);margin:.5rem .85rem"/>'
+      }
       let label = item.label
       if (item.page === 'local-umps') label = `${societyType}s Locais`
       if (item.page === 'members')    label = memberLabel
@@ -122,9 +135,12 @@ function buildNavHTML(user, societyType) {
           </button>
         `
       }
+      const iconHtml = item.icon.startsWith('/')
+        ? `<img class="nav-icon" src="${item.icon}" alt="" />`
+        : `<span class="nav-icon" style="font-size:1.1rem;display:inline-flex;align-items:center;justify-content:center">${item.icon}</span>`
       return `
         <button class="nav-item" data-page="${item.page}" onclick="navigate('${item.page}')">
-          <img class="nav-icon" src="${item.icon}" alt="" />
+          ${iconHtml}
           ${label}
         </button>
       `
