@@ -324,7 +324,7 @@ def reset_password_default(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    from app.core.security import get_password_hash
+    from app.core.security import hash_password
 
     # Apenas presidente e vice
     year = datetime.date.today().year
@@ -347,7 +347,7 @@ def reset_password_default(
     if not target:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
 
-    new_hash = get_password_hash("123456")
+    new_hash = hash_password("123456")
 
     # Atualiza todos os vínculos do mesmo email
     db.query(User).filter(
