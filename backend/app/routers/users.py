@@ -256,6 +256,107 @@ def deactivate_user(
     db.commit()
 
 
+# Editar dados de usuário (apenas presidente e vice)
+@router.put("/{user_id}")
+def update_user(
+    user_id: UUID,
+    payload: UserUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # Apenas presidente e vice podem editar
+    year = datetime.date.today().year
+    ur = db.query(UserRole).filter(
+        UserRole.user_id == current_user.id,
+        UserRole.fiscal_year == year,
+        UserRole.is_active == True,
+    ).first()
+    role = ur.role.value if ur and hasattr(ur.role, 'value') else str(ur.role) if ur else ''
+    if role not in {'presidente', 'vice_presidente'}:
+        raise HTTPException(
+            status_code=403,
+            detail="Apenas Presidente ou Vice-Presidente podem editar usuários"
+        )
+
+    # Busca o usuário alvo — deve ser da mesma organização
+    target = db.query(User).filter(
+        User.id == user_id,
+        User.organization_id == current_user.organization_id,
+    ).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    # Valida email duplicado se estiver mudando
+    if payload.email and payload.email.lower() != target.email.lower():
+        existing = db.query(User).filter(
+            sqlfunc.lower(User.email) == payload.email.lower().strip(),
+            User.organization_id == current_user.organization_id,
+        ).first()
+        if existing:
+            raise HTTPException(
+                status_code=400,
+                detail="Este email já está em uso nesta organização"
+            )
+
+    if payload.full_name:
+        target.full_name = payload.full_name.strip()
+    if payload.email:
+        # Atualiza email em todos os vínculos do mesmo email
+        old_email = target.email
+        new_email = payload.email.lower().strip()
+        db.query(User).filter(
+            sqlfunc.lower(User.email) == old_email.lower()
+        ).update({"email": new_email}, synchronize_session=False)
+
+    db.commit()
+    db.refresh(target)
+    return {
+        "id": str(target.id),
+        "full_name": target.full_name,
+        "email": target.email,
+    }
+
+
+# Reset de senha para 123456 (apenas presidente e vice)
+@router.post("/{user_id}/reset-password-default")
+def reset_password_default(
+    user_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from app.core.security import get_password_hash
+
+    # Apenas presidente e vice
+    year = datetime.date.today().year
+    ur = db.query(UserRole).filter(
+        UserRole.user_id == current_user.id,
+        UserRole.fiscal_year == year,
+        UserRole.is_active == True,
+    ).first()
+    role = ur.role.value if ur and hasattr(ur.role, 'value') else str(ur.role) if ur else ''
+    if role not in {'presidente', 'vice_presidente'}:
+        raise HTTPException(
+            status_code=403,
+            detail="Apenas Presidente ou Vice-Presidente podem resetar senhas"
+        )
+
+    target = db.query(User).filter(
+        User.id == user_id,
+        User.organization_id == current_user.organization_id,
+    ).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    new_hash = get_password_hash("123456")
+
+    # Atualiza todos os vínculos do mesmo email
+    db.query(User).filter(
+        sqlfunc.lower(User.email) == target.email.lower()
+    ).update({"password_hash": new_hash}, synchronize_session=False)
+    db.commit()
+
+    return {"detail": f"Senha de {target.full_name} redefinida para 123456"}
+
 
 @router.get("/my-organizations")
 def list_my_organizations(

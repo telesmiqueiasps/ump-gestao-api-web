@@ -214,6 +214,29 @@
   </div>
 </div>
 
+<!-- Modal Editar Usuário -->
+<div class="modal-overlay" id="modal-edit-user">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2>Editar Usuário</h2>
+      <button class="modal-close">✕</button>
+    </div>
+    <div class="field mb-4">
+      <label>Nome completo</label>
+      <input class="input" type="text" id="edit-user-name" placeholder="Nome completo" />
+    </div>
+    <div class="field mb-4">
+      <label>Email</label>
+      <input class="input" type="email" id="edit-user-email" placeholder="email@exemplo.com" />
+    </div>
+    <div id="edit-user-alert" class="hidden mb-3"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary modal-close">Cancelar</button>
+      <button class="btn btn-primary" id="btn-confirm-edit-user">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
   import { requireAuth, isFederation, isLocalUmp, hasRole, getUser } from '../assets/js/auth.js?v=9'
   import { renderShell, canAccessPage, renderBottomNav } from '../assets/js/router.v3.js?v=9'
@@ -513,6 +536,13 @@
 
   // ── Usuários da Federação ────────────────────────────────────────────────────
 
+  // Verifica se o usuário logado é presidente ou vice
+  const user = getUser()
+  const userRoles = user?.roles ?? []
+  const canManageUsers = userRoles.some(r =>
+    ['presidente', 'vice_presidente'].includes(r)
+  )
+
   async function loadFedUsers() {
     const tbody = document.getElementById('fed-users-body')
     tbody.innerHTML = '<tr><td colspan="5" class="table-empty">Carregando...</td></tr>'
@@ -530,7 +560,13 @@
           <td><span class="badge badge-blue">${ROLE_LABELS[u.role] ?? u.role}</span></td>
           <td><span class="badge ${u.is_active ? 'badge-green' : 'badge-slate'}">${u.is_active ? 'Ativo' : 'Inativo'}</span></td>
           <td>
-            ${u.is_active ? `<button class="btn btn-ghost btn-sm" style="color:var(--red-600)" onclick="deactivateFedUser('${u.id}','${u.full_name.replace(/'/g, "\\'")}')">Desativar</button>` : ''}
+            ${u.is_active ? `
+              <button class="btn btn-ghost btn-sm" style="color:var(--red-600)" onclick="deactivateFedUser('${u.id}','${u.full_name.replace(/'/g, "\\'")}')">Desativar</button>
+            ` : ''}
+            ${canManageUsers ? `
+              <button class="btn btn-ghost btn-sm" onclick="openEditUser('${u.id}','${u.full_name.replace(/'/g, "\\'")}','${u.email}')" title="Editar usuário">✎ Editar</button>
+              <button class="btn btn-ghost btn-sm" style="color:var(--amber-600)" onclick="resetUserPassword('${u.id}','${u.full_name.replace(/'/g, "\\'")}')" title="Resetar senha para 123456">🔑 Resetar senha</button>
+            ` : ''}
           </td>
         </tr>
       `).join('')
@@ -662,6 +698,53 @@
       await api.delete(`/api/users/${id}`)
       loadFedUsers()
     } catch(err) { showAlert('page-alert', err.message, 'error') }
+  }
+
+  // ── Editar usuário e resetar senha ──────────────────────────────────────────
+
+  let editUserId = null
+
+  window.openEditUser = (id, name, email) => {
+    editUserId = id
+    document.getElementById('edit-user-name').value  = name
+    document.getElementById('edit-user-email').value = email
+    clearAlert('edit-user-alert')
+    openModal('modal-edit-user')
+  }
+
+  document.getElementById('btn-confirm-edit-user')
+    .addEventListener('click', async () => {
+      const btn   = document.getElementById('btn-confirm-edit-user')
+      const name  = document.getElementById('edit-user-name').value.trim()
+      const email = document.getElementById('edit-user-email').value.trim()
+      if (!name || !email) {
+        showAlert('edit-user-alert', 'Preencha nome e email.', 'error')
+        return
+      }
+      setLoading(btn, true, 'Salvar')
+      try {
+        await api.put(`/api/users/${editUserId}`, { full_name: name, email })
+        closeModal('modal-edit-user')
+        showAlert('users-alert', '✓ Usuário atualizado com sucesso!', 'success')
+        loadFedUsers()
+      } catch(err) {
+        showAlert('edit-user-alert', err.message, 'error')
+      } finally {
+        setLoading(btn, false, 'Salvar')
+      }
+    })
+
+  window.resetUserPassword = async (id, name) => {
+    if (!confirm(
+      `Resetar a senha de "${name}" para 123456?\n\n` +
+      `O usuário deverá alterar a senha no próximo acesso.`
+    )) return
+    try {
+      const result = await api.post(`/api/users/${id}/reset-password-default`)
+      showAlert('users-alert', `🔑 ${result.detail}`, 'success')
+    } catch(err) {
+      showAlert('users-alert', err.message, 'error')
+    }
   }
 
   Promise.all([loadBoard(), loadSecretaries()])
