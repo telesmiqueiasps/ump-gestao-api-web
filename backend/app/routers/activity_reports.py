@@ -145,10 +145,10 @@ def _get_act_secs_data(db, current_user, year):
     ]
 
 
-def _get_logos(org_data):
+def _get_logos(org_data, b2_client=None):
     settings_obj = get_settings()
     bucket = settings_obj.b2_bucket_name
-    b2 = _get_client()
+    b2 = b2_client if b2_client is not None else _get_client()
 
     logo_bytes = None
     if org_data.get('logo_url'):
@@ -159,6 +159,17 @@ def _get_logos(org_data):
             try:
                 resp = b2.get_object(Bucket=bucket, Key=match.group(1))
                 logo_bytes = resp['Body'].read()
+                # Redimensiona defensivamente para no máximo 500x500 pixels
+                try:
+                    from PIL import Image as PILImage
+                    with PILImage.open(io.BytesIO(logo_bytes)) as pil_img:
+                        pil_img.thumbnail((500, 500), PILImage.LANCZOS)
+                        out_io = io.BytesIO()
+                        fmt = pil_img.format if pil_img.format else 'PNG'
+                        pil_img.save(out_io, format=fmt)
+                        logo_bytes = out_io.getvalue()
+                except Exception:
+                    pass
             except Exception:
                 pass
 
@@ -168,6 +179,15 @@ def _get_logos(org_data):
         if os.path.exists(ipb_path):
             with open(ipb_path, 'rb') as f:
                 ipb_logo_bytes = f.read()
+                try:
+                    from PIL import Image as PILImage
+                    with PILImage.open(io.BytesIO(ipb_logo_bytes)) as pil_img:
+                        pil_img.thumbnail((500, 500), PILImage.LANCZOS)
+                        out_io = io.BytesIO()
+                        pil_img.save(out_io, format='PNG')
+                        ipb_logo_bytes = out_io.getvalue()
+                except Exception:
+                    pass
     except Exception:
         pass
 
@@ -175,28 +195,15 @@ def _get_logos(org_data):
 
 
 def _build_activities_data(activities, with_photos=True):
-    settings_obj = get_settings()
-    bucket = settings_obj.b2_bucket_name
-    b2 = _get_client() if with_photos else None
-
     result = []
     for act in activities:
-        photos_bytes = []
-        if with_photos:
-            for photo in act.photos:
-                try:
-                    resp = b2.get_object(Bucket=bucket, Key=photo.photo_key)
-                    photos_bytes.append(resp['Body'].read())
-                except Exception:
-                    photos_bytes.append(None)
-
         result.append({
             "id":          str(act.id),
             "title":       act.title,
             "description": act.description or '',
             "start_date":  act.start_date.strftime('%Y-%m-%d'),
             "end_date":    act.end_date.strftime('%Y-%m-%d') if act.end_date else None,
-            "photos_bytes": photos_bytes,
+            "photo_keys":  [p.photo_key for p in act.photos] if with_photos else [],
         })
     return result
 
@@ -487,10 +494,11 @@ def publish_report(
         Activity.fiscal_year == year,
     ).order_by(Activity.start_date).all()
 
+    b2_client = _get_client()
     org_data      = _get_org_data(db, current_user)
     board_data    = _get_board_data(db, current_user, year)
     act_secs_data = _get_act_secs_data(db, current_user, year)
-    logo_bytes, ipb_logo_bytes = _get_logos(org_data)
+    logo_bytes, ipb_logo_bytes = _get_logos(org_data, b2_client=b2_client)
     activities_data = _build_activities_data(activities, with_photos=True)
 
     from app.services.pdf_generator import generate_activity_report
@@ -513,6 +521,7 @@ def publish_report(
         },
         logo_bytes     = logo_bytes,
         ipb_logo_bytes = ipb_logo_bytes,
+        b2_client      = b2_client,
     )
 
     settings_obj = get_settings()
@@ -557,10 +566,11 @@ def preview_report_pdf(
         Activity.fiscal_year == year,
     ).order_by(Activity.start_date).all()
 
+    b2_client = _get_client()
     org_data      = _get_org_data(db, current_user)
     board_data    = _get_board_data(db, current_user, year)
     act_secs_data = _get_act_secs_data(db, current_user, year)
-    logo_bytes, ipb_logo_bytes = _get_logos(org_data)
+    logo_bytes, ipb_logo_bytes = _get_logos(org_data, b2_client=b2_client)
     activities_data = _build_activities_data(activities, with_photos=True)
 
     from app.services.pdf_generator import generate_activity_report
@@ -583,6 +593,7 @@ def preview_report_pdf(
         },
         logo_bytes    = logo_bytes,
         ipb_logo_bytes= ipb_logo_bytes,
+        b2_client     = b2_client,
     )
 
     filename = f"Previa_Relatorio_Atividades_{year}.pdf"

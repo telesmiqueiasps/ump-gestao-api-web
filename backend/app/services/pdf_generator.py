@@ -8,7 +8,7 @@ from reportlab.lib import colors
 from reportlab.lib.units import mm
 from reportlab.platypus import (
     SimpleDocTemplate, Spacer, Table, TableStyle,
-    HRFlowable, PageBreak, Image, Paragraph
+    HRFlowable, PageBreak, Image, Paragraph, Flowable
 )
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
@@ -448,6 +448,79 @@ def generate_meeting_report(
 
 
 # ═══════════════════════════════════════════════════════════════
+# CLASSE DE IMAGEM PREGUIÇOSA (LAZY IMAGE)
+# ═══════════════════════════════════════════════════════════════
+
+class LazyImage(Flowable):
+    def __init__(self, b2_client, bucket, photo_key=None, photo_bytes=None, max_w=0, max_h=0):
+        Flowable.__init__(self)
+        self.b2_client = b2_client
+        self.bucket = bucket
+        self.photo_key = photo_key
+        self.photo_bytes = photo_bytes
+        self.max_w = max_w
+        self.max_h = max_h
+        self.width = max_w
+        self.height = max_h
+        self._processed_bytes = None
+
+    def _load_and_process(self):
+        if self._processed_bytes is not None:
+            return
+        try:
+            raw_bytes = self.photo_bytes
+            if raw_bytes is None and self.photo_key and self.b2_client:
+                resp = self.b2_client.get_object(Bucket=self.bucket, Key=self.photo_key)
+                raw_bytes = resp['Body'].read()
+
+            if not raw_bytes:
+                self.width = 1
+                self.height = 1
+                self._processed_bytes = b''
+                return
+
+            from PIL import Image as PILImage, ImageOps
+            with PILImage.open(io.BytesIO(raw_bytes)) as pil_img:
+                pil_img = ImageOps.exif_transpose(pil_img)
+                pil_img.thumbnail((1600, 1600), PILImage.LANCZOS)
+
+                if pil_img.mode in ('RGBA', 'P', 'LA'):
+                    pil_img = pil_img.convert('RGB')
+
+                out_io = io.BytesIO()
+                pil_img.save(out_io, format='JPEG', quality=85)
+                self._processed_bytes = out_io.getvalue()
+
+            with PILImage.open(io.BytesIO(self._processed_bytes)) as pil:
+                ow, oh = pil.size
+
+            ratio = min(self.max_w / (ow * 0.352778), self.max_h / (oh * 0.352778))
+            self.width = ow * 0.352778 * ratio
+            self.height = oh * 0.352778 * ratio
+        except Exception:
+            self.width = 1
+            self.height = 1
+            self._processed_bytes = b''
+
+    def wrap(self, availWidth, availHeight):
+        self._load_and_process()
+        return self.width, self.height
+
+    def draw(self):
+        if not self._processed_bytes:
+            return
+        try:
+            from reportlab.platypus import Image as RLImage
+            img = RLImage(io.BytesIO(self._processed_bytes), width=self.width, height=self.height)
+            img.hAlign = 'CENTER'
+            img.drawOn(self.canv, 0, 0)
+        finally:
+            self._processed_bytes = None
+            import gc
+            gc.collect()
+
+
+# ═══════════════════════════════════════════════════════════════
 # RELATÓRIO DE ATIVIDADES
 # ═══════════════════════════════════════════════════════════════
 
@@ -460,13 +533,20 @@ def generate_activity_report(
     report: dict,
     logo_bytes: bytes = None,
     ipb_logo_bytes: bytes = None,
+    b2_client = None,
 ) -> bytes:
     """Gera o Relatório de Atividades no modelo oficial."""
     import datetime as _dt
+    from app.services.storage import _get_client
+    from app.core.config import get_settings
 
     buf = io.BytesIO()
     ML = MR = 15 * mm
     W = A4[0] - ML - MR
+
+    b2 = b2_client if b2_client is not None else _get_client()
+    settings_obj = get_settings()
+    bucket = settings_obj.b2_bucket_name
 
     # Cabeçalho e rodapé em todas as páginas
     def _make_header_footer(canvas_obj, doc_obj):
@@ -844,7 +924,17 @@ def generate_activity_report(
 
     first_activity = True
     for act in activities:
-        photos = [p for p in act.get('photos_bytes', []) if p]
+        keys = act.get('photo_keys', [])
+        bytes_list = act.get('photos_bytes', [])
+
+        photos_data = []
+        if keys:
+            for k in keys:
+                photos_data.append((k, None))
+        elif bytes_list:
+            for b in bytes_list:
+                if b:
+                    photos_data.append((None, b))
 
         if first_activity:
             story.append(Spacer(1, 3 * mm))
@@ -871,44 +961,21 @@ def generate_activity_report(
                 alignment=4, leading=14, spaceAfter=6,
             )))
 
-        if not photos:
+        if not photos_data:
             story.append(Spacer(1, 4 * mm))
             continue
 
-        try:
-            from PIL import Image as PILImage
-            PIL_available = True
-        except ImportError:
-            PIL_available = False
-
-        def _make_img(photo_bytes, max_w, max_h):
-            """Cria Image respeitando proporção."""
-            try:
-                if PIL_available:
-                    pil = PILImage.open(io.BytesIO(photo_bytes))
-                    ow, oh = pil.size
-                    ratio = min(max_w / (ow * 0.352778), max_h / (oh * 0.352778))
-                    iw = ow * 0.352778 * ratio
-                    ih = oh * 0.352778 * ratio
-                else:
-                    iw, ih = max_w, max_h
-                img = Image(io.BytesIO(photo_bytes), width=iw, height=ih)
-                img.hAlign = 'CENTER'
-                return img
-            except Exception:
-                return Spacer(1, 1)
-
-        n = len(photos)
+        n = len(photos_data)
         MAX_H = 180 * mm
 
         if n == 1:
-            story.append(_make_img(photos[0], W, MAX_H))
+            story.append(LazyImage(b2, bucket, photo_key=photos_data[0][0], photo_bytes=photos_data[0][1], max_w=W, max_h=MAX_H))
 
         elif n == 2:
             half = (W - 3 * mm) / 2
             row = Table([
-                [_make_img(photos[0], half, MAX_H / 2),
-                 _make_img(photos[1], half, MAX_H / 2)]
+                [LazyImage(b2, bucket, photo_key=photos_data[0][0], photo_bytes=photos_data[0][1], max_w=half, max_h=MAX_H / 2),
+                 LazyImage(b2, bucket, photo_key=photos_data[1][0], photo_bytes=photos_data[1][1], max_w=half, max_h=MAX_H / 2)]
             ], colWidths=[half, half])
             row.setStyle(TableStyle([
                 ('VALIGN',  (0, 0), (-1, -1), 'MIDDLE'),
@@ -922,8 +989,8 @@ def generate_activity_report(
             half = (W - 3 * mm) / 2
             row_h = MAX_H / 2 - 3 * mm
             top_row = Table([
-                [_make_img(photos[0], half, row_h),
-                 _make_img(photos[1], half, row_h)]
+                [LazyImage(b2, bucket, photo_key=photos_data[0][0], photo_bytes=photos_data[0][1], max_w=half, max_h=row_h),
+                 LazyImage(b2, bucket, photo_key=photos_data[1][0], photo_bytes=photos_data[1][1], max_w=half, max_h=row_h)]
             ], colWidths=[half, half])
             top_row.setStyle(TableStyle([
                 ('VALIGN',  (0, 0), (-1, -1), 'MIDDLE'),
@@ -933,7 +1000,7 @@ def generate_activity_report(
             ]))
             story.append(top_row)
             story.append(Spacer(1, 3 * mm))
-            bot = _make_img(photos[2], W / 2, row_h)
+            bot = LazyImage(b2, bucket, photo_key=photos_data[2][0], photo_bytes=photos_data[2][1], max_w=W / 2, max_h=row_h)
             bot_row = Table([[bot]], colWidths=[W])
             bot_row.setStyle(TableStyle([('ALIGN', (0, 0), (-1, -1), 'CENTER')]))
             story.append(bot_row)
@@ -943,8 +1010,8 @@ def generate_activity_report(
             row_h = MAX_H / 2 - 3 * mm
             for i in range(0, 4, 2):
                 pair = Table([
-                    [_make_img(photos[i], half, row_h),
-                     _make_img(photos[i + 1], half, row_h)]
+                    [LazyImage(b2, bucket, photo_key=photos_data[i][0], photo_bytes=photos_data[i][1], max_w=half, max_h=row_h),
+                     LazyImage(b2, bucket, photo_key=photos_data[i + 1][0], photo_bytes=photos_data[i + 1][1], max_w=half, max_h=row_h)]
                 ], colWidths=[half, half])
                 pair.setStyle(TableStyle([
                     ('VALIGN',  (0, 0), (-1, -1), 'MIDDLE'),
