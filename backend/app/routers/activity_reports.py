@@ -96,6 +96,7 @@ def _get_org_data(db, current_user):
             "logo_url":        org_obj.logo_url if org_obj else None,
             "theme_color":     getattr(org_obj, 'theme_color', '#1a2a6c') or '#1a2a6c',
             "organization_type": org_type,
+            "society_type":    getattr(org_obj, 'society_type', 'UMP') or 'UMP',
         }
     else:
         from app.models.local_ump import LocalUmp
@@ -108,6 +109,7 @@ def _get_org_data(db, current_user):
             "logo_url":        org_obj.logo_url if org_obj else None,
             "theme_color":     getattr(org_obj, 'theme_color', '#1a2a6c') or '#1a2a6c',
             "organization_type": org_type,
+            "society_type":    getattr(org_obj, 'society_type', 'UMP') or 'UMP',
         }
 
 

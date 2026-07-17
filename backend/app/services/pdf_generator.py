@@ -607,8 +607,12 @@ def generate_activity_report(
         # Lema/texto à esquerda no rodapé (configurável)
         canvas_obj.setFont('Helvetica', 6.5)
         canvas_obj.setFillColor(colors.HexColor('#94a3b8'))
-        footer_text = org_data.get('footer_text') or \
-            'ALEGRES NA ESPERANÇA – FORTES NA FÉ – DEDICADOS NO AMOR – UNIDOS NO TRABALHO'
+        soc_type = str(org_data.get('society_type', 'UMP')).upper()
+        if soc_type == 'UPH':
+            default_footer = 'CONFIANÇA EM JESUS, ENTUSIASMO NA AÇÃO E UNIÃO FRATERNAL'
+        else:
+            default_footer = 'ALEGRES NA ESPERANÇA – FORTES NA FÉ – DEDICADOS NO AMOR – UNIDOS NO TRABALHO'
+        footer_text = org_data.get('footer_text') or default_footer
         canvas_obj.drawCentredString(W_page/2, 8*mm, footer_text)
 
         # Número da página à direita
