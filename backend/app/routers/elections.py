@@ -324,7 +324,7 @@ def close_round(
             else:
                 session.status = "completed"
                 session.current_role = None
-                session.current_round = None
+                session.current_round = 1
                 next_step = "Eleição concluída"
         else:
             # Not elected, advance round
