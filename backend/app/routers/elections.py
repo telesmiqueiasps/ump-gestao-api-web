@@ -270,18 +270,20 @@ def close_round(
     
     # Count votes per candidate
     for v in votes:
-        cid = str(v.candidate_member_id) if v.candidate_member_id else "blank"
+        cid = v.candidate_member_id
         results[cid] = results.get(cid, 0) + 1
 
     # Format results list with member names
     results_list = []
     for cid, count in results.items():
-        if cid == "blank":
+        if cid is None:
             name = "Branco/Nulo"
+            cid_str = "blank"
         else:
             m = db.query(Member).filter(Member.id == cid).first()
             name = m.full_name if m else "Desconhecido"
-        results_list.append({"candidate_id": cid, "name": name, "votes": count})
+            cid_str = str(cid)
+        results_list.append({"candidate_id": cid_str, "name": name, "votes": count})
     
     results_list.sort(key=lambda x: x["votes"], reverse=True)
 
@@ -308,7 +310,7 @@ def close_round(
             winner_name = top_candidate["name"]
             
             # Save elected candidate
-            new_elected = {**session.elected_positions}
+            new_elected = {**(session.elected_positions or {})}
             new_elected[session.current_role] = winner_id
             session.elected_positions = new_elected
             
@@ -391,9 +393,14 @@ def get_history(
     for s in sessions:
         # Load elected members details
         elected_details = {}
-        for role, member_id in s.elected_positions.items():
-            m = db.query(Member).filter(Member.id == member_id).first()
-            elected_details[role] = m.full_name if m else "Desconhecido"
+        elected_positions = s.elected_positions or {}
+        for role, member_id in elected_positions.items():
+            try:
+                m = db.query(Member).filter(Member.id == UUID(member_id)).first()
+                name = m.full_name if m else "Desconhecido"
+            except Exception:
+                name = "Desconhecido"
+            elected_details[role] = name
 
         result.append({
             "id": str(s.id),
