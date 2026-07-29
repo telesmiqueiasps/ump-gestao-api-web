@@ -8,7 +8,16 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 from app.core.config import get_settings
-from app.routers import auth, federations, local_umps, users, finances, members, board, member_fees, notices, signatures, meetings, activity_reports, uph_statistics, admin, member_portal, push_notifications
+from app.routers import auth, federations, local_umps, users, finances, members, board, member_fees, notices, signatures, meetings, activity_reports, uph_statistics, admin, member_portal, push_notifications, elections
+from app.db.session import engine, Base
+import app.models # Ensure all models are loaded
+
+# Create missing database tables automatically on start
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    import logging
+    logging.getLogger("uvicorn").error(f"Error creating database tables: {e}")
 
 settings = get_settings()
 
@@ -51,6 +60,8 @@ app.include_router(uph_statistics.router,    prefix="/api/uph-statistics",    ta
 app.include_router(admin.router,             prefix="/api/admin",             tags=["Admin"])
 app.include_router(member_portal.router,      prefix="/api/member-portal",      tags=["Portal do Socio"])
 app.include_router(push_notifications.router, prefix="/api/push",          tags=["Push Notifications"])
+app.include_router(elections.router,          prefix="/api/elections",     tags=["Eleições"])
+
 
 
 @app.get("/health")

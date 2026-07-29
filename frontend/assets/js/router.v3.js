@@ -72,6 +72,16 @@ const NAV_ITEMS = [
     path: '/pages/notices.html',
     roles: null
   },
+  {
+    page: 'eleicoes',
+    label: 'Eleições',
+    icon: '🗳️',
+    path: '/pages/eleicoes.html',
+    localOnly: true,
+    roles: ['presidente','vice_presidente','tesoureiro',
+            '1_secretario','2_secretario','secretario_executivo',
+            'secretario_presbiterial','conselheiro'],
+  },
   { type: 'divider', roles: null },
   {
     page: 'sisvoto',

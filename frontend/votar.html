@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#1a2a6c" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Votação — UMP POPB</title>
+  <link rel="icon" type="image/png" href="/assets/img/logo.png" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:   #1a2a6c;
+      --blue2:  #0d1640;
+      --orange: #e8630a;
+      --red:    #c0392b;
+      --white:  #ffffff;
+      --gray50: #f8fafc;
+      --gray200:#e2e8f0;
+      --gray400:#94a3b8;
+      --gray600:#475569;
+      --gray800:#1e293b;
+      --radius: 14px;
+      --shadow: 0 20px 60px rgba(0,0,0,.35);
+      --green: #16a34a;
+      --green-dark: #15803d;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Inter', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(145deg, #060d24 0%, #1a2a6c 45%, #0d1640 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem 1rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(232,99,10,.12) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(26,42,108,.4) 0%, transparent 50%),
+        radial-gradient(circle at 60% 10%, rgba(255,255,255,.03) 0%, transparent 40%);
+      pointer-events: none;
+    }
+
+    .vote-wrapper {
+      width: 100%;
+      max-width: 440px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .vote-logo-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .vote-logo {
+      width: 80px;
+      height: 80px;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 20px rgba(232,99,10,.4));
+    }
+
+    .vote-brand {
+      margin-top: .5rem;
+      text-align: center;
+    }
+
+    .vote-brand h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #white;
+      color: #fff;
+    }
+
+    .vote-brand p {
+      font-size: .8rem;
+      color: rgba(255,255,255,.6);
+      margin-top: .2rem;
+    }
+
+    .vote-card {
+      background: rgba(255,255,255,.98);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 2rem;
+      backdrop-filter: blur(10px);
+    }
+
+    .vote-card h2 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--gray800);
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    .field {
+      margin-bottom: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: .4rem;
+    }
+
+    .field label {
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--gray600);
+    }
+
+    .input, .select {
+      width: 100%;
+      padding: .75rem 1rem;
+      border: 1.5px solid var(--gray200);
+      border-radius: 10px;
+      font-size: 1rem;
+      font-family: inherit;
+      color: var(--gray800);
+      background: var(--gray50);
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+
+    .input:focus, .select:focus {
+      border-color: #1a2a6c;
+      background: #white;
+      background: #white;
+      box-shadow: 0 0 0 3px rgba(26,42,108,.12);
+    }
+
+    .btn {
+      width: 100%;
+      padding: .85rem;
+      background: linear-gradient(135deg, #1a2a6c, #2a3f9f);
+      color: #white;
+      color: #white;
+      color: #white;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: opacity .15s, transform .1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .6rem;
+      min-height: 48px;
+    }
+
+    .btn:hover:not(:disabled) {
+      opacity: .92;
+      transform: translateY(-1px);
+    }
+
+    .btn:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, var(--green), var(--green-dark));
+    }
+
+    .btn-secondary {
+      background: var(--gray200);
+      color: var(--gray800);
+    }
+
+    .badge-step {
+      display: inline-block;
+      padding: .2rem .6rem;
+      background: #eef0fb;
+      color: #1a2a6c;
+      border-radius: 6px;
+      font-size: .75rem;
+      font-weight: 600;
+      margin-bottom: .75rem;
+      text-transform: uppercase;
+    }
+
+    .alert {
+      padding: .75rem 1rem;
+      border-radius: 10px;
+      font-size: .85rem;
+      line-height: 1.5;
+    }
+    .alert-error {
+      background: #fef2f2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+    .alert-success {
+      background: #f0fdf4;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .text-center {
+      text-align: center;
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2.5px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+<div class="vote-wrapper">
+  
+  <div class="vote-logo-wrap">
+    <img class="vote-logo" src="/assets/img/logo.png" alt="Logo UMP" />
+    <div class="vote-brand">
+      <h1>Eleição Secreta UMP</h1>
+      <p id="society-subtitle">Plataforma de Gestão UMP</p>
+    </div>
+  </div>
+
+  <!-- ── CARD: STEP 1 (LOGIN WITH ACCESS CODE) ── -->
+  <div class="vote-card" id="card-login">
+    <h2>Código Secreto de Votante</h2>
+    <div id="login-alert" class="hidden" style="margin-bottom: 1.25rem;"></div>
+
+    <div class="field">
+      <label for="voter-code">Insira seu código de 6 caracteres</label>
+      <input class="input text-center" type="text" id="voter-code" maxlength="6" placeholder="A1B2C3" style="text-transform: uppercase; font-family: monospace; font-size: 1.3rem; letter-spacing: 2px;"/>
+    </div>
+    
+    <button class="btn" id="btn-login-code">Entrar na Seção Secreta</button>
+  </div>
+
+  <!-- ── CARD: STEP 2 (CAST VOTE) ── -->
+  <div class="vote-card hidden" id="card-ballot">
+    <div class="text-center" style="margin-bottom: 1.5rem;">
+      <span class="badge-step" id="ballot-step-badge">Presidente</span>
+      <h2 style="margin-bottom: .2rem; font-size: 1.25rem;" id="ballot-title">Eleição de Diretoria 2026</h2>
+      <p style="font-size: .8rem; color: var(--gray600);" id="ballot-role-label">Votação para o cargo de Presidente (1º Escrutínio)</p>
+    </div>
+
+    <div id="ballot-alert" class="hidden" style="margin-bottom: 1.25rem;"></div>
+
+    <!-- Active Voting state -->
+    <div id="ballot-active-state">
+      <div class="field">
+        <label for="ballot-select">Selecione seu Candidato</label>
+        <select class="select" id="ballot-select">
+          <!-- Populated dynamically -->
+        </select>
+      </div>
+
+      <button class="btn btn-success" id="btn-cast-vote">Confirmar Voto Secreto</button>
+      
+      <p style="font-size: .72rem; color: var(--gray600); text-align: center; margin-top: 1rem; line-height: 1.4;">
+        🔒 <strong>Voto Secreto e Anônimo:</strong> Sua senha e identificação não são salvas junto com o voto.
+      </p>
+    </div>
+
+    <!-- Voted / Wait state -->
+    <div id="ballot-voted-state" class="hidden text-center" style="padding: 1rem 0;">
+      <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
+      <h3 style="font-size: 1.1rem; color: var(--gray800); margin-bottom: .5rem;">Voto Computado com Sucesso!</h3>
+      <p style="font-size: .85rem; color: var(--gray600); line-height: 1.6; margin-bottom: 1.5rem;">
+        Seu voto secreto foi computado de forma totalmente anônima. Aguarde a diretoria encerrar esta rodada de votação.
+      </p>
+      <button class="btn btn-secondary" id="btn-refresh-status">
+        🔄 Verificar Próxima Rodada
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- API client dependencies -->
+<script type="module">
+  const BASE_URL = 'https://ump-gestao-api.onrender.com'
+  // Local development fallback
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  const API_URL = isLocal ? 'http://localhost:8000' : BASE_URL
+
+  const cardLogin = document.getElementById('card-login')
+  const cardBallot = document.getElementById('card-ballot')
+  
+  let voterCode = ''
+  let currentSession = null
+
+  // Check query string for session/code
+  const urlParams = new URLSearchParams(window.location.search)
+  const codeParam = urlParams.get('code')
+  if (codeParam) {
+    document.getElementById('voter-code').value = codeParam.toUpperCase().trim()
+  }
+
+  // Set local UMP/UPH/etc label if available
+  const societyType = localStorage.getItem('society_type') || 'UMP'
+  document.getElementById('society-subtitle').textContent = `Plataforma de Gestão ${societyType}`
+
+  // Alert helpers
+  function showAlert(id, message, type = 'error') {
+    const el = document.getElementById(id)
+    el.innerHTML = `<div class="alert alert-${type}">${message}</div>`
+    el.classList.remove('hidden')
+  }
+
+  function clearAlert(id) {
+    const el = document.getElementById(id)
+    el.innerHTML = ''
+    el.classList.add('hidden')
+  }
+
+  function setLoading(btn, loading, text) {
+    btn.disabled = loading
+    btn.innerHTML = loading ? `<span class="spinner"></span> Aguarde...` : text
+  }
+
+  // Step 1: Login Code
+  document.getElementById('btn-login-code').addEventListener('click', async () => {
+    const codeEl = document.getElementById('voter-code')
+    const code = codeEl.value.trim().toUpperCase()
+    
+    if (code.length !== 6) {
+      showAlert('login-alert', 'Por favor, insira o código de 6 caracteres.')
+      return
+    }
+
+    const btn = document.getElementById('btn-login-code')
+    setLoading(btn, true, 'Entrar na Seção Secreta')
+    clearAlert('login-alert')
+
+    try {
+      const res = await fetch(`${API_URL}/api/elections/public/session?code=${code}`)
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.detail || 'Código inválido ou expirado.')
+      }
+      
+      const data = await res.json()
+      voterCode = code
+      currentSession = data
+      
+      // Navigate to ballot card
+      cardLogin.classList.add('hidden')
+      cardBallot.classList.remove('hidden')
+      renderBallotScreen()
+    } catch (err) {
+      showAlert('login-alert', err.message)
+    } finally {
+      setLoading(btn, false, 'Entrar na Seção Secreta')
+    }
+  })
+
+  // Render Ballot Form or Voted Screen
+  function renderBallotScreen() {
+    clearAlert('ballot-alert')
+    
+    document.getElementById('ballot-title').textContent = currentSession.title
+    
+    const ROLE_LABELS = {
+      presidente: 'Presidente',
+      vice_presidente: 'Vice-Presidente',
+      '1_secretario': '1º Secretário(a)',
+      '2_secretario': '2º Secretário(a)',
+      secretario_executivo: 'Secretário Executivo',
+      tesoureiro: 'Tesoureiro(a)',
+    }
+    const roleLabel = ROLE_LABELS[currentSession.current_role] || currentSession.current_role
+    
+    document.getElementById('ballot-step-badge').textContent = roleLabel
+    document.getElementById('ballot-role-label').textContent = `Votação para o cargo de ${roleLabel} (${currentSession.current_round}º Escrutínio)`
+
+    const activeState = document.getElementById('ballot-active-state')
+    const votedState = document.getElementById('ballot-voted-state')
+
+    if (currentSession.has_voted) {
+      activeState.classList.add('hidden')
+      votedState.classList.remove('hidden')
+    } else {
+      activeState.classList.remove('hidden')
+      votedState.classList.add('hidden')
+
+      // Populate Dropdown
+      const select = document.getElementById('ballot-select')
+      
+      let optionsHtml = '<option value="">-- Selecione seu candidato --</option>'
+      currentSession.candidates.forEach(c => {
+        optionsHtml += `<option value="${c.id}">${c.full_name}</option>`
+      })
+      optionsHtml += '<option value="blank">Votar em Branco/Nulo</option>'
+      
+      select.innerHTML = optionsHtml
+    }
+  }
+
+  // Step 2: Cast Vote
+  document.getElementById('btn-cast-vote').addEventListener('click', async () => {
+    const select = document.getElementById('ballot-select')
+    const val = select.value
+    if (!val) {
+      showAlert('ballot-alert', 'Por favor, selecione um candidato ou marque voto em branco.')
+      return
+    }
+
+    const candidateId = val === 'blank' ? null : val
+    
+    if (!confirm('Deseja realmente confirmar seu voto secreto? Uma vez enviado, não poderá ser alterado.')) {
+      return
+    }
+
+    const btn = document.getElementById('btn-cast-vote')
+    setLoading(btn, true, 'Confirmar Voto Secreto')
+    clearAlert('ballot-alert')
+
+    try {
+      const res = await fetch(`${API_URL}/api/elections/public/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: voterCode,
+          candidate_member_id: candidateId
+        })
+      })
+
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.detail || 'Erro ao registrar voto.')
+      }
+
+      currentSession.has_voted = true
+      renderBallotScreen()
+    } catch (err) {
+      showAlert('ballot-alert', err.message)
+    } finally {
+      setLoading(btn, false, 'Confirmar Voto Secreto')
+    }
+  })
+
+  // Refresh status
+  document.getElementById('btn-refresh-status').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-refresh-status')
+    setLoading(btn, true, 'Verificar Próxima Rodada')
+    
+    try {
+      const res = await fetch(`${API_URL}/api/elections/public/session?code=${voterCode}`)
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.detail || 'Erro ao carregar sessão.')
+      }
+      const data = await res.json()
+      currentSession = data
+      renderBallotScreen()
+    } catch (err) {
+      showAlert('ballot-alert', err.message)
+    } finally {
+      setLoading(btn, false, '🔄 Verificar Próxima Rodada')
+    }
+  })
+</script>
+</body>
+</html>

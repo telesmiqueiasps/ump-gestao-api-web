@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <meta name="theme-color" content="#1a2a6c"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <title>Eleições — Gestão UMP</title>
+  <link rel="icon" type="image/png" href="/assets/img/logo.png"/>
+  <link rel="manifest" href="/manifest.json"/>
+  <link rel="stylesheet" href="../assets/css/main.css?v=9"/>
+  <link rel="stylesheet" href="../assets/css/components.css?v=9"/>
+  <link rel="stylesheet" href="../assets/css/layout.css?v=9"/>
+  <style>
+    .role-checkbox-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: .75rem;
+      margin-bottom: 1.5rem;
+    }
+    .role-checkbox-card {
+      border: 1.5px solid var(--slate-200);
+      border-radius: var(--radius);
+      padding: .75rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      background: #fff;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .role-checkbox-card:hover {
+      border-color: var(--blue-500);
+    }
+    .role-checkbox-card input {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    .link-copy-box {
+      background: var(--slate-50);
+      border: 1.5px solid var(--slate-200);
+      border-radius: var(--radius);
+      padding: .75rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .link-copy-text {
+      font-family: monospace;
+      font-size: .85rem;
+      color: var(--slate-700);
+      word-break: break-all;
+    }
+    .voter-badge-voted {
+      background: var(--green-100);
+      color: var(--green-700);
+      font-weight: 600;
+    }
+    .voter-badge-pending {
+      background: var(--slate-100);
+      color: var(--slate-500);
+      font-weight: 500;
+    }
+    .result-bar-container {
+      margin-bottom: 1rem;
+    }
+    .result-bar-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: .85rem;
+      font-weight: 600;
+      margin-bottom: .3rem;
+    }
+    .result-bar-bg {
+      background: var(--slate-100);
+      height: 10px;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .result-bar-fill {
+      background: var(--blue-600);
+      height: 100%;
+      border-radius: 5px;
+      transition: width .3s ease;
+    }
+    .step-badge {
+      background: var(--blue-50);
+      color: var(--blue-600);
+      padding: .2rem .6rem;
+      border-radius: var(--radius-sm);
+      font-size: .75rem;
+      font-weight: 600;
+      display: inline-block;
+      margin-bottom: .5rem;
+    }
+    .code-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: .75rem;
+    }
+    .code-card {
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius);
+      padding: .75rem;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .code-card-name {
+      font-size: .85rem;
+      font-weight: 600;
+      color: var(--slate-800);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 180px;
+    }
+    .code-card-code {
+      font-family: monospace;
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--brand-orange);
+      background: var(--amber-50);
+      padding: .2rem .5rem;
+      border-radius: 5px;
+      border: 1px solid var(--amber-200);
+    }
+    @media print {
+      body * { display: none !important; }
+      #print-area, #print-area * { display: block !important; }
+      #print-area { position: absolute; left: 0; top: 0; width: 100%; }
+      .print-code-card {
+        border: 2px dashed #000;
+        padding: 1.5cm;
+        margin-bottom: 1cm;
+        page-break-inside: avoid;
+        text-align: center;
+      }
+      .print-code-card h2 { font-size: 1.6rem; margin-bottom: 0.5cm; }
+      .print-code-card .print-code { font-size: 2.5rem; font-family: monospace; font-weight: bold; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <img src="/assets/img/logo.png" class="sidebar-brand-logo" alt="Logo"/>
+      <div class="sidebar-brand-text">
+        <h1>UMP POPB</h1>
+        <p>Plataforma de Gestão</p>
+      </div>
+    </div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer">v1.0.0</div>
+  </aside>
+
+  <div class="main-area">
+    <header class="header">
+      <div class="header-left">
+        <button class="btn-menu" id="btn-menu">☰</button>
+        <div class="header-org">
+          <span class="header-org-name" id="header-org-name"></span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="header-user">
+          <div class="header-user-name" id="header-name"></div>
+          <div class="header-user-role" id="header-role"></div>
+        </div>
+        <div class="header-avatar" id="header-avatar"></div>
+        <button class="btn-logout" id="btn-logout" title="Sair">⏻</button>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header">
+        <div class="page-header-info">
+          <h1>🗳️ Eleições</h1>
+          <p>Módulo de eleição interna secreta e simplificada</p>
+        </div>
+      </div>
+
+      <div id="page-alert" class="hidden"></div>
+
+      <!-- ── SECTION: CONFIG ── -->
+      <section id="section-config" class="hidden">
+        <div class="card mb-4">
+          <div class="card-header">
+            <h2>1. Configurar Sessão Eleitoral</h2>
+          </div>
+          <div class="field mb-3">
+            <label for="election-title">Título da Eleição</label>
+            <input class="input" type="text" id="election-title" placeholder="Ex: Eleição de Diretoria - UMP Local 2026"/>
+          </div>
+
+          <h3 class="mb-2">Cargos a disputar</h3>
+          <p class="text-sm text-slate-500 mb-3">Marque um ou mais cargos. A eleição seguirá na ordem selecionada.</p>
+          <div class="role-checkbox-group">
+            <label class="role-checkbox-card">
+              <input type="checkbox" name="roles" value="presidente" checked/>
+              <span>Presidente</span>
+            </label>
+            <label class="role-checkbox-card">
+              <input type="checkbox" name="roles" value="vice_presidente" checked/>
+              <span>Vice-Presidente</span>
+            </label>
+            <label class="role-checkbox-card">
+              <input type="checkbox" name="roles" value="1_secretario" checked/>
+              <span>1º Secretário(a)</span>
+            </label>
+            <label class="role-checkbox-card">
+              <input type="checkbox" name="roles" value="2_secretario"/>
+              <span>2º Secretário(a)</span>
+            </label>
+            <label class="role-checkbox-card">
+              <input type="checkbox" name="roles" value="secretario_executivo"/>
+              <span>Secretário Executivo</span>
+            </label>
+            <label class="role-checkbox-card">
+              <input type="checkbox" name="roles" value="tesoureiro" checked/>
+              <span>Tesoureiro(a)</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="card mb-4">
+          <div class="card-header">
+            <h2>2. Sócios Votados (Elegibilidade)</h2>
+          </div>
+          <p class="text-sm text-slate-500 mb-3">Todos os sócios ativos listados abaixo podem votar. Desmarque aqueles que <strong>não</strong> podem ser votados (impedidos).</p>
+          
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nome do Sócio</th>
+                  <th style="width: 120px;" class="text-center">Pode ser Votado</th>
+                </tr>
+              </thead>
+              <tbody id="config-members-body">
+                <!-- Injected via js -->
+              </tbody>
+            </table>
+          </div>
+          <div style="margin-top: 1.5rem; text-align: right;">
+            <button class="btn btn-primary" id="btn-start-session">Criar e Gerar Códigos</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── SECTION: ACTIVE ── -->
+      <section id="section-active" class="hidden">
+        <!-- Status Panel -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <h2 id="active-title">Eleição Ativa</h2>
+            <span class="badge badge-amber" id="active-status-badge">Configuração</span>
+          </div>
+
+          <div id="active-config-panel" class="hidden" style="padding: 1rem 0;">
+            <div class="alert alert-success mb-3" style="display: flex; align-items: center; gap: .75rem;">
+              <span style="font-size: 1.5rem;">🔑</span>
+              <div>
+                <strong>Eleição Configurada com Sucesso!</strong><br/>
+                Os códigos de acesso dos sócios já foram gerados. Você já pode iniciar a votação ou copiar os códigos abaixo para distribuí-los.
+              </div>
+            </div>
+            <div style="display: flex; gap: .75rem;">
+              <button class="btn btn-success" id="btn-activate-voting">Iniciar Votação</button>
+              <button class="btn btn-danger btn-secondary" id="btn-cancel-election-config">Cancelar Sessão Eleitoral</button>
+            </div>
+          </div>
+
+          <div id="active-voting-panel" class="hidden">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+              <div class="stat-card" style="border: 1.5px solid var(--blue-100); background: var(--blue-50);">
+                <div class="stat-icon blue">🗳️</div>
+                <div>
+                  <span class="step-badge" id="active-step-badge">Presidente - 1º Escrutínio</span>
+                  <div class="stat-value" id="active-votes-count">0 / 0</div>
+                  <div class="stat-label">Votos Registrados</div>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon green">🕒</div>
+                <div>
+                  <div class="stat-value" id="active-percent-count">0%</div>
+                  <div class="stat-label">Participação da Sociedade</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="link-copy-box">
+              <div>
+                <strong class="text-sm">Link Público de Votação Secreta:</strong>
+                <div class="link-copy-text" id="voting-url-text">http://...</div>
+              </div>
+              <button class="btn btn-secondary btn-sm" id="btn-copy-url">Copiar Link</button>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+              <h3>Lista de Eleitores e Códigos</h3>
+              <div style="display: flex; gap: .5rem;">
+                <button class="btn btn-secondary btn-sm" id="btn-copy-codes">Copiar Todos os Códigos</button>
+                <button class="btn btn-secondary btn-sm" id="btn-print-codes">Imprimir Senhas</button>
+              </div>
+            </div>
+
+            <div class="code-grid mb-4" id="voters-code-container">
+              <!-- Injected via js -->
+            </div>
+
+            <div style="border-top: 1.5px solid var(--slate-200); padding-top: 1.5rem; text-align: right; display: flex; justify-content: space-between; align-items: center;">
+              <button class="btn btn-danger btn-secondary" id="btn-cancel-election-active">Cancelar Eleição</button>
+              <button class="btn btn-danger" id="btn-close-round" style="box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);">Encerrar Votação</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── MODAL: RESULTS ── -->
+      <div class="modal-overlay" id="modal-results">
+        <div class="modal">
+          <div class="modal-header">
+            <h2>Resultado da Votação</h2>
+            <button class="modal-close">✕</button>
+          </div>
+          <div id="results-alert" class="hidden mb-3"></div>
+          
+          <div style="margin-bottom: 1.5rem;">
+            <div class="step-badge" id="results-step-label">Presidente - 1º Escrutínio</div>
+            <div style="font-size: 1.25rem; font-weight: 700; color: var(--slate-800); margin-top: .2rem;" id="results-total-label">Total de votos: 0</div>
+          </div>
+
+          <div id="results-bars-container" class="mb-4">
+            <!-- Results bars injected here -->
+          </div>
+
+          <div class="alert alert-success mb-4" id="results-message-box" style="display: flex; align-items: flex-start; gap: .6rem;">
+            <span style="font-size: 1.2rem;">✨</span>
+            <div id="results-message-text">...</div>
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn btn-primary" id="btn-next-step">Avançar para o Próximo Passo</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SECTION: HISTORY ── -->
+      <section id="section-history" class="hidden">
+        <div class="card">
+          <div class="card-header">
+            <h2>Histórico de Eleições</h2>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Título da Eleição</th>
+                  <th>Diretoria Eleita</th>
+                </tr>
+              </thead>
+              <tbody id="history-table-body">
+                <!-- Injected via js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<!-- Hidden Print Area for voter codes -->
+<div id="print-area" style="display:none"></div>
+
+<script type="module">
+  import { requireAuth } from '../assets/js/auth.js?v=9'
+  import { renderShell, renderBottomNav } from '../assets/js/router.v3.js?v=9'
+  import { api } from '../assets/js/api.js?v=9'
+  import { showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading, formatDate } from '../assets/js/utils.js?v=9'
+
+  (async () => {
+    if (!requireAuth()) throw new Error()
+    await renderShell()
+    renderBottomNav('eleicoes')
+    document.querySelector('[data-page="eleicoes"]')?.classList.add('active')
+    initModalClose()
+
+    // Mobile menu toggle
+    const btnMenu = document.getElementById('btn-menu')
+    const sidebar = document.querySelector('.sidebar')
+    const overlay = document.getElementById('sidebar-overlay')
+    btnMenu?.addEventListener('click', () => {
+      sidebar.classList.toggle('open')
+      overlay.classList.toggle('open')
+    })
+    overlay?.addEventListener('click', () => {
+      sidebar.classList.remove('open')
+      overlay.classList.remove('open')
+    })
+
+    // Elements
+    const secConfig = document.getElementById('section-config')
+    const secActive = document.getElementById('section-active')
+    const secHistory = document.getElementById('section-history')
+
+    // Local State
+    let activeSession = null
+    let localMembers = []
+
+    // Map Backend Roles to Labels
+    const ROLE_LABELS = {
+      presidente: 'Presidente',
+      vice_presidente: 'Vice-Presidente',
+      '1_secretario': '1º Secretário(a)',
+      '2_secretario': '2º Secretário(a)',
+      secretario_executivo: 'Secretário Executivo',
+      tesoureiro: 'Tesoureiro(a)',
+    }
+
+    async function loadScreen() {
+      clearAlert('page-alert')
+      try {
+        // Try to get active election
+        activeSession = await api.get('/api/elections/active').catch(() => null)
+        
+        if (activeSession) {
+          secConfig.classList.add('hidden')
+          secActive.classList.remove('hidden')
+          secHistory.classList.add('hidden')
+          renderActiveElection()
+        } else {
+          secConfig.classList.remove('hidden')
+          secActive.classList.add('hidden')
+          secHistory.classList.remove('hidden')
+          loadConfigScreen()
+          loadHistory()
+        }
+      } catch (err) {
+        showAlert('page-alert', err.message, 'error')
+      }
+    }
+
+    // ── SECTION CONFIG ──
+    async function loadConfigScreen() {
+      try {
+        localMembers = await api.get('/api/members/?active_only=true')
+        // Filter active members only
+        const activeOnly = localMembers.filter(m => m.member_type === 'ativo')
+        
+        const tbody = document.getElementById('config-members-body')
+        if (!activeOnly.length) {
+          tbody.innerHTML = `<tr><td colspan="2" class="table-empty">Nenhum sócio ativo encontrado. Por favor, adicione sócios na aba Sócios antes.</td></tr>`
+          return
+        }
+
+        tbody.innerHTML = activeOnly.map(m => `
+          <tr>
+            <td>
+              <div style="font-weight:600;font-size:.9rem">${m.full_name}</div>
+              <div style="font-size:.75rem;color:var(--slate-400)">Sócio Ativo</div>
+            </td>
+            <td class="text-center">
+              <input type="checkbox" class="can-be-voted-cb" data-member-id="${m.id}" checked style="width: 20px; height: 20px; cursor: pointer;"/>
+            </td>
+          </tr>
+        `).join('')
+      } catch (err) {
+        showAlert('page-alert', 'Erro ao carregar sócios: ' + err.message, 'error')
+      }
+    }
+
+    // Create session
+    document.getElementById('btn-start-session').addEventListener('click', async () => {
+      const title = document.getElementById('election-title').value.trim()
+      if (!title) {
+        showAlert('page-alert', 'Por favor, insira o título da eleição.', 'error')
+        return
+      }
+
+      // Selected roles
+      const checkedRoles = Array.from(document.querySelectorAll('input[name="roles"]:checked')).map(cb => cb.value)
+      if (!checkedRoles.length) {
+        showAlert('page-alert', 'Por favor, selecione pelo menos um cargo para disputa.', 'error')
+        return
+      }
+
+      // Ineligible members (unchecked cbs)
+      const ineligibleIds = Array.from(document.querySelectorAll('.can-be-voted-cb:not(:checked)')).map(cb => cb.getAttribute('data-member-id'))
+
+      const btn = document.getElementById('btn-start-session')
+      setLoading(btn, true, 'Criar e Gerar Códigos')
+
+      try {
+        await api.post('/api/elections/', {
+          title,
+          roles_to_dispute: checkedRoles,
+          ineligible_member_ids: ineligibleIds,
+        })
+        loadScreen()
+      } catch (err) {
+        showAlert('page-alert', err.message, 'error')
+      } finally {
+        setLoading(btn, false, 'Criar e Gerar Códigos')
+      }
+    })
+
+    // ── SECTION ACTIVE ──
+    async function renderActiveElection() {
+      document.getElementById('active-title').textContent = activeSession.title
+      
+      const badge = document.getElementById('active-status-badge')
+      const configPanel = document.getElementById('active-config-panel')
+      const votingPanel = document.getElementById('active-voting-panel')
+
+      if (activeSession.status === 'config') {
+        badge.className = 'badge badge-amber'
+        badge.textContent = 'Configuração'
+        configPanel.classList.remove('hidden')
+        votingPanel.classList.add('hidden')
+      } else {
+        badge.className = 'badge badge-green'
+        badge.textContent = 'Votação Ativa'
+        configPanel.classList.add('hidden')
+        votingPanel.classList.remove('hidden')
+        await loadRealtimeStatus()
+      }
+    }
+
+    // Start voting
+    document.getElementById('btn-activate-voting').addEventListener('click', async () => {
+      const btn = document.getElementById('btn-activate-voting')
+      setLoading(btn, true, 'Iniciar Votação')
+      try {
+        await api.post('/api/elections/active/start')
+        loadScreen()
+      } catch (err) {
+        showAlert('page-alert', err.message, 'error')
+      } finally {
+        setLoading(btn, false, 'Iniciar Votação')
+      }
+    })
+
+    // Cancel from config
+    document.getElementById('btn-cancel-election-config').addEventListener('click', cancelSession)
+    document.getElementById('btn-cancel-election-active').addEventListener('click', cancelSession)
+
+    async function cancelSession() {
+      if (!confirm('Tem certeza de que deseja cancelar esta eleição? Todos os dados serão perdidos.')) return
+      try {
+        await api.post('/api/elections/active/cancel')
+        loadScreen()
+      } catch (err) {
+        showAlert('page-alert', err.message, 'error')
+      }
+    }
+
+    let statusInterval = null
+
+    // Load Realtime Status
+    async function loadRealtimeStatus() {
+      try {
+        const stats = await api.get('/api/elections/active/status')
+        
+        // Update Title & Badge
+        document.getElementById('active-step-badge').textContent = `${ROLE_LABELS[stats.current_role] || stats.current_role} — ${stats.current_round}º Escrutínio`
+        document.getElementById('active-votes-count').textContent = `${stats.votes_cast} / ${stats.total_voters}`
+        
+        const pct = stats.total_voters > 0 ? Math.round((stats.votes_cast / stats.total_voters) * 100) : 0
+        document.getElementById('active-percent-count').textContent = `${pct}%`
+
+        // Construct voting URL
+        const votingUrl = `${window.location.origin}/votar.html?session=${stats.session_id}`
+        document.getElementById('voting-url-text').textContent = votingUrl
+
+        // Populate voters & codes card list
+        const container = document.getElementById('voters-code-container')
+        container.innerHTML = stats.voters.map(v => {
+          const voteBadge = v.has_voted
+            ? `<span class="badge voter-badge-voted">Votou</span>`
+            : `<span class="badge voter-badge-pending">Não votou</span>`
+          return `
+            <div class="code-card">
+              <div>
+                <div class="code-card-name" title="${v.full_name}">${v.full_name}</div>
+                <div style="margin-top: .3rem;">${voteBadge}</div>
+              </div>
+              <div class="code-card-code">${v.access_code}</div>
+            </div>
+          `
+        }).join('')
+
+        // Configure click event copy button
+        document.getElementById('btn-copy-url').onclick = () => {
+          navigator.clipboard.writeText(votingUrl)
+          alert('Link público copiado!')
+        }
+
+        // Copy all codes text
+        document.getElementById('btn-copy-codes').onclick = () => {
+          const text = stats.voters.map(v => `${v.full_name}: ${v.access_code}`).join('\n')
+          navigator.clipboard.writeText(text)
+          alert('Lista de códigos copiada para a área de transferência!')
+        }
+
+        // Print Codes
+        document.getElementById('btn-print-codes').onclick = () => {
+          const printArea = document.getElementById('print-area')
+          printArea.innerHTML = stats.voters.map(v => `
+            <div class="print-code-card">
+              <h2>${activeSession.title}</h2>
+              <p>Código Secreto de Voto para o sócio(a):</p>
+              <div style="font-size: 1.4rem; font-weight: bold; margin: 10px 0;">${v.full_name}</div>
+              <div class="print-code">${v.access_code}</div>
+              <p style="margin-top: 10px; font-size: 0.9rem;">Acesse: ${votingUrl}</p>
+            </div>
+          `).join('')
+          window.print()
+        }
+
+      } catch (err) {
+        showAlert('page-alert', 'Erro de status: ' + err.message, 'error')
+      }
+    }
+
+    // Set polling interval for status when voting is active
+    clearInterval(statusInterval)
+    statusInterval = setInterval(() => {
+      const activeSecVisible = !secActive.classList.contains('hidden')
+      const votingPanelActive = !document.getElementById('active-voting-panel').classList.contains('hidden')
+      if (activeSecVisible && votingPanelActive) {
+        loadRealtimeStatus()
+      }
+    }, 4000)
+
+    // Close Round
+    document.getElementById('btn-close-round').addEventListener('click', async () => {
+      const btn = document.getElementById('btn-close-round')
+      setLoading(btn, true, 'Encerrar Votação')
+      clearAlert('results-alert')
+
+      try {
+        const res = await api.post('/api/elections/active/close-round')
+        
+        // Show Results Modal
+        document.getElementById('results-step-label').textContent = `${ROLE_LABELS[activeSession.current_role] || activeSession.current_role} — ${activeSession.current_round}º Escrutínio`
+        document.getElementById('results-total-label').textContent = `Total de votos: ${res.total_votes}`
+
+        // Injected bars
+        const barsContainer = document.getElementById('results-bars-container')
+        if (!res.results.length) {
+          barsContainer.innerHTML = '<p class="text-slate-400 text-center py-3">Nenhum voto foi computado.</p>'
+        } else {
+          barsContainer.innerHTML = res.results.map(r => {
+            const pct = res.total_votes > 0 ? Math.round((r.votes / res.total_votes) * 100) : 0
+            return `
+              <div class="result-bar-container">
+                <div class="result-bar-header">
+                  <span>${r.name}</span>
+                  <span>${r.votes} voto${r.votes !== 1 ? 's' : ''} (${pct}%)</span>
+                </div>
+                <div class="result-bar-bg">
+                  <div class="result-bar-fill" style="width: ${pct}%"></div>
+                </div>
+              </div>
+            `
+          }).join('')
+        }
+
+        // Success / Progress Message
+        const msgText = document.getElementById('results-message-text')
+        const msgBox = document.getElementById('results-message-box')
+        if (res.elected) {
+          msgBox.className = 'alert alert-success mb-4'
+          msgText.innerHTML = `<strong>${res.winner_name}</strong> foi eleito(a) com sucesso!<br/>Próximo passo: ${res.next_step}.`
+        } else {
+          msgBox.className = 'alert alert-amber mb-4'
+          msgText.innerHTML = `Ninguém obteve a maioria absoluta necessária nesta rodada.<br/>Próximo passo: ${res.next_step}.`
+        }
+
+        openModal('modal-results')
+
+        // Setup click handler for next step button
+        document.getElementById('btn-next-step').onclick = () => {
+          closeModal('modal-results')
+          loadScreen()
+        }
+
+      } catch (err) {
+        showAlert('page-alert', err.message, 'error')
+      } finally {
+        setLoading(btn, false, 'Encerrar Votação')
+      }
+    })
+
+    // ── SECTION HISTORY ──
+    async function loadHistory() {
+      try {
+        const list = await api.get('/api/elections/history')
+        const tbody = document.getElementById('history-table-body')
+        if (!list.length) {
+          tbody.innerHTML = `<tr><td colspan="3" class="table-empty">Nenhuma eleição concluída no histórico.</td></tr>`
+          return
+        }
+
+        tbody.innerHTML = list.map(h => {
+          const positionsHtml = Object.entries(h.elected_positions).map(([role, name]) => {
+            return `<div><strong>${ROLE_LABELS[role] || role}:</strong> ${name}</div>`
+          }).join('')
+
+          return `
+            <tr>
+              <td>${formatDate(h.created_at.split('T')[0])}</td>
+              <td style="font-weight: 600;">${h.title}</td>
+              <td>${positionsHtml || '—'}</td>
+            </tr>
+          `
+        }).join('')
+      } catch (err) {
+        console.error('Erro ao carregar histórico:', err)
+      }
+    }
+
+    // Load initial screen data
+    await loadScreen()
+
+  })()
+</script>
+</body>
+</html>
