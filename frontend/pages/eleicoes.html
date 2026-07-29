@@ -263,12 +263,12 @@
             <span class="badge badge-amber" id="active-status-badge">Configuração</span>
           </div>
 
-          <div id="active-config-panel" class="hidden" style="padding: 1rem 0;">
+          <div id="active-config-panel" class="hidden" style="padding: 1rem 0 0 0;">
             <div class="alert alert-success mb-3" style="display: flex; align-items: center; gap: .75rem;">
               <span style="font-size: 1.5rem;">🔑</span>
               <div>
                 <strong>Eleição Configurada com Sucesso!</strong><br/>
-                Os códigos de acesso dos sócios já foram gerados. Você já pode iniciar a votação ou copiar os códigos abaixo para distribuí-los.
+                Os códigos de acesso dos sócios já foram gerados. Distribua os códigos exibidos abaixo e clique em <strong>Iniciar Votação</strong> para liberar a urna eletrônica pública.
               </div>
             </div>
             <div style="display: flex; gap: .75rem;">
@@ -277,7 +277,7 @@
             </div>
           </div>
 
-          <div id="active-voting-panel" class="hidden">
+          <div id="active-voting-panel" class="hidden" style="padding: 1rem 0 0 0;">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
               <div class="stat-card" style="border: 1.5px solid var(--blue-100); background: var(--blue-50);">
                 <div class="stat-icon blue">🗳️</div>
@@ -296,30 +296,37 @@
               </div>
             </div>
 
-            <div class="link-copy-box">
-              <div>
-                <strong class="text-sm">Link Público de Votação Secreta:</strong>
-                <div class="link-copy-text" id="voting-url-text">http://...</div>
-              </div>
-              <button class="btn btn-secondary btn-sm" id="btn-copy-url">Copiar Link</button>
-            </div>
-
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-              <h3>Lista de Eleitores e Códigos</h3>
-              <div style="display: flex; gap: .5rem;">
-                <button class="btn btn-secondary btn-sm" id="btn-copy-codes">Copiar Todos os Códigos</button>
-                <button class="btn btn-secondary btn-sm" id="btn-print-codes">Imprimir Senhas</button>
-              </div>
-            </div>
-
-            <div class="code-grid mb-4" id="voters-code-container">
-              <!-- Injected via js -->
-            </div>
-
             <div style="border-top: 1.5px solid var(--slate-200); padding-top: 1.5rem; text-align: right; display: flex; justify-content: space-between; align-items: center;">
               <button class="btn btn-danger btn-secondary" id="btn-cancel-election-active">Cancelar Eleição</button>
               <button class="btn btn-danger" id="btn-close-round" style="box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);">Encerrar Votação</button>
             </div>
+          </div>
+        </div>
+
+        <!-- Codes & Public Link Card (Always visible when there is an active session) -->
+        <div class="card mb-4" id="active-codes-card">
+          <div class="card-header">
+            <h2>Códigos de Acesso & Urna Pública</h2>
+          </div>
+
+          <div class="link-copy-box">
+            <div>
+              <strong class="text-sm">Link da Urna Eletrônica Secreta:</strong>
+              <div class="link-copy-text" id="voting-url-text">http://...</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="btn-copy-url">Copiar Link</button>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3>Lista de Eleitores e Códigos</h3>
+            <div style="display: flex; gap: .5rem;">
+              <button class="btn btn-secondary btn-sm" id="btn-copy-codes">Copiar Todos os Códigos</button>
+              <button class="btn btn-secondary btn-sm" id="btn-print-codes">Imprimir Senhas</button>
+            </div>
+          </div>
+
+          <div class="code-grid mb-2" id="voters-code-container">
+            <!-- Injected via js -->
           </div>
         </div>
       </section>
@@ -534,8 +541,8 @@
         badge.textContent = 'Votação Ativa'
         configPanel.classList.add('hidden')
         votingPanel.classList.remove('hidden')
-        await loadRealtimeStatus()
       }
+      await loadRealtimeStatus()
     }
 
     // Start voting
