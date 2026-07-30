@@ -606,7 +606,13 @@
         const addForm = document.getElementById('federation-voter-add-form')
         if (isFed) {
           addForm.classList.remove('hidden')
-          allActiveMembers = []
+          localMembers = await api.get('/api/members/?active_only=true')
+          allActiveMembers = localMembers.filter(m => m.member_type === 'ativo').map(m => ({
+            id: m.id,
+            name: m.full_name,
+            local_society: m.local_society || '',
+            full_name: m.local_society ? `${m.full_name} (${m.local_society})` : m.full_name
+          }))
         } else {
           addForm.classList.add('hidden')
           localMembers = await api.get('/api/members/?active_only=true')
@@ -636,20 +642,12 @@
 
       grid.innerHTML = filtered.map(m => {
         const isChecked = !ineligibleMemberIds.has(m.id)
-        const deleteBtn = isFed ? `
-          <button type="button" class="btn btn-ghost danger btn-sm" 
-            style="padding: 1px 6px; min-height: auto; font-size: .65rem; font-weight: bold; margin-left: auto;" 
-            onclick="removeTempVoter('${m.id}')">
-            ✕
-          </button>
-        ` : ''
         return `
           <label class="eligibility-card" style="display: flex; align-items: center; justify-content: space-between; gap: .5rem;">
             <div style="display: flex; align-items: center; gap: .5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
               <input type="checkbox" class="can-be-voted-cb" data-member-id="${m.id}" ${isChecked ? 'checked' : ''} onchange="toggleMemberEligibility('${m.id}', this.checked)" />
               <span style="font-weight: 500; color: var(--slate-700); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${m.full_name}">${m.full_name}</span>
             </div>
-            ${deleteBtn}
           </label>
         `
       }).join('')
@@ -663,14 +661,8 @@
       }
     }
 
-    window.removeTempVoter = (tempId) => {
-      allActiveMembers = allActiveMembers.filter(m => m.id !== tempId)
-      ineligibleMemberIds.delete(tempId)
-      renderMembersGrid()
-    }
-
-    // Add federation voter helper
-    document.getElementById('btn-add-fed-voter').addEventListener('click', () => {
+    // Add federation voter helper (saves directly to backend database)
+    document.getElementById('btn-add-fed-voter').addEventListener('click', async () => {
       const nameEl = document.getElementById('fed-voter-name')
       const societyEl = document.getElementById('fed-voter-society')
       const name = nameEl.value.trim()
@@ -681,18 +673,27 @@
         return
       }
       
-      const tempId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5)
-      allActiveMembers.push({
-        id: tempId,
-        name: name,
-        local_society: society,
-        full_name: `${name} (${society})`
-      })
-      
-      nameEl.value = ''
-      societyEl.value = ''
-      nameEl.focus()
-      renderMembersGrid()
+      try {
+        const newMember = await api.post('/api/members/', {
+          full_name: name,
+          local_society: society,
+          member_type: 'ativo',
+          join_date: new Date().toISOString().split('T')[0]
+        })
+        allActiveMembers.push({
+          id: newMember.id,
+          name: newMember.full_name,
+          local_society: newMember.local_society || '',
+          full_name: newMember.local_society ? `${newMember.full_name} (${newMember.local_society})` : newMember.full_name
+        })
+        
+        nameEl.value = ''
+        societyEl.value = ''
+        nameEl.focus()
+        renderMembersGrid()
+      } catch (err) {
+        alert('Erro ao salvar delegado: ' + err.message)
+      }
     })
 
     // Bind search input typing event
@@ -714,22 +715,12 @@
       }
 
       const isFed = isFederation()
-      let ineligibleIds = []
-      let fedVoters = null
-
-      if (isFed) {
-        if (!allActiveMembers.length) {
-          showAlert('page-alert', 'Por favor, adicione pelo menos um delegado para a eleição.', 'error')
-          return
-        }
-        fedVoters = allActiveMembers.map(m => ({
-          name: m.name,
-          local_society: m.local_society,
-          can_be_voted: !ineligibleMemberIds.has(m.id)
-        }))
-      } else {
-        ineligibleIds = Array.from(ineligibleMemberIds)
+      if (isFed && !allActiveMembers.length) {
+        showAlert('page-alert', 'Por favor, adicione pelo menos um delegado para a eleição.', 'error')
+        return
       }
+
+      const ineligibleIds = Array.from(ineligibleMemberIds)
 
       const btn = document.getElementById('btn-start-session')
       setLoading(btn, true, 'Criar e Gerar Códigos')
@@ -739,7 +730,6 @@
           title,
           roles_to_dispute: checkedRoles,
           ineligible_member_ids: ineligibleIds,
-          federation_voters: fedVoters
         })
         loadScreen()
       } catch (err) {

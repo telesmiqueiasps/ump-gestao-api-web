@@ -139,38 +139,14 @@ def create_election(
     if active_session:
         raise HTTPException(status_code=400, detail="Já existe uma sessão eleitoral ativa.")
 
-    active_members = []
-    
-    if current_user.organization_type == 'federation':
-        # Verify federation_voters payload is not empty
-        if not payload.federation_voters:
-            raise HTTPException(status_code=400, detail="Por favor, forneça a lista de eleitores para a eleição da federação.")
-            
-        # Create shadow members for delegates
-        for v in payload.federation_voters:
-            m = Member(
-                local_ump_id=current_user.organization_id, # link to shadow LocalUmp
-                full_name=f"{v.name} ({v.local_society})",
-                member_type=MemberType.ativo,
-                is_active=True
-            )
-            db.add(m)
-            db.flush()
-            # Store temporary attributes to assign properties later
-            m._temp_can_be_voted = v.can_be_voted
-            active_members.append(m)
-    else:
-        # Get active members
-        db_members = db.query(Member).filter(
-            Member.local_ump_id == current_user.organization_id,
-            Member.member_type == MemberType.ativo,
-            Member.is_active == True
-        ).all()
-        if not db_members:
-            raise HTTPException(status_code=400, detail="Não há sócios ativos cadastrados para participar da eleição.")
-        for member in db_members:
-            member._temp_can_be_voted = member.id not in payload.ineligible_member_ids
-            active_members.append(member)
+    # Get active members
+    active_members = db.query(Member).filter(
+        Member.local_ump_id == current_user.organization_id,
+        Member.member_type == MemberType.ativo,
+        Member.is_active == True
+    ).all()
+    if not active_members:
+        raise HTTPException(status_code=400, detail="Não há sócios/delegados ativos cadastrados para participar da eleição.")
 
     # Create session
     session = ElectionSession(
@@ -190,11 +166,12 @@ def create_election(
     
     # Save voters
     for idx, member in enumerate(active_members):
+        can_be_voted = member.id not in payload.ineligible_member_ids
         voter = ElectionVoter(
             election_session_id=session.id,
             member_id=member.id,
             access_code=codes[idx],
-            can_be_voted=member._temp_can_be_voted,
+            can_be_voted=can_be_voted,
             has_voted_current_round=False
         )
         db.add(voter)
@@ -418,16 +395,7 @@ def cancel_election(
     if not session:
         raise HTTPException(status_code=404, detail="Nenhuma eleição ativa encontrada.")
 
-    voter_member_ids = []
-    if current_user.organization_type == 'federation':
-        voter_member_ids = [v.member_id for v in session.voters]
-
     db.delete(session)
-    db.flush()
-
-    if voter_member_ids:
-        db.query(Member).filter(Member.id.in_(voter_member_ids)).delete(synchronize_session=False)
-
     db.commit()
     return {"detail": "Sessão eleitoral cancelada com sucesso."}
 
@@ -713,16 +681,7 @@ def delete_election(
     if not session:
         raise HTTPException(status_code=404, detail="Eleição não encontrada.")
         
-    voter_member_ids = []
-    if current_user.organization_type == 'federation':
-        voter_member_ids = [v.member_id for v in session.voters]
-
     db.delete(session)
-    db.flush()
-
-    if voter_member_ids:
-        db.query(Member).filter(Member.id.in_(voter_member_ids)).delete(synchronize_session=False)
-
     db.commit()
     return {"detail": "Eleição excluída com sucesso."}
 
@@ -831,13 +790,6 @@ def remove_active_voter(
     if not voter:
         raise HTTPException(status_code=404, detail="Eleitor não encontrado nesta sessão.")
 
-    member_id = voter.member_id
     db.delete(voter)
-    db.flush()
-    
-    # If federation, delete the shadow member too
-    if current_user.organization_type == 'federation':
-        db.query(Member).filter(Member.id == member_id).delete(synchronize_session=False)
-
     db.commit()
     return {"detail": "Eleitor removido da sessão com sucesso."}

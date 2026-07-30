@@ -10,7 +10,7 @@ from app.models.member import Member, MembershipFee
 from app.models.local_ump import LocalUmp
 from app.models.enums import MemberType
 from app.models.user import User
-from app.core.dependencies import get_current_user, require_local_ump
+from app.core.dependencies import get_current_user, require_local_or_federation
 
 router = APIRouter()
 
@@ -23,6 +23,7 @@ class MemberCreate(BaseModel):
     birth_date: Optional[datetime.date] = None
     join_date: Optional[datetime.date] = None
     is_board_member: Optional[bool] = False
+    local_society: Optional[str] = None
 
 
 class MemberUpdate(BaseModel):
@@ -32,6 +33,7 @@ class MemberUpdate(BaseModel):
     phone: Optional[str] = None
     birth_date: Optional[datetime.date] = None
     is_board_member: Optional[bool] = None
+    local_society: Optional[str] = None
 
 
 class FeeCreate(BaseModel):
@@ -44,7 +46,7 @@ class FeeCreate(BaseModel):
 @router.get("/")
 def list_members(
     active_only: bool = True,
-    current_user: User = Depends(require_local_ump),
+    current_user: User = Depends(require_local_or_federation),
     db: Session = Depends(get_db),
 ):
     query = db.query(Member).filter(Member.local_ump_id == current_user.organization_id)
@@ -58,9 +60,23 @@ def list_members(
 @router.post("/", status_code=status.HTTP_201_CREATED)
 def create_member(
     payload: MemberCreate,
-    current_user: User = Depends(require_local_ump),
+    current_user: User = Depends(require_local_or_federation),
     db: Session = Depends(get_db),
 ):
+    # If federation, create shadow local_ump if not exists
+    if current_user.organization_type == 'federation':
+        shadow_ump = db.query(LocalUmp).filter(LocalUmp.id == current_user.organization_id).first()
+        if not shadow_ump:
+            shadow_ump = LocalUmp(
+                id=current_user.organization_id,
+                federation_id=current_user.organization_id,
+                name="Eleições da Federação",
+                fiscal_year=2026,
+                is_active=True
+            )
+            db.add(shadow_ump)
+            db.flush()
+
     member = Member(
         local_ump_id=current_user.organization_id,
         **payload.model_dump()
@@ -73,7 +89,7 @@ def create_member(
 
 @router.get("/birthdays")
 def get_birthdays(
-    current_user: User = Depends(require_local_ump),
+    current_user: User = Depends(require_local_or_federation),
     db: Session = Depends(get_db),
 ):
     current_month = datetime.date.today().month
@@ -111,7 +127,7 @@ def get_birthdays(
 @router.get("/{member_id}")
 def get_member(
     member_id: UUID,
-    current_user: User = Depends(require_local_ump),
+    current_user: User = Depends(require_local_or_federation),
     db: Session = Depends(get_db),
 ):
     member = db.query(Member).filter(
@@ -128,7 +144,7 @@ def get_member(
 def update_member(
     member_id: UUID,
     payload: MemberUpdate,
-    current_user: User = Depends(require_local_ump),
+    current_user: User = Depends(require_local_or_federation),
     db: Session = Depends(get_db),
 ):
     member = db.query(Member).filter(
@@ -148,7 +164,7 @@ def update_member(
 @router.delete("/{member_id}", status_code=status.HTTP_204_NO_CONTENT)
 def deactivate_member(
     member_id: UUID,
-    current_user: User = Depends(require_local_ump),
+    current_user: User = Depends(require_local_or_federation),
     db: Session = Depends(get_db),
 ):
     member = db.query(Member).filter(
@@ -165,7 +181,7 @@ def deactivate_member(
 @router.post("/fees", status_code=status.HTTP_201_CREATED)
 def register_fee(
     payload: FeeCreate,
-    current_user: User = Depends(require_local_ump),
+    current_user: User = Depends(require_local_or_federation),
     db: Session = Depends(get_db),
 ):
     member = db.query(Member).filter(
@@ -198,7 +214,7 @@ def register_fee(
 @router.get("/{member_id}/fees")
 def list_fees(
     member_id: UUID,
-    current_user: User = Depends(require_local_ump),
+    current_user: User = Depends(require_local_or_federation),
     db: Session = Depends(get_db),
 ):
     member = db.query(Member).filter(
@@ -236,4 +252,5 @@ def _to_out(m: Member) -> dict:
         "join_date": m.join_date.isoformat() if m.join_date else None,
         "is_active": m.is_active,
         "is_board_member": m.is_board_member or False,
+        "local_society": m.local_society,
     }

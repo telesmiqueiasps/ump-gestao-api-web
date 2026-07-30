@@ -36,7 +36,6 @@ const NAV_ITEMS = [
   {
     page: 'members', label: getSocietyLabel('membros'), icon: '/assets/img/socios.png',
     path: '/pages/members.html',
-    localOnly: true,
     roles: ['presidente','vice_presidente','tesoureiro','conselheiro','secretario_presbiterial']
   },
   {

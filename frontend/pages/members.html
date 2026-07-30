@@ -160,6 +160,10 @@
       <label>Nome completo</label>
       <input class="input" type="text" id="m-name" placeholder="Nome do sócio" />
     </div>
+    <div class="field mb-4 hidden" id="fed-society-field">
+      <label>Sociedade Local</label>
+      <input class="input" type="text" id="m-society" placeholder="Ex: Central de UMP" />
+    </div>
     <div class="field mb-4">
       <label>Tipo</label>
       <select class="input" id="m-type">
@@ -309,10 +313,10 @@
 </div>
 
 <script type="module">
-  import { requireAuth, isLocalUmp } from '../assets/js/auth.js?v=9'
+  import { requireAuth, isLocalUmp, isFederation } from '../assets/js/auth.js?v=9'
   import { renderShell, canAccessPage, renderBottomNav } from '../assets/js/router.v3.js?v=9'
   import { api } from '../assets/js/api.js?v=9'
-  import { formatCurrency, formatDate, showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading, getSocietyLabel } from '../assets/js/utils.js?v=9'
+  import { formatCurrency, formatDate, showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading, getSocietyLabel, avatarHtml } from '../assets/js/utils.js?v=9'
 
   (async () => {
     if (!requireAuth()) throw new Error()
@@ -323,9 +327,15 @@
     document.querySelector('[data-page="members"]')?.classList.add('active')
     initModalClose()
 
+    const isFed = isFederation()
+    if (isFed) {
+      document.getElementById('fees-config-card').classList.add('hidden')
+      document.getElementById('fed-society-field').classList.remove('hidden')
+    }
+
     // Nomenclatura dinâmica
-    document.getElementById('page-title').textContent = getSocietyLabel('membros')
-    document.getElementById('btn-new-member').textContent = '+ Novo ' + getSocietyLabel('membro')
+    document.getElementById('page-title').textContent = isFed ? 'Delegados' : getSocietyLabel('membros')
+    document.getElementById('btn-new-member').textContent = isFed ? '+ Novo Delegado' : '+ Novo ' + getSocietyLabel('membro')
 
     let activeOnly = true
     let editId = null
@@ -384,7 +394,10 @@
     async function loadMembers() {
       try {
         const data = await api.get(`/api/members/?active_only=${activeOnly}`)
-        document.getElementById('member-count').textContent = `${data.length} sócio${data.length !== 1 ? 's' : ''}`
+        const isFed = isFederation()
+        document.getElementById('member-count').textContent = isFed 
+          ? `${data.length} delegado${data.length !== 1 ? 's' : ''}` 
+          : `${data.length} sócio${data.length !== 1 ? 's' : ''}`
         renderTable(data)
       } catch(err) {
         showAlert('page-alert', err.message, 'error')
@@ -393,10 +406,27 @@
 
     function renderTable(members) {
       const tbody = document.getElementById('members-body')
+      const isFed = isFederation()
+      
+      // Update table headers dynamically
+      const headers = `
+        <tr>
+          <th>Nome</th>
+          <th>${isFed ? 'Sociedade Local' : 'Tipo'}</th>
+          <th class="hide-mobile">E-mail</th>
+          <th class="hide-mobile">Telefone</th>
+          <th class="hide-mobile">Entrada</th>
+          <th class="text-center">Status</th>
+          <th></th>
+        </tr>
+      `
+      document.querySelector('thead').innerHTML = headers
+
       if (!members.length) {
-        tbody.innerHTML = `<tr><td colspan="7" class="table-empty">Nenhum sócio encontrado.</td></tr>`
+        tbody.innerHTML = `<tr><td colspan="7" class="table-empty">Nenhum ${isFed ? 'delegado' : 'sócio'} encontrado.</td></tr>`
         return
       }
+
       tbody.innerHTML = members.map(m => `
         <tr>
           <td>
@@ -404,21 +434,19 @@
               ${avatarHtml(m.full_name, 36, '.85rem')}
               <div>
                 <div style="font-weight:600;font-size:.875rem">${m.full_name}</div>
-                <div style="font-size:.72rem;color:var(--slate-400)">
-                  ${m.member_type === 'ativo' ? 'Ativo' : 'Cooperador'}
-                </div>
+                ${isFed && m.local_society ? `<div style="font-size:.72rem;color:var(--slate-400)">${m.local_society}</div>` : ''}
               </div>
             </div>
           </td>
-          <td><span class="badge ${m.member_type === 'ativo' ? 'badge-blue' : 'badge-slate'}">${m.member_type === 'ativo' ? 'Ativo' : 'Cooperador'}</span></td>
+          <td>${isFed ? (m.local_society ?? '—') : `<span class="badge ${m.member_type === 'ativo' ? 'badge-blue' : 'badge-slate'}">${m.member_type === 'ativo' ? 'Ativo' : 'Cooperador'}</span>`}</td>
           <td class="hide-mobile">${m.email ?? '—'}</td>
           <td class="hide-mobile">${m.phone ?? '—'}</td>
           <td class="hide-mobile">${formatDate(m.join_date)}</td>
           <td class="text-center"><span class="badge ${m.is_active ? 'badge-green' : 'badge-slate'}">${m.is_active ? 'Ativo' : 'Inativo'}</span></td>
           <td>
             <div class="row-actions">
-              <button class="btn btn-ghost btn-icon" title="Contribuições" onclick="openContributions('${m.id}','${m.full_name.replace(/'/g, "\\'")}')">📋</button>
-              <button class="btn btn-ghost btn-icon" title="Editar" onclick="editMember('${m.id}','${m.full_name.replace(/'/g, "\\'")}','${m.member_type}','${m.email??''}','${m.phone??''}','${m.birth_date??''}','${m.join_date??''}',${m.is_board_member?true:false})">✎</button>
+              ${!isFed ? `<button class="btn btn-ghost btn-icon" title="Contribuições" onclick="openContributions('${m.id}','${m.full_name.replace(/'/g, "\\'")}')">📋</button>` : ''}
+              <button class="btn btn-ghost btn-icon" title="Editar" onclick="editMember('${m.id}','${m.full_name.replace(/'/g, "\\'")}','${m.member_type}','${m.email??''}','${m.phone??''}','${m.birth_date??''}','${m.join_date??''}',${m.is_board_member?true:false},'${(m.local_society??'').replace(/'/g, "\\'")}')">✎</button>
               ${m.is_active ? `<button class="btn btn-ghost btn-icon danger" title="Desativar" onclick="deactivate('${m.id}','${m.full_name.replace(/'/g, "\\'")}')">✕</button>` : ''}
             </div>
           </td>
@@ -429,7 +457,8 @@
     // ── Novo / Editar sócio ──
     document.getElementById('btn-new-member').addEventListener('click', () => {
       editId = null
-      document.getElementById('modal-member-title').textContent = 'Novo Sócio'
+      const isFed = isFederation()
+      document.getElementById('modal-member-title').textContent = isFed ? 'Novo Delegado' : 'Novo Sócio'
       document.getElementById('m-name').value  = ''
       document.getElementById('m-type').value  = 'ativo'
       document.getElementById('m-email').value = ''
@@ -437,13 +466,17 @@
       document.getElementById('m-birth').value = ''
       document.getElementById('m-join').value  = new Date().toISOString().split('T')[0]
       document.getElementById('m-is-board').checked = false
+      if (isFed) {
+        document.getElementById('m-society').value = ''
+      }
       clearAlert('member-alert')
       openModal('modal-member')
     })
 
-    window.editMember = (id, name, type, email, phone, birth, join, isBoardMember) => {
+    window.editMember = (id, name, type, email, phone, birth, join, isBoardMember, localSociety = '') => {
       editId = id
-      document.getElementById('modal-member-title').textContent = 'Editar Sócio'
+      const isFed = isFederation()
+      document.getElementById('modal-member-title').textContent = isFed ? 'Editar Delegado' : 'Editar Sócio'
       document.getElementById('m-name').value  = name
       document.getElementById('m-type').value  = type
       document.getElementById('m-email').value = email
@@ -451,6 +484,9 @@
       document.getElementById('m-birth').value = birth
       document.getElementById('m-join').value  = join
       document.getElementById('m-is-board').checked = !!isBoardMember
+      if (isFed) {
+        document.getElementById('m-society').value = localSociety
+      }
       clearAlert('member-alert')
       openModal('modal-member')
     }
@@ -458,7 +494,13 @@
     document.getElementById('btn-save-member').addEventListener('click', async () => {
       const btn = document.getElementById('btn-save-member')
       const name = document.getElementById('m-name').value.trim()
-      if (!name) { showAlert('member-alert', 'Informe o nome do sócio.', 'error'); return }
+      const isFed = isFederation()
+      if (!name) { showAlert('member-alert', isFed ? 'Informe o nome do delegado.' : 'Informe o nome do sócio.', 'error'); return }
+
+      if (isFed && !document.getElementById('m-society').value.trim()) {
+        showAlert('member-alert', 'Informe a Sociedade Local.', 'error')
+        return
+      }
 
       const payload = {
         full_name:      name,
@@ -468,6 +510,7 @@
         birth_date:     document.getElementById('m-birth').value || null,
         join_date:      document.getElementById('m-join').value  || null,
         is_board_member: document.getElementById('m-is-board').checked,
+        local_society:  isFed ? document.getElementById('m-society').value.trim() || null : null,
       }
 
       setLoading(btn, true, 'Salvar')
