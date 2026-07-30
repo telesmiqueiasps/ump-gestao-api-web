@@ -312,9 +312,25 @@
 
         <div class="card mb-4">
           <div class="card-header">
-            <h2>2. Sócios Votados (Elegibilidade)</h2>
+            <h2 id="config-members-header-title">2. Sócios Votados (Elegibilidade)</h2>
           </div>
-          <p class="text-sm text-slate-500 mb-3">Todos os sócios ativos listados abaixo podem votar. Desmarque aqueles que <strong>não</strong> podem ser votados (impedidos).</p>
+          <p class="text-sm text-slate-500 mb-3" id="config-members-header-desc">Todos os sócios ativos listados abaixo podem votar. Desmarque aqueles que <strong>não</strong> podem ser votados (impedidos).</p>
+
+          <!-- Federation voter addition form -->
+          <div id="federation-voter-add-form" class="hidden mb-4" style="background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: var(--radius); padding: 1rem;">
+            <h3 style="font-size: .95rem; margin-bottom: .75rem; color: var(--slate-800); font-weight: 600;">Adicionar Delegado (Votante)</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: .75rem; align-items: flex-end;">
+              <div class="field" style="margin: 0;">
+                <label for="fed-voter-name" style="font-size: .8rem; font-weight: 500;">Nome do Eleitor</label>
+                <input class="input" type="text" id="fed-voter-name" placeholder="Ex: João Silva" style="padding: .5rem .75rem; font-size: .85rem;" />
+              </div>
+              <div class="field" style="margin: 0;">
+                <label for="fed-voter-society" style="font-size: .8rem; font-weight: 500;">Sociedade Local</label>
+                <input class="input" type="text" id="fed-voter-society" placeholder="Ex: Central" style="padding: .5rem .75rem; font-size: .85rem;" />
+              </div>
+              <button class="btn btn-primary btn-sm" id="btn-add-fed-voter" style="min-height: auto; padding: .6rem 1.25rem; font-size: .85rem; font-weight: 600;">Adicionar</button>
+            </div>
+          </div>
           
           <div style="margin-bottom: 1rem; position: relative;">
             <input class="input" type="text" id="input-search-members" placeholder="🔍 Pesquisar sócio por nome..." style="padding-left: 2.2rem; font-size: .9rem;" />
@@ -502,7 +518,7 @@
 <div id="print-area" style="display:none"></div>
 
 <script type="module">
-  import { requireAuth } from '../assets/js/auth.js?v=9'
+  import { requireAuth, getUser, isFederation } from '../assets/js/auth.js?v=9'
   import { renderShell, renderBottomNav } from '../assets/js/router.v3.js?v=9'
   import { api } from '../assets/js/api.js?v=9'
   import { showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading, formatDate } from '../assets/js/utils.js?v=9'
@@ -570,41 +586,70 @@
     }
 
     // ── SECTION CONFIG ──
-    // ── SECTION CONFIG ──
     let allActiveMembers = []
     let ineligibleMemberIds = new Set()
 
     async function loadConfigScreen() {
       try {
-        localMembers = await api.get('/api/members/?active_only=true')
-        allActiveMembers = localMembers.filter(m => m.member_type === 'ativo')
-        ineligibleMemberIds.clear()
+        const isFed = isFederation()
         
-        // Reset search input
-        document.getElementById('input-search-members').value = ''
+        // Adjust headers
+        document.getElementById('config-members-header-title').textContent = isFed ? '2. Delegados Votantes (Elegibilidade)' : '2. Sócios Votados (Elegibilidade)'
+        document.getElementById('config-members-header-desc').textContent = isFed 
+          ? 'Adicione os delegados que participarão da votação. Todos adicionados poderão votar. Desmarque aqueles que não podem ser votados (impedidos).' 
+          : 'Todos os sócios ativos listados abaixo podem votar. Desmarque aqueles que não podem ser votados (impedidos).'
+        
+        const searchInput = document.getElementById('input-search-members')
+        searchInput.placeholder = isFed ? '🔍 Pesquisar delegado por nome...' : '🔍 Pesquisar sócio por nome...'
+        searchInput.value = ''
+        
+        const addForm = document.getElementById('federation-voter-add-form')
+        if (isFed) {
+          addForm.classList.remove('hidden')
+          allActiveMembers = []
+        } else {
+          addForm.classList.add('hidden')
+          localMembers = await api.get('/api/members/?active_only=true')
+          allActiveMembers = localMembers.filter(m => m.member_type === 'ativo')
+        }
+        
+        ineligibleMemberIds.clear()
         renderMembersGrid()
       } catch (err) {
-        showAlert('page-alert', 'Erro ao carregar sócios: ' + err.message, 'error')
+        showAlert('page-alert', 'Erro ao carregar dados de configuração: ' + err.message, 'error')
       }
     }
 
     function renderMembersGrid() {
       const query = document.getElementById('input-search-members').value.trim().toLowerCase()
       const grid = document.getElementById('config-members-grid')
+      const isFed = isFederation()
       
       const filtered = allActiveMembers.filter(m => m.full_name.toLowerCase().includes(query))
       
       if (!filtered.length) {
-        grid.innerHTML = '<p class="text-slate-400 text-center py-3" style="grid-column: 1/-1; width: 100%;">Nenhum sócio ativo encontrado.</p>'
+        grid.innerHTML = isFed 
+          ? '<p class="text-slate-400 text-center py-3" style="grid-column: 1/-1; width: 100%;">Nenhum delegado adicionado ou encontrado.</p>' 
+          : '<p class="text-slate-400 text-center py-3" style="grid-column: 1/-1; width: 100%;">Nenhum sócio ativo encontrado.</p>'
         return
       }
 
       grid.innerHTML = filtered.map(m => {
         const isChecked = !ineligibleMemberIds.has(m.id)
+        const deleteBtn = isFed ? `
+          <button type="button" class="btn btn-ghost danger btn-sm" 
+            style="padding: 1px 6px; min-height: auto; font-size: .65rem; font-weight: bold; margin-left: auto;" 
+            onclick="removeTempVoter('${m.id}')">
+            ✕
+          </button>
+        ` : ''
         return `
-          <label class="eligibility-card">
-            <input type="checkbox" class="can-be-voted-cb" data-member-id="${m.id}" ${isChecked ? 'checked' : ''} onchange="toggleMemberEligibility('${m.id}', this.checked)" />
-            <span style="font-weight: 500; color: var(--slate-700); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${m.full_name}">${m.full_name}</span>
+          <label class="eligibility-card" style="display: flex; align-items: center; justify-content: space-between; gap: .5rem;">
+            <div style="display: flex; align-items: center; gap: .5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
+              <input type="checkbox" class="can-be-voted-cb" data-member-id="${m.id}" ${isChecked ? 'checked' : ''} onchange="toggleMemberEligibility('${m.id}', this.checked)" />
+              <span style="font-weight: 500; color: var(--slate-700); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${m.full_name}">${m.full_name}</span>
+            </div>
+            ${deleteBtn}
           </label>
         `
       }).join('')
@@ -617,6 +662,38 @@
         ineligibleMemberIds.add(memberId)
       }
     }
+
+    window.removeTempVoter = (tempId) => {
+      allActiveMembers = allActiveMembers.filter(m => m.id !== tempId)
+      ineligibleMemberIds.delete(tempId)
+      renderMembersGrid()
+    }
+
+    // Add federation voter helper
+    document.getElementById('btn-add-fed-voter').addEventListener('click', () => {
+      const nameEl = document.getElementById('fed-voter-name')
+      const societyEl = document.getElementById('fed-voter-society')
+      const name = nameEl.value.trim()
+      const society = societyEl.value.trim()
+      
+      if (!name || !society) {
+        alert('Por favor, informe o nome do eleitor e a sociedade local!')
+        return
+      }
+      
+      const tempId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5)
+      allActiveMembers.push({
+        id: tempId,
+        name: name,
+        local_society: society,
+        full_name: `${name} (${society})`
+      })
+      
+      nameEl.value = ''
+      societyEl.value = ''
+      nameEl.focus()
+      renderMembersGrid()
+    })
 
     // Bind search input typing event
     document.getElementById('input-search-members').addEventListener('input', renderMembersGrid)
@@ -636,8 +713,23 @@
         return
       }
 
-      // Ineligible members (unchecked cbs via JS Set)
-      const ineligibleIds = Array.from(ineligibleMemberIds)
+      const isFed = isFederation()
+      let ineligibleIds = []
+      let fedVoters = null
+
+      if (isFed) {
+        if (!allActiveMembers.length) {
+          showAlert('page-alert', 'Por favor, adicione pelo menos um delegado para a eleição.', 'error')
+          return
+        }
+        fedVoters = allActiveMembers.map(m => ({
+          name: m.name,
+          local_society: m.local_society,
+          can_be_voted: !ineligibleMemberIds.has(m.id)
+        }))
+      } else {
+        ineligibleIds = Array.from(ineligibleMemberIds)
+      }
 
       const btn = document.getElementById('btn-start-session')
       setLoading(btn, true, 'Criar e Gerar Códigos')
@@ -647,6 +739,7 @@
           title,
           roles_to_dispute: checkedRoles,
           ineligible_member_ids: ineligibleIds,
+          federation_voters: fedVoters
         })
         loadScreen()
       } catch (err) {

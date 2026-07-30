@@ -52,6 +52,15 @@ def require_local_ump(current_user: User = Depends(get_current_user)) -> User:
     return current_user
 
 
+def require_local_or_federation(current_user: User = Depends(get_current_user)) -> User:
+    if current_user.organization_type not in (OrgType.local_ump, OrgType.federation):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso restrito a usuários de UMP Local ou Federação",
+        )
+    return current_user
+
+
 def require_roles(*roles: BoardRole):
     def checker(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> User:
         from app.models.user import UserRole

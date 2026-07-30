@@ -77,7 +77,6 @@ const NAV_ITEMS = [
     label: 'Eleições',
     icon: '/assets/img/eleicao.png',
     path: '/pages/eleicoes.html',
-    localOnly: true,
     roles: ['presidente','vice_presidente','tesoureiro',
             '1_secretario','2_secretario','secretario_executivo',
             'secretario_presbiterial','conselheiro'],

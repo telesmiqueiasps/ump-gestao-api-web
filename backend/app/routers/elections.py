@@ -15,15 +15,21 @@ from app.models.member import Member
 from app.models.local_ump import LocalUmp
 from app.models.enums import MemberType
 from app.models.election import ElectionSession, ElectionVoter, ElectionVote
-from app.core.dependencies import require_local_ump
+from app.core.dependencies import require_local_or_federation
 from app.services.pdf_generator import generate_election_report
 
 router = APIRouter()
+
+class FederationVoterPayload(BaseModel):
+    name: str
+    local_society: str
+    can_be_voted: bool = True
 
 class ElectionCreatePayload(BaseModel):
     title: str
     roles_to_dispute: List[str]
     ineligible_member_ids: List[UUID]
+    federation_voters: Optional[List[FederationVoterPayload]] = None
 
 class PublicVotePayload(BaseModel):
     code: str
@@ -99,7 +105,7 @@ def get_eligible_candidates(db: Session, session: ElectionSession) -> List[Membe
 @router.post("/", status_code=status.HTTP_201_CREATED)
 def create_election(
     payload: ElectionCreatePayload,
-    current_user: User = Depends(require_local_ump),
+    current_user: User = Depends(require_local_or_federation),
     db: Session = Depends(get_db),
 ):
     # Validate roles
@@ -111,6 +117,20 @@ def create_election(
     if not payload.roles_to_dispute:
         raise HTTPException(status_code=400, detail="Selecione pelo menos um cargo para disputa.")
 
+    # Check/Create shadow LocalUmp if federation
+    if current_user.organization_type == 'federation':
+        shadow_ump = db.query(LocalUmp).filter(LocalUmp.id == current_user.organization_id).first()
+        if not shadow_ump:
+            shadow_ump = LocalUmp(
+                id=current_user.organization_id,
+                federation_id=current_user.organization_id,
+                name="Eleições da Federação",
+                fiscal_year=2026,
+                is_active=True
+            )
+            db.add(shadow_ump)
+            db.flush()
+
     # Check for active session
     active_session = db.query(ElectionSession).filter(
         ElectionSession.local_ump_id == current_user.organization_id,
@@ -119,14 +139,38 @@ def create_election(
     if active_session:
         raise HTTPException(status_code=400, detail="Já existe uma sessão eleitoral ativa.")
 
-    # Get active members
-    active_members = db.query(Member).filter(
-        Member.local_ump_id == current_user.organization_id,
-        Member.member_type == MemberType.ativo,
-        Member.is_active == True
-    ).all()
-    if not active_members:
-        raise HTTPException(status_code=400, detail="Não há sócios ativos cadastrados para participar da eleição.")
+    active_members = []
+    
+    if current_user.organization_type == 'federation':
+        # Verify federation_voters payload is not empty
+        if not payload.federation_voters:
+            raise HTTPException(status_code=400, detail="Por favor, forneça a lista de eleitores para a eleição da federação.")
+            
+        # Create shadow members for delegates
+        for v in payload.federation_voters:
+            m = Member(
+                local_ump_id=current_user.organization_id, # link to shadow LocalUmp
+                full_name=f"{v.name} ({v.local_society})",
+                member_type=MemberType.ativo,
+                is_active=True
+            )
+            db.add(m)
+            db.flush()
+            # Store temporary attributes to assign properties later
+            m._temp_can_be_voted = v.can_be_voted
+            active_members.append(m)
+    else:
+        # Get active members
+        db_members = db.query(Member).filter(
+            Member.local_ump_id == current_user.organization_id,
+            Member.member_type == MemberType.ativo,
+            Member.is_active == True
+        ).all()
+        if not db_members:
+            raise HTTPException(status_code=400, detail="Não há sócios ativos cadastrados para participar da eleição.")
+        for member in db_members:
+            member._temp_can_be_voted = member.id not in payload.ineligible_member_ids
+            active_members.append(member)
 
     # Create session
     session = ElectionSession(
@@ -146,12 +190,11 @@ def create_election(
     
     # Save voters
     for idx, member in enumerate(active_members):
-        can_be_voted = member.id not in payload.ineligible_member_ids
         voter = ElectionVoter(
             election_session_id=session.id,
             member_id=member.id,
             access_code=codes[idx],
-            can_be_voted=can_be_voted,
+            can_be_voted=member._temp_can_be_voted,
             has_voted_current_round=False
         )
         db.add(voter)
@@ -162,7 +205,7 @@ def create_election(
 # Get Active Election Session
 @router.get("/active")
 def get_active_election(
-    current_user: User = Depends(require_local_ump),
+    current_user: User = Depends(require_local_or_federation),
     db: Session = Depends(get_db),
 ):
     session = db.query(ElectionSession).filter(
@@ -185,7 +228,7 @@ def get_active_election(
 # Start Voting
 @router.post("/active/start")
 def start_voting(
-    current_user: User = Depends(require_local_ump),
+    current_user: User = Depends(require_local_or_federation),
     db: Session = Depends(get_db),
 ):
     session = db.query(ElectionSession).filter(
@@ -202,7 +245,7 @@ def start_voting(
 # Get Voting Status
 @router.get("/active/status")
 def get_voting_status(
-    current_user: User = Depends(require_local_ump),
+    current_user: User = Depends(require_local_or_federation),
     db: Session = Depends(get_db),
 ):
     session = db.query(ElectionSession).filter(
@@ -253,7 +296,7 @@ def get_voting_status(
 # Close Round and Calculate Results
 @router.post("/active/close-round")
 def close_round(
-    current_user: User = Depends(require_local_ump),
+    current_user: User = Depends(require_local_or_federation),
     db: Session = Depends(get_db),
 ):
     session = db.query(ElectionSession).filter(
@@ -365,7 +408,7 @@ def close_round(
 # Cancel Active Election Session
 @router.post("/active/cancel")
 def cancel_election(
-    current_user: User = Depends(require_local_ump),
+    current_user: User = Depends(require_local_or_federation),
     db: Session = Depends(get_db),
 ):
     session = db.query(ElectionSession).filter(
@@ -375,6 +418,12 @@ def cancel_election(
     if not session:
         raise HTTPException(status_code=404, detail="Nenhuma eleição ativa encontrada.")
 
+    # If federation, delete shadow members first
+    if current_user.organization_type == 'federation':
+        voter_member_ids = [v.member_id for v in session.voters]
+        if voter_member_ids:
+            db.query(Member).filter(Member.id.in_(voter_member_ids)).delete(synchronize_session=False)
+
     db.delete(session)
     db.commit()
     return {"detail": "Sessão eleitoral cancelada com sucesso."}
@@ -382,7 +431,7 @@ def cancel_election(
 # Get Completed Elections History
 @router.get("/history")
 def get_history(
-    current_user: User = Depends(require_local_ump),
+    current_user: User = Depends(require_local_or_federation),
     db: Session = Depends(get_db),
 ):
     sessions = db.query(ElectionSession).filter(
@@ -587,7 +636,7 @@ def _get_session_report_data(db: Session, session: ElectionSession) -> dict:
 @router.get("/session/{session_id}/details")
 def get_election_details(
     session_id: UUID,
-    current_user: User = Depends(require_local_ump),
+    current_user: User = Depends(require_local_or_federation),
     db: Session = Depends(get_db),
 ):
     session = db.query(ElectionSession).filter(
@@ -602,7 +651,7 @@ def get_election_details(
 @router.get("/session/{session_id}/pdf")
 def get_election_pdf(
     session_id: UUID,
-    current_user: User = Depends(require_local_ump),
+    current_user: User = Depends(require_local_or_federation),
     db: Session = Depends(get_db),
 ):
     session = db.query(ElectionSession).filter(
@@ -651,7 +700,7 @@ def get_election_pdf(
 @router.delete("/session/{session_id}")
 def delete_election(
     session_id: UUID,
-    current_user: User = Depends(require_local_ump),
+    current_user: User = Depends(require_local_or_federation),
     db: Session = Depends(get_db),
 ):
     session = db.query(ElectionSession).filter(
@@ -661,6 +710,12 @@ def delete_election(
     if not session:
         raise HTTPException(status_code=404, detail="Eleição não encontrada.")
         
+    # If federation, delete shadow members first
+    if current_user.organization_type == 'federation':
+        voter_member_ids = [v.member_id for v in session.voters]
+        if voter_member_ids:
+            db.query(Member).filter(Member.id.in_(voter_member_ids)).delete(synchronize_session=False)
+
     db.delete(session)
     db.commit()
     return {"detail": "Eleição excluída com sucesso."}
@@ -669,7 +724,7 @@ def delete_election(
 # Advance Active Election to Next Round/Role
 @router.post("/active/advance")
 def advance_election(
-    current_user: User = Depends(require_local_ump),
+    current_user: User = Depends(require_local_or_federation),
     db: Session = Depends(get_db),
 ):
     session = db.query(ElectionSession).filter(
@@ -753,7 +808,7 @@ def advance_election(
 @router.delete("/active/voters/{voter_id}")
 def remove_active_voter(
     voter_id: UUID,
-    current_user: User = Depends(require_local_ump),
+    current_user: User = Depends(require_local_or_federation),
     db: Session = Depends(get_db),
 ):
     session = db.query(ElectionSession).filter(
@@ -770,6 +825,12 @@ def remove_active_voter(
     if not voter:
         raise HTTPException(status_code=404, detail="Eleitor não encontrado nesta sessão.")
 
+    member_id = voter.member_id
     db.delete(voter)
+    
+    # If federation, delete the shadow member too
+    if current_user.organization_type == 'federation':
+        db.query(Member).filter(Member.id == member_id).delete(synchronize_session=False)
+
     db.commit()
     return {"detail": "Eleitor removido da sessão com sucesso."}
