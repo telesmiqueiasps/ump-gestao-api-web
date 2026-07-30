@@ -2,6 +2,10 @@ import io
 import re
 import datetime
 import gc
+import logging
+import time
+import concurrent.futures
+import threading
 from PIL import Image as _PILImage
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
@@ -13,6 +17,7 @@ from reportlab.platypus import (
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 
+logger = logging.getLogger(__name__)
 
 GRAY_ROW  = colors.HexColor('#f5f7fa')
 GRAY_LINE = colors.HexColor('#e2e8f0')
@@ -24,12 +29,18 @@ WHITE     = colors.white
 YELLOW_BG = colors.HexColor('#fffde7')
 BLUE_DEF  = colors.HexColor('#1a2a6c')
 
+_TC_CACHE = {}
 
 def _tc(hex_color):
-    try:
-        return colors.HexColor(str(hex_color))
-    except:
+    if not hex_color:
         return BLUE_DEF
+    s = str(hex_color).strip().lower()
+    if s not in _TC_CACHE:
+        try:
+            _TC_CACHE[s] = colors.HexColor(s)
+        except Exception:
+            _TC_CACHE[s] = BLUE_DEF
+    return _TC_CACHE[s]
 
 
 def _fc(v):
@@ -52,15 +63,43 @@ def _fd(d):
         return str(d)
 
 
+_STYLE_CACHE = {}
+
+def _get_paragraph_style(size=10, color=BLACK, bold=False, align=TA_LEFT,
+                         leading=None, indent=0, space_before=0, space_after=2,
+                         first_line_indent=0, font_name=None):
+    if font_name is None:
+        font_name = 'Helvetica-Bold' if bold else 'Helvetica'
+    leading_val = leading if leading is not None else (size * 1.5)
+    indent_val = indent * mm if isinstance(indent, (int, float)) else indent
+    first_indent_val = first_line_indent * mm if isinstance(first_line_indent, (int, float)) else first_line_indent
+    cache_key = (size, str(color), font_name, align, leading_val, indent_val, space_before, space_after, first_indent_val)
+    if cache_key not in _STYLE_CACHE:
+        _STYLE_CACHE[cache_key] = ParagraphStyle(
+            f'ps_{len(_STYLE_CACHE)}',
+            fontSize=size,
+            textColor=color,
+            fontName=font_name,
+            alignment=align,
+            leading=leading_val,
+            leftIndent=indent_val,
+            firstLineIndent=first_indent_val,
+            spaceBefore=space_before,
+            spaceAfter=space_after,
+        )
+    return _STYLE_CACHE[cache_key]
+
+
 def _ps(size=8, color=BLACK, bold=False, align=TA_LEFT):
-    return ParagraphStyle('_',
-        fontSize=size,
-        textColor=color,
-        fontName='Helvetica-Bold' if bold else 'Helvetica',
-        alignment=align,
-        leading=size * 1.4,
-        spaceAfter=0, spaceBefore=0,
-    )
+    return _get_paragraph_style(size=size, color=color, bold=bold, align=align, space_after=0, space_before=0, leading=size * 1.4)
+
+
+def _p(txt, size=10, color=BLACK, bold=False, align=TA_LEFT,
+       leading=None, indent=0, space_before=0, space_after=2):
+    style = _get_paragraph_style(size=size, color=color, bold=bold, align=align,
+                                leading=leading, indent=indent,
+                                space_before=space_before, space_after=space_after)
+    return Paragraph(str(txt or ''), style)
 
 
 def _logo(logo_bytes, w_mm, h_mm):
@@ -448,11 +487,103 @@ def generate_meeting_report(
 
 
 # ═══════════════════════════════════════════════════════════════
-# CLASSE DE IMAGEM PREGUIÇOSA (LAZY IMAGE)
+# HELPER PARALELO DE IMAGENS E LAZY IMAGE OTIMIZADA
 # ═══════════════════════════════════════════════════════════════
 
+def _extract_b2_key(key_or_url: str, bucket: str) -> str:
+    if not key_or_url:
+        return ""
+    match = re.search(rf'/file/{re.escape(bucket)}/(.+)$', key_or_url)
+    if not match:
+        match = re.search(rf'/{re.escape(bucket)}/(.+)$', key_or_url)
+    if match:
+        return match.group(1)
+    return key_or_url
+
+
+def _process_single_photo_worker(b2_client, bucket, photo_key, photo_bytes, image_cache, cache_lock):
+    cache_key = photo_key if photo_key else (id(photo_bytes) if photo_bytes else None)
+    if not cache_key:
+        return None
+
+    with cache_lock:
+        if cache_key in image_cache:
+            return image_cache[cache_key]
+
+    raw_bytes = photo_bytes
+    if raw_bytes is None and photo_key and b2_client:
+        clean_key = _extract_b2_key(photo_key, bucket)
+        try:
+            resp = b2_client.get_object(Bucket=bucket, Key=clean_key)
+            raw_bytes = resp['Body'].read()
+        except Exception as e:
+            logger.error("Falha no download direto da foto no B2 [key: %s]: %s", clean_key, e)
+            raw_bytes = None
+
+    if not raw_bytes:
+        res = (b'', 1, 1)
+        with cache_lock:
+            image_cache[cache_key] = res
+        return res
+
+    try:
+        from PIL import Image as PILImage, ImageOps as PILImageOps
+        with PILImage.open(io.BytesIO(raw_bytes)) as pil_img:
+            pil_img = PILImageOps.exif_transpose(pil_img)
+            pil_img.thumbnail((1600, 1600), PILImage.LANCZOS)
+            if pil_img.mode in ('RGBA', 'P', 'LA'):
+                pil_img = pil_img.convert('RGB')
+            out_io = io.BytesIO()
+            pil_img.save(out_io, format='JPEG', quality=85, optimize=True)
+            proc_bytes = out_io.getvalue()
+            ow, oh = pil_img.size
+
+        res = (proc_bytes, ow, oh)
+        with cache_lock:
+            image_cache[cache_key] = res
+        return res
+    except Exception as e:
+        logger.error("Falha no redimensionamento da foto [key: %s]: %s", photo_key, e)
+        res = (b'', 1, 1)
+        with cache_lock:
+            image_cache[cache_key] = res
+        return res
+
+
+def _download_and_process_photos_parallel(activities: list, b2_client, bucket: str, image_cache: dict) -> int:
+    tasks = []
+    seen = set()
+    for act in activities:
+        keys = act.get('photo_keys', [])
+        bytes_list = act.get('photos_bytes', [])
+        if keys:
+            for k in keys:
+                if k and k not in seen:
+                    seen.add(k)
+                    tasks.append((k, None))
+        elif bytes_list:
+            for b in bytes_list:
+                if b and id(b) not in seen:
+                    seen.add(id(b))
+                    tasks.append((None, b))
+
+    if not tasks:
+        return 0
+
+    cache_lock = threading.Lock()
+    max_workers = min(8, len(tasks))
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = [
+            executor.submit(_process_single_photo_worker, b2_client, bucket, k, b, image_cache, cache_lock)
+            for k, b in tasks
+        ]
+        concurrent.futures.wait(futures)
+
+    return len(tasks)
+
+
 class LazyImage(Flowable):
-    def __init__(self, b2_client, bucket, photo_key=None, photo_bytes=None, max_w=0, max_h=0):
+    def __init__(self, b2_client, bucket, photo_key=None, photo_bytes=None, max_w=0, max_h=0, image_cache=None):
         Flowable.__init__(self)
         self.b2_client = b2_client
         self.bucket = bucket
@@ -460,9 +591,24 @@ class LazyImage(Flowable):
         self.photo_bytes = photo_bytes
         self.max_w = max_w
         self.max_h = max_h
+        self.image_cache = image_cache
         self.width = max_w
         self.height = max_h
         self._processed_bytes = None
+        self._calculate_dimensions()
+
+    def _calculate_dimensions(self):
+        cache_key = self.photo_key if self.photo_key else (id(self.photo_bytes) if self.photo_bytes else None)
+        if self.image_cache and cache_key and cache_key in self.image_cache:
+            proc_bytes, ow, oh = self.image_cache[cache_key]
+            if proc_bytes and ow > 0 and oh > 0:
+                self._processed_bytes = proc_bytes
+                ratio = min(self.max_w / (ow * 0.352778), self.max_h / (oh * 0.352778))
+                self.width = ow * 0.352778 * ratio
+                self.height = oh * 0.352778 * ratio
+                return
+
+        self._load_and_process()
 
     def _load_and_process(self):
         if self._processed_bytes is not None:
@@ -470,7 +616,8 @@ class LazyImage(Flowable):
         try:
             raw_bytes = self.photo_bytes
             if raw_bytes is None and self.photo_key and self.b2_client:
-                resp = self.b2_client.get_object(Bucket=self.bucket, Key=self.photo_key)
+                clean_key = _extract_b2_key(self.photo_key, self.bucket)
+                resp = self.b2_client.get_object(Bucket=self.bucket, Key=clean_key)
                 raw_bytes = resp['Body'].read()
 
             if not raw_bytes:
@@ -479,31 +626,29 @@ class LazyImage(Flowable):
                 self._processed_bytes = b''
                 return
 
-            from PIL import Image as PILImage, ImageOps
+            from PIL import Image as PILImage, ImageOps as PILImageOps
             with PILImage.open(io.BytesIO(raw_bytes)) as pil_img:
-                pil_img = ImageOps.exif_transpose(pil_img)
+                pil_img = PILImageOps.exif_transpose(pil_img)
                 pil_img.thumbnail((1600, 1600), PILImage.LANCZOS)
-
                 if pil_img.mode in ('RGBA', 'P', 'LA'):
                     pil_img = pil_img.convert('RGB')
-
                 out_io = io.BytesIO()
-                pil_img.save(out_io, format='JPEG', quality=85)
+                pil_img.save(out_io, format='JPEG', quality=85, optimize=True)
                 self._processed_bytes = out_io.getvalue()
-
-            with PILImage.open(io.BytesIO(self._processed_bytes)) as pil:
-                ow, oh = pil.size
+                ow, oh = pil_img.size
 
             ratio = min(self.max_w / (ow * 0.352778), self.max_h / (oh * 0.352778))
             self.width = ow * 0.352778 * ratio
             self.height = oh * 0.352778 * ratio
-        except Exception:
+        except Exception as e:
+            logger.error("Erro ao carregar imagem no LazyImage [key: %s]: %s", self.photo_key, e)
             self.width = 1
             self.height = 1
             self._processed_bytes = b''
 
     def wrap(self, availWidth, availHeight):
-        self._load_and_process()
+        if self._processed_bytes is None:
+            self._load_and_process()
         return self.width, self.height
 
     def draw(self):
@@ -514,174 +659,29 @@ class LazyImage(Flowable):
             img = RLImage(io.BytesIO(self._processed_bytes), width=self.width, height=self.height)
             img.hAlign = 'CENTER'
             img.drawOn(self.canv, 0, 0)
-        finally:
-            self._processed_bytes = None
-            import gc
-            gc.collect()
+        except Exception as e:
+            logger.error("Erro ao desenhar imagem no canvas [key: %s]: %s", self.photo_key, e)
 
 
 # ═══════════════════════════════════════════════════════════════
-# RELATÓRIO DE ATIVIDADES
+# SUBFUNÇÕES MODULARES DO RELATÓRIO DE ATIVIDADES
 # ═══════════════════════════════════════════════════════════════
 
-def generate_activity_report(
-    org_data: dict,
-    fiscal_year: int,
-    board_data: list,
-    act_secs_data: list,
-    activities: list,
-    report: dict,
-    logo_bytes: bytes = None,
-    ipb_logo_bytes: bytes = None,
-    b2_client = None,
-) -> bytes:
-    """Gera o Relatório de Atividades no modelo oficial."""
-    import datetime as _dt
-    from app.services.storage import _get_client
-    from app.core.config import get_settings
-
-    buf = io.BytesIO()
-    ML = MR = 15 * mm
-    W = A4[0] - ML - MR
-
-    b2 = b2_client if b2_client is not None else _get_client()
-    settings_obj = get_settings()
-    bucket = settings_obj.b2_bucket_name
-
-    # Cabeçalho e rodapé em todas as páginas
-    def _make_header_footer(canvas_obj, doc_obj):
-        canvas_obj.saveState()
-        W_page = A4[0]
-        ML_page = ML
-        W_content = W_page - ML - MR
-
-        # ── Cabeçalho (a partir da 2ª página)
-        if doc_obj.page > 1:
-            canvas_obj.setStrokeColor(colors.HexColor(org_data.get('theme_color','#1a2a6c')))
-            canvas_obj.setLineWidth(0.5)
-
-            # Logo IPB
-            if ipb_logo_bytes:
-                try:
-                    from reportlab.lib.utils import ImageReader
-                    ipb_reader = ImageReader(io.BytesIO(ipb_logo_bytes))
-                    canvas_obj.drawImage(ipb_reader, ML_page, A4[1]-13*mm,
-                                         width=9*mm, height=9*mm,
-                                         preserveAspectRatio=True, mask='auto')
-                except:
-                    pass
-
-            # Logo da org
-            if logo_bytes:
-                try:
-                    from reportlab.lib.utils import ImageReader
-                    org_reader = ImageReader(io.BytesIO(logo_bytes))
-                    canvas_obj.drawImage(org_reader, W_page-MR-9*mm, A4[1]-13*mm,
-                                         width=9*mm, height=9*mm,
-                                         preserveAspectRatio=True, mask='auto')
-                except:
-                    pass
-
-            # Título central
-            canvas_obj.setFont('Helvetica-Bold', 8)
-            canvas_obj.setFillColor(colors.black)
-            canvas_obj.drawCentredString(
-                W_page/2, A4[1]-9*mm,
-                'RELATÓRIO DE ATIVIDADES'
-            )
-            canvas_obj.setFont('Helvetica', 7)
-            canvas_obj.setFillColor(colors.HexColor('#64748b'))
-            canvas_obj.drawCentredString(
-                W_page/2, A4[1]-13*mm,
-                f'Gestão {fiscal_year}  ·  {org_data.get("name","")}'
-            )
-
-            # Linha separadora do cabeçalho
-            canvas_obj.setStrokeColor(colors.HexColor('#e2e8f0'))
-            canvas_obj.line(ML_page, A4[1]-15*mm, W_page-MR, A4[1]-15*mm)
-
-        # ── Rodapé em todas as páginas ──
-        canvas_obj.setStrokeColor(colors.HexColor('#e2e8f0'))
-        canvas_obj.line(ML_page, 12*mm, W_page-MR, 12*mm)
-
-        # Lema/texto à esquerda no rodapé (configurável)
-        canvas_obj.setFont('Helvetica', 6.5)
-        canvas_obj.setFillColor(colors.HexColor('#94a3b8'))
-        soc_type = str(org_data.get('society_type', 'UMP')).upper()
-        if soc_type == 'UPH':
-            default_footer = 'CONFIANÇA EM JESUS, ENTUSIASMO NA AÇÃO E UNIÃO FRATERNAL'
-        else:
-            default_footer = 'ALEGRES NA ESPERANÇA – FORTES NA FÉ – DEDICADOS NO AMOR – UNIDOS NO TRABALHO'
-        footer_text = org_data.get('footer_text') or default_footer
-        canvas_obj.drawCentredString(W_page/2, 8*mm, footer_text)
-
-        # Número da página à direita
-        canvas_obj.setFont('Helvetica', 7)
-        canvas_obj.setFillColor(colors.HexColor('#94a3b8'))
-        canvas_obj.drawRightString(W_page-MR, 8*mm, f'Página {doc_obj.page}')
-
-        canvas_obj.restoreState()
-
-    doc = SimpleDocTemplate(buf, pagesize=A4,
-        leftMargin=ML, rightMargin=MR,
-        topMargin=20*mm,
-        bottomMargin=18*mm
+def _render_text_to_story(text_content, story):
+    if not text_content:
+        return
+    body_style = _get_paragraph_style(
+        size=10, color=BLACK, bold=False, align=4, leading=16, first_line_indent=10, space_after=2
     )
+    for para in text_content.split('\n'):
+        stripped = para.strip()
+        if not stripped:
+            story.append(Spacer(1, 2 * mm))
+            continue
+        story.append(Paragraph(stripped, body_style))
 
-    TC = _tc(org_data.get('theme_color', '#1a2a6c'))
-    story = []
 
-    MONTH_NAMES_PT = [
-        'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
-    ]
-
-    def _p(txt, size=10, color=BLACK, bold=False, align=TA_LEFT,
-           leading=None, indent=0, space_before=0, space_after=2):
-        return Paragraph(str(txt or ''), ParagraphStyle('_',
-            fontSize=size, textColor=color,
-            fontName='Helvetica-Bold' if bold else 'Helvetica',
-            alignment=align,
-            leading=leading or size * 1.5,
-            leftIndent=indent * mm,
-            spaceBefore=space_before, spaceAfter=space_after,
-        ))
-
-    def section_hdr(txt):
-        t = Table([[_p(txt, 9, WHITE, bold=True)]], colWidths=[W])
-        t.setStyle(TableStyle([
-            ('BACKGROUND',    (0, 0), (-1, -1), TC),
-            ('TOPPADDING',    (0, 0), (-1, -1), 4),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-            ('LEFTPADDING',   (0, 0), (-1, -1), 6),
-        ]))
-        return t
-
-    def section_bar_num(num, title):
-        t = Table([[_p(f'{num}. {title}', 10, WHITE, bold=True, align=TA_RIGHT)]], colWidths=[W])
-        t.setStyle(TableStyle([
-            ('BACKGROUND',    (0, 0), (-1, -1), TC),
-            ('TOPPADDING',    (0, 0), (-1, -1), 5),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
-            ('RIGHTPADDING',  (0, 0), (-1, -1), 8),
-        ]))
-        return t
-
-    def render_text(text_content):
-        if not text_content:
-            return
-        for para in text_content.split('\n'):
-            stripped = para.strip()
-            if not stripped:
-                story.append(Spacer(1, 2 * mm))
-                continue
-            story.append(Paragraph(stripped, ParagraphStyle('body',
-                fontSize=10, textColor=BLACK, fontName='Helvetica',
-                alignment=4, leading=16, firstLineIndent=10 * mm,
-                spaceAfter=2, spaceBefore=0,
-            )))
-
-    # ── CABEÇALHO ────────────────────────────────────────────
+def _build_header_section(logo_bytes, ipb_logo_bytes, org_data, fiscal_year, W):
     logo_cell = _logo(logo_bytes, 22, 22) or Paragraph('', _ps())
     ipb_cell  = _logo(ipb_logo_bytes, 22, 22) or Paragraph('', _ps())
 
@@ -710,14 +710,21 @@ def generate_activity_report(
         ('TOPPADDING',    (0, 0), (-1, -1), 0),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
     ]))
-    story.append(hdr)
-    story.append(Spacer(1, 5 * mm))
-    story.append(HRFlowable(width=W, thickness=0.5, color=GRAY_LINE))
-    story.append(Spacer(1, 4 * mm))
 
-    # ── DADOS GERAIS ─────────────────────────────────────────
-    story.append(section_hdr('DADOS GERAIS'))
+    return [
+        hdr,
+        Spacer(1, 5 * mm),
+        HRFlowable(width=W, thickness=0.5, color=GRAY_LINE),
+        Spacer(1, 4 * mm),
+    ]
+
+
+def _build_general_data_section(org_data, fiscal_year, W, section_hdr_func):
+    items = [section_hdr_func('DADOS GERAIS')]
     LW = 45 * mm
+    org_name   = org_data.get('name', '')
+    presbytery = org_data.get('presbytery_name', '')
+
     geral_data = [
         [_p('Nome', 9, GRAY_TXT, align=TA_RIGHT),        _p(org_name, 9, BLACK)],
         [_p('Presbitério', 9, GRAY_TXT, align=TA_RIGHT),  _p(presbytery, 9, BLACK)],
@@ -733,98 +740,105 @@ def generate_activity_report(
         ('RIGHTPADDING',  (0, 0), (-1, -1), 6),
         ('BACKGROUND',    (0, 0), (0, -1), GRAY_ROW),
     ]))
-    story.append(geral_t)
-    story.append(Spacer(1, 4 * mm))
+    items.append(geral_t)
+    items.append(Spacer(1, 4 * mm))
+    return items
 
-    # ── DIRETORIA ─────────────────────────────────────────────
-    if board_data:
-        story.append(section_hdr('DIRETORIA'))
-        CW = [42 * mm, W - 42 * mm - 28 * mm - 28 * mm, 28 * mm, 28 * mm]
-        dir_rows = []
-        for b in board_data:
-            dir_rows.append([
-                _p(b['role_label'], 8.5, GRAY_TXT, align=TA_RIGHT),
-                _p(b['member_name'], 8.5, BLACK),
-                _p('CONTATO:', 7.5, GRAY_TXT),
-                _p(b['contact'], 8.5, BLACK),
-            ])
-        dir_t = Table(dir_rows, colWidths=CW)
-        dir_t.setStyle(TableStyle([
-            ('GRID',          (0, 0), (-1, -1), 0.5, GRAY_LINE),
-            ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
-            ('TOPPADDING',    (0, 0), (-1, -1), 3),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
-            ('LEFTPADDING',   (0, 0), (-1, -1), 5),
-            ('RIGHTPADDING',  (0, 0), (-1, -1), 5),
-            ('BACKGROUND',    (0, 0), (0, -1), GRAY_ROW),
-            ('BACKGROUND',    (2, 0), (2, -1), GRAY_ROW),
-        ]))
-        story.append(dir_t)
-        story.append(Spacer(1, 4 * mm))
 
-    # ── SECRETARIAS ───────────────────────────────────────────
-    if act_secs_data:
-        story.append(section_hdr('SECRETARIAS'))
-        CW = [42 * mm, W - 42 * mm - 28 * mm - 28 * mm, 28 * mm, 28 * mm]
-        sec_rows = []
-        for s in act_secs_data:
-            sec_rows.append([
-                _p(s['activity_name'], 8.5, GRAY_TXT, align=TA_RIGHT),
-                _p(s['member_name'], 8.5, BLACK),
-                _p('CONTATO:', 7.5, GRAY_TXT),
-                _p(s['contact'], 8.5, BLACK),
-            ])
-        sec_t = Table(sec_rows, colWidths=CW)
-        sec_t.setStyle(TableStyle([
-            ('GRID',          (0, 0), (-1, -1), 0.5, GRAY_LINE),
-            ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
-            ('TOPPADDING',    (0, 0), (-1, -1), 3),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
-            ('LEFTPADDING',   (0, 0), (-1, -1), 5),
-            ('RIGHTPADDING',  (0, 0), (-1, -1), 5),
-            ('BACKGROUND',    (0, 0), (0, -1), GRAY_ROW),
-            ('BACKGROUND',    (2, 0), (2, -1), GRAY_ROW),
-        ]))
-        story.append(sec_t)
+def _build_board_section(board_data, W, section_hdr_func):
+    if not board_data:
+        return []
+    items = [section_hdr_func('DIRETORIA')]
+    CW = [42 * mm, W - 42 * mm - 28 * mm - 28 * mm, 28 * mm, 28 * mm]
+    dir_rows = []
+    for b in board_data:
+        dir_rows.append([
+            _p(b['role_label'], 8.5, GRAY_TXT, align=TA_RIGHT),
+            _p(b['member_name'], 8.5, BLACK),
+            _p('CONTATO:', 7.5, GRAY_TXT),
+            _p(b['contact'], 8.5, BLACK),
+        ])
+    dir_t = Table(dir_rows, colWidths=CW)
+    dir_t.setStyle(TableStyle([
+        ('GRID',          (0, 0), (-1, -1), 0.5, GRAY_LINE),
+        ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING',    (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ('LEFTPADDING',   (0, 0), (-1, -1), 5),
+        ('RIGHTPADDING',  (0, 0), (-1, -1), 5),
+        ('BACKGROUND',    (0, 0), (0, -1), GRAY_ROW),
+        ('BACKGROUND',    (2, 0), (2, -1), GRAY_ROW),
+    ]))
+    items.append(dir_t)
+    items.append(Spacer(1, 4 * mm))
+    return items
 
-    story.append(PageBreak())
 
-    # ════════════════════════════════
-    # SEÇÃO I — INTRODUÇÃO
-    # ════════════════════════════════
-    story.append(section_bar_num('I', 'INTRODUÇÃO'))
-    story.append(Spacer(1, 4 * mm))
+def _build_secretaries_section(act_secs_data, W, section_hdr_func):
+    if not act_secs_data:
+        return []
+    items = [section_hdr_func('SECRETARIAS')]
+    CW = [42 * mm, W - 42 * mm - 28 * mm - 28 * mm, 28 * mm, 28 * mm]
+    sec_rows = []
+    for s in act_secs_data:
+        sec_rows.append([
+            _p(s['activity_name'], 8.5, GRAY_TXT, align=TA_RIGHT),
+            _p(s['member_name'], 8.5, BLACK),
+            _p('CONTATO:', 7.5, GRAY_TXT),
+            _p(s['contact'], 8.5, BLACK),
+        ])
+    sec_t = Table(sec_rows, colWidths=CW)
+    sec_t.setStyle(TableStyle([
+        ('GRID',          (0, 0), (-1, -1), 0.5, GRAY_LINE),
+        ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING',    (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ('LEFTPADDING',   (0, 0), (-1, -1), 5),
+        ('RIGHTPADDING',  (0, 0), (-1, -1), 5),
+        ('BACKGROUND',    (0, 0), (0, -1), GRAY_ROW),
+        ('BACKGROUND',    (2, 0), (2, -1), GRAY_ROW),
+    ]))
+    items.append(sec_t)
+    return items
 
-    # Versículo — alinhado à direita, itálico
+
+def _build_intro_section(report, W, TC, section_bar_num_func):
+    items = [
+        section_bar_num_func('I', 'INTRODUÇÃO'),
+        Spacer(1, 4 * mm),
+    ]
     if report.get('section_intro_verse') and report['section_intro_verse'].strip():
         verse_lines = report['section_intro_verse'].strip().split('\n')
+        verse_style = _get_paragraph_style(
+            size=10, color=BLACK, bold=False, align=TA_RIGHT,
+            leading=16, space_after=2, font_name='Helvetica-Oblique'
+        )
         for line in verse_lines:
             if line.strip():
-                story.append(Paragraph(
-                    f'<i>"{line.strip()}"</i>' if not line.strip().startswith('"')
-                    else f'<i>{line.strip()}</i>',
-                    ParagraphStyle('verse', fontSize=10, textColor=BLACK,
-                        fontName='Helvetica-Oblique', alignment=TA_RIGHT,
-                        leading=16, spaceAfter=2,
-                    )
-                ))
-        story.append(Spacer(1, 5 * mm))
+                txt = f'<i>"{line.strip()}"</i>' if not line.strip().startswith('"') else f'<i>{line.strip()}</i>'
+                items.append(Paragraph(txt, verse_style))
+        items.append(Spacer(1, 5 * mm))
 
-    render_text(report.get('section_intro'))
-    story.append(PageBreak())
+    _render_text_to_story(report.get('section_intro'), items)
+    return items
 
-    # ════════════════════════════════
-    # SEÇÃO II — ATIVIDADES REALIZADAS
-    # ════════════════════════════════
-    story.append(section_bar_num('II', 'ATIVIDADES REALIZADAS'))
-    story.append(Spacer(1, 3 * mm))
+
+def _build_activities_list_section(activities, W, TC, section_bar_num_func):
+    items = [
+        section_bar_num_func('II', 'ATIVIDADES REALIZADAS'),
+        Spacer(1, 3 * mm),
+    ]
+
+    MONTH_NAMES_PT = [
+        'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+    ]
 
     if activities:
         HW = (W - 4 * mm) / 2
         LLW = 18 * mm
         VW = HW - LLW
 
-        # Agrupa por mês
         by_month = {m: [] for m in range(1, 13)}
         for act in activities:
             month_num = int(act['start_date'].split('-')[1])
@@ -854,8 +868,8 @@ def generate_activity_report(
 
             act_rows = []
             for act in acts:
-                start = _dt.date.fromisoformat(act['start_date'])
-                end   = _dt.date.fromisoformat(act['end_date']) if act.get('end_date') else None
+                start = datetime.date.fromisoformat(act['start_date'])
+                end   = datetime.date.fromisoformat(act['end_date']) if act.get('end_date') else None
                 day_str = f"{start.day}/{end.day}" if end and end != start else str(start.day)
                 act_rows.append([
                     _p(day_str, 7.5, BLACK, align=TA_CENTER),
@@ -878,7 +892,6 @@ def generate_activity_report(
 
             return Table([[m_hdr], [col_hdr], [acts_t]], colWidths=[HW])
 
-        # Renderiza em 2 colunas: Jan×Jul, Fev×Ago, ...
         for left_m, right_m in zip(range(1, 7), range(7, 13)):
             left_block  = make_month_block(left_m, by_month[left_m])
             right_block = make_month_block(right_m, by_month[right_m])
@@ -891,18 +904,22 @@ def generate_activity_report(
                 ('TOPPADDING',    (0, 0), (-1, -1), 0),
                 ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
             ]))
-            story.append(pair)
-            story.append(Spacer(1, 3 * mm))
+            items.append(pair)
+            items.append(Spacer(1, 3 * mm))
     else:
-        story.append(_p('Nenhuma atividade cadastrada.', 9, GRAY_TXT, align=TA_CENTER))
+        items.append(_p('Nenhuma atividade cadastrada.', 9, GRAY_TXT, align=TA_CENTER))
 
-    story.append(PageBreak())
+    return items
 
-    # ════════════════════════════════
-    # SEÇÃO III — RAIO-X
-    # ════════════════════════════════
-    story.append(section_bar_num('III', 'RAIO-X'))
-    story.append(Spacer(1, 4 * mm))
+
+def _build_raio_x_section(report, W, TC, section_bar_num_func):
+    items = [
+        section_bar_num_func('III', 'RAIO-X'),
+        Spacer(1, 4 * mm),
+    ]
+    sub_title_style = _get_paragraph_style(
+        size=10, color=BLACK, bold=True, space_before=4, space_after=2, leading=14
+    )
 
     raio_x_sections = [
         ('Pontos Fortes:',                       report.get('section_raio_x_strong')),
@@ -912,19 +929,24 @@ def generate_activity_report(
     ]
     for sub_title, content in raio_x_sections:
         if content and content.strip():
-            story.append(Paragraph(sub_title, ParagraphStyle('sub',
-                fontSize=10, textColor=BLACK, fontName='Helvetica-Bold',
-                spaceBefore=4, spaceAfter=2, leading=14,
-            )))
-            render_text(content)
-            story.append(Spacer(1, 3 * mm))
+            items.append(Paragraph(sub_title, sub_title_style))
+            _render_text_to_story(content, items)
+            items.append(Spacer(1, 3 * mm))
 
-    story.append(PageBreak())
+    return items
 
-    # ════════════════════════════════
-    # SEÇÃO IV — REGISTROS DE ATIVIDADES (com fotos)
-    # ════════════════════════════════
-    story.append(section_bar_num('IV', 'REGISTROS DE ATIVIDADES'))
+
+def _build_activity_photos_section(activities, b2, bucket, W, TC, image_cache, section_bar_num_func):
+    items = [
+        section_bar_num_func('IV', 'REGISTROS DE ATIVIDADES'),
+    ]
+
+    act_title_style = _get_paragraph_style(
+        size=10, color=BLACK, bold=False, font_name='Helvetica', leading=14, space_after=4
+    )
+    act_desc_style = _get_paragraph_style(
+        size=9, color=BLACK, bold=False, font_name='Helvetica', align=4, leading=14, space_after=6
+    )
 
     first_activity = True
     for act in activities:
@@ -941,45 +963,38 @@ def generate_activity_report(
                     photos_data.append((None, b))
 
         if first_activity:
-            story.append(Spacer(1, 3 * mm))
+            items.append(Spacer(1, 3 * mm))
             first_activity = False
         else:
-            story.append(PageBreak())
+            items.append(PageBreak())
 
-        start = _dt.date.fromisoformat(act['start_date'])
-        end   = _dt.date.fromisoformat(act['end_date']) if act.get('end_date') else None
+        start = datetime.date.fromisoformat(act['start_date'])
+        end   = datetime.date.fromisoformat(act['end_date']) if act.get('end_date') else None
         if end and end != start:
             date_str = f"{start.day} e {end.day}/{end.month:02d}/{end.year}"
         else:
             date_str = start.strftime('%d/%m/%Y')
 
-        story.append(Paragraph(
-            f'{date_str} — <b>{act["title"]}</b>',
-            ParagraphStyle('act_title', fontSize=10, textColor=BLACK,
-                           fontName='Helvetica', leading=14, spaceAfter=4)
-        ))
+        items.append(Paragraph(f'{date_str} — <b>{act["title"]}</b>', act_title_style))
 
         if act.get('description'):
-            story.append(Paragraph(act['description'], ParagraphStyle('act_desc',
-                fontSize=9, textColor=BLACK, fontName='Helvetica',
-                alignment=4, leading=14, spaceAfter=6,
-            )))
+            items.append(Paragraph(act['description'], act_desc_style))
 
         if not photos_data:
-            story.append(Spacer(1, 4 * mm))
+            items.append(Spacer(1, 4 * mm))
             continue
 
         n = len(photos_data)
         MAX_H = 180 * mm
 
         if n == 1:
-            story.append(LazyImage(b2, bucket, photo_key=photos_data[0][0], photo_bytes=photos_data[0][1], max_w=W, max_h=MAX_H))
+            items.append(LazyImage(b2, bucket, photo_key=photos_data[0][0], photo_bytes=photos_data[0][1], max_w=W, max_h=MAX_H, image_cache=image_cache))
 
         elif n == 2:
             half = (W - 3 * mm) / 2
             row = Table([
-                [LazyImage(b2, bucket, photo_key=photos_data[0][0], photo_bytes=photos_data[0][1], max_w=half, max_h=MAX_H / 2),
-                 LazyImage(b2, bucket, photo_key=photos_data[1][0], photo_bytes=photos_data[1][1], max_w=half, max_h=MAX_H / 2)]
+                [LazyImage(b2, bucket, photo_key=photos_data[0][0], photo_bytes=photos_data[0][1], max_w=half, max_h=MAX_H / 2, image_cache=image_cache),
+                 LazyImage(b2, bucket, photo_key=photos_data[1][0], photo_bytes=photos_data[1][1], max_w=half, max_h=MAX_H / 2, image_cache=image_cache)]
             ], colWidths=[half, half])
             row.setStyle(TableStyle([
                 ('VALIGN',  (0, 0), (-1, -1), 'MIDDLE'),
@@ -987,14 +1002,14 @@ def generate_activity_report(
                 ('LEFTPADDING',  (0, 0), (-1, -1), 0),
                 ('RIGHTPADDING', (0, 0), (-1, -1), 0),
             ]))
-            story.append(row)
+            items.append(row)
 
         elif n == 3:
             half = (W - 3 * mm) / 2
             row_h = MAX_H / 2 - 3 * mm
             top_row = Table([
-                [LazyImage(b2, bucket, photo_key=photos_data[0][0], photo_bytes=photos_data[0][1], max_w=half, max_h=row_h),
-                 LazyImage(b2, bucket, photo_key=photos_data[1][0], photo_bytes=photos_data[1][1], max_w=half, max_h=row_h)]
+                [LazyImage(b2, bucket, photo_key=photos_data[0][0], photo_bytes=photos_data[0][1], max_w=half, max_h=row_h, image_cache=image_cache),
+                 LazyImage(b2, bucket, photo_key=photos_data[1][0], photo_bytes=photos_data[1][1], max_w=half, max_h=row_h, image_cache=image_cache)]
             ], colWidths=[half, half])
             top_row.setStyle(TableStyle([
                 ('VALIGN',  (0, 0), (-1, -1), 'MIDDLE'),
@@ -1002,20 +1017,20 @@ def generate_activity_report(
                 ('LEFTPADDING',  (0, 0), (-1, -1), 0),
                 ('RIGHTPADDING', (0, 0), (-1, -1), 0),
             ]))
-            story.append(top_row)
-            story.append(Spacer(1, 3 * mm))
-            bot = LazyImage(b2, bucket, photo_key=photos_data[2][0], photo_bytes=photos_data[2][1], max_w=W / 2, max_h=row_h)
+            items.append(top_row)
+            items.append(Spacer(1, 3 * mm))
+            bot = LazyImage(b2, bucket, photo_key=photos_data[2][0], photo_bytes=photos_data[2][1], max_w=W / 2, max_h=row_h, image_cache=image_cache)
             bot_row = Table([[bot]], colWidths=[W])
             bot_row.setStyle(TableStyle([('ALIGN', (0, 0), (-1, -1), 'CENTER')]))
-            story.append(bot_row)
+            items.append(bot_row)
 
         else:  # 4 fotos — grade 2×2
             half = (W - 3 * mm) / 2
             row_h = MAX_H / 2 - 3 * mm
             for i in range(0, 4, 2):
                 pair = Table([
-                    [LazyImage(b2, bucket, photo_key=photos_data[i][0], photo_bytes=photos_data[i][1], max_w=half, max_h=row_h),
-                     LazyImage(b2, bucket, photo_key=photos_data[i + 1][0], photo_bytes=photos_data[i + 1][1], max_w=half, max_h=row_h)]
+                    [LazyImage(b2, bucket, photo_key=photos_data[i][0], photo_bytes=photos_data[i][1], max_w=half, max_h=row_h, image_cache=image_cache),
+                     LazyImage(b2, bucket, photo_key=photos_data[i + 1][0], photo_bytes=photos_data[i + 1][1], max_w=half, max_h=row_h, image_cache=image_cache)]
                 ], colWidths=[half, half])
                 pair.setStyle(TableStyle([
                     ('VALIGN',  (0, 0), (-1, -1), 'MIDDLE'),
@@ -1023,48 +1038,236 @@ def generate_activity_report(
                     ('LEFTPADDING',  (0, 0), (-1, -1), 0),
                     ('RIGHTPADDING', (0, 0), (-1, -1), 0),
                 ]))
-                story.append(pair)
+                items.append(pair)
                 if i == 0:
-                    story.append(Spacer(1, 3 * mm))
+                    items.append(Spacer(1, 3 * mm))
 
-    # ════════════════════════════════
-    # SEÇÃO V — PALAVRA FINAL
-    # ════════════════════════════════
+    return items
+
+
+def _build_final_word_section(report, board_data, org_data, fiscal_year, W, TC, section_bar_num_func):
     final_word = report.get('section_final_word', '')
-    if final_word and final_word.strip():
-        story.append(PageBreak())
-        story.append(section_bar_num('V', 'PALAVRA FINAL'))
-        story.append(Spacer(1, 4 * mm))
-        render_text(final_word)
+    if not (final_word and final_word.strip()):
+        return []
 
-        story.append(Spacer(1, 10 * mm))
+    items = [
+        PageBreak(),
+        section_bar_num_func('V', 'PALAVRA FINAL'),
+        Spacer(1, 4 * mm),
+    ]
+    _render_text_to_story(final_word, items)
+    items.append(Spacer(1, 10 * mm))
 
-        # Nome e cargo — alinhado à direita, itálico como no modelo
-        sign_name = report.get('section_final_sign_name', '')
-        sign_role = report.get('section_final_sign_role', '')
+    sign_name = report.get('section_final_sign_name', '')
+    sign_role = report.get('section_final_sign_role', '')
 
-        if not sign_name:
-            pres = next((b for b in board_data if b.get('role_label') == 'Presidente'), None)
-            if pres:
-                sign_name = pres.get('member_name', '')
-                sign_role = f"Presidente da {org_data.get('name','')} {fiscal_year}"
+    if not sign_name:
+        pres = next((b for b in board_data if b.get('role_label') == 'Presidente'), None)
+        if pres:
+            sign_name = pres.get('member_name', '')
+            sign_role = f"Presidente da {org_data.get('name','')} {fiscal_year}"
 
-        if sign_name:
-            story.append(Paragraph(sign_name, ParagraphStyle('sig_name',
-                fontSize=10, textColor=BLACK, alignment=TA_RIGHT,
-                fontName='Helvetica-Bold', leading=14,
-            )))
-        if sign_role:
-            story.append(Paragraph(f'<i>{sign_role}</i>', ParagraphStyle('sig_role',
-                fontSize=9, textColor=colors.HexColor('#64748b'), alignment=TA_RIGHT,
-                fontName='Helvetica-Oblique', leading=12,
-            )))
+    if sign_name:
+        sig_name_style = _get_paragraph_style(
+            size=10, color=BLACK, bold=True, align=TA_RIGHT, leading=14
+        )
+        items.append(Paragraph(sign_name, sig_name_style))
+    if sign_role:
+        sig_role_style = _get_paragraph_style(
+            size=9, color=_tc('#64748b'), bold=False, align=TA_RIGHT,
+            leading=12, font_name='Helvetica-Oblique'
+        )
+        items.append(Paragraph(f'<i>{sign_role}</i>', sig_role_style))
+
+    return items
+
+
+# ═══════════════════════════════════════════════════════════════
+# RELATÓRIO DE ATIVIDADES (ORQUESTRADOR PRINCIPAL)
+# ═══════════════════════════════════════════════════════════════
+
+def generate_activity_report(
+    org_data: dict,
+    fiscal_year: int,
+    board_data: list,
+    act_secs_data: list,
+    activities: list,
+    report: dict,
+    logo_bytes: bytes = None,
+    ipb_logo_bytes: bytes = None,
+    b2_client = None,
+) -> bytes:
+    """Gera o Relatório de Atividades no modelo oficial (altamente otimizado)."""
+    t_start = time.perf_counter()
+
+    from app.services.storage import _get_client
+    from app.core.config import get_settings
+
+    b2 = b2_client if b2_client is not None else _get_client()
+    settings_obj = get_settings()
+    bucket = settings_obj.b2_bucket_name
+
+    # 1. Processamento e download paralelo de imagens com cache temporário em memória
+    image_cache = {}
+    photo_count = _download_and_process_photos_parallel(activities, b2, bucket, image_cache)
+    t_photos = time.perf_counter()
+
+    buf = io.BytesIO()
+    ML = MR = 15 * mm
+    W = A4[0] - ML - MR
+    TC = _tc(org_data.get('theme_color', '#1a2a6c'))
+
+    # Pre-criar ImageReaders para logos do cabeçalho uma única vez
+    ipb_reader = None
+    if ipb_logo_bytes:
+        try:
+            from reportlab.lib.utils import ImageReader
+            ipb_reader = ImageReader(io.BytesIO(ipb_logo_bytes))
+        except Exception:
+            pass
+
+    org_reader = None
+    if logo_bytes:
+        try:
+            from reportlab.lib.utils import ImageReader
+            org_reader = ImageReader(io.BytesIO(logo_bytes))
+        except Exception:
+            pass
+
+    # Cabeçalho e rodapé em todas as páginas
+    def _make_header_footer(canvas_obj, doc_obj):
+        canvas_obj.saveState()
+        W_page = A4[0]
+        ML_page = ML
+
+        # ── Cabeçalho (a partir da 2ª página)
+        if doc_obj.page > 1:
+            canvas_obj.setStrokeColor(TC)
+            canvas_obj.setLineWidth(0.5)
+
+            # Logo IPB
+            if ipb_reader:
+                try:
+                    canvas_obj.drawImage(ipb_reader, ML_page, A4[1]-13*mm,
+                                         width=9*mm, height=9*mm,
+                                         preserveAspectRatio=True, mask='auto')
+                except Exception:
+                    pass
+
+            # Logo da org
+            if org_reader:
+                try:
+                    canvas_obj.drawImage(org_reader, W_page-MR-9*mm, A4[1]-13*mm,
+                                         width=9*mm, height=9*mm,
+                                         preserveAspectRatio=True, mask='auto')
+                except Exception:
+                    pass
+
+            # Título central
+            canvas_obj.setFont('Helvetica-Bold', 8)
+            canvas_obj.setFillColor(colors.black)
+            canvas_obj.drawCentredString(
+                W_page/2, A4[1]-9*mm,
+                'RELATÓRIO DE ATIVIDADES'
+            )
+            canvas_obj.setFont('Helvetica', 7)
+            canvas_obj.setFillColor(_tc('#64748b'))
+            canvas_obj.drawCentredString(
+                W_page/2, A4[1]-13*mm,
+                f'Gestão {fiscal_year}  ·  {org_data.get("name","")}'
+            )
+
+            # Linha separadora do cabeçalho
+            canvas_obj.setStrokeColor(_tc('#e2e8f0'))
+            canvas_obj.line(ML_page, A4[1]-15*mm, W_page-MR, A4[1]-15*mm)
+
+        # ── Rodapé em todas as páginas ──
+        canvas_obj.setStrokeColor(_tc('#e2e8f0'))
+        canvas_obj.line(ML_page, 12*mm, W_page-MR, 12*mm)
+
+        # Lema/texto à esquerda no rodapé (configurável)
+        canvas_obj.setFont('Helvetica', 6.5)
+        canvas_obj.setFillColor(_tc('#94a3b8'))
+        soc_type = str(org_data.get('society_type', 'UMP')).upper()
+        if soc_type == 'UPH':
+            default_footer = 'CONFIANÇA EM JESUS, ENTUSIASMO NA AÇÃO E UNIÃO FRATERNAL'
+        else:
+            default_footer = 'ALEGRES NA ESPERANÇA – FORTES NA FÉ – DEDICADOS NO AMOR – UNIDOS NO TRABALHO'
+        footer_text = org_data.get('footer_text') or default_footer
+        canvas_obj.drawCentredString(W_page/2, 8*mm, footer_text)
+
+        # Número da página à direita
+        canvas_obj.setFont('Helvetica', 7)
+        canvas_obj.setFillColor(_tc('#94a3b8'))
+        canvas_obj.drawRightString(W_page-MR, 8*mm, f'Página {doc_obj.page}')
+
+        canvas_obj.restoreState()
+
+    doc = SimpleDocTemplate(buf, pagesize=A4,
+        leftMargin=ML, rightMargin=MR,
+        topMargin=20*mm,
+        bottomMargin=18*mm
+    )
+
+    story = []
+
+    def section_hdr(txt):
+        t = Table([[_p(txt, 9, WHITE, bold=True)]], colWidths=[W])
+        t.setStyle(TableStyle([
+            ('BACKGROUND',    (0, 0), (-1, -1), TC),
+            ('TOPPADDING',    (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ('LEFTPADDING',   (0, 0), (-1, -1), 6),
+        ]))
+        return t
+
+    def section_bar_num(num, title):
+        t = Table([[_p(f'{num}. {title}', 10, WHITE, bold=True, align=TA_RIGHT)]], colWidths=[W])
+        t.setStyle(TableStyle([
+            ('BACKGROUND',    (0, 0), (-1, -1), TC),
+            ('TOPPADDING',    (0, 0), (-1, -1), 5),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+            ('RIGHTPADDING',  (0, 0), (-1, -1), 8),
+        ]))
+        return t
+
+    # ── Construção modular das seções
+    story.extend(_build_header_section(logo_bytes, ipb_logo_bytes, org_data, fiscal_year, W))
+    story.extend(_build_general_data_section(org_data, fiscal_year, W, section_hdr))
+    if board_data:
+        story.extend(_build_board_section(board_data, W, section_hdr))
+    if act_secs_data:
+        story.extend(_build_secretaries_section(act_secs_data, W, section_hdr))
+
+    story.append(PageBreak())
+    story.extend(_build_intro_section(report, W, TC, section_bar_num))
+
+    story.append(PageBreak())
+    story.extend(_build_activities_list_section(activities, W, TC, section_bar_num))
+
+    story.append(PageBreak())
+    story.extend(_build_raio_x_section(report, W, TC, section_bar_num))
+
+    story.extend(_build_activity_photos_section(activities, b2, bucket, W, TC, image_cache, section_bar_num))
+    story.extend(_build_final_word_section(report, board_data, org_data, fiscal_year, W, TC, section_bar_num))
+
+    t_story = time.perf_counter()
 
     doc.build(story,
         onFirstPage=_make_header_footer,
         onLaterPages=_make_header_footer,
     )
+    t_end = time.perf_counter()
+
+    image_cache.clear()
     gc.collect()
+
+    logger.info(
+        "Relatório de Atividades PDF gerado em %.2fs | "
+        "Fotos: %d preparadas em %.2fs | Montagem PDF: %.2fs",
+        (t_end - t_start), photo_count, (t_photos - t_start), (t_end - t_story)
+    )
+
     return buf.getvalue()
 
 

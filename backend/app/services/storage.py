@@ -1,32 +1,37 @@
 import logging
 import re
-import boto3
-from botocore.exceptions import ClientError
+import threading
 from app.core.config import get_settings
 
 settings = get_settings()
 
 logger = logging.getLogger(__name__)
 
+_b2_client_instance = None
+_b2_client_lock = threading.Lock()
+
 
 def _get_client():
-    key_id = settings.b2_key_id or ""
-    logger.info(
-        "B2 client init - key_id prefix: %s... | endpoint: %s | bucket: %s",
-        key_id[:8],
-        settings.b2_endpoint_url,
-        settings.b2_bucket_name,
-    )
-    # ATENÇÃO: aws_access_key_id deve ser o "keyID" da Application Key
-    # (começa com "005..."), NÃO o accountId da conta.
-    # aws_secret_access_key deve ser a "applicationKey" (chave longa gerada).
-    return boto3.client(
-        "s3",
-        endpoint_url=settings.b2_endpoint_url,
-        aws_access_key_id=settings.b2_key_id,
-        aws_secret_access_key=settings.b2_application_key,
-        region_name="us-west-004",
-    )
+    global _b2_client_instance
+    if _b2_client_instance is None:
+        with _b2_client_lock:
+            if _b2_client_instance is None:
+                import boto3
+                key_id = settings.b2_key_id or ""
+                logger.info(
+                    "B2 client init - key_id prefix: %s... | endpoint: %s | bucket: %s",
+                    key_id[:8],
+                    settings.b2_endpoint_url,
+                    settings.b2_bucket_name,
+                )
+                _b2_client_instance = boto3.client(
+                    "s3",
+                    endpoint_url=settings.b2_endpoint_url,
+                    aws_access_key_id=settings.b2_key_id,
+                    aws_secret_access_key=settings.b2_application_key,
+                    region_name="us-west-004",
+                )
+    return _b2_client_instance
 
 
 def _download_base() -> str:
@@ -43,6 +48,7 @@ def _download_base() -> str:
 
 
 def upload_file(contents: bytes, key: str, content_type: str) -> str:
+    from botocore.exceptions import ClientError
     client = _get_client()
     try:
         client.put_object(
@@ -71,13 +77,11 @@ def get_presigned_url(key: str, expires_in: int = 3600) -> str:
 def delete_file(key: str) -> bool:
     client = _get_client()
     try:
-        # Lista todas as versões do arquivo
         response = client.list_object_versions(
             Bucket=settings.b2_bucket_name,
             Prefix=key
         )
 
-        # Exclui todas as versões (Versions) e markers de exclusão (DeleteMarkers)
         versions = response.get('Versions', [])
         delete_markers = response.get('DeleteMarkers', [])
 
@@ -106,7 +110,6 @@ def delete_file(key: str) -> bool:
 def delete_folder(prefix: str) -> bool:
     client = _get_client()
     try:
-        # Lista todas as versões de todos os objetos com esse prefixo
         response = client.list_object_versions(
             Bucket=settings.b2_bucket_name,
             Prefix=prefix
@@ -128,7 +131,6 @@ def delete_folder(prefix: str) -> bool:
         if not all_objects:
             return True
 
-        # Exclui tudo de uma vez
         client.delete_objects(
             Bucket=settings.b2_bucket_name,
             Delete={'Objects': all_objects}
