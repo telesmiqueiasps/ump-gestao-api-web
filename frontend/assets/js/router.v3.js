@@ -75,7 +75,7 @@ const NAV_ITEMS = [
   {
     page: 'eleicoes',
     label: 'Eleições',
-    icon: '🗳️',
+    icon: '/assets/img/eleicao.png',
     path: '/pages/eleicoes.html',
     localOnly: true,
     roles: ['presidente','vice_presidente','tesoureiro',

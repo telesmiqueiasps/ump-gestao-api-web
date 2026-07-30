@@ -291,20 +291,24 @@
 
     <!-- Voted / Wait state -->
     <div id="ballot-voted-state" class="hidden text-center" style="padding: 1rem 0;">
-      <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
+      <div style="margin-bottom: 1rem;">
+        <img src="/assets/img/check.png" style="width: 64px; height: 64px; margin: 0 auto; display: block;" alt="Voto Computado"/>
+      </div>
       <h3 style="font-size: 1.1rem; color: var(--gray800); margin-bottom: .5rem;">Voto Computado com Sucesso!</h3>
       <p style="font-size: .85rem; color: var(--gray600); line-height: 1.6; margin-bottom: 1.5rem;">
         Seu voto secreto foi computado de forma totalmente anônima. Aguarde a diretoria encerrar esta rodada de votação.
       </p>
-      <button class="btn btn-secondary" id="btn-refresh-status">
-        🔄 Verificar Próxima Rodada
+      <button class="btn btn-secondary" id="btn-refresh-status" style="display: inline-flex; align-items: center; gap: .5rem; justify-content: center; margin: 0 auto;">
+        <img src="/assets/img/trocar.png" style="width: 18px; height: 18px;" alt=""/>
+        <span>Votar Próximo Cargo</span>
       </button>
     </div>
 
     <!-- Sair / Trocar de Código -->
     <div style="margin-top: 1.5rem; border-top: 1.5px solid var(--gray200); padding-top: 1rem; text-align: center;">
-      <button class="btn btn-secondary" id="btn-logout" style="width: auto; margin: 0 auto; padding: .5rem 1.25rem; font-size: .85rem; min-height: auto; display: inline-flex;">
-        🚪 Sair / Votar com outro código
+      <button class="btn btn-secondary" id="btn-logout" style="width: auto; margin: 0 auto; padding: .5rem 1.25rem; font-size: .85rem; min-height: auto; display: inline-flex; align-items: center; gap: .5rem; justify-content: center;">
+        <img src="/assets/img/sair.png" style="width: 16px; height: 16px;" alt=""/>
+        <span>Sair / Votar com outro código</span>
       </button>
     </div>
   </div>
@@ -477,7 +481,7 @@
   // Refresh status
   document.getElementById('btn-refresh-status').addEventListener('click', async () => {
     const btn = document.getElementById('btn-refresh-status')
-    setLoading(btn, true, 'Verificar Próxima Rodada')
+    setLoading(btn, true, 'Aguarde...')
     clearAlert('ballot-alert')
     
     try {
@@ -503,7 +507,7 @@
     } catch (err) {
       showAlert('ballot-alert', err.message)
     } finally {
-      setLoading(btn, false, '🔄 Verificar Próxima Rodada')
+      setLoading(btn, false, '<img src="/assets/img/trocar.png" style="width: 18px; height: 18px;" alt=""/> <span>Votar Próximo Cargo</span>')
     }
   })
 
