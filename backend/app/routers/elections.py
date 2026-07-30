@@ -263,6 +263,18 @@ def close_round(
     if not session:
         raise HTTPException(status_code=404, detail="Nenhuma eleição em votação encontrada.")
 
+    # Check if all voters have cast their votes
+    not_voted_count = db.query(ElectionVoter).filter(
+        ElectionVoter.election_session_id == session.id,
+        ElectionVoter.has_voted_current_round == False
+    ).count()
+
+    if not_voted_count > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Ainda faltam {not_voted_count} pessoa(s) votar(em). Não é possível encerrar o escrutínio."
+        )
+
     # Fetch votes
     votes = db.query(ElectionVote).filter(
         ElectionVote.election_session_id == session.id,
@@ -299,7 +311,6 @@ def close_round(
 
     if total_votes > 0:
         majority_threshold = total_votes / 2
-        # Check if first candidate has majority
         top_candidate = results_list[0]
         
         # Absolute majority required for round 1 and 2
@@ -319,42 +330,29 @@ def close_round(
             new_elected[session.current_role] = winner_id
             session.elected_positions = new_elected
             
-            # Find next role
+            # Find next role to describe next step
             roles = session.roles_to_dispute
             current_idx = roles.index(session.current_role)
             if current_idx + 1 < len(roles):
-                session.current_role = roles[current_idx + 1]
-                session.current_round = 1
-                next_step = f"Iniciar votação para {session.current_role.replace('_', ' ').title()}"
+                session.status = "results"
+                next_step = f"Iniciar votação para {roles[current_idx + 1].replace('_', ' ').title()}"
             else:
                 session.status = "completed"
                 session.current_role = None
                 session.current_round = 1
                 next_step = "Eleição concluída"
         else:
-            # Not elected, advance round
+            # Not elected, transition to results state
+            session.status = "results"
             if session.current_round == 1:
-                session.current_round = 2
                 next_step = "Iniciar 2º Escrutínio (todos os candidatos continuam)"
             elif session.current_round == 2:
-                session.current_round = 3
                 next_step = "Iniciar 3º Escrutínio (apenas os 2 mais votados)"
             else:
-                # Should not normally happen if round 3 resolves, but if all blank or strict tie:
-                # Let's say if round 3 has a strict tie, we stay in round 3 and re-vote
                 next_step = "Empate no 3º Escrutínio. Uma nova votação da rodada 3 foi configurada."
-
-        # Reset has_voted_current_round for next round/role
-        db.query(ElectionVoter).filter(
-            ElectionVoter.election_session_id == session.id
-        ).update({"has_voted_current_round": False}, synchronize_session=False)
-
     else:
-        # 0 votes cast
+        session.status = "results"
         next_step = "Nenhum voto registrado. Repetindo a rodada atual."
-        db.query(ElectionVoter).filter(
-            ElectionVoter.election_session_id == session.id
-        ).update({"has_voted_current_round": False}, synchronize_session=False)
 
     db.commit()
     
@@ -446,6 +444,7 @@ def get_public_session(
     return {
         "session_id": str(session.id),
         "title": session.title,
+        "status": session.status,
         "current_role": session.current_role,
         "current_round": session.current_round,
         "has_voted": voter.has_voted_current_round,
@@ -667,3 +666,86 @@ def delete_election(
     db.delete(session)
     db.commit()
     return {"detail": "Eleição excluída com sucesso."}
+
+
+# Advance Active Election to Next Round/Role
+@router.post("/active/advance")
+def advance_election(
+    current_user: User = Depends(require_local_ump),
+    db: Session = Depends(get_db),
+):
+    session = db.query(ElectionSession).filter(
+        ElectionSession.local_ump_id == current_user.organization_id,
+        ElectionSession.status == 'results'
+    ).first()
+    if not session:
+        raise HTTPException(status_code=400, detail="Nenhuma sessão eleitoral no estado de apuração encontrada.")
+
+    # 1. Fetch votes of current round/role to determine if anyone was elected
+    votes = db.query(ElectionVote).filter(
+        ElectionVote.election_session_id == session.id,
+        ElectionVote.role == session.current_role,
+        ElectionVote.round == session.current_round
+    ).all()
+
+    total_votes = len(votes)
+    results = {}
+    for v in votes:
+        cid = v.candidate_member_id
+        results[cid] = results.get(cid, 0) + 1
+
+    results_list = []
+    for cid, count in results.items():
+        results_list.append({"candidate_id": str(cid) if cid else "blank", "votes": count})
+    
+    results_list.sort(key=lambda x: x["votes"], reverse=True)
+
+    elected = False
+    if total_votes > 0:
+        majority_threshold = total_votes / 2
+        top_candidate = results_list[0]
+        if session.current_round in (1, 2):
+            if top_candidate["candidate_id"] != "blank" and top_candidate["votes"] > majority_threshold:
+                elected = True
+        else:
+            if top_candidate["candidate_id"] != "blank":
+                elected = True
+
+    # 2. Perform the actual transition
+    if elected:
+        # Move to next role
+        roles = session.roles_to_dispute
+        current_idx = roles.index(session.current_role)
+        if current_idx + 1 < len(roles):
+            session.current_role = roles[current_idx + 1]
+            session.current_round = 1
+            session.status = "voting"
+        else:
+            session.status = "completed"
+            session.current_role = None
+            session.current_round = 1
+    else:
+        # Move to next round
+        if session.current_round == 1:
+            session.current_round = 2
+            session.status = "voting"
+        elif session.current_round == 2:
+            session.current_round = 3
+            session.status = "voting"
+        else:
+            # Round 3 tie: stay in round 3
+            session.current_round = 3
+            session.status = "voting"
+
+    # Reset has_voted_current_round for the next phase
+    db.query(ElectionVoter).filter(
+        ElectionVoter.election_session_id == session.id
+    ).update({"has_voted_current_round": False}, synchronize_session=False)
+
+    db.commit()
+
+    return {
+        "status": session.status,
+        "current_role": session.current_role,
+        "current_round": session.current_round,
+    }

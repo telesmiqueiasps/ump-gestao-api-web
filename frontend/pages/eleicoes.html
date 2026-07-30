@@ -144,6 +144,10 @@
       .print-code-card h2 { font-size: 1.6rem; margin-bottom: 0.5cm; }
       .print-code-card .print-code { font-size: 2.5rem; font-family: monospace; font-weight: bold; }
     }
+    .tab-btn.active {
+      color: var(--blue-700) !important;
+      border-bottom-color: var(--blue-700) !important;
+    }
   </style>
 </head>
 <body>
@@ -323,6 +327,19 @@
               <button class="btn btn-secondary btn-sm" id="btn-copy-codes">Copiar Todos os Códigos</button>
               <button class="btn btn-secondary btn-sm" id="btn-print-codes">Imprimir Senhas</button>
             </div>
+          </div>
+
+          <!-- Tab Navigation for Voters -->
+          <div class="tabs-nav" style="display: flex; gap: .75rem; border-bottom: 2px solid var(--slate-150); padding-bottom: .25rem; margin-bottom: 1.25rem;">
+            <button class="tab-btn active" id="tab-voters-all" style="background: none; border: none; padding: .5rem .75rem; cursor: pointer; font-weight: 600; font-family: inherit; font-size: .85rem; color: var(--slate-600); border-bottom: 3px solid transparent; transition: color .15s, border-bottom-color .15s;">
+              Todos / Senhas (<span id="count-tab-all">0</span>)
+            </button>
+            <button class="tab-btn" id="tab-voters-voted" style="background: none; border: none; padding: .5rem .75rem; cursor: pointer; font-weight: 600; font-family: inherit; font-size: .85rem; color: var(--slate-600); border-bottom: 3px solid transparent; transition: color .15s, border-bottom-color .15s;">
+              Já Votaram (<span id="count-tab-voted">0</span>)
+            </button>
+            <button class="tab-btn" id="tab-voters-pending" style="background: none; border: none; padding: .5rem .75rem; cursor: pointer; font-weight: 600; font-family: inherit; font-size: .85rem; color: var(--slate-600); border-bottom: 3px solid transparent; transition: color .15s, border-bottom-color .15s;">
+              Faltam Votar (<span id="count-tab-pending">0</span>)
+            </button>
           </div>
 
           <div class="code-grid mb-2" id="voters-code-container">
@@ -559,6 +576,9 @@
       const configPanel = document.getElementById('active-config-panel')
       const votingPanel = document.getElementById('active-voting-panel')
 
+      const btnCloseRound = document.getElementById('btn-close-round')
+      let advBtn = document.getElementById('btn-panel-advance')
+
       if (activeSession.status === 'config') {
         badge.className = 'badge badge-amber'
         badge.textContent = 'Configuração'
@@ -567,6 +587,37 @@
       } else {
         badge.className = 'badge badge-green'
         badge.textContent = 'Votação Ativa'
+        
+        if (activeSession.status === 'results') {
+          badge.className = 'badge badge-amber'
+          badge.textContent = 'Apuração (Pausada)'
+          
+          btnCloseRound.classList.add('hidden')
+          if (!advBtn) {
+            const parent = btnCloseRound.parentNode
+            advBtn = document.createElement('button')
+            advBtn.className = 'btn btn-success'
+            advBtn.id = 'btn-panel-advance'
+            advBtn.textContent = 'Liberar Próxima Fase'
+            advBtn.onclick = async () => {
+              setLoading(advBtn, true, 'Liberando...')
+              try {
+                await api.post('/api/elections/active/advance')
+                loadScreen()
+              } catch (err) {
+                alert('Erro ao avançar: ' + err.message)
+              } finally {
+                setLoading(advBtn, false, 'Liberar Próxima Fase')
+              }
+            }
+            parent.appendChild(advBtn)
+          }
+          advBtn.classList.remove('hidden')
+        } else {
+          btnCloseRound.classList.remove('hidden')
+          if (advBtn) advBtn.classList.add('hidden')
+        }
+
         configPanel.classList.add('hidden')
         votingPanel.classList.remove('hidden')
       }
@@ -603,6 +654,60 @@
 
     let statusInterval = null
 
+    let currentVotersTab = 'all'
+    let lastVotersData = []
+
+    const tabAll = document.getElementById('tab-voters-all')
+    const tabVoted = document.getElementById('tab-voters-voted')
+    const tabPending = document.getElementById('tab-voters-pending')
+
+    function switchVotersTab(tab) {
+      currentVotersTab = tab
+      tabAll.classList.toggle('active', tab === 'all')
+      tabVoted.classList.toggle('active', tab === 'voted')
+      tabPending.classList.toggle('active', tab === 'pending')
+      renderVotersGrid()
+    }
+
+    tabAll.onclick = () => switchVotersTab('all')
+    tabVoted.onclick = () => switchVotersTab('voted')
+    tabPending.onclick = () => switchVotersTab('pending')
+
+    function renderVotersGrid() {
+      const container = document.getElementById('voters-code-container')
+      if (!lastVotersData || !lastVotersData.length) {
+        container.innerHTML = '<p class="text-slate-400 text-center py-3" style="grid-column: 1/-1;">Nenhum eleitor cadastrado.</p>'
+        return
+      }
+
+      let filtered = lastVotersData
+      if (currentVotersTab === 'voted') {
+        filtered = lastVotersData.filter(v => v.has_voted)
+      } else if (currentVotersTab === 'pending') {
+        filtered = lastVotersData.filter(v => !v.has_voted)
+      }
+
+      if (!filtered.length) {
+        container.innerHTML = '<p class="text-slate-400 text-center py-3" style="grid-column: 1/-1;">Nenhum eleitor nesta categoria.</p>'
+        return
+      }
+
+      container.innerHTML = filtered.map(v => {
+        const voteBadge = v.has_voted
+          ? `<span class="badge voter-badge-voted">Votou</span>`
+          : `<span class="badge voter-badge-pending">Não votou</span>`
+        return `
+          <div class="code-card">
+            <div>
+              <div class="code-card-name" title="${v.full_name}">${v.full_name}</div>
+              <div style="margin-top: .3rem;">${voteBadge}</div>
+            </div>
+            <div class="code-card-code">${v.access_code}</div>
+          </div>
+        `
+      }).join('')
+    }
+
     // Load Realtime Status
     async function loadRealtimeStatus() {
       try {
@@ -619,22 +724,13 @@
         const votingUrl = `${window.location.origin}/votar.html?session=${stats.session_id}`
         document.getElementById('voting-url-text').textContent = votingUrl
 
-        // Populate voters & codes card list
-        const container = document.getElementById('voters-code-container')
-        container.innerHTML = stats.voters.map(v => {
-          const voteBadge = v.has_voted
-            ? `<span class="badge voter-badge-voted">Votou</span>`
-            : `<span class="badge voter-badge-pending">Não votou</span>`
-          return `
-            <div class="code-card">
-              <div>
-                <div class="code-card-name" title="${v.full_name}">${v.full_name}</div>
-                <div style="margin-top: .3rem;">${voteBadge}</div>
-              </div>
-              <div class="code-card-code">${v.access_code}</div>
-            </div>
-          `
-        }).join('')
+        // Save last data and update counts
+        lastVotersData = stats.voters
+        document.getElementById('count-tab-all').textContent = stats.voters.length
+        document.getElementById('count-tab-voted').textContent = stats.voters.filter(v => v.has_voted).length
+        document.getElementById('count-tab-pending').textContent = stats.voters.filter(v => !v.has_voted).length
+
+        renderVotersGrid()
 
         // Configure click event copy button
         document.getElementById('btn-copy-url').onclick = () => {
@@ -727,9 +823,18 @@
         openModal('modal-results')
 
         // Setup click handler for next step button
-        document.getElementById('btn-next-step').onclick = () => {
-          closeModal('modal-results')
-          loadScreen()
+        document.getElementById('btn-next-step').onclick = async () => {
+          const nextBtn = document.getElementById('btn-next-step')
+          setLoading(nextBtn, true, 'Avançar para o Próximo Passo')
+          try {
+            await api.post('/api/elections/active/advance')
+            closeModal('modal-results')
+            loadScreen()
+          } catch (err) {
+            alert('Erro ao avançar de fase: ' + err.message)
+          } finally {
+            setLoading(nextBtn, false, 'Avançar para o Próximo Passo')
+          }
         }
 
       } catch (err) {
