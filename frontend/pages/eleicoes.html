@@ -360,6 +360,33 @@
         </div>
       </div>
 
+      <!-- ── MODAL: ELECTION DETAILS ── -->
+      <div class="modal-overlay" id="modal-election-details">
+        <div class="modal modal-lg">
+          <div class="modal-header">
+            <h2 id="det-modal-title">Detalhes da Eleição</h2>
+            <button class="modal-close">✕</button>
+          </div>
+          
+          <div style="margin-bottom: 1.25rem;">
+            <p style="font-size: .85rem; color: var(--slate-500);" id="det-modal-date">Data: —</p>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 1.5px solid var(--slate-150); padding-bottom: .75rem;">
+            <h3>Resultados da Apuração</h3>
+            <button class="btn btn-primary btn-sm" id="btn-det-download-pdf">📥 Baixar PDF Oficial</button>
+          </div>
+
+          <div id="det-modal-content" style="max-height: 400px; overflow-y: auto; padding-right: .5rem;">
+            <!-- Content dynamically generated -->
+          </div>
+
+          <div class="modal-footer" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1.5px solid var(--slate-100);">
+            <button class="btn btn-secondary modal-close">Fechar</button>
+          </div>
+        </div>
+      </div>
+
       <!-- ── SECTION: HISTORY ── -->
       <section id="section-history" class="hidden">
         <div class="card">
@@ -373,6 +400,7 @@
                   <th>Data</th>
                   <th>Título da Eleição</th>
                   <th>Diretoria Eleita</th>
+                  <th style="width: 140px;" class="text-center">Ações</th>
                 </tr>
               </thead>
               <tbody id="history-table-body">
@@ -717,7 +745,7 @@
         const list = await api.get('/api/elections/history')
         const tbody = document.getElementById('history-table-body')
         if (!list.length) {
-          tbody.innerHTML = `<tr><td colspan="3" class="table-empty">Nenhuma eleição concluída no histórico.</td></tr>`
+          tbody.innerHTML = `<tr><td colspan="4" class="table-empty">Nenhuma eleição concluída no histórico.</td></tr>`
           return
         }
 
@@ -731,11 +759,130 @@
               <td>${formatDate(h.created_at.split('T')[0])}</td>
               <td style="font-weight: 600;">${h.title}</td>
               <td>${positionsHtml || '—'}</td>
+              <td>
+                <div class="row-actions" style="justify-content: center;">
+                  <button class="btn btn-ghost btn-icon" title="Ver Detalhes" onclick="viewElectionDetails('${h.id}')">📋</button>
+                  <button class="btn btn-ghost btn-icon" title="Baixar PDF" onclick="downloadElectionPdf('${h.id}')">📥</button>
+                  <button class="btn btn-ghost btn-icon danger" title="Excluir Eleição" onclick="deleteCompletedElection('${h.id}', '${h.title.replace(/'/g, "\\'")}')">✕</button>
+                </div>
+              </td>
             </tr>
           `
         }).join('')
       } catch (err) {
         console.error('Erro ao carregar histórico:', err)
+      }
+    }
+
+    // ── ELECTION DETAILS & PDF & DELETE ──
+    let selectedDetailsSessionId = null
+
+    window.viewElectionDetails = async (sessionId) => {
+      selectedDetailsSessionId = sessionId
+      clearAlert('page-alert')
+      
+      const content = document.getElementById('det-modal-content')
+      content.innerHTML = '<p class="text-slate-400 text-center py-3">Carregando detalhes da apuração... ⏳</p>'
+      openModal('modal-election-details')
+
+      try {
+        const details = await api.get(`/api/elections/session/${sessionId}/details`)
+        
+        document.getElementById('det-modal-title').textContent = details.title
+        document.getElementById('det-modal-date').textContent = `Data: ${formatDate(details.created_at.split('T')[0])}`
+
+        let html = ''
+        details.roles_disputed.forEach(r => {
+          const winnerText = r.winner_name 
+            ? `<div style="font-size: .85rem; font-weight: 600; color: var(--green-600); margin-bottom: .6rem;">✨ Eleito(a): ${r.winner_name}</div>`
+            : `<div style="font-size: .85rem; font-weight: 600; color: var(--brand-red); margin-bottom: .6rem;">❌ Cargo não concluído ou sem eleito</div>`
+            
+          let roundsHtml = ''
+          r.rounds.forEach(rnd => {
+            let candidatesHtml = rnd.results.map(cand => {
+              return `
+                <div style="display:flex; justify-content:space-between; font-size:.8rem; padding:.25rem 0; border-bottom:1px dashed var(--slate-200)">
+                  <span>${cand.name}</span>
+                  <span style="font-weight:600">${cand.votes} voto${cand.votes !== 1 ? 's' : ''} (${Math.round(cand.percentage)}%)</span>
+                </div>
+              `
+            }).join('')
+            
+            roundsHtml += `
+              <div style="margin-bottom: 1rem; background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: var(--radius); padding: .75rem;">
+                <div style="font-size: .8rem; font-weight: 700; color: var(--slate-700); margin-bottom: .4rem; display:flex; justify-content:space-between;">
+                  <span>• ${rnd.round}º Escrutínio</span>
+                  <span>Total: ${rnd.total_votes} votos</span>
+                </div>
+                <div>${candidatesHtml}</div>
+              </div>
+            `
+          })
+
+          html += `
+            <div style="margin-bottom: 1.5rem; border: 1.5px solid var(--slate-200); border-radius: var(--radius-lg); padding: 1rem; background: #fff;">
+              <h4 style="font-size: .95rem; font-weight: 700; color: var(--slate-800); margin-bottom: .3rem;">${r.role_label}</h4>
+              ${winnerText}
+              <div style="margin-top: .5rem;">${roundsHtml}</div>
+            </div>
+          `
+        })
+
+        content.innerHTML = html || '<p class="text-slate-400 text-center py-3">Nenhum detalhe de voto encontrado para esta eleição.</p>'
+
+      } catch (err) {
+        content.innerHTML = `<div class="alert alert-error">${err.message}</div>`
+      }
+    }
+
+    window.downloadElectionPdf = async (sessionId) => {
+      const targetSessionId = sessionId || selectedDetailsSessionId
+      if (!targetSessionId) return
+      
+      const btn = document.getElementById('btn-det-download-pdf')
+      const origText = btn.innerHTML
+      setLoading(btn, true, 'Baixando...')
+
+      try {
+        const token = localStorage.getItem('access_token')
+        const BASE_URL = 'https://ump-gestao-api.onrender.com'
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        const API_URL = isLocal ? 'http://localhost:8000' : BASE_URL
+        
+        const response = await fetch(`${API_URL}/api/elections/session/${targetSessionId}/pdf`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({ detail: 'Erro ao gerar PDF' }))
+          throw new Error(err.detail || 'Erro ao gerar PDF')
+        }
+        const blob   = await response.blob()
+        const objUrl = URL.createObjectURL(blob)
+        window.open(objUrl, '_blank')
+        setTimeout(() => URL.revokeObjectURL(objUrl), 15000)
+      } catch (err) {
+        alert('Erro ao baixar PDF: ' + err.message)
+      } finally {
+        setLoading(btn, false, origText)
+      }
+    }
+
+    // Bind PDF download button inside modal
+    document.getElementById('btn-det-download-pdf').addEventListener('click', () => {
+      downloadElectionPdf(selectedDetailsSessionId)
+    })
+
+    window.deleteCompletedElection = async (sessionId, title) => {
+      if (!confirm(`Tem certeza absoluta de que deseja excluir permanentemente a eleição "${title}" e todos os seus votos do histórico? Esta ação é irreversível!`)) {
+        return
+      }
+
+      try {
+        await api.delete(`/api/elections/session/${sessionId}`)
+        alert('Eleição excluída com sucesso!')
+        loadScreen()
+      } catch (err) {
+        alert('Erro ao excluir eleição: ' + err.message)
       }
     }
 

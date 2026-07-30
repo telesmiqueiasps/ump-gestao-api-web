@@ -1,17 +1,22 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, text
 from pydantic import BaseModel
 from typing import Optional, List
 from uuid import UUID
 import secrets
+import io
+import os
 
 from app.db.session import get_db
 from app.models.user import User
 from app.models.member import Member
+from app.models.local_ump import LocalUmp
 from app.models.enums import MemberType
 from app.models.election import ElectionSession, ElectionVoter, ElectionVote
 from app.core.dependencies import require_local_ump
+from app.services.pdf_generator import generate_election_report
 
 router = APIRouter()
 
@@ -487,3 +492,178 @@ def cast_public_vote(
     db.commit()
 
     return {"detail": "Voto registrado com sucesso!"}
+
+
+def _get_session_report_data(db: Session, session: ElectionSession) -> dict:
+    ROLE_LABELS = {
+        'presidente': 'Presidente',
+        'vice_presidente': 'Vice-Presidente',
+        '1_secretario': '1º Secretário(a)',
+        '2_secretario': '2º Secretário(a)',
+        'secretario_executivo': 'Secretário Executivo',
+        'tesoureiro': 'Tesoureiro(a)',
+    }
+
+    # Fetch all votes for this session
+    votes = db.query(ElectionVote).filter(
+        ElectionVote.election_session_id == session.id
+    ).all()
+
+    # Load elected names
+    elected_positions_names = {}
+    elected_positions = session.elected_positions or {}
+    for role, member_id in elected_positions.items():
+        try:
+            m = db.query(Member).filter(Member.id == UUID(member_id)).first()
+            elected_positions_names[role] = m.full_name if m else "Desconhecido"
+        except Exception:
+            elected_positions_names[role] = "Desconhecido"
+
+    # Group votes by role and round
+    # votes_map = { role: { round: { candidate_id: count } } }
+    votes_map = {}
+    for v in votes:
+        role = v.role
+        r = v.round
+        cid = v.candidate_member_id # UUID or None (blank)
+        
+        if role not in votes_map:
+            votes_map[role] = {}
+        if r not in votes_map[role]:
+            votes_map[role][r] = {}
+            
+        votes_map[role][r][cid] = votes_map[role][r].get(cid, 0) + 1
+
+    roles_disputed = []
+    for role in session.roles_to_dispute:
+        role_label = ROLE_LABELS.get(role, role.replace('_', ' ').title())
+        winner_name = elected_positions_names.get(role)
+
+        rounds_list = []
+        role_votes = votes_map.get(role, {})
+        for r_num in sorted(role_votes.keys()):
+            r_votes = role_votes[r_num]
+            total_r_votes = sum(r_votes.values())
+
+            results_list = []
+            for cid, count in r_votes.items():
+                if cid is None:
+                    name = "Branco/Nulo"
+                    cid_str = "blank"
+                else:
+                    m = db.query(Member).filter(Member.id == cid).first()
+                    name = m.full_name if m else "Desconhecido"
+                    cid_str = str(cid)
+                
+                pct = (count / total_r_votes * 100) if total_r_votes > 0 else 0
+                results_list.append({
+                    "candidate_id": cid_str,
+                    "name": name,
+                    "votes": count,
+                    "percentage": pct
+                })
+            
+            results_list.sort(key=lambda x: x["votes"], reverse=True)
+            rounds_list.append({
+                "round": r_num,
+                "total_votes": total_r_votes,
+                "results": results_list
+            })
+
+        roles_disputed.append({
+            "role": role,
+            "role_label": role_label,
+            "winner_name": winner_name,
+            "rounds": rounds_list
+        })
+
+    return {
+        "id": str(session.id),
+        "title": session.title,
+        "created_at": session.created_at.isoformat() if session.created_at else None,
+        "status": session.status,
+        "elected_positions": elected_positions_names,
+        "roles_disputed": roles_disputed
+    }
+
+
+@router.get("/session/{session_id}/details")
+def get_election_details(
+    session_id: UUID,
+    current_user: User = Depends(require_local_ump),
+    db: Session = Depends(get_db),
+):
+    session = db.query(ElectionSession).filter(
+        ElectionSession.id == session_id,
+        ElectionSession.local_ump_id == current_user.organization_id
+    ).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Eleição não encontrada.")
+    return _get_session_report_data(db, session)
+
+
+@router.get("/session/{session_id}/pdf")
+def get_election_pdf(
+    session_id: UUID,
+    current_user: User = Depends(require_local_ump),
+    db: Session = Depends(get_db),
+):
+    session = db.query(ElectionSession).filter(
+        ElectionSession.id == session_id,
+        ElectionSession.local_ump_id == current_user.organization_id
+    ).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Eleição não encontrada.")
+    
+    election_data = _get_session_report_data(db, session)
+    
+    local_ump = db.query(LocalUmp).filter(LocalUmp.id == current_user.organization_id).first()
+    org_data = {
+        "name": local_ump.name if local_ump else "UMP Local",
+        "theme_color": local_ump.theme_color if local_ump and local_ump.theme_color else "#1a2a6c"
+    }
+    
+    ipb_logo_bytes = None
+    try:
+        ipb_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'ipb_logo.png')
+        if os.path.exists(ipb_path):
+            with open(ipb_path, 'rb') as f:
+                ipb_logo_bytes = f.read()
+    except Exception:
+        pass
+
+    logo_bytes = None
+    
+    pdf_bytes = generate_election_report(
+        election_data=election_data,
+        org_data=org_data,
+        logo_bytes=logo_bytes,
+        ipb_logo_bytes=ipb_logo_bytes,
+        theme_color=org_data["theme_color"],
+    )
+    
+    safe_title = session.title.replace('/', '-').replace(' ', '_')
+    filename = f"Relatorio_Eleicao_{safe_title}.pdf"
+    return StreamingResponse(
+        io.BytesIO(pdf_bytes),
+        media_type='application/pdf',
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
+
+
+@router.delete("/session/{session_id}")
+def delete_election(
+    session_id: UUID,
+    current_user: User = Depends(require_local_ump),
+    db: Session = Depends(get_db),
+):
+    session = db.query(ElectionSession).filter(
+        ElectionSession.id == session_id,
+        ElectionSession.local_ump_id == current_user.organization_id
+    ).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Eleição não encontrada.")
+        
+    db.delete(session)
+    db.commit()
+    return {"detail": "Eleição excluída com sucesso."}

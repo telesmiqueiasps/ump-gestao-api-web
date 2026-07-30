@@ -2261,5 +2261,194 @@ def generate_uph_stat_report(
     doc.build(story)
     return buf.getvalue()
 
+
+# ═══════════════════════════════════════════════════════════════
+# RELATÓRIO DE ELEIÇÕES
+# ═══════════════════════════════════════════════════════════════
+
+def generate_election_report(
+    election_data: dict,
+    org_data: dict,
+    logo_bytes: bytes = None,
+    ipb_logo_bytes: bytes = None,
+    theme_color: str = '#1a2a6c',
+) -> bytes:
+    """Gera o PDF com o histórico e apuração completa dos escrutínios da eleição."""
+    buf = io.BytesIO()
+    ML = MR = 15 * mm
+    MT = MB = 15 * mm
+    W = A4[0] - ML - MR
+
+    doc = SimpleDocTemplate(buf, pagesize=A4,
+        leftMargin=ML, rightMargin=MR, topMargin=MT, bottomMargin=MB)
+
+    TC = _tc(theme_color)
+    story = []
+
+    # ── Cabeçalho com logos ──────────────────────────────────
+    org_name = (org_data.get('name') or '').upper()
+
+    ipb_cell = Spacer(22 * mm, 22 * mm)
+    if ipb_logo_bytes:
+        try:
+            ipb_cell = Image(io.BytesIO(ipb_logo_bytes), width=22 * mm, height=22 * mm)
+        except Exception:
+            pass
+
+    org_cell = Spacer(22 * mm, 22 * mm)
+    if logo_bytes:
+        try:
+            org_cell = Image(io.BytesIO(logo_bytes), width=22 * mm, height=22 * mm)
+        except Exception:
+            pass
+
+    title_w = W - 44 * mm
+    title_content = Table([
+        [Paragraph('IGREJA PRESBITERIANA DO BRASIL',
+                   _ps(9, BLACK, bold=True, align=TA_CENTER))],
+        [Spacer(1, 1 * mm)],
+        [Paragraph(org_name, _ps(10, BLACK, bold=True, align=TA_CENTER))],
+        [Spacer(1, 1 * mm)],
+        [Paragraph('RELATÓRIO OFICIAL DE PROCESSO ELEITORAL', _ps(11, TC, bold=True, align=TA_CENTER))],
+    ], colWidths=[title_w])
+    title_content.setStyle(TableStyle([
+        ('TOPPADDING',    (0, 0), (-1, -1), 1),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
+    ]))
+
+    hdr = Table([[ipb_cell, title_content, org_cell]],
+                colWidths=[22 * mm, title_w, 22 * mm])
+    hdr.setStyle(TableStyle([
+        ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+        ('LEFTPADDING',   (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING',  (0, 0), (-1, -1), 0),
+        ('TOPPADDING',    (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+    ]))
+    story.append(hdr)
+    story.append(Spacer(1, 4 * mm))
+    story.append(HRFlowable(width=W, thickness=1.5, color=TC))
+    story.append(Spacer(1, 3 * mm))
+
+    # ── Identificação da Eleição ──────────────────────────────
+    ident_data = [
+        [Paragraph('<b>Eleição:</b>', _ps(8.5, BLACK)), Paragraph(election_data.get('title', '—'), _ps(8.5, BLACK))],
+        [Paragraph('<b>Data de Apuração:</b>', _ps(8.5, BLACK)), Paragraph(_fd(election_data.get('created_at', '—')), _ps(8.5, BLACK))],
+        [Paragraph('<b>Status:</b>', _ps(8.5, BLACK)), Paragraph('CONCLUÍDA' if election_data.get('status') == 'completed' else 'EM ANDAMENTO', _ps(8.5, BLACK, bold=True))],
+    ]
+    ident_table = Table(ident_data, colWidths=[40 * mm, W - 40 * mm])
+    ident_table.setStyle(TableStyle([
+        ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('TOPPADDING',    (0, 0), (-1, -1), 4),
+        ('LEFTPADDING',   (0, 0), (-1, -1), 0),
+    ]))
+    story.append(ident_table)
+    story.append(Spacer(1, 4 * mm))
+
+    # ── Diretoria Eleita ─────────────────────────────────────
+    story.append(_section_bar('DIRETORIA ELEITA', W, TC))
+    story.append(Spacer(1, 2 * mm))
+
+    dir_rows = []
+    ROLE_LABELS = {
+        'presidente': 'Presidente',
+        'vice_presidente': 'Vice-Presidente',
+        '1_secretario': '1º Secretário(a)',
+        '2_secretario': '2º Secretário(a)',
+        'secretario_executivo': 'Secretário Executivo',
+        'tesoureiro': 'Tesoureiro(a)',
+    }
+    
+    elected_positions = election_data.get('elected_positions') or {}
+    if not elected_positions:
+        dir_rows.append([Paragraph('Nenhum cargo foi concluído ainda.', _ps(9, GRAY_TXT, italic=True))])
+    else:
+        for role_key, name in elected_positions.items():
+            role_label = ROLE_LABELS.get(role_key, role_key.replace('_', ' ').title())
+            dir_rows.append([
+                Paragraph(f'<b>{role_label}:</b>', _ps(9, BLACK)),
+                Paragraph(name or '—', _ps(9, BLACK, bold=True))
+            ])
+            
+    dir_table = Table(dir_rows, colWidths=[50 * mm, W - 50 * mm] if elected_positions else [W])
+    dir_table.setStyle(TableStyle([
+        ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+        ('TOPPADDING',    (0, 0), (-1, -1), 5),
+        ('LEFTPADDING',   (0, 0), (-1, -1), 6),
+        ('BACKGROUND',    (0, 0), (-1, -1), colors.HexColor('#f8fafc')),
+        ('BOX',           (0, 0), (-1, -1), 0.5, GRAY_LINE),
+    ]))
+    story.append(dir_table)
+    story.append(Spacer(1, 6 * mm))
+
+    # ── Detalhes por Cargo e Escrutínio ───────────────────────
+    story.append(_section_bar('DETALHAMENTO DOS VOTOS POR ESCRUTÍNIO', W, TC))
+    story.append(Spacer(1, 3 * mm))
+
+    roles_disputed = election_data.get('roles_disputed') or []
+    for role_item in roles_disputed:
+        role_label = role_item.get('role_label', '')
+        winner_name = role_item.get('winner_name')
+        story.append(Paragraph(f'<b>Cargo: {role_label.upper()}</b>', _ps(10, TC, bold=True)))
+        story.append(Spacer(1, 1.5 * mm))
+
+        for r_item in role_item.get('rounds', []):
+            round_num = r_item.get('round', 1)
+            total_votes = r_item.get('total_votes', 0)
+            story.append(Paragraph(f'• {round_num}º Escrutínio (Total de Votos: {total_votes})', _ps(9, BLACK, bold=True)))
+            story.append(Spacer(1, 1 * mm))
+
+            # Table for results in this round
+            table_data = [[
+                Paragraph('<b>Candidato</b>', _ps(8, BLACK, bold=True)),
+                Paragraph('<b>Votos</b>', _ps(8, BLACK, bold=True, align=TA_CENTER)),
+                Paragraph('<b>Porcentagem</b>', _ps(8, BLACK, bold=True, align=TA_RIGHT))
+            ]]
+
+            for res in r_item.get('results', []):
+                pct_str = f"{res.get('percentage', 0):.1f}%"
+                table_data.append([
+                    Paragraph(res.get('name', ''), _ps(8, BLACK)),
+                    Paragraph(str(res.get('votes', 0)), _ps(8, BLACK, align=TA_CENTER)),
+                    Paragraph(pct_str, _ps(8, BLACK, align=TA_RIGHT))
+                ])
+
+            round_table = Table(table_data, colWidths=[W - 60 * mm, 30 * mm, 30 * mm])
+            round_table.setStyle(TableStyle([
+                ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+                ('GRID',          (0, 0), (-1, -1), 0.5, GRAY_LINE),
+                ('BACKGROUND',    (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
+                ('TOPPADDING',    (0, 0), (-1, -1), 4),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ]))
+            story.append(round_table)
+            story.append(Spacer(1, 3 * mm))
+
+        if winner_name:
+            story.append(Paragraph(f'<i>Resultado: <b>{winner_name}</b> foi eleito(a) para o cargo de {role_label}.</i>', _ps(8.5, GREEN)))
+        else:
+            story.append(Paragraph(f'<i>Resultado: Cargo não concluído ou sem eleito.</i>', _ps(8.5, RED_C)))
+            
+        story.append(Spacer(1, 5 * mm))
+        story.append(HRFlowable(width=W, thickness=0.5, color=GRAY_LINE))
+        story.append(Spacer(1, 3 * mm))
+
+    # ── Assinaturas da Mesa Eleitoral ─────────────────────────
+    story.append(Spacer(1, 8 * mm))
+    sig_data = [
+        [
+            Paragraph('__________________________________________<br/>Presidente da Assembleia', _ps(8.5, BLACK, align=TA_CENTER)),
+            Paragraph('__________________________________________<br/>Secretário(a) da Assembleia', _ps(8.5, BLACK, align=TA_CENTER))
+        ]
+    ]
+    sig_table = Table(sig_data, colWidths=[W/2, W/2])
+    sig_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('TOPPADDING', (0,0), (-1,-1), 10),
+    ]))
+    story.append(sig_table)
+
     doc.build(story)
     return buf.getvalue()
