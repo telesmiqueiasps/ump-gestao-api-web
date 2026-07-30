@@ -580,20 +580,6 @@
         // Adjust headers
         document.getElementById('config-members-header-title').textContent = isFed ? '2. Delegados Votantes (Elegibilidade)' : '2. Sócios Votados (Elegibilidade)'
         document.getElementById('config-members-header-desc').textContent = isFed 
-          ? 'Adicione os delegados que participarão da votação. Todos adicionados poderão votar. Desmarque aqueles que não podem ser votados (impedidos).' 
-          : 'Todos os sócios ativos listados abaixo podem votar. Desmarque aqueles que não podem ser votados (impedidos).'
-        
-        const searchInput = document.getElementById('input-search-members')
-        searchInput.placeholder = isFed ? '🔍 Pesquisar delegado por nome...' : '🔍 Pesquisar sócio por nome...'
-        searchInput.value = ''
-        
-    async function loadConfigScreen() {
-      try {
-        const isFed = isFederation()
-        
-        // Adjust headers
-        document.getElementById('config-members-header-title').textContent = isFed ? '2. Delegados Votantes (Elegibilidade)' : '2. Sócios Votados (Elegibilidade)'
-        document.getElementById('config-members-header-desc').textContent = isFed 
           ? 'Todos os delegados ativos listados abaixo podem votar. Desmarque aqueles que não podem ser votados (impedidos).' 
           : 'Todos os sócios ativos listados abaixo podem votar. Desmarque aqueles que não podem ser votados (impedidos).'
         
