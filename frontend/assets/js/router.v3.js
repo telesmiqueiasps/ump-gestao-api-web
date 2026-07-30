@@ -82,16 +82,6 @@ const NAV_ITEMS = [
             '1_secretario','2_secretario','secretario_executivo',
             'secretario_presbiterial','conselheiro'],
   },
-  { type: 'divider', roles: null },
-  {
-    page: 'sisvoto',
-    label: 'SISVOTO',
-    icon: '🗳️',
-    path: '/pages/sisvoto.html',
-    roles: ['presidente','vice_presidente','tesoureiro',
-            '1_secretario','2_secretario','secretario_executivo',
-            'secretario_presbiterial','conselheiro'],
-  },
 ]
 
 // Expõe navigate globalmente para os onclick do HTML

@@ -144,9 +144,59 @@
       .print-code-card h2 { font-size: 1.6rem; margin-bottom: 0.5cm; }
       .print-code-card .print-code { font-size: 2.5rem; font-family: monospace; font-weight: bold; }
     }
+    .tab-btn {
+      background: none;
+      border: none;
+      padding: .5rem .75rem;
+      cursor: pointer;
+      font-weight: 600;
+      font-family: inherit;
+      font-size: .85rem;
+      color: var(--slate-500);
+      border-bottom: 3px solid transparent;
+      transition: all .2s;
+    }
+    .tab-btn:hover {
+      color: var(--slate-800);
+    }
     .tab-btn.active {
-      color: var(--blue-700) !important;
-      border-bottom-color: var(--blue-700) !important;
+      color: var(--blue-600) !important;
+      border-bottom-color: var(--blue-600) !important;
+    }
+    .role-checkbox-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: .75rem;
+      margin-top: .5rem;
+    }
+    .role-checkbox-card {
+      display: flex;
+      align-items: center;
+      gap: .65rem;
+      border: 1px solid var(--slate-200);
+      border-radius: 6px;
+      padding: .75rem 1rem;
+      background: #fff;
+      cursor: pointer;
+      transition: all .15s;
+      font-size: .9rem;
+      user-select: none;
+    }
+    .role-checkbox-card:hover {
+      border-color: var(--slate-300);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .role-checkbox-card:has(input:checked) {
+      border-color: var(--blue-400) !important;
+      background: var(--blue-50) !important;
+      font-weight: 600;
+      color: var(--blue-900);
+    }
+    .role-checkbox-card input {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      margin: 0;
     }
     .eligibility-card {
       display: flex;
@@ -345,14 +395,14 @@
           </div>
 
           <!-- Tab Navigation for Voters -->
-          <div class="tabs-nav" style="display: flex; gap: .75rem; border-bottom: 2px solid var(--slate-150); padding-bottom: .25rem; margin-bottom: 1.25rem;">
-            <button class="tab-btn active" id="tab-voters-all" style="background: none; border: none; padding: .5rem .75rem; cursor: pointer; font-weight: 600; font-family: inherit; font-size: .85rem; color: var(--slate-600); border-bottom: 3px solid transparent; transition: color .15s, border-bottom-color .15s;">
+          <div class="tabs-nav" style="display: flex; gap: .75rem; border-bottom: 2px solid var(--slate-200); padding-bottom: .25rem; margin-bottom: 1.25rem;">
+            <button class="tab-btn active" id="tab-voters-all">
               Todos / Senhas (<span id="count-tab-all">0</span>)
             </button>
-            <button class="tab-btn" id="tab-voters-voted" style="background: none; border: none; padding: .5rem .75rem; cursor: pointer; font-weight: 600; font-family: inherit; font-size: .85rem; color: var(--slate-600); border-bottom: 3px solid transparent; transition: color .15s, border-bottom-color .15s;">
+            <button class="tab-btn" id="tab-voters-voted">
               Já Votaram (<span id="count-tab-voted">0</span>)
             </button>
-            <button class="tab-btn" id="tab-voters-pending" style="background: none; border: none; padding: .5rem .75rem; cursor: pointer; font-weight: 600; font-family: inherit; font-size: .85rem; color: var(--slate-600); border-bottom: 3px solid transparent; transition: color .15s, border-bottom-color .15s;">
+            <button class="tab-btn" id="tab-voters-pending">
               Faltam Votar (<span id="count-tab-pending">0</span>)
             </button>
           </div>
