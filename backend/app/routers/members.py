@@ -46,6 +46,7 @@ class FeeCreate(BaseModel):
 @router.get("/")
 def list_members(
     active_only: bool = True,
+    include_board: bool = False,
     current_user: User = Depends(require_local_or_federation),
     db: Session = Depends(get_db),
 ):
@@ -113,6 +114,8 @@ def list_members(
     query = db.query(Member).filter(Member.local_ump_id == current_user.organization_id)
     if active_only:
         query = query.filter(Member.is_active == True)
+    if not include_board:
+        query = query.filter((Member.local_society.is_(None)) | (Member.local_society != "Diretoria"))
     members = query.order_by(Member.full_name).limit(500).all()
     return [_to_out(m) for m in members]
 
@@ -221,9 +224,9 @@ def update_member(
     return _to_out(member)
 
 
-# Desativar sócio
+# Excluir ou Desativar sócio
 @router.delete("/{member_id}", status_code=status.HTTP_204_NO_CONTENT)
-def deactivate_member(
+def delete_or_deactivate_member(
     member_id: UUID,
     current_user: User = Depends(require_local_or_federation),
     db: Session = Depends(get_db),
@@ -234,8 +237,17 @@ def deactivate_member(
     ).first()
     if not member:
         raise HTTPException(status_code=404, detail="Sócio não encontrado")
-    member.is_active = False
-    db.commit()
+    
+    try:
+        # Tenta exclusão física
+        db.delete(member)
+        db.commit()
+    except Exception:
+        # Em caso de constraint de chave estrangeira (ex: já votou/tem lançamentos), faz o fallback para desativação
+        db.rollback()
+        member = db.query(Member).filter(Member.id == member_id).first()
+        member.is_active = False
+        db.commit()
 
 
 # Registrar mensalidade

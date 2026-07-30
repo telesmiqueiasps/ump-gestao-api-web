@@ -663,7 +663,7 @@
           searchInput.placeholder = isFed ? '🔍 Pesquisar delegado por nome...' : '🔍 Pesquisar sócio por nome...'
           searchInput.value = ''
 
-          localMembers = await api.get('/api/members/?active_only=true')
+          localMembers = await api.get('/api/members/?active_only=true&include_board=true')
           if (isFed) {
             allActiveMembers = localMembers.filter(m => m.member_type === 'ativo').map(m => ({
               id: m.id,
