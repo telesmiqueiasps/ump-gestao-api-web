@@ -148,6 +148,33 @@
       color: var(--blue-700) !important;
       border-bottom-color: var(--blue-700) !important;
     }
+    .eligibility-card {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      border: 1px solid var(--slate-200);
+      border-radius: 6px;
+      padding: .5rem .75rem;
+      background: #fff;
+      cursor: pointer;
+      transition: all .15s;
+      font-size: .85rem;
+      user-select: none;
+    }
+    .eligibility-card:hover {
+      border-color: var(--slate-300);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .eligibility-card:has(input:checked) {
+      border-color: var(--blue-400) !important;
+      background: var(--blue-50) !important;
+    }
+    .eligibility-card input {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      margin: 0;
+    }
   </style>
 </head>
 <body>
@@ -239,18 +266,13 @@
           </div>
           <p class="text-sm text-slate-500 mb-3">Todos os sócios ativos listados abaixo podem votar. Desmarque aqueles que <strong>não</strong> podem ser votados (impedidos).</p>
           
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Nome do Sócio</th>
-                  <th style="width: 120px;" class="text-center">Pode ser Votado</th>
-                </tr>
-              </thead>
-              <tbody id="config-members-body">
-                <!-- Injected via js -->
-              </tbody>
-            </table>
+          <div style="margin-bottom: 1rem; position: relative;">
+            <input class="input" type="text" id="input-search-members" placeholder="🔍 Pesquisar sócio por nome..." style="padding-left: 2.2rem; font-size: .9rem;" />
+            <span style="position: absolute; left: .75rem; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--slate-400); font-size: .95rem;"></span>
+          </div>
+
+          <div class="members-eligibility-grid" id="config-members-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .5rem; max-height: 280px; overflow-y: auto; padding: .5rem; border: 1.5px solid var(--slate-200); border-radius: var(--radius); background: var(--slate-50);">
+            <!-- Cards injected dynamically via JS -->
           </div>
           <div style="margin-top: 1.5rem; text-align: right;">
             <button class="btn btn-primary" id="btn-start-session">Criar e Gerar Códigos</button>
@@ -505,33 +527,56 @@
     }
 
     // ── SECTION CONFIG ──
+    // ── SECTION CONFIG ──
+    let allActiveMembers = []
+    let ineligibleMemberIds = new Set()
+
     async function loadConfigScreen() {
       try {
         localMembers = await api.get('/api/members/?active_only=true')
-        // Filter active members only
-        const activeOnly = localMembers.filter(m => m.member_type === 'ativo')
+        allActiveMembers = localMembers.filter(m => m.member_type === 'ativo')
+        ineligibleMemberIds.clear()
         
-        const tbody = document.getElementById('config-members-body')
-        if (!activeOnly.length) {
-          tbody.innerHTML = `<tr><td colspan="2" class="table-empty">Nenhum sócio ativo encontrado. Por favor, adicione sócios na aba Sócios antes.</td></tr>`
-          return
-        }
-
-        tbody.innerHTML = activeOnly.map(m => `
-          <tr>
-            <td>
-              <div style="font-weight:600;font-size:.9rem">${m.full_name}</div>
-              <div style="font-size:.75rem;color:var(--slate-400)">Sócio Ativo</div>
-            </td>
-            <td class="text-center">
-              <input type="checkbox" class="can-be-voted-cb" data-member-id="${m.id}" checked style="width: 20px; height: 20px; cursor: pointer;"/>
-            </td>
-          </tr>
-        `).join('')
+        // Reset search input
+        document.getElementById('input-search-members').value = ''
+        renderMembersGrid()
       } catch (err) {
         showAlert('page-alert', 'Erro ao carregar sócios: ' + err.message, 'error')
       }
     }
+
+    function renderMembersGrid() {
+      const query = document.getElementById('input-search-members').value.trim().toLowerCase()
+      const grid = document.getElementById('config-members-grid')
+      
+      const filtered = allActiveMembers.filter(m => m.full_name.toLowerCase().includes(query))
+      
+      if (!filtered.length) {
+        grid.innerHTML = '<p class="text-slate-400 text-center py-3" style="grid-column: 1/-1; width: 100%;">Nenhum sócio ativo encontrado.</p>'
+        return
+      }
+
+      grid.innerHTML = filtered.map(m => {
+        const isChecked = !ineligibleMemberIds.has(m.id)
+        return `
+          <label class="eligibility-card">
+            <input type="checkbox" class="can-be-voted-cb" data-member-id="${m.id}" ${isChecked ? 'checked' : ''} onchange="toggleMemberEligibility('${m.id}', this.checked)" />
+            <span style="font-weight: 500; color: var(--slate-700); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${m.full_name}">${m.full_name}</span>
+          </label>
+        `
+      }).join('')
+    }
+
+    window.toggleMemberEligibility = (memberId, isChecked) => {
+      if (isChecked) {
+        ineligibleMemberIds.delete(memberId)
+      } else {
+        ineligibleMemberIds.add(memberId)
+      }
+    }
+
+    // Bind search input typing event
+    document.getElementById('input-search-members').addEventListener('input', renderMembersGrid)
 
     // Create session
     document.getElementById('btn-start-session').addEventListener('click', async () => {
@@ -548,8 +593,8 @@
         return
       }
 
-      // Ineligible members (unchecked cbs)
-      const ineligibleIds = Array.from(document.querySelectorAll('.can-be-voted-cb:not(:checked)')).map(cb => cb.getAttribute('data-member-id'))
+      // Ineligible members (unchecked cbs via JS Set)
+      const ineligibleIds = Array.from(ineligibleMemberIds)
 
       const btn = document.getElementById('btn-start-session')
       setLoading(btn, true, 'Criar e Gerar Códigos')
