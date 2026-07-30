@@ -845,7 +845,11 @@
         }
 
       } catch (err) {
-        showAlert('page-alert', 'Erro de status: ' + err.message, 'error')
+        if (err.message.includes('Nenhuma eleição ativa encontrada') || err.message.includes('404')) {
+          loadScreen()
+        } else {
+          showAlert('page-alert', 'Erro de status: ' + err.message, 'error')
+        }
       }
     }
 
