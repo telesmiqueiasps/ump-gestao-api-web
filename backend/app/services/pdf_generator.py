@@ -530,14 +530,15 @@ def _process_single_photo_worker(b2_client, bucket, photo_key, photo_bytes, imag
         from PIL import Image as PILImage, ImageOps as PILImageOps
         with PILImage.open(io.BytesIO(raw_bytes)) as pil_img:
             pil_img = PILImageOps.exif_transpose(pil_img)
-            pil_img.thumbnail((1600, 1600), PILImage.LANCZOS)
+            pil_img.thumbnail((800, 800), PILImage.LANCZOS)
             if pil_img.mode in ('RGBA', 'P', 'LA'):
                 pil_img = pil_img.convert('RGB')
             out_io = io.BytesIO()
-            pil_img.save(out_io, format='JPEG', quality=85, optimize=True)
+            pil_img.save(out_io, format='JPEG', quality=80, optimize=True)
             proc_bytes = out_io.getvalue()
             ow, oh = pil_img.size
 
+        del raw_bytes
         res = (proc_bytes, ow, oh)
         with cache_lock:
             image_cache[cache_key] = res
@@ -571,7 +572,8 @@ def _download_and_process_photos_parallel(activities: list, b2_client, bucket: s
         return 0
 
     cache_lock = threading.Lock()
-    max_workers = min(8, len(tasks))
+    # Limita a no máximo 3 workers simultâneos para manter o consumo de RAM baixo no limite de 512MB do Render
+    max_workers = min(3, len(tasks))
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = [
             executor.submit(_process_single_photo_worker, b2_client, bucket, k, b, image_cache, cache_lock)
@@ -579,6 +581,7 @@ def _download_and_process_photos_parallel(activities: list, b2_client, bucket: s
         ]
         concurrent.futures.wait(futures)
 
+    gc.collect()
     return len(tasks)
 
 
@@ -629,11 +632,11 @@ class LazyImage(Flowable):
             from PIL import Image as PILImage, ImageOps as PILImageOps
             with PILImage.open(io.BytesIO(raw_bytes)) as pil_img:
                 pil_img = PILImageOps.exif_transpose(pil_img)
-                pil_img.thumbnail((1600, 1600), PILImage.LANCZOS)
+                pil_img.thumbnail((800, 800), PILImage.LANCZOS)
                 if pil_img.mode in ('RGBA', 'P', 'LA'):
                     pil_img = pil_img.convert('RGB')
                 out_io = io.BytesIO()
-                pil_img.save(out_io, format='JPEG', quality=85, optimize=True)
+                pil_img.save(out_io, format='JPEG', quality=80, optimize=True)
                 self._processed_bytes = out_io.getvalue()
                 ow, oh = pil_img.size
 
