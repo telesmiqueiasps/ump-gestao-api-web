@@ -418,13 +418,16 @@ def cancel_election(
     if not session:
         raise HTTPException(status_code=404, detail="Nenhuma eleição ativa encontrada.")
 
-    # If federation, delete shadow members first
+    voter_member_ids = []
     if current_user.organization_type == 'federation':
         voter_member_ids = [v.member_id for v in session.voters]
-        if voter_member_ids:
-            db.query(Member).filter(Member.id.in_(voter_member_ids)).delete(synchronize_session=False)
 
     db.delete(session)
+    db.flush()
+
+    if voter_member_ids:
+        db.query(Member).filter(Member.id.in_(voter_member_ids)).delete(synchronize_session=False)
+
     db.commit()
     return {"detail": "Sessão eleitoral cancelada com sucesso."}
 
@@ -710,13 +713,16 @@ def delete_election(
     if not session:
         raise HTTPException(status_code=404, detail="Eleição não encontrada.")
         
-    # If federation, delete shadow members first
+    voter_member_ids = []
     if current_user.organization_type == 'federation':
         voter_member_ids = [v.member_id for v in session.voters]
-        if voter_member_ids:
-            db.query(Member).filter(Member.id.in_(voter_member_ids)).delete(synchronize_session=False)
 
     db.delete(session)
+    db.flush()
+
+    if voter_member_ids:
+        db.query(Member).filter(Member.id.in_(voter_member_ids)).delete(synchronize_session=False)
+
     db.commit()
     return {"detail": "Eleição excluída com sucesso."}
 
@@ -827,6 +833,7 @@ def remove_active_voter(
 
     member_id = voter.member_id
     db.delete(voter)
+    db.flush()
     
     # If federation, delete the shadow member too
     if current_user.organization_type == 'federation':
