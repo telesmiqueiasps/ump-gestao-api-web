@@ -29,20 +29,39 @@ app = FastAPI(
     redoc_url="/redoc" if settings.app_env == "development" else None,
 )
 
+from fastapi import Request
+from fastapi.responses import JSONResponse
+
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+ALLOWED_ORIGINS = [
+    "https://umpgestao.netlify.app",
+    "https://ump-socio.netlify.app",
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5500",
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://umpgestao.netlify.app",
-        "https://ump-socio.netlify.app",
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:5500",
-    ],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition", "Content-Type", "Content-Length"],
 )
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logging.getLogger("uvicorn.error").exception(f"Unhandled error: {exc}")
+    origin = request.headers.get("origin")
+    response_headers = {}
+    if origin and origin in ALLOWED_ORIGINS:
+        response_headers["Access-Control-Allow-Origin"] = origin
+        response_headers["Access-Control-Allow-Credentials"] = "true"
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Erro interno no servidor: {str(exc)}"},
+        headers=response_headers,
+    )
 
 app.include_router(auth.router,         prefix="/api/auth",        tags=["Autenticação"])
 app.include_router(federations.router,  prefix="/api/federations", tags=["Federações"])

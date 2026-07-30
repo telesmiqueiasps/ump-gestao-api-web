@@ -4,7 +4,7 @@ import re
 import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, Response
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
@@ -599,10 +599,13 @@ def preview_report_pdf(
     )
 
     filename = f"Previa_Relatorio_Atividades_{year}.pdf"
-    return StreamingResponse(
-        io.BytesIO(pdf_bytes),
+    return Response(
+        content=pdf_bytes,
         media_type='application/pdf',
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+        headers={
+            "Content-Disposition": f'inline; filename="{filename}"',
+            "Access-Control-Expose-Headers": "Content-Disposition",
+        }
     )
 
 
