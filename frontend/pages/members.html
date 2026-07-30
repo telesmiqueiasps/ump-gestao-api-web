@@ -164,14 +164,14 @@
       <label>Sociedade Local</label>
       <input class="input" type="text" id="m-society" placeholder="Ex: Central de UMP" />
     </div>
-    <div class="field mb-4">
+    <div class="field mb-4 local-only-field">
       <label>Tipo</label>
       <select class="input" id="m-type">
         <option value="ativo">Ativo</option>
         <option value="cooperador">Cooperador</option>
       </select>
     </div>
-    <div class="grid-2 mb-4">
+    <div class="grid-2 mb-4 local-only-field">
       <div class="field">
         <label>E-mail <span class="text-slate-400" style="font-weight:400">(opcional)</span></label>
         <input class="input" type="email" id="m-email" placeholder="opcional" />
@@ -181,7 +181,7 @@
         <input class="input" type="tel" id="m-phone" placeholder="(83) 99999-9999" maxlength="15" />
       </div>
     </div>
-    <div class="grid-2 mb-4">
+    <div class="grid-2 mb-4 local-only-field">
       <div class="field">
         <label>Data de nascimento</label>
         <input class="input" type="date" id="m-birth" />
@@ -191,7 +191,7 @@
         <input class="input" type="date" id="m-join" />
       </div>
     </div>
-    <div class="field mb-4">
+    <div class="field mb-4 local-only-field">
       <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-weight:500">
         <input type="checkbox" id="m-is-board" style="width:16px;height:16px;cursor:pointer" />
         <span>Membro da Diretoria</span>
@@ -331,6 +331,7 @@
     if (isFed) {
       document.getElementById('fees-config-card').classList.add('hidden')
       document.getElementById('fed-society-field').classList.remove('hidden')
+      document.querySelectorAll('.local-only-field').forEach(el => el.classList.add('hidden'))
     }
 
     // Nomenclatura dinâmica

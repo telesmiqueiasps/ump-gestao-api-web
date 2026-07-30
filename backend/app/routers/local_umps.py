@@ -89,6 +89,7 @@ def get_local_anniversaries(
 
     locals_ = db.query(LocalUmp).filter(
         LocalUmp.federation_id == current_user.organization_id,
+        LocalUmp.id != current_user.organization_id,
         LocalUmp.is_active == True,
         LocalUmp.organization_date.isnot(None),
         extract('month', LocalUmp.organization_date) == current_month,

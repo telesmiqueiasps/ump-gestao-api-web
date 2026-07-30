@@ -315,22 +315,6 @@
             <h2 id="config-members-header-title">2. Sócios Votados (Elegibilidade)</h2>
           </div>
           <p class="text-sm text-slate-500 mb-3" id="config-members-header-desc">Todos os sócios ativos listados abaixo podem votar. Desmarque aqueles que <strong>não</strong> podem ser votados (impedidos).</p>
-
-          <!-- Federation voter addition form -->
-          <div id="federation-voter-add-form" class="hidden mb-4" style="background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: var(--radius); padding: 1rem;">
-            <h3 style="font-size: .95rem; margin-bottom: .75rem; color: var(--slate-800); font-weight: 600;">Adicionar Delegado (Votante)</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: .75rem; align-items: flex-end;">
-              <div class="field" style="margin: 0;">
-                <label for="fed-voter-name" style="font-size: .8rem; font-weight: 500;">Nome do Eleitor</label>
-                <input class="input" type="text" id="fed-voter-name" placeholder="Ex: João Silva" style="padding: .5rem .75rem; font-size: .85rem;" />
-              </div>
-              <div class="field" style="margin: 0;">
-                <label for="fed-voter-society" style="font-size: .8rem; font-weight: 500;">Sociedade Local</label>
-                <input class="input" type="text" id="fed-voter-society" placeholder="Ex: Central" style="padding: .5rem .75rem; font-size: .85rem;" />
-              </div>
-              <button class="btn btn-primary btn-sm" id="btn-add-fed-voter" style="min-height: auto; padding: .6rem 1.25rem; font-size: .85rem; font-weight: 600;">Adicionar</button>
-            </div>
-          </div>
           
           <div style="margin-bottom: 1rem; position: relative;">
             <input class="input" type="text" id="input-search-members" placeholder="🔍 Pesquisar sócio por nome..." style="padding-left: 2.2rem; font-size: .9rem;" />
@@ -603,10 +587,22 @@
         searchInput.placeholder = isFed ? '🔍 Pesquisar delegado por nome...' : '🔍 Pesquisar sócio por nome...'
         searchInput.value = ''
         
-        const addForm = document.getElementById('federation-voter-add-form')
+    async function loadConfigScreen() {
+      try {
+        const isFed = isFederation()
+        
+        // Adjust headers
+        document.getElementById('config-members-header-title').textContent = isFed ? '2. Delegados Votantes (Elegibilidade)' : '2. Sócios Votados (Elegibilidade)'
+        document.getElementById('config-members-header-desc').textContent = isFed 
+          ? 'Todos os delegados ativos listados abaixo podem votar. Desmarque aqueles que não podem ser votados (impedidos).' 
+          : 'Todos os sócios ativos listados abaixo podem votar. Desmarque aqueles que não podem ser votados (impedidos).'
+        
+        const searchInput = document.getElementById('input-search-members')
+        searchInput.placeholder = isFed ? '🔍 Pesquisar delegado por nome...' : '🔍 Pesquisar sócio por nome...'
+        searchInput.value = ''
+        
+        localMembers = await api.get('/api/members/?active_only=true')
         if (isFed) {
-          addForm.classList.remove('hidden')
-          localMembers = await api.get('/api/members/?active_only=true')
           allActiveMembers = localMembers.filter(m => m.member_type === 'ativo').map(m => ({
             id: m.id,
             name: m.full_name,
@@ -614,8 +610,6 @@
             full_name: m.local_society ? `${m.full_name} (${m.local_society})` : m.full_name
           }))
         } else {
-          addForm.classList.add('hidden')
-          localMembers = await api.get('/api/members/?active_only=true')
           allActiveMembers = localMembers.filter(m => m.member_type === 'ativo')
         }
         
@@ -635,7 +629,7 @@
       
       if (!filtered.length) {
         grid.innerHTML = isFed 
-          ? '<p class="text-slate-400 text-center py-3" style="grid-column: 1/-1; width: 100%;">Nenhum delegado adicionado ou encontrado.</p>' 
+          ? '<p class="text-slate-400 text-center py-3" style="grid-column: 1/-1; width: 100%;">Nenhum delegado encontrado.</p>' 
           : '<p class="text-slate-400 text-center py-3" style="grid-column: 1/-1; width: 100%;">Nenhum sócio ativo encontrado.</p>'
         return
       }
@@ -660,41 +654,6 @@
         ineligibleMemberIds.add(memberId)
       }
     }
-
-    // Add federation voter helper (saves directly to backend database)
-    document.getElementById('btn-add-fed-voter').addEventListener('click', async () => {
-      const nameEl = document.getElementById('fed-voter-name')
-      const societyEl = document.getElementById('fed-voter-society')
-      const name = nameEl.value.trim()
-      const society = societyEl.value.trim()
-      
-      if (!name || !society) {
-        alert('Por favor, informe o nome do eleitor e a sociedade local!')
-        return
-      }
-      
-      try {
-        const newMember = await api.post('/api/members/', {
-          full_name: name,
-          local_society: society,
-          member_type: 'ativo',
-          join_date: new Date().toISOString().split('T')[0]
-        })
-        allActiveMembers.push({
-          id: newMember.id,
-          name: newMember.full_name,
-          local_society: newMember.local_society || '',
-          full_name: newMember.local_society ? `${newMember.full_name} (${newMember.local_society})` : newMember.full_name
-        })
-        
-        nameEl.value = ''
-        societyEl.value = ''
-        nameEl.focus()
-        renderMembersGrid()
-      } catch (err) {
-        alert('Erro ao salvar delegado: ' + err.message)
-      }
-    })
 
     // Bind search input typing event
     document.getElementById('input-search-members').addEventListener('input', renderMembersGrid)

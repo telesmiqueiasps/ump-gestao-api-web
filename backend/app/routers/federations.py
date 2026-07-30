@@ -178,7 +178,8 @@ def list_my_local_umps(
     db: Session = Depends(get_db),
 ):
     locals_ = db.query(LocalUmp).filter(
-        LocalUmp.federation_id == current_user.organization_id
+        LocalUmp.federation_id == current_user.organization_id,
+        LocalUmp.id != current_user.organization_id
     ).limit(500).all()
     return [
         {
