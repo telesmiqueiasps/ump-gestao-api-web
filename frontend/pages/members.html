@@ -402,6 +402,7 @@
 
     // ── Carrega configuração ──
     async function loadFeesConfig() {
+      if (isFederation()) return
       try {
         feesConfig = await api.get('/api/member-fees/config')
         document.getElementById('config-monthly-value').value = feesConfig.monthly_fee_value
