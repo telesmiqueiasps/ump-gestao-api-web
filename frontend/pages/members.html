@@ -461,10 +461,17 @@
       const isFed = isFederation()
       
       // Update table headers dynamically
-      const headers = `
+      const headers = isFed ? `
         <tr>
           <th>Nome</th>
-          <th>${isFed ? 'Sociedade Local' : 'Tipo'}</th>
+          <th>Sociedade Local</th>
+          <th class="text-center">Status</th>
+          <th></th>
+        </tr>
+      ` : `
+        <tr>
+          <th>Nome</th>
+          <th>Tipo</th>
           <th class="hide-mobile">E-mail</th>
           <th class="hide-mobile">Telefone</th>
           <th class="hide-mobile">Entrada</th>
@@ -475,35 +482,51 @@
       document.querySelector('thead').innerHTML = headers
 
       if (!members.length) {
-        tbody.innerHTML = `<tr><td colspan="7" class="table-empty">Nenhum ${isFed ? 'delegado' : 'sócio'} encontrado.</td></tr>`
+        tbody.innerHTML = `<tr><td colspan="${isFed ? 4 : 7}" class="table-empty">Nenhum ${isFed ? 'delegado' : 'sócio'} encontrado.</td></tr>`
         return
       }
 
-      tbody.innerHTML = members.map(m => `
-        <tr>
+      tbody.innerHTML = members.map(m => {
+        const cells = isFed ? `
           <td>
             <div style="display:flex;align-items:center;gap:.6rem">
               ${avatarHtml(m.full_name, 36, '.85rem')}
               <div>
                 <div style="font-weight:600;font-size:.875rem">${m.full_name}</div>
-                ${isFed && m.local_society ? `<div style="font-size:.72rem;color:var(--slate-400)">${m.local_society}</div>` : ''}
               </div>
             </div>
           </td>
-          <td>${isFed ? (m.local_society ?? '—') : `<span class="badge ${m.member_type === 'ativo' ? 'badge-blue' : 'badge-slate'}">${m.member_type === 'ativo' ? 'Ativo' : 'Cooperador'}</span>`}</td>
+          <td>${m.local_society ?? '—'}</td>
+          <td class="text-center"><span class="badge ${m.is_active ? 'badge-green' : 'badge-slate'}">${m.is_active ? 'Ativo' : 'Inativo'}</span></td>
+        ` : `
+          <td>
+            <div style="display:flex;align-items:center;gap:.6rem">
+              ${avatarHtml(m.full_name, 36, '.85rem')}
+              <div>
+                <div style="font-weight:600;font-size:.875rem">${m.full_name}</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="badge ${m.member_type === 'ativo' ? 'badge-blue' : 'badge-slate'}">${m.member_type === 'ativo' ? 'Ativo' : 'Cooperador'}</span></td>
           <td class="hide-mobile">${m.email ?? '—'}</td>
           <td class="hide-mobile">${m.phone ?? '—'}</td>
           <td class="hide-mobile">${formatDate(m.join_date)}</td>
           <td class="text-center"><span class="badge ${m.is_active ? 'badge-green' : 'badge-slate'}">${m.is_active ? 'Ativo' : 'Inativo'}</span></td>
-          <td>
-            <div class="row-actions">
-              ${!isFed ? `<button class="btn btn-ghost btn-icon" title="Contribuições" onclick="openContributions('${m.id}','${m.full_name.replace(/'/g, "\\'")}')">📋</button>` : ''}
-              <button class="btn btn-ghost btn-icon" title="Editar" onclick="editMember('${m.id}','${m.full_name.replace(/'/g, "\\'")}','${m.member_type}','${m.email??''}','${m.phone??''}','${m.birth_date??''}','${m.join_date??''}',${m.is_board_member?true:false},'${(m.local_society??'').replace(/'/g, "\\'")}')">✎</button>
-              ${m.is_active ? `<button class="btn btn-ghost btn-icon danger" title="Desativar" onclick="deactivate('${m.id}','${m.full_name.replace(/'/g, "\\'")}')">✕</button>` : ''}
-            </div>
-          </td>
-        </tr>
-      `).join('')
+        `
+
+        return `
+          <tr>
+            ${cells}
+            <td>
+              <div class="row-actions">
+                ${!isFed ? `<button class="btn btn-ghost btn-icon" title="Contribuições" onclick="openContributions('${m.id}','${m.full_name.replace(/'/g, "\\'")}')">📋</button>` : ''}
+                <button class="btn btn-ghost btn-icon" title="Editar" onclick="editMember('${m.id}','${m.full_name.replace(/'/g, "\\'")}','${m.member_type}','${m.email??''}','${m.phone??''}','${m.birth_date??''}','${m.join_date??''}',${m.is_board_member?true:false},'${(m.local_society??'').replace(/'/g, "\\'")}')">✎</button>
+                ${m.is_active ? `<button class="btn btn-ghost btn-icon danger" title="Desativar" onclick="deactivate('${m.id}','${m.full_name.replace(/'/g, "\\'")}')">✕</button>` : ''}
+              </div>
+            </td>
+          </tr>
+        `
+      }).join('')
     }
 
     // ── Novo / Editar sócio ──

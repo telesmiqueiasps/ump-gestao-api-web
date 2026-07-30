@@ -1,17 +1,18 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-  <meta name="theme-color" content="#1a2a6c"/>
-  <meta name="mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#1a2a6c" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>Eleições — Gestão UMP</title>
-  <link rel="icon" type="image/png" href="/assets/img/logo.png"/>
-  <link rel="manifest" href="/manifest.json"/>
-  <link rel="stylesheet" href="../assets/css/main.css?v=9"/>
-  <link rel="stylesheet" href="../assets/css/components.css?v=9"/>
-  <link rel="stylesheet" href="../assets/css/layout.css?v=9"/>
+  <link rel="icon" type="image/png" href="/assets/img/logo.png" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="stylesheet" href="../assets/css/main.css?v=9" />
+  <link rel="stylesheet" href="../assets/css/components.css?v=9" />
+  <link rel="stylesheet" href="../assets/css/layout.css?v=9" />
   <style>
     .role-checkbox-group {
       display: grid;
@@ -19,6 +20,7 @@
       gap: .75rem;
       margin-bottom: 1.5rem;
     }
+
     .role-checkbox-card {
       border: 1.5px solid var(--slate-200);
       border-radius: var(--radius);
@@ -30,14 +32,17 @@
       cursor: pointer;
       transition: all .15s;
     }
+
     .role-checkbox-card:hover {
       border-color: var(--blue-500);
     }
+
     .role-checkbox-card input {
       width: 18px;
       height: 18px;
       cursor: pointer;
     }
+
     .link-copy-box {
       background: var(--slate-50);
       border: 1.5px solid var(--slate-200);
@@ -49,25 +54,30 @@
       gap: 1rem;
       margin-bottom: 1.5rem;
     }
+
     .link-copy-text {
       font-family: monospace;
       font-size: .85rem;
       color: var(--slate-700);
       word-break: break-all;
     }
+
     .voter-badge-voted {
       background: var(--green-100);
       color: var(--green-700);
       font-weight: 600;
     }
+
     .voter-badge-pending {
       background: var(--slate-100);
       color: var(--slate-500);
       font-weight: 500;
     }
+
     .result-bar-container {
       margin-bottom: 1rem;
     }
+
     .result-bar-header {
       display: flex;
       justify-content: space-between;
@@ -75,18 +85,21 @@
       font-weight: 600;
       margin-bottom: .3rem;
     }
+
     .result-bar-bg {
       background: var(--slate-100);
       height: 10px;
       border-radius: 5px;
       overflow: hidden;
     }
+
     .result-bar-fill {
       background: var(--blue-600);
       height: 100%;
       border-radius: 5px;
       transition: width .3s ease;
     }
+
     .step-badge {
       background: var(--blue-50);
       color: var(--blue-600);
@@ -97,11 +110,13 @@
       display: inline-block;
       margin-bottom: .5rem;
     }
+
     .code-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: .75rem;
     }
+
     .code-card {
       border: 1px solid var(--slate-200);
       border-radius: var(--radius);
@@ -111,6 +126,7 @@
       align-items: center;
       justify-content: space-between;
     }
+
     .code-card-name {
       font-size: .85rem;
       font-weight: 600;
@@ -120,6 +136,7 @@
       text-overflow: ellipsis;
       max-width: 180px;
     }
+
     .code-card-code {
       font-family: monospace;
       font-size: .95rem;
@@ -130,10 +147,24 @@
       border-radius: 5px;
       border: 1px solid var(--amber-200);
     }
+
     @media print {
-      body * { display: none !important; }
-      #print-area, #print-area * { display: block !important; }
-      #print-area { position: absolute; left: 0; top: 0; width: 100%; }
+      body * {
+        display: none !important;
+      }
+
+      #print-area,
+      #print-area * {
+        display: block !important;
+      }
+
+      #print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+      }
+
       .print-code-card {
         border: 2px dashed #000;
         padding: 1.5cm;
@@ -141,9 +172,19 @@
         page-break-inside: avoid;
         text-align: center;
       }
-      .print-code-card h2 { font-size: 1.6rem; margin-bottom: 0.5cm; }
-      .print-code-card .print-code { font-size: 2.5rem; font-family: monospace; font-weight: bold; }
+
+      .print-code-card h2 {
+        font-size: 1.6rem;
+        margin-bottom: 0.5cm;
+      }
+
+      .print-code-card .print-code {
+        font-size: 2.5rem;
+        font-family: monospace;
+        font-weight: bold;
+      }
     }
+
     .tab-btn {
       background: none;
       border: none;
@@ -156,19 +197,23 @@
       border-bottom: 3px solid transparent;
       transition: all .2s;
     }
+
     .tab-btn:hover {
       color: var(--slate-800);
     }
+
     .tab-btn.active {
       color: var(--blue-600) !important;
       border-bottom-color: var(--blue-600) !important;
     }
+
     .role-checkbox-group {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
       gap: .75rem;
       margin-top: .5rem;
     }
+
     .role-checkbox-card {
       display: flex;
       align-items: center;
@@ -182,22 +227,26 @@
       font-size: .9rem;
       user-select: none;
     }
+
     .role-checkbox-card:hover {
       border-color: var(--slate-300);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
+
     .role-checkbox-card:has(input:checked) {
       border-color: var(--blue-400) !important;
       background: var(--blue-50) !important;
       font-weight: 600;
       color: var(--blue-900);
     }
+
     .role-checkbox-card input {
       width: 18px;
       height: 18px;
       cursor: pointer;
       margin: 0;
     }
+
     .eligibility-card {
       display: flex;
       align-items: center;
@@ -211,14 +260,17 @@
       font-size: .85rem;
       user-select: none;
     }
+
     .eligibility-card:hover {
       border-color: var(--slate-300);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
+
     .eligibility-card:has(input:checked) {
       border-color: var(--blue-400) !important;
       background: var(--blue-50) !important;
     }
+
     .eligibility-card input {
       width: 16px;
       height: 16px;
@@ -227,402 +279,426 @@
     }
   </style>
 </head>
+
 <body>
-<div class="app-shell">
-  <aside class="sidebar">
-    <div class="sidebar-brand">
-      <img src="/assets/img/logo.png" class="sidebar-brand-logo" alt="Logo"/>
-      <div class="sidebar-brand-text">
-        <h1>UMP POPB</h1>
-        <p>Plataforma de Gestão</p>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <img src="/assets/img/logo.png" class="sidebar-brand-logo" alt="Logo" />
+        <div class="sidebar-brand-text">
+          <h1>UMP POPB</h1>
+          <p>Plataforma de Gestão</p>
+        </div>
       </div>
+      <nav class="sidebar-nav" id="sidebar-nav"></nav>
+      <div class="sidebar-footer">v1.0.0</div>
+    </aside>
+
+    <div class="main-area">
+      <header class="header">
+        <div class="header-left">
+          <button class="btn-menu" id="btn-menu">☰</button>
+          <div class="header-org">
+            <span class="header-org-name" id="header-org-name"></span>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="header-user">
+            <div class="header-user-name" id="header-name"></div>
+            <div class="header-user-role" id="header-role"></div>
+          </div>
+          <div class="header-avatar" id="header-avatar"></div>
+          <button class="btn-logout" id="btn-logout" title="Sair">⏻</button>
+        </div>
+      </header>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div class="page-header-info">
+            <h1>Eleições</h1>
+            <p>Módulo de eleição interna secreta e simplificada</p>
+          </div>
+        </div>
+
+        <div id="page-alert" class="hidden"></div>
+
+        <!-- ── SECTION: CONFIG ── -->
+        <section id="section-config" class="hidden">
+          <div class="card mb-4">
+            <div class="card-header">
+              <h2>1. Configurar Sessão</h2>
+            </div>
+            <div class="field mb-4" style="margin-bottom: 1.5rem;">
+              <label for="election-title" style="font-size: 1.05rem; font-weight: 700; color: var(--slate-800); margin-bottom: .6rem; display: block;">Título da Eleição</label>
+              <input class="input" type="text" id="election-title" placeholder="Ex: Eleição de Diretoria - 2026" style="font-size: 1.05rem; padding: .75rem 1rem; height: auto;" />
+            </div>
+
+            <div style="border-bottom: 1.5px dashed var(--slate-200); margin: 1.75rem 0 1.5rem 0;"></div>
+
+            <h3 class="mb-2" style="font-size: 1rem; font-weight: 700; color: var(--slate-850);">Cargos a disputar</h3>
+            <p class="text-sm text-slate-500 mb-3">Marque os cargos a serem disputados.</p>
+            <div class="role-checkbox-group">
+              <label class="role-checkbox-card">
+                <input type="checkbox" name="roles" value="presidente" checked />
+                <span>Presidente</span>
+              </label>
+              <label class="role-checkbox-card">
+                <input type="checkbox" name="roles" value="vice_presidente" checked />
+                <span>Vice-Presidente</span>
+              </label>
+              <label class="role-checkbox-card">
+                <input type="checkbox" name="roles" value="1_secretario" checked />
+                <span>1º Secretário(a)</span>
+              </label>
+              <label class="role-checkbox-card">
+                <input type="checkbox" name="roles" value="2_secretario" />
+                <span>2º Secretário(a)</span>
+              </label>
+              <label class="role-checkbox-card">
+                <input type="checkbox" name="roles" value="secretario_executivo" />
+                <span>Secretário Executivo</span>
+              </label>
+              <label class="role-checkbox-card">
+                <input type="checkbox" name="roles" value="tesoureiro" checked />
+                <span>Tesoureiro(a)</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="card mb-4">
+            <div class="card-header">
+              <h2 id="config-members-header-title">2. Sócios Votados (Elegibilidade)</h2>
+            </div>
+            <p class="text-sm text-slate-500 mb-3" id="config-members-header-desc">Todos os sócios ativos listados
+              abaixo podem votar. Desmarque aqueles que <strong>não</strong> podem ser votados (impedidos).</p>
+
+            <div style="margin-bottom: 1rem; position: relative;">
+              <input class="input" type="text" id="input-search-members" placeholder="🔍 Pesquisar sócio por nome..."
+                style="padding-left: 2.2rem; font-size: .9rem;" />
+              <span
+                style="position: absolute; left: .75rem; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--slate-400); font-size: .95rem;"></span>
+            </div>
+
+            <div class="members-eligibility-grid" id="config-members-grid"
+              style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .5rem; max-height: 280px; overflow-y: auto; padding: .5rem; border: 1.5px solid var(--slate-200); border-radius: var(--radius); background: var(--slate-50);">
+              <!-- Cards injected dynamically via JS -->
+            </div>
+            <div style="margin-top: 1.5rem; text-align: right;">
+              <button class="btn btn-primary" id="btn-start-session">Criar e Gerar Códigos</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── SECTION: ACTIVE ── -->
+        <section id="section-active" class="hidden">
+          <!-- Status Panel -->
+          <div class="card mb-4">
+            <div class="card-header">
+              <h2 id="active-title">Eleição Ativa</h2>
+              <span class="badge badge-amber" id="active-status-badge">Configuração</span>
+            </div>
+
+            <div id="active-config-panel" class="hidden" style="padding: 1rem 0 0 0;">
+              <div class="alert alert-success mb-3" style="display: flex; align-items: center; gap: .75rem;">
+                <span style="font-size: 1.5rem;">🔑</span>
+                <div>
+                  <strong>Eleição Configurada com Sucesso!</strong><br />
+                  Os códigos de acesso dos sócios já foram gerados. Distribua os códigos exibidos abaixo e clique em
+                  <strong>Iniciar Votação</strong> para liberar a urna eletrônica pública.
+                </div>
+              </div>
+              <div style="display: flex; gap: .75rem;">
+                <button class="btn btn-success" id="btn-activate-voting">Iniciar Votação</button>
+                <button class="btn btn-danger btn-secondary" id="btn-cancel-election-config">Cancelar Sessão
+                  Eleitoral</button>
+              </div>
+            </div>
+
+            <div id="active-voting-panel" class="hidden" style="padding: 1rem 0 0 0;">
+              <div id="voting-status-banner"
+                style="background: var(--blue-50); border: 1.5px solid var(--blue-200); border-radius: var(--radius-lg); padding: 1.25rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; gap: 1rem; transition: all .25s ease;">
+                <div>
+                  <span class="step-badge"
+                    style="background: var(--blue-700); color: #fff; border-radius: 20px; padding: .25rem .75rem; font-size: .75rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: .4rem; display: inline-block;"
+                    id="active-step-badge">1º Escrutínio</span>
+                  <h3
+                    style="font-size: 1.5rem; font-weight: 800; color: var(--blue-900); margin: 0; transition: color .25s ease;"
+                    id="active-role-display">Presidente</h3>
+                </div>
+                <div style="text-align: right;">
+                  <div class="stat-value" id="active-votes-count"
+                    style="font-size: 1.8rem; font-weight: 800; color: var(--blue-900); transition: color .25s ease;">0
+                    / 0</div>
+                  <div class="stat-label" style="font-size: .8rem; color: var(--slate-500); font-weight: 500;">Votos
+                    Registrados (<span id="active-percent-count" style="font-weight: 700;">0%</span>)</div>
+                </div>
+              </div>
+
+              <div
+                style="border-top: 1.5px solid var(--slate-200); padding-top: 1.5rem; text-align: right; display: flex; justify-content: space-between; align-items: center;">
+                <button class="btn btn-danger btn-secondary" id="btn-cancel-election-active">Cancelar Eleição</button>
+                <button class="btn btn-danger" id="btn-close-round"
+                  style="box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);">Encerrar Votação</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Codes & Public Link Card (Always visible when there is an active session) -->
+          <div class="card mb-4" id="active-codes-card">
+            <div class="card-header">
+              <h2>Códigos de Acesso & Urna Pública</h2>
+            </div>
+
+            <div class="link-copy-box">
+              <div>
+                <strong class="text-sm">Link da Urna Eletrônica Secreta:</strong>
+                <div class="link-copy-text" id="voting-url-text">http://...</div>
+              </div>
+              <button class="btn btn-secondary btn-sm" id="btn-copy-url">Copiar Link</button>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+              <h3>Lista de Eleitores e Códigos</h3>
+              <div style="display: flex; gap: .5rem;">
+                <button class="btn btn-secondary btn-sm" id="btn-copy-codes">Copiar Todos os Códigos</button>
+                <button class="btn btn-secondary btn-sm" id="btn-print-codes">Imprimir Senhas</button>
+              </div>
+            </div>
+
+            <!-- Tab Navigation for Voters -->
+            <div class="tabs-nav"
+              style="display: flex; gap: .75rem; border-bottom: 2px solid var(--slate-200); padding-bottom: .25rem; margin-bottom: 1.25rem;">
+              <button class="tab-btn active" id="tab-voters-all">
+                Todos / Senhas (<span id="count-tab-all">0</span>)
+              </button>
+              <button class="tab-btn" id="tab-voters-voted">
+                Já Votaram (<span id="count-tab-voted">0</span>)
+              </button>
+              <button class="tab-btn" id="tab-voters-pending">
+                Faltam Votar (<span id="count-tab-pending">0</span>)
+              </button>
+            </div>
+
+            <div class="code-grid mb-2" id="voters-code-container">
+              <!-- Injected via js -->
+            </div>
+          </div>
+        </section>
+
+        <!-- ── MODAL: RESULTS ── -->
+        <div class="modal-overlay" id="modal-results">
+          <div class="modal">
+            <div class="modal-header">
+              <h2>Resultado da Votação</h2>
+              <button class="modal-close">✕</button>
+            </div>
+            <div id="results-alert" class="hidden mb-3"></div>
+
+            <div style="margin-bottom: 1.5rem;">
+              <div class="step-badge" id="results-step-label">Presidente - 1º Escrutínio</div>
+              <div style="font-size: 1.25rem; font-weight: 700; color: var(--slate-800); margin-top: .2rem;"
+                id="results-total-label">Total de votos: 0</div>
+            </div>
+
+            <div id="results-bars-container" class="mb-4">
+              <!-- Results bars injected here -->
+            </div>
+
+            <div class="alert alert-success mb-4" id="results-message-box"
+              style="display: flex; align-items: flex-start; gap: .6rem;">
+              <span style="font-size: 1.2rem;">✨</span>
+              <div id="results-message-text">...</div>
+            </div>
+
+            <div class="modal-footer">
+              <button class="btn btn-primary" id="btn-next-step">Avançar para o Próximo Passo</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── MODAL: ELECTION DETAILS ── -->
+        <div class="modal-overlay" id="modal-election-details">
+          <div class="modal modal-lg">
+            <div class="modal-header">
+              <h2 id="det-modal-title">Detalhes da Eleição</h2>
+              <button class="modal-close">✕</button>
+            </div>
+
+            <div style="margin-bottom: 1.25rem;">
+              <p style="font-size: .85rem; color: var(--slate-500);" id="det-modal-date">Data: —</p>
+            </div>
+
+            <div
+              style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 1.5px solid var(--slate-150); padding-bottom: .75rem;">
+              <h3>Resultados da Apuração</h3>
+              <button class="btn btn-primary btn-sm" id="btn-det-download-pdf">📥 Baixar PDF Oficial</button>
+            </div>
+
+            <div id="det-modal-content" style="max-height: 400px; overflow-y: auto; padding-right: .5rem;">
+              <!-- Content dynamically generated -->
+            </div>
+
+            <div class="modal-footer"
+              style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1.5px solid var(--slate-100);">
+              <button class="btn btn-secondary modal-close">Fechar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── SECTION: HISTORY ── -->
+        <section id="section-history" class="hidden">
+          <div class="card">
+            <div class="card-header">
+              <h2>Histórico de Eleições</h2>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Título da Eleição</th>
+                    <th>Diretoria Eleita</th>
+                    <th style="width: 140px;" class="text-center">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="history-table-body">
+                  <!-- Injected via js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </main>
     </div>
-    <nav class="sidebar-nav" id="sidebar-nav"></nav>
-    <div class="sidebar-footer">v1.0.0</div>
-  </aside>
-
-  <div class="main-area">
-    <header class="header">
-      <div class="header-left">
-        <button class="btn-menu" id="btn-menu">☰</button>
-        <div class="header-org">
-          <span class="header-org-name" id="header-org-name"></span>
-        </div>
-      </div>
-      <div class="header-right">
-        <div class="header-user">
-          <div class="header-user-name" id="header-name"></div>
-          <div class="header-user-role" id="header-role"></div>
-        </div>
-        <div class="header-avatar" id="header-avatar"></div>
-        <button class="btn-logout" id="btn-logout" title="Sair">⏻</button>
-      </div>
-    </header>
-
-    <main class="page-content">
-      <div class="page-header">
-        <div class="page-header-info">
-          <h1>🗳️ Eleições</h1>
-          <p>Módulo de eleição interna secreta e simplificada</p>
-        </div>
-      </div>
-
-      <div id="page-alert" class="hidden"></div>
-
-      <!-- ── SECTION: CONFIG ── -->
-      <section id="section-config" class="hidden">
-        <div class="card mb-4">
-          <div class="card-header">
-            <h2>1. Configurar Sessão Eleitoral</h2>
-          </div>
-          <div class="field mb-3">
-            <label for="election-title">Título da Eleição</label>
-            <input class="input" type="text" id="election-title" placeholder="Ex: Eleição de Diretoria - UMP Local 2026"/>
-          </div>
-
-          <h3 class="mb-2">Cargos a disputar</h3>
-          <p class="text-sm text-slate-500 mb-3">Marque um ou mais cargos. A eleição seguirá na ordem selecionada.</p>
-          <div class="role-checkbox-group">
-            <label class="role-checkbox-card">
-              <input type="checkbox" name="roles" value="presidente" checked/>
-              <span>Presidente</span>
-            </label>
-            <label class="role-checkbox-card">
-              <input type="checkbox" name="roles" value="vice_presidente" checked/>
-              <span>Vice-Presidente</span>
-            </label>
-            <label class="role-checkbox-card">
-              <input type="checkbox" name="roles" value="1_secretario" checked/>
-              <span>1º Secretário(a)</span>
-            </label>
-            <label class="role-checkbox-card">
-              <input type="checkbox" name="roles" value="2_secretario"/>
-              <span>2º Secretário(a)</span>
-            </label>
-            <label class="role-checkbox-card">
-              <input type="checkbox" name="roles" value="secretario_executivo"/>
-              <span>Secretário Executivo</span>
-            </label>
-            <label class="role-checkbox-card">
-              <input type="checkbox" name="roles" value="tesoureiro" checked/>
-              <span>Tesoureiro(a)</span>
-            </label>
-          </div>
-        </div>
-
-        <div class="card mb-4">
-          <div class="card-header">
-            <h2 id="config-members-header-title">2. Sócios Votados (Elegibilidade)</h2>
-          </div>
-          <p class="text-sm text-slate-500 mb-3" id="config-members-header-desc">Todos os sócios ativos listados abaixo podem votar. Desmarque aqueles que <strong>não</strong> podem ser votados (impedidos).</p>
-          
-          <div style="margin-bottom: 1rem; position: relative;">
-            <input class="input" type="text" id="input-search-members" placeholder="🔍 Pesquisar sócio por nome..." style="padding-left: 2.2rem; font-size: .9rem;" />
-            <span style="position: absolute; left: .75rem; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--slate-400); font-size: .95rem;"></span>
-          </div>
-
-          <div class="members-eligibility-grid" id="config-members-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .5rem; max-height: 280px; overflow-y: auto; padding: .5rem; border: 1.5px solid var(--slate-200); border-radius: var(--radius); background: var(--slate-50);">
-            <!-- Cards injected dynamically via JS -->
-          </div>
-          <div style="margin-top: 1.5rem; text-align: right;">
-            <button class="btn btn-primary" id="btn-start-session">Criar e Gerar Códigos</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- ── SECTION: ACTIVE ── -->
-      <section id="section-active" class="hidden">
-        <!-- Status Panel -->
-        <div class="card mb-4">
-          <div class="card-header">
-            <h2 id="active-title">Eleição Ativa</h2>
-            <span class="badge badge-amber" id="active-status-badge">Configuração</span>
-          </div>
-
-          <div id="active-config-panel" class="hidden" style="padding: 1rem 0 0 0;">
-            <div class="alert alert-success mb-3" style="display: flex; align-items: center; gap: .75rem;">
-              <span style="font-size: 1.5rem;">🔑</span>
-              <div>
-                <strong>Eleição Configurada com Sucesso!</strong><br/>
-                Os códigos de acesso dos sócios já foram gerados. Distribua os códigos exibidos abaixo e clique em <strong>Iniciar Votação</strong> para liberar a urna eletrônica pública.
-              </div>
-            </div>
-            <div style="display: flex; gap: .75rem;">
-              <button class="btn btn-success" id="btn-activate-voting">Iniciar Votação</button>
-              <button class="btn btn-danger btn-secondary" id="btn-cancel-election-config">Cancelar Sessão Eleitoral</button>
-            </div>
-          </div>
-
-          <div id="active-voting-panel" class="hidden" style="padding: 1rem 0 0 0;">
-            <div id="voting-status-banner" style="background: var(--blue-50); border: 1.5px solid var(--blue-200); border-radius: var(--radius-lg); padding: 1.25rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; gap: 1rem; transition: all .25s ease;">
-              <div>
-                <span class="step-badge" style="background: var(--blue-700); color: #fff; border-radius: 20px; padding: .25rem .75rem; font-size: .75rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: .4rem; display: inline-block;" id="active-step-badge">1º Escrutínio</span>
-                <h3 style="font-size: 1.5rem; font-weight: 800; color: var(--blue-900); margin: 0; transition: color .25s ease;" id="active-role-display">Presidente</h3>
-              </div>
-              <div style="text-align: right;">
-                <div class="stat-value" id="active-votes-count" style="font-size: 1.8rem; font-weight: 800; color: var(--blue-900); transition: color .25s ease;">0 / 0</div>
-                <div class="stat-label" style="font-size: .8rem; color: var(--slate-500); font-weight: 500;">Votos Registrados (<span id="active-percent-count" style="font-weight: 700;">0%</span>)</div>
-              </div>
-            </div>
-
-            <div style="border-top: 1.5px solid var(--slate-200); padding-top: 1.5rem; text-align: right; display: flex; justify-content: space-between; align-items: center;">
-              <button class="btn btn-danger btn-secondary" id="btn-cancel-election-active">Cancelar Eleição</button>
-              <button class="btn btn-danger" id="btn-close-round" style="box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);">Encerrar Votação</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Codes & Public Link Card (Always visible when there is an active session) -->
-        <div class="card mb-4" id="active-codes-card">
-          <div class="card-header">
-            <h2>Códigos de Acesso & Urna Pública</h2>
-          </div>
-
-          <div class="link-copy-box">
-            <div>
-              <strong class="text-sm">Link da Urna Eletrônica Secreta:</strong>
-              <div class="link-copy-text" id="voting-url-text">http://...</div>
-            </div>
-            <button class="btn btn-secondary btn-sm" id="btn-copy-url">Copiar Link</button>
-          </div>
-
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h3>Lista de Eleitores e Códigos</h3>
-            <div style="display: flex; gap: .5rem;">
-              <button class="btn btn-secondary btn-sm" id="btn-copy-codes">Copiar Todos os Códigos</button>
-              <button class="btn btn-secondary btn-sm" id="btn-print-codes">Imprimir Senhas</button>
-            </div>
-          </div>
-
-          <!-- Tab Navigation for Voters -->
-          <div class="tabs-nav" style="display: flex; gap: .75rem; border-bottom: 2px solid var(--slate-200); padding-bottom: .25rem; margin-bottom: 1.25rem;">
-            <button class="tab-btn active" id="tab-voters-all">
-              Todos / Senhas (<span id="count-tab-all">0</span>)
-            </button>
-            <button class="tab-btn" id="tab-voters-voted">
-              Já Votaram (<span id="count-tab-voted">0</span>)
-            </button>
-            <button class="tab-btn" id="tab-voters-pending">
-              Faltam Votar (<span id="count-tab-pending">0</span>)
-            </button>
-          </div>
-
-          <div class="code-grid mb-2" id="voters-code-container">
-            <!-- Injected via js -->
-          </div>
-        </div>
-      </section>
-
-      <!-- ── MODAL: RESULTS ── -->
-      <div class="modal-overlay" id="modal-results">
-        <div class="modal">
-          <div class="modal-header">
-            <h2>Resultado da Votação</h2>
-            <button class="modal-close">✕</button>
-          </div>
-          <div id="results-alert" class="hidden mb-3"></div>
-          
-          <div style="margin-bottom: 1.5rem;">
-            <div class="step-badge" id="results-step-label">Presidente - 1º Escrutínio</div>
-            <div style="font-size: 1.25rem; font-weight: 700; color: var(--slate-800); margin-top: .2rem;" id="results-total-label">Total de votos: 0</div>
-          </div>
-
-          <div id="results-bars-container" class="mb-4">
-            <!-- Results bars injected here -->
-          </div>
-
-          <div class="alert alert-success mb-4" id="results-message-box" style="display: flex; align-items: flex-start; gap: .6rem;">
-            <span style="font-size: 1.2rem;">✨</span>
-            <div id="results-message-text">...</div>
-          </div>
-
-          <div class="modal-footer">
-            <button class="btn btn-primary" id="btn-next-step">Avançar para o Próximo Passo</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── MODAL: ELECTION DETAILS ── -->
-      <div class="modal-overlay" id="modal-election-details">
-        <div class="modal modal-lg">
-          <div class="modal-header">
-            <h2 id="det-modal-title">Detalhes da Eleição</h2>
-            <button class="modal-close">✕</button>
-          </div>
-          
-          <div style="margin-bottom: 1.25rem;">
-            <p style="font-size: .85rem; color: var(--slate-500);" id="det-modal-date">Data: —</p>
-          </div>
-
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 1.5px solid var(--slate-150); padding-bottom: .75rem;">
-            <h3>Resultados da Apuração</h3>
-            <button class="btn btn-primary btn-sm" id="btn-det-download-pdf">📥 Baixar PDF Oficial</button>
-          </div>
-
-          <div id="det-modal-content" style="max-height: 400px; overflow-y: auto; padding-right: .5rem;">
-            <!-- Content dynamically generated -->
-          </div>
-
-          <div class="modal-footer" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1.5px solid var(--slate-100);">
-            <button class="btn btn-secondary modal-close">Fechar</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── SECTION: HISTORY ── -->
-      <section id="section-history" class="hidden">
-        <div class="card">
-          <div class="card-header">
-            <h2>Histórico de Eleições</h2>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Data</th>
-                  <th>Título da Eleição</th>
-                  <th>Diretoria Eleita</th>
-                  <th style="width: 140px;" class="text-center">Ações</th>
-                </tr>
-              </thead>
-              <tbody id="history-table-body">
-                <!-- Injected via js -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-    </main>
   </div>
-</div>
 
-<div class="sidebar-overlay" id="sidebar-overlay"></div>
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
-<!-- Hidden Print Area for voter codes -->
-<div id="print-area" style="display:none"></div>
+  <!-- Hidden Print Area for voter codes -->
+  <div id="print-area" style="display:none"></div>
 
-<script type="module">
-  import { requireAuth, getUser, isFederation } from '../assets/js/auth.js?v=9'
-  import { renderShell, renderBottomNav } from '../assets/js/router.v3.js?v=9'
-  import { api } from '../assets/js/api.js?v=9'
-  import { showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading, formatDate } from '../assets/js/utils.js?v=9'
+  <script type="module">
+    import { requireAuth, getUser, isFederation } from '../assets/js/auth.js?v=9'
+    import { renderShell, renderBottomNav } from '../assets/js/router.v3.js?v=9'
+    import { api } from '../assets/js/api.js?v=9'
+    import { showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading, formatDate } from '../assets/js/utils.js?v=9'
 
-  (async () => {
-    if (!requireAuth()) throw new Error()
-    await renderShell()
-    renderBottomNav('eleicoes')
-    document.querySelector('[data-page="eleicoes"]')?.classList.add('active')
-    initModalClose()
+    (async () => {
+      if (!requireAuth()) throw new Error()
+      await renderShell()
+      renderBottomNav('eleicoes')
+      document.querySelector('[data-page="eleicoes"]')?.classList.add('active')
+      initModalClose()
 
-    // Mobile menu toggle
-    const btnMenu = document.getElementById('btn-menu')
-    const sidebar = document.querySelector('.sidebar')
-    const overlay = document.getElementById('sidebar-overlay')
-    btnMenu?.addEventListener('click', () => {
-      sidebar.classList.toggle('open')
-      overlay.classList.toggle('open')
-    })
-    overlay?.addEventListener('click', () => {
-      sidebar.classList.remove('open')
-      overlay.classList.remove('open')
-    })
+      // Mobile menu toggle
+      const btnMenu = document.getElementById('btn-menu')
+      const sidebar = document.querySelector('.sidebar')
+      const overlay = document.getElementById('sidebar-overlay')
+      btnMenu?.addEventListener('click', () => {
+        sidebar.classList.toggle('open')
+        overlay.classList.toggle('open')
+      })
+      overlay?.addEventListener('click', () => {
+        sidebar.classList.remove('open')
+        overlay.classList.remove('open')
+      })
 
-    // Elements
-    const secConfig = document.getElementById('section-config')
-    const secActive = document.getElementById('section-active')
-    const secHistory = document.getElementById('section-history')
+      // Elements
+      const secConfig = document.getElementById('section-config')
+      const secActive = document.getElementById('section-active')
+      const secHistory = document.getElementById('section-history')
 
-    // Local State
-    let activeSession = null
-    let localMembers = []
+      // Local State
+      let activeSession = null
+      let localMembers = []
 
-    // Map Backend Roles to Labels
-    const ROLE_LABELS = {
-      presidente: 'Presidente',
-      vice_presidente: 'Vice-Presidente',
-      '1_secretario': '1º Secretário(a)',
-      '2_secretario': '2º Secretário(a)',
-      secretario_executivo: 'Secretário Executivo',
-      tesoureiro: 'Tesoureiro(a)',
-    }
-
-    async function loadScreen() {
-      clearAlert('page-alert')
-      try {
-        // Try to get active election
-        activeSession = await api.get('/api/elections/active').catch(() => null)
-        
-        if (activeSession) {
-          secConfig.classList.add('hidden')
-          secActive.classList.remove('hidden')
-          secHistory.classList.add('hidden')
-          renderActiveElection()
-        } else {
-          secConfig.classList.remove('hidden')
-          secActive.classList.add('hidden')
-          secHistory.classList.remove('hidden')
-          loadConfigScreen()
-          loadHistory()
-        }
-      } catch (err) {
-        showAlert('page-alert', err.message, 'error')
+      // Map Backend Roles to Labels
+      const ROLE_LABELS = {
+        presidente: 'Presidente',
+        vice_presidente: 'Vice-Presidente',
+        '1_secretario': '1º Secretário(a)',
+        '2_secretario': '2º Secretário(a)',
+        secretario_executivo: 'Secretário Executivo',
+        tesoureiro: 'Tesoureiro(a)',
       }
-    }
 
-    // ── SECTION CONFIG ──
-    let allActiveMembers = []
-    let ineligibleMemberIds = new Set()
+      async function loadScreen() {
+        clearAlert('page-alert')
+        try {
+          // Try to get active election
+          activeSession = await api.get('/api/elections/active').catch(() => null)
 
-    async function loadConfigScreen() {
-      try {
+          if (activeSession) {
+            secConfig.classList.add('hidden')
+            secActive.classList.remove('hidden')
+            secHistory.classList.add('hidden')
+            renderActiveElection()
+          } else {
+            secConfig.classList.remove('hidden')
+            secActive.classList.add('hidden')
+            secHistory.classList.remove('hidden')
+            loadConfigScreen()
+            loadHistory()
+          }
+        } catch (err) {
+          showAlert('page-alert', err.message, 'error')
+        }
+      }
+
+      // ── SECTION CONFIG ──
+      let allActiveMembers = []
+      let ineligibleMemberIds = new Set()
+
+      async function loadConfigScreen() {
+        try {
+          const isFed = isFederation()
+
+          // Adjust headers
+          document.getElementById('config-members-header-title').textContent = isFed ? '2. Delegados Votantes (Elegibilidade)' : '2. Sócios Votados (Elegibilidade)'
+          document.getElementById('config-members-header-desc').textContent = isFed
+            ? 'Todos os delegados ativos listados abaixo podem votar. Desmarque aqueles que não podem ser votados (impedidos).'
+            : 'Todos os sócios ativos listados abaixo podem votar. Desmarque aqueles que não podem ser votados (impedidos).'
+
+          const searchInput = document.getElementById('input-search-members')
+          searchInput.placeholder = isFed ? '🔍 Pesquisar delegado por nome...' : '🔍 Pesquisar sócio por nome...'
+          searchInput.value = ''
+
+          localMembers = await api.get('/api/members/?active_only=true')
+          if (isFed) {
+            allActiveMembers = localMembers.filter(m => m.member_type === 'ativo').map(m => ({
+              id: m.id,
+              name: m.full_name,
+              local_society: m.local_society || '',
+              full_name: m.local_society ? `${m.full_name} (${m.local_society})` : m.full_name
+            }))
+          } else {
+            allActiveMembers = localMembers.filter(m => m.member_type === 'ativo')
+          }
+
+          ineligibleMemberIds.clear()
+          renderMembersGrid()
+        } catch (err) {
+          showAlert('page-alert', 'Erro ao carregar dados de configuração: ' + err.message, 'error')
+        }
+      }
+
+      function renderMembersGrid() {
+        const query = document.getElementById('input-search-members').value.trim().toLowerCase()
+        const grid = document.getElementById('config-members-grid')
         const isFed = isFederation()
-        
-        // Adjust headers
-        document.getElementById('config-members-header-title').textContent = isFed ? '2. Delegados Votantes (Elegibilidade)' : '2. Sócios Votados (Elegibilidade)'
-        document.getElementById('config-members-header-desc').textContent = isFed 
-          ? 'Todos os delegados ativos listados abaixo podem votar. Desmarque aqueles que não podem ser votados (impedidos).' 
-          : 'Todos os sócios ativos listados abaixo podem votar. Desmarque aqueles que não podem ser votados (impedidos).'
-        
-        const searchInput = document.getElementById('input-search-members')
-        searchInput.placeholder = isFed ? '🔍 Pesquisar delegado por nome...' : '🔍 Pesquisar sócio por nome...'
-        searchInput.value = ''
-        
-        localMembers = await api.get('/api/members/?active_only=true')
-        if (isFed) {
-          allActiveMembers = localMembers.filter(m => m.member_type === 'ativo').map(m => ({
-            id: m.id,
-            name: m.full_name,
-            local_society: m.local_society || '',
-            full_name: m.local_society ? `${m.full_name} (${m.local_society})` : m.full_name
-          }))
-        } else {
-          allActiveMembers = localMembers.filter(m => m.member_type === 'ativo')
+
+        const filtered = allActiveMembers.filter(m => m.full_name.toLowerCase().includes(query))
+
+        if (!filtered.length) {
+          grid.innerHTML = isFed
+            ? '<p class="text-slate-400 text-center py-3" style="grid-column: 1/-1; width: 100%;">Nenhum delegado encontrado.</p>'
+            : '<p class="text-slate-400 text-center py-3" style="grid-column: 1/-1; width: 100%;">Nenhum sócio ativo encontrado.</p>'
+          return
         }
-        
-        ineligibleMemberIds.clear()
-        renderMembersGrid()
-      } catch (err) {
-        showAlert('page-alert', 'Erro ao carregar dados de configuração: ' + err.message, 'error')
-      }
-    }
 
-    function renderMembersGrid() {
-      const query = document.getElementById('input-search-members').value.trim().toLowerCase()
-      const grid = document.getElementById('config-members-grid')
-      const isFed = isFederation()
-      
-      const filtered = allActiveMembers.filter(m => m.full_name.toLowerCase().includes(query))
-      
-      if (!filtered.length) {
-        grid.innerHTML = isFed 
-          ? '<p class="text-slate-400 text-center py-3" style="grid-column: 1/-1; width: 100%;">Nenhum delegado encontrado.</p>' 
-          : '<p class="text-slate-400 text-center py-3" style="grid-column: 1/-1; width: 100%;">Nenhum sócio ativo encontrado.</p>'
-        return
-      }
-
-      grid.innerHTML = filtered.map(m => {
-        const isChecked = !ineligibleMemberIds.has(m.id)
-        return `
+        grid.innerHTML = filtered.map(m => {
+          const isChecked = !ineligibleMemberIds.has(m.id)
+          return `
           <label class="eligibility-card" style="display: flex; align-items: center; justify-content: space-between; gap: .5rem;">
             <div style="display: flex; align-items: center; gap: .5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
               <input type="checkbox" class="can-be-voted-cb" data-member-id="${m.id}" ${isChecked ? 'checked' : ''} onchange="toggleMemberEligibility('${m.id}', this.checked)" />
@@ -630,189 +706,189 @@
             </div>
           </label>
         `
-      }).join('')
-    }
-
-    window.toggleMemberEligibility = (memberId, isChecked) => {
-      if (isChecked) {
-        ineligibleMemberIds.delete(memberId)
-      } else {
-        ineligibleMemberIds.add(memberId)
-      }
-    }
-
-    // Bind search input typing event
-    document.getElementById('input-search-members').addEventListener('input', renderMembersGrid)
-
-    // Create session
-    document.getElementById('btn-start-session').addEventListener('click', async () => {
-      const title = document.getElementById('election-title').value.trim()
-      if (!title) {
-        showAlert('page-alert', 'Por favor, insira o título da eleição.', 'error')
-        return
+        }).join('')
       }
 
-      // Selected roles
-      const checkedRoles = Array.from(document.querySelectorAll('input[name="roles"]:checked')).map(cb => cb.value)
-      if (!checkedRoles.length) {
-        showAlert('page-alert', 'Por favor, selecione pelo menos um cargo para disputa.', 'error')
-        return
-      }
-
-      const isFed = isFederation()
-      if (isFed && !allActiveMembers.length) {
-        showAlert('page-alert', 'Por favor, adicione pelo menos um delegado para a eleição.', 'error')
-        return
-      }
-
-      const ineligibleIds = Array.from(ineligibleMemberIds)
-
-      const btn = document.getElementById('btn-start-session')
-      setLoading(btn, true, 'Criar e Gerar Códigos')
-
-      try {
-        await api.post('/api/elections/', {
-          title,
-          roles_to_dispute: checkedRoles,
-          ineligible_member_ids: ineligibleIds,
-        })
-        loadScreen()
-      } catch (err) {
-        showAlert('page-alert', err.message, 'error')
-      } finally {
-        setLoading(btn, false, 'Criar e Gerar Códigos')
-      }
-    })
-
-    // ── SECTION ACTIVE ──
-    async function renderActiveElection() {
-      document.getElementById('active-title').textContent = activeSession.title
-      
-      const badge = document.getElementById('active-status-badge')
-      const configPanel = document.getElementById('active-config-panel')
-      const votingPanel = document.getElementById('active-voting-panel')
-
-      const btnCloseRound = document.getElementById('btn-close-round')
-      let advBtn = document.getElementById('btn-panel-advance')
-
-      if (activeSession.status === 'config') {
-        badge.className = 'badge badge-amber'
-        badge.textContent = 'Configuração'
-        configPanel.classList.remove('hidden')
-        votingPanel.classList.add('hidden')
-      } else {
-        badge.className = 'badge badge-green'
-        badge.textContent = 'Votação Ativa'
-        
-        if (activeSession.status === 'results') {
-          badge.className = 'badge badge-amber'
-          badge.textContent = 'Apuração (Pausada)'
-          
-          btnCloseRound.classList.add('hidden')
-          if (!advBtn) {
-            const parent = btnCloseRound.parentNode
-            advBtn = document.createElement('button')
-            advBtn.className = 'btn btn-success'
-            advBtn.id = 'btn-panel-advance'
-            advBtn.textContent = 'Liberar Próxima Fase'
-            advBtn.onclick = async () => {
-              setLoading(advBtn, true, 'Liberando...')
-              try {
-                await api.post('/api/elections/active/advance')
-                loadScreen()
-              } catch (err) {
-                alert('Erro ao avançar: ' + err.message)
-              } finally {
-                setLoading(advBtn, false, 'Liberar Próxima Fase')
-              }
-            }
-            parent.appendChild(advBtn)
-          }
-          advBtn.classList.remove('hidden')
+      window.toggleMemberEligibility = (memberId, isChecked) => {
+        if (isChecked) {
+          ineligibleMemberIds.delete(memberId)
         } else {
-          btnCloseRound.classList.remove('hidden')
-          if (advBtn) advBtn.classList.add('hidden')
+          ineligibleMemberIds.add(memberId)
+        }
+      }
+
+      // Bind search input typing event
+      document.getElementById('input-search-members').addEventListener('input', renderMembersGrid)
+
+      // Create session
+      document.getElementById('btn-start-session').addEventListener('click', async () => {
+        const title = document.getElementById('election-title').value.trim()
+        if (!title) {
+          showAlert('page-alert', 'Por favor, insira o título da eleição.', 'error')
+          return
         }
 
-        configPanel.classList.add('hidden')
-        votingPanel.classList.remove('hidden')
+        // Selected roles
+        const checkedRoles = Array.from(document.querySelectorAll('input[name="roles"]:checked')).map(cb => cb.value)
+        if (!checkedRoles.length) {
+          showAlert('page-alert', 'Por favor, selecione pelo menos um cargo para disputa.', 'error')
+          return
+        }
+
+        const isFed = isFederation()
+        if (isFed && !allActiveMembers.length) {
+          showAlert('page-alert', 'Por favor, adicione pelo menos um delegado para a eleição.', 'error')
+          return
+        }
+
+        const ineligibleIds = Array.from(ineligibleMemberIds)
+
+        const btn = document.getElementById('btn-start-session')
+        setLoading(btn, true, 'Criar e Gerar Códigos')
+
+        try {
+          await api.post('/api/elections/', {
+            title,
+            roles_to_dispute: checkedRoles,
+            ineligible_member_ids: ineligibleIds,
+          })
+          loadScreen()
+        } catch (err) {
+          showAlert('page-alert', err.message, 'error')
+        } finally {
+          setLoading(btn, false, 'Criar e Gerar Códigos')
+        }
+      })
+
+      // ── SECTION ACTIVE ──
+      async function renderActiveElection() {
+        document.getElementById('active-title').textContent = activeSession.title
+
+        const badge = document.getElementById('active-status-badge')
+        const configPanel = document.getElementById('active-config-panel')
+        const votingPanel = document.getElementById('active-voting-panel')
+
+        const btnCloseRound = document.getElementById('btn-close-round')
+        let advBtn = document.getElementById('btn-panel-advance')
+
+        if (activeSession.status === 'config') {
+          badge.className = 'badge badge-amber'
+          badge.textContent = 'Configuração'
+          configPanel.classList.remove('hidden')
+          votingPanel.classList.add('hidden')
+        } else {
+          badge.className = 'badge badge-green'
+          badge.textContent = 'Votação Ativa'
+
+          if (activeSession.status === 'results') {
+            badge.className = 'badge badge-amber'
+            badge.textContent = 'Apuração (Pausada)'
+
+            btnCloseRound.classList.add('hidden')
+            if (!advBtn) {
+              const parent = btnCloseRound.parentNode
+              advBtn = document.createElement('button')
+              advBtn.className = 'btn btn-success'
+              advBtn.id = 'btn-panel-advance'
+              advBtn.textContent = 'Liberar Próxima Fase'
+              advBtn.onclick = async () => {
+                setLoading(advBtn, true, 'Liberando...')
+                try {
+                  await api.post('/api/elections/active/advance')
+                  loadScreen()
+                } catch (err) {
+                  alert('Erro ao avançar: ' + err.message)
+                } finally {
+                  setLoading(advBtn, false, 'Liberar Próxima Fase')
+                }
+              }
+              parent.appendChild(advBtn)
+            }
+            advBtn.classList.remove('hidden')
+          } else {
+            btnCloseRound.classList.remove('hidden')
+            if (advBtn) advBtn.classList.add('hidden')
+          }
+
+          configPanel.classList.add('hidden')
+          votingPanel.classList.remove('hidden')
+        }
+        await loadRealtimeStatus()
       }
-      await loadRealtimeStatus()
-    }
 
-    // Start voting
-    document.getElementById('btn-activate-voting').addEventListener('click', async () => {
-      const btn = document.getElementById('btn-activate-voting')
-      setLoading(btn, true, 'Iniciar Votação')
-      try {
-        await api.post('/api/elections/active/start')
-        loadScreen()
-      } catch (err) {
-        showAlert('page-alert', err.message, 'error')
-      } finally {
-        setLoading(btn, false, 'Iniciar Votação')
-      }
-    })
+      // Start voting
+      document.getElementById('btn-activate-voting').addEventListener('click', async () => {
+        const btn = document.getElementById('btn-activate-voting')
+        setLoading(btn, true, 'Iniciar Votação')
+        try {
+          await api.post('/api/elections/active/start')
+          loadScreen()
+        } catch (err) {
+          showAlert('page-alert', err.message, 'error')
+        } finally {
+          setLoading(btn, false, 'Iniciar Votação')
+        }
+      })
 
-    // Cancel from config
-    document.getElementById('btn-cancel-election-config').addEventListener('click', cancelSession)
-    document.getElementById('btn-cancel-election-active').addEventListener('click', cancelSession)
+      // Cancel from config
+      document.getElementById('btn-cancel-election-config').addEventListener('click', cancelSession)
+      document.getElementById('btn-cancel-election-active').addEventListener('click', cancelSession)
 
-    async function cancelSession() {
-      if (!confirm('Tem certeza de que deseja cancelar esta eleição? Todos os dados serão perdidos.')) return
-      try {
-        await api.post('/api/elections/active/cancel')
-        loadScreen()
-      } catch (err) {
-        showAlert('page-alert', err.message, 'error')
-      }
-    }
-
-    let statusInterval = null
-
-    let currentVotersTab = 'all'
-    let lastVotersData = []
-
-    const tabAll = document.getElementById('tab-voters-all')
-    const tabVoted = document.getElementById('tab-voters-voted')
-    const tabPending = document.getElementById('tab-voters-pending')
-
-    function switchVotersTab(tab) {
-      currentVotersTab = tab
-      tabAll.classList.toggle('active', tab === 'all')
-      tabVoted.classList.toggle('active', tab === 'voted')
-      tabPending.classList.toggle('active', tab === 'pending')
-      renderVotersGrid()
-    }
-
-    tabAll.onclick = () => switchVotersTab('all')
-    tabVoted.onclick = () => switchVotersTab('voted')
-    tabPending.onclick = () => switchVotersTab('pending')
-
-    function renderVotersGrid() {
-      const container = document.getElementById('voters-code-container')
-      if (!lastVotersData || !lastVotersData.length) {
-        container.innerHTML = '<p class="text-slate-400 text-center py-3" style="grid-column: 1/-1;">Nenhum eleitor cadastrado.</p>'
-        return
+      async function cancelSession() {
+        if (!confirm('Tem certeza de que deseja cancelar esta eleição? Todos os dados serão perdidos.')) return
+        try {
+          await api.post('/api/elections/active/cancel')
+          loadScreen()
+        } catch (err) {
+          showAlert('page-alert', err.message, 'error')
+        }
       }
 
-      let filtered = lastVotersData
-      if (currentVotersTab === 'voted') {
-        filtered = lastVotersData.filter(v => v.has_voted)
-      } else if (currentVotersTab === 'pending') {
-        filtered = lastVotersData.filter(v => !v.has_voted)
+      let statusInterval = null
+
+      let currentVotersTab = 'all'
+      let lastVotersData = []
+
+      const tabAll = document.getElementById('tab-voters-all')
+      const tabVoted = document.getElementById('tab-voters-voted')
+      const tabPending = document.getElementById('tab-voters-pending')
+
+      function switchVotersTab(tab) {
+        currentVotersTab = tab
+        tabAll.classList.toggle('active', tab === 'all')
+        tabVoted.classList.toggle('active', tab === 'voted')
+        tabPending.classList.toggle('active', tab === 'pending')
+        renderVotersGrid()
       }
 
-      if (!filtered.length) {
-        container.innerHTML = '<p class="text-slate-400 text-center py-3" style="grid-column: 1/-1;">Nenhum eleitor nesta categoria.</p>'
-        return
-      }
+      tabAll.onclick = () => switchVotersTab('all')
+      tabVoted.onclick = () => switchVotersTab('voted')
+      tabPending.onclick = () => switchVotersTab('pending')
 
-      container.innerHTML = filtered.map(v => {
-        const voteBadge = v.has_voted
-          ? `<span class="badge voter-badge-voted">Votou</span>`
-          : `<span class="badge voter-badge-pending">Não votou</span>`
-        return `
+      function renderVotersGrid() {
+        const container = document.getElementById('voters-code-container')
+        if (!lastVotersData || !lastVotersData.length) {
+          container.innerHTML = '<p class="text-slate-400 text-center py-3" style="grid-column: 1/-1;">Nenhum eleitor cadastrado.</p>'
+          return
+        }
+
+        let filtered = lastVotersData
+        if (currentVotersTab === 'voted') {
+          filtered = lastVotersData.filter(v => v.has_voted)
+        } else if (currentVotersTab === 'pending') {
+          filtered = lastVotersData.filter(v => !v.has_voted)
+        }
+
+        if (!filtered.length) {
+          container.innerHTML = '<p class="text-slate-400 text-center py-3" style="grid-column: 1/-1;">Nenhum eleitor nesta categoria.</p>'
+          return
+        }
+
+        container.innerHTML = filtered.map(v => {
+          const voteBadge = v.has_voted
+            ? `<span class="badge voter-badge-voted">Votou</span>`
+            : `<span class="badge voter-badge-pending">Não votou</span>`
+          return `
           <div class="code-card" style="align-items: flex-start;">
             <div>
               <div class="code-card-name" title="${v.full_name}">${v.full_name}</div>
@@ -830,87 +906,87 @@
             </div>
           </div>
         `
-      }).join('')
-    }
+        }).join('')
+      }
 
-    // Load Realtime Status
-    async function loadRealtimeStatus() {
-      try {
-        const stats = await api.get('/api/elections/active/status')
-        
-        const isAllVoted = stats.votes_cast === stats.total_voters && stats.total_voters > 0
+      // Load Realtime Status
+      async function loadRealtimeStatus() {
+        try {
+          const stats = await api.get('/api/elections/active/status')
 
-        const banner = document.getElementById('voting-status-banner')
-        const badge = document.getElementById('active-step-badge')
-        const roleDisplay = document.getElementById('active-role-display')
-        const votesCount = document.getElementById('active-votes-count')
-        const percentCount = document.getElementById('active-percent-count')
-        const closeBtn = document.getElementById('btn-close-round')
+          const isAllVoted = stats.votes_cast === stats.total_voters && stats.total_voters > 0
 
-        const roleText = ROLE_LABELS[stats.current_role] || stats.current_role
-        
-        // Update Title & Badge
-        badge.textContent = `${stats.current_round}º Escrutínio`
-        roleDisplay.innerHTML = isAllVoted ? `${roleText} <span style="color: #16a34a; margin-left: .3rem; font-weight: 900;">✓</span>` : roleText
-        votesCount.textContent = `${stats.votes_cast} / ${stats.total_voters}`
-        
-        const pct = stats.total_voters > 0 ? Math.round((stats.votes_cast / stats.total_voters) * 100) : 0
-        percentCount.textContent = `${pct}%`
+          const banner = document.getElementById('voting-status-banner')
+          const badge = document.getElementById('active-step-badge')
+          const roleDisplay = document.getElementById('active-role-display')
+          const votesCount = document.getElementById('active-votes-count')
+          const percentCount = document.getElementById('active-percent-count')
+          const closeBtn = document.getElementById('btn-close-round')
 
-        // Style based on all voted status
-        if (isAllVoted) {
-          banner.style.background = '#f0fdf4'
-          banner.style.borderColor = '#bbf7d0'
-          badge.style.background = '#16a34a'
-          badge.style.color = '#fff'
-          roleDisplay.style.color = '#166534'
-          votesCount.style.color = '#166534'
-          
-          closeBtn.className = 'btn btn-success'
-          closeBtn.innerHTML = '🗳️ Encerrar Votação (Todos Votaram!)'
-          closeBtn.style.boxShadow = '0 4px 12px rgba(22, 163, 74, 0.25)'
-        } else {
-          banner.style.background = 'var(--blue-50)'
-          banner.style.borderColor = 'var(--blue-200)'
-          badge.style.background = 'var(--blue-700)'
-          badge.style.color = '#fff'
-          roleDisplay.style.color = 'var(--blue-900)'
-          votesCount.style.color = 'var(--blue-900)'
-          
-          closeBtn.className = 'btn btn-danger'
-          closeBtn.innerHTML = 'Encerrar Votação'
-          closeBtn.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.25)'
-        }
+          const roleText = ROLE_LABELS[stats.current_role] || stats.current_role
 
-        // Construct voting URL
-        const votingUrl = `${window.location.origin}/votar.html?session=${stats.session_id}`
-        document.getElementById('voting-url-text').textContent = votingUrl
+          // Update Title & Badge
+          badge.textContent = `${stats.current_round}º Escrutínio`
+          roleDisplay.innerHTML = isAllVoted ? `${roleText} <span style="color: #16a34a; margin-left: .3rem; font-weight: 900;">✓</span>` : roleText
+          votesCount.textContent = `${stats.votes_cast} / ${stats.total_voters}`
 
-        // Save last data and update counts
-        lastVotersData = stats.voters
-        document.getElementById('count-tab-all').textContent = stats.voters.length
-        document.getElementById('count-tab-voted').textContent = stats.voters.filter(v => v.has_voted).length
-        document.getElementById('count-tab-pending').textContent = stats.voters.filter(v => !v.has_voted).length
+          const pct = stats.total_voters > 0 ? Math.round((stats.votes_cast / stats.total_voters) * 100) : 0
+          percentCount.textContent = `${pct}%`
 
-        renderVotersGrid()
+          // Style based on all voted status
+          if (isAllVoted) {
+            banner.style.background = '#f0fdf4'
+            banner.style.borderColor = '#bbf7d0'
+            badge.style.background = '#16a34a'
+            badge.style.color = '#fff'
+            roleDisplay.style.color = '#166534'
+            votesCount.style.color = '#166534'
 
-        // Configure click event copy button
-        document.getElementById('btn-copy-url').onclick = () => {
-          navigator.clipboard.writeText(votingUrl)
-          alert('Link público copiado!')
-        }
+            closeBtn.className = 'btn btn-success'
+            closeBtn.innerHTML = '🗳️ Encerrar Votação (Todos Votaram!)'
+            closeBtn.style.boxShadow = '0 4px 12px rgba(22, 163, 74, 0.25)'
+          } else {
+            banner.style.background = 'var(--blue-50)'
+            banner.style.borderColor = 'var(--blue-200)'
+            badge.style.background = 'var(--blue-700)'
+            badge.style.color = '#fff'
+            roleDisplay.style.color = 'var(--blue-900)'
+            votesCount.style.color = 'var(--blue-900)'
 
-        // Copy all codes text
-        document.getElementById('btn-copy-codes').onclick = () => {
-          const text = stats.voters.map(v => `${v.full_name}: ${v.access_code}`).join('\n')
-          navigator.clipboard.writeText(text)
-          alert('Lista de códigos copiada para a área de transferência!')
-        }
+            closeBtn.className = 'btn btn-danger'
+            closeBtn.innerHTML = 'Encerrar Votação'
+            closeBtn.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.25)'
+          }
 
-        // Print Codes
-        document.getElementById('btn-print-codes').onclick = () => {
-          const printArea = document.getElementById('print-area')
-          printArea.innerHTML = stats.voters.map(v => `
+          // Construct voting URL
+          const votingUrl = `${window.location.origin}/votar.html?session=${stats.session_id}`
+          document.getElementById('voting-url-text').textContent = votingUrl
+
+          // Save last data and update counts
+          lastVotersData = stats.voters
+          document.getElementById('count-tab-all').textContent = stats.voters.length
+          document.getElementById('count-tab-voted').textContent = stats.voters.filter(v => v.has_voted).length
+          document.getElementById('count-tab-pending').textContent = stats.voters.filter(v => !v.has_voted).length
+
+          renderVotersGrid()
+
+          // Configure click event copy button
+          document.getElementById('btn-copy-url').onclick = () => {
+            navigator.clipboard.writeText(votingUrl)
+            alert('Link público copiado!')
+          }
+
+          // Copy all codes text
+          document.getElementById('btn-copy-codes').onclick = () => {
+            const text = stats.voters.map(v => `${v.full_name}: ${v.access_code}`).join('\n')
+            navigator.clipboard.writeText(text)
+            alert('Lista de códigos copiada para a área de transferência!')
+          }
+
+          // Print Codes
+          document.getElementById('btn-print-codes').onclick = () => {
+            const printArea = document.getElementById('print-area')
+            printArea.innerHTML = stats.voters.map(v => `
             <div class="print-code-card">
               <h2>${activeSession.title}</h2>
               <p>Código Secreto de Voto para o sócio(a):</p>
@@ -919,49 +995,49 @@
               <p style="margin-top: 10px; font-size: 0.9rem;">Acesse: ${votingUrl}</p>
             </div>
           `).join('')
-          window.print()
-        }
+            window.print()
+          }
 
-      } catch (err) {
-        if (err.message.includes('Nenhuma eleição ativa encontrada') || err.message.includes('404')) {
-          loadScreen()
-        } else {
-          showAlert('page-alert', 'Erro de status: ' + err.message, 'error')
+        } catch (err) {
+          if (err.message.includes('Nenhuma eleição ativa encontrada') || err.message.includes('404')) {
+            loadScreen()
+          } else {
+            showAlert('page-alert', 'Erro de status: ' + err.message, 'error')
+          }
         }
       }
-    }
 
-    // Set polling interval for status when voting is active
-    clearInterval(statusInterval)
-    statusInterval = setInterval(() => {
-      const activeSecVisible = !secActive.classList.contains('hidden')
-      const votingPanelActive = !document.getElementById('active-voting-panel').classList.contains('hidden')
-      if (activeSecVisible && votingPanelActive) {
-        loadRealtimeStatus()
-      }
-    }, 4000)
+      // Set polling interval for status when voting is active
+      clearInterval(statusInterval)
+      statusInterval = setInterval(() => {
+        const activeSecVisible = !secActive.classList.contains('hidden')
+        const votingPanelActive = !document.getElementById('active-voting-panel').classList.contains('hidden')
+        if (activeSecVisible && votingPanelActive) {
+          loadRealtimeStatus()
+        }
+      }, 4000)
 
-    // Close Round
-    document.getElementById('btn-close-round').addEventListener('click', async () => {
-      const btn = document.getElementById('btn-close-round')
-      setLoading(btn, true, 'Encerrar Votação')
-      clearAlert('results-alert')
+      // Close Round
+      document.getElementById('btn-close-round').addEventListener('click', async () => {
+        const btn = document.getElementById('btn-close-round')
+        setLoading(btn, true, 'Encerrar Votação')
+        clearAlert('results-alert')
 
-      try {
-        const res = await api.post('/api/elections/active/close-round')
-        
-        // Show Results Modal
-        document.getElementById('results-step-label').textContent = `${ROLE_LABELS[activeSession.current_role] || activeSession.current_role} — ${activeSession.current_round}º Escrutínio`
-        document.getElementById('results-total-label').textContent = `Total de votos: ${res.total_votes}`
+        try {
+          const res = await api.post('/api/elections/active/close-round')
 
-        // Injected bars
-        const barsContainer = document.getElementById('results-bars-container')
-        if (!res.results.length) {
-          barsContainer.innerHTML = '<p class="text-slate-400 text-center py-3">Nenhum voto foi computado.</p>'
-        } else {
-          barsContainer.innerHTML = res.results.map(r => {
-            const pct = res.total_votes > 0 ? Math.round((r.votes / res.total_votes) * 100) : 0
-            return `
+          // Show Results Modal
+          document.getElementById('results-step-label').textContent = `${ROLE_LABELS[activeSession.current_role] || activeSession.current_role} — ${activeSession.current_round}º Escrutínio`
+          document.getElementById('results-total-label').textContent = `Total de votos: ${res.total_votes}`
+
+          // Injected bars
+          const barsContainer = document.getElementById('results-bars-container')
+          if (!res.results.length) {
+            barsContainer.innerHTML = '<p class="text-slate-400 text-center py-3">Nenhum voto foi computado.</p>'
+          } else {
+            barsContainer.innerHTML = res.results.map(r => {
+              const pct = res.total_votes > 0 ? Math.round((r.votes / res.total_votes) * 100) : 0
+              return `
               <div class="result-bar-container">
                 <div class="result-bar-header">
                   <span>${r.name}</span>
@@ -972,68 +1048,68 @@
                 </div>
               </div>
             `
-          }).join('')
-        }
-
-        // Success / Progress Message
-        const msgText = document.getElementById('results-message-text')
-        const msgBox = document.getElementById('results-message-box')
-        const nextBtn = document.getElementById('btn-next-step')
-        
-        if (res.elected) {
-          msgBox.className = 'alert alert-success mb-4'
-          msgText.innerHTML = `<strong>${res.winner_name}</strong> foi eleito(a) com sucesso!<br/>Próximo passo: ${res.next_step}.`
-        } else {
-          msgBox.className = 'alert alert-amber mb-4'
-          msgText.innerHTML = `Ninguém obteve a maioria absoluta necessária nesta rodada.<br/>Próximo passo: ${res.next_step}.`
-        }
-
-        if (res.next_step.toLowerCase().includes('concluída') || res.next_step.toLowerCase().includes('concluida')) {
-          nextBtn.textContent = 'Concluir Eleição e Salvar'
-        } else {
-          nextBtn.textContent = 'Avançar para o Próximo Passo'
-        }
-
-        openModal('modal-results')
-
-        // Setup click handler for next step button
-        document.getElementById('btn-next-step').onclick = async () => {
-          const nextBtn = document.getElementById('btn-next-step')
-          setLoading(nextBtn, true, 'Avançar para o Próximo Passo')
-          try {
-            await api.post('/api/elections/active/advance')
-            closeModal('modal-results')
-            loadScreen()
-          } catch (err) {
-            alert('Erro ao avançar de fase: ' + err.message)
-          } finally {
-            setLoading(nextBtn, false, 'Avançar para o Próximo Passo')
+            }).join('')
           }
+
+          // Success / Progress Message
+          const msgText = document.getElementById('results-message-text')
+          const msgBox = document.getElementById('results-message-box')
+          const nextBtn = document.getElementById('btn-next-step')
+
+          if (res.elected) {
+            msgBox.className = 'alert alert-success mb-4'
+            msgText.innerHTML = `<strong>${res.winner_name}</strong> foi eleito(a) com sucesso!<br/>Próximo passo: ${res.next_step}.`
+          } else {
+            msgBox.className = 'alert alert-amber mb-4'
+            msgText.innerHTML = `Ninguém obteve a maioria absoluta necessária nesta rodada.<br/>Próximo passo: ${res.next_step}.`
+          }
+
+          if (res.next_step.toLowerCase().includes('concluída') || res.next_step.toLowerCase().includes('concluida')) {
+            nextBtn.textContent = 'Concluir Eleição e Salvar'
+          } else {
+            nextBtn.textContent = 'Avançar para o Próximo Passo'
+          }
+
+          openModal('modal-results')
+
+          // Setup click handler for next step button
+          document.getElementById('btn-next-step').onclick = async () => {
+            const nextBtn = document.getElementById('btn-next-step')
+            setLoading(nextBtn, true, 'Avançar para o Próximo Passo')
+            try {
+              await api.post('/api/elections/active/advance')
+              closeModal('modal-results')
+              loadScreen()
+            } catch (err) {
+              alert('Erro ao avançar de fase: ' + err.message)
+            } finally {
+              setLoading(nextBtn, false, 'Avançar para o Próximo Passo')
+            }
+          }
+
+        } catch (err) {
+          showAlert('page-alert', err.message, 'error')
+        } finally {
+          setLoading(btn, false, 'Encerrar Votação')
         }
+      })
 
-      } catch (err) {
-        showAlert('page-alert', err.message, 'error')
-      } finally {
-        setLoading(btn, false, 'Encerrar Votação')
-      }
-    })
+      // ── SECTION HISTORY ──
+      async function loadHistory() {
+        try {
+          const list = await api.get('/api/elections/history')
+          const tbody = document.getElementById('history-table-body')
+          if (!list.length) {
+            tbody.innerHTML = `<tr><td colspan="4" class="table-empty">Nenhuma eleição concluída no histórico.</td></tr>`
+            return
+          }
 
-    // ── SECTION HISTORY ──
-    async function loadHistory() {
-      try {
-        const list = await api.get('/api/elections/history')
-        const tbody = document.getElementById('history-table-body')
-        if (!list.length) {
-          tbody.innerHTML = `<tr><td colspan="4" class="table-empty">Nenhuma eleição concluída no histórico.</td></tr>`
-          return
-        }
+          tbody.innerHTML = list.map(h => {
+            const positionsHtml = Object.entries(h.elected_positions).map(([role, name]) => {
+              return `<div><strong>${ROLE_LABELS[role] || role}:</strong> ${name}</div>`
+            }).join('')
 
-        tbody.innerHTML = list.map(h => {
-          const positionsHtml = Object.entries(h.elected_positions).map(([role, name]) => {
-            return `<div><strong>${ROLE_LABELS[role] || role}:</strong> ${name}</div>`
-          }).join('')
-
-          return `
+            return `
             <tr>
               <td>${formatDate(h.created_at.split('T')[0])}</td>
               <td style="font-weight: 600;">${h.title}</td>
@@ -1047,47 +1123,47 @@
               </td>
             </tr>
           `
-        }).join('')
-      } catch (err) {
-        console.error('Erro ao carregar histórico:', err)
+          }).join('')
+        } catch (err) {
+          console.error('Erro ao carregar histórico:', err)
+        }
       }
-    }
 
-    // ── ELECTION DETAILS & PDF & DELETE ──
-    let selectedDetailsSessionId = null
+      // ── ELECTION DETAILS & PDF & DELETE ──
+      let selectedDetailsSessionId = null
 
-    window.viewElectionDetails = async (sessionId) => {
-      selectedDetailsSessionId = sessionId
-      clearAlert('page-alert')
-      
-      const content = document.getElementById('det-modal-content')
-      content.innerHTML = '<p class="text-slate-400 text-center py-3">Carregando detalhes da apuração... ⏳</p>'
-      openModal('modal-election-details')
+      window.viewElectionDetails = async (sessionId) => {
+        selectedDetailsSessionId = sessionId
+        clearAlert('page-alert')
 
-      try {
-        const details = await api.get(`/api/elections/session/${sessionId}/details`)
-        
-        document.getElementById('det-modal-title').textContent = details.title
-        document.getElementById('det-modal-date').textContent = `Data: ${formatDate(details.created_at.split('T')[0])}`
+        const content = document.getElementById('det-modal-content')
+        content.innerHTML = '<p class="text-slate-400 text-center py-3">Carregando detalhes da apuração... ⏳</p>'
+        openModal('modal-election-details')
 
-        let html = ''
-        details.roles_disputed.forEach(r => {
-          const winnerText = r.winner_name 
-            ? `<div style="font-size: .85rem; font-weight: 600; color: var(--green-600); margin-bottom: .6rem;">✨ Eleito(a): ${r.winner_name}</div>`
-            : `<div style="font-size: .85rem; font-weight: 600; color: var(--brand-red); margin-bottom: .6rem;">❌ Cargo não concluído ou sem eleito</div>`
-            
-          let roundsHtml = ''
-          r.rounds.forEach(rnd => {
-            let candidatesHtml = rnd.results.map(cand => {
-              return `
+        try {
+          const details = await api.get(`/api/elections/session/${sessionId}/details`)
+
+          document.getElementById('det-modal-title').textContent = details.title
+          document.getElementById('det-modal-date').textContent = `Data: ${formatDate(details.created_at.split('T')[0])}`
+
+          let html = ''
+          details.roles_disputed.forEach(r => {
+            const winnerText = r.winner_name
+              ? `<div style="font-size: .85rem; font-weight: 600; color: var(--green-600); margin-bottom: .6rem;">✨ Eleito(a): ${r.winner_name}</div>`
+              : `<div style="font-size: .85rem; font-weight: 600; color: var(--brand-red); margin-bottom: .6rem;">❌ Cargo não concluído ou sem eleito</div>`
+
+            let roundsHtml = ''
+            r.rounds.forEach(rnd => {
+              let candidatesHtml = rnd.results.map(cand => {
+                return `
                 <div style="display:flex; justify-content:space-between; font-size:.8rem; padding:.25rem 0; border-bottom:1px dashed var(--slate-200)">
                   <span>${cand.name}</span>
                   <span style="font-weight:600">${cand.votes} voto${cand.votes !== 1 ? 's' : ''} (${Math.round(cand.percentage)}%)</span>
                 </div>
               `
-            }).join('')
-            
-            roundsHtml += `
+              }).join('')
+
+              roundsHtml += `
               <div style="margin-bottom: 1rem; background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: var(--radius); padding: .75rem;">
                 <div style="font-size: .8rem; font-weight: 700; color: var(--slate-700); margin-bottom: .4rem; display:flex; justify-content:space-between;">
                   <span>• ${rnd.round}º Escrutínio</span>
@@ -1096,93 +1172,94 @@
                 <div>${candidatesHtml}</div>
               </div>
             `
-          })
+            })
 
-          html += `
+            html += `
             <div style="margin-bottom: 1.5rem; border: 1.5px solid var(--slate-200); border-radius: var(--radius-lg); padding: 1rem; background: #fff;">
               <h4 style="font-size: .95rem; font-weight: 700; color: var(--slate-800); margin-bottom: .3rem;">${r.role_label}</h4>
               ${winnerText}
               <div style="margin-top: .5rem;">${roundsHtml}</div>
             </div>
           `
-        })
+          })
 
-        content.innerHTML = html || '<p class="text-slate-400 text-center py-3">Nenhum detalhe de voto encontrado para esta eleição.</p>'
+          content.innerHTML = html || '<p class="text-slate-400 text-center py-3">Nenhum detalhe de voto encontrado para esta eleição.</p>'
 
-      } catch (err) {
-        content.innerHTML = `<div class="alert alert-error">${err.message}</div>`
-      }
-    }
-
-    window.downloadElectionPdf = async (sessionId) => {
-      const targetSessionId = sessionId || selectedDetailsSessionId
-      if (!targetSessionId) return
-      
-      const btn = document.getElementById('btn-det-download-pdf')
-      const origText = btn.innerHTML
-      setLoading(btn, true, 'Baixando...')
-
-      try {
-        const token = localStorage.getItem('access_token')
-        const BASE_URL = 'https://ump-gestao-api.onrender.com'
-        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-        const API_URL = isLocal ? 'http://localhost:8000' : BASE_URL
-        
-        const response = await fetch(`${API_URL}/api/elections/session/${targetSessionId}/pdf`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-        if (!response.ok) {
-          const err = await response.json().catch(() => ({ detail: 'Erro ao gerar PDF' }))
-          throw new Error(err.detail || 'Erro ao gerar PDF')
+        } catch (err) {
+          content.innerHTML = `<div class="alert alert-error">${err.message}</div>`
         }
-        const blob   = await response.blob()
-        const objUrl = URL.createObjectURL(blob)
-        window.open(objUrl, '_blank')
-        setTimeout(() => URL.revokeObjectURL(objUrl), 15000)
-      } catch (err) {
-        alert('Erro ao baixar PDF: ' + err.message)
-      } finally {
-        setLoading(btn, false, origText)
-      }
-    }
-
-    // Bind PDF download button inside modal
-    document.getElementById('btn-det-download-pdf').addEventListener('click', () => {
-      downloadElectionPdf(selectedDetailsSessionId)
-    })
-
-    window.deleteCompletedElection = async (sessionId, title) => {
-      if (!confirm(`Tem certeza absoluta de que deseja excluir permanentemente a eleição "${title}" e todos os seus votos do histórico? Esta ação é irreversível!`)) {
-        return
       }
 
-      try {
-        await api.delete(`/api/elections/session/${sessionId}`)
-        alert('Eleição excluída com sucesso!')
-        loadScreen()
-      } catch (err) {
-        alert('Erro ao excluir eleição: ' + err.message)
+      window.downloadElectionPdf = async (sessionId) => {
+        const targetSessionId = sessionId || selectedDetailsSessionId
+        if (!targetSessionId) return
+
+        const btn = document.getElementById('btn-det-download-pdf')
+        const origText = btn.innerHTML
+        setLoading(btn, true, 'Baixando...')
+
+        try {
+          const token = localStorage.getItem('access_token')
+          const BASE_URL = 'https://ump-gestao-api.onrender.com'
+          const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+          const API_URL = isLocal ? 'http://localhost:8000' : BASE_URL
+
+          const response = await fetch(`${API_URL}/api/elections/session/${targetSessionId}/pdf`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+          if (!response.ok) {
+            const err = await response.json().catch(() => ({ detail: 'Erro ao gerar PDF' }))
+            throw new Error(err.detail || 'Erro ao gerar PDF')
+          }
+          const blob = await response.blob()
+          const objUrl = URL.createObjectURL(blob)
+          window.open(objUrl, '_blank')
+          setTimeout(() => URL.revokeObjectURL(objUrl), 15000)
+        } catch (err) {
+          alert('Erro ao baixar PDF: ' + err.message)
+        } finally {
+          setLoading(btn, false, origText)
+        }
       }
-    }
 
-    window.removeAbsentVoter = async (voterId, name) => {
-      if (!confirm(`Deseja realmente remover o eleitor "${name}" (Ausente) desta sessão de votação? Isso reduzirá o quórum e permitirá encerrar o escrutínio atual.`)) {
-        return
+      // Bind PDF download button inside modal
+      document.getElementById('btn-det-download-pdf').addEventListener('click', () => {
+        downloadElectionPdf(selectedDetailsSessionId)
+      })
+
+      window.deleteCompletedElection = async (sessionId, title) => {
+        if (!confirm(`Tem certeza absoluta de que deseja excluir permanentemente a eleição "${title}" e todos os seus votos do histórico? Esta ação é irreversível!`)) {
+          return
+        }
+
+        try {
+          await api.delete(`/api/elections/session/${sessionId}`)
+          alert('Eleição excluída com sucesso!')
+          loadScreen()
+        } catch (err) {
+          alert('Erro ao excluir eleição: ' + err.message)
+        }
       }
 
-      try {
-        await api.delete(`/api/elections/active/voters/${voterId}`)
-        alert('Eleitor removido com sucesso (quórum ajustado)!')
-        loadScreen()
-      } catch (err) {
-        alert('Erro ao remover eleitor: ' + err.message)
+      window.removeAbsentVoter = async (voterId, name) => {
+        if (!confirm(`Deseja realmente remover o eleitor "${name}" (Ausente) desta sessão de votação? Isso reduzirá o quórum e permitirá encerrar o escrutínio atual.`)) {
+          return
+        }
+
+        try {
+          await api.delete(`/api/elections/active/voters/${voterId}`)
+          alert('Eleitor removido com sucesso (quórum ajustado)!')
+          loadScreen()
+        } catch (err) {
+          alert('Erro ao remover eleitor: ' + err.message)
+        }
       }
-    }
 
-    // Load initial screen data
-    await loadScreen()
+      // Load initial screen data
+      await loadScreen()
 
-  })()
-</script>
+    })()
+  </script>
 </body>
+
 </html>
