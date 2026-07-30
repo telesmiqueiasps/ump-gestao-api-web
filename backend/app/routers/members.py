@@ -42,13 +42,74 @@ class FeeCreate(BaseModel):
     amount: float
 
 
-# Listar sócios da UMP Local
+# Listar sócios da UMP Local / Delegados da Federação
 @router.get("/")
 def list_members(
     active_only: bool = True,
     current_user: User = Depends(require_local_or_federation),
     db: Session = Depends(get_db),
 ):
+    # Check/Sync board members if federation
+    if current_user.organization_type == 'federation':
+        shadow_ump = db.query(LocalUmp).filter(LocalUmp.id == current_user.organization_id).first()
+        if not shadow_ump:
+            shadow_ump = LocalUmp(
+                id=current_user.organization_id,
+                federation_id=current_user.organization_id,
+                name="Eleições da Federação",
+                fiscal_year=2026,
+                is_active=True
+            )
+            db.add(shadow_ump)
+            db.flush()
+
+        from app.models.board import BoardMember
+        import datetime
+        current_year = datetime.date.today().year
+        board_members = db.query(BoardMember).filter(
+            BoardMember.organization_id == current_user.organization_id,
+            BoardMember.fiscal_year == current_year,
+            BoardMember.is_active == True,
+            BoardMember.role != 'secretario_presbiterial'
+        ).all()
+
+        active_board_names = {bm.member_name for bm in board_members}
+
+        # Find all delegates from "Diretoria"
+        diretoria_members = db.query(Member).filter(
+            Member.local_ump_id == current_user.organization_id,
+            Member.local_society == "Diretoria"
+        ).all()
+
+        has_changes = False
+        for dm in diretoria_members:
+            if dm.full_name not in active_board_names and dm.is_active:
+                dm.is_active = False
+                has_changes = True
+
+        for bm in board_members:
+            existing = db.query(Member).filter(
+                Member.local_ump_id == current_user.organization_id,
+                Member.full_name == bm.member_name
+            ).first()
+            if not existing:
+                new_m = Member(
+                    local_ump_id=current_user.organization_id,
+                    full_name=bm.member_name,
+                    local_society="Diretoria",
+                    member_type=MemberType.ativo,
+                    is_active=True,
+                    join_date=datetime.date.today()
+                )
+                db.add(new_m)
+                has_changes = True
+            elif not existing.is_active:
+                existing.is_active = True
+                has_changes = True
+
+        if has_changes:
+            db.commit()
+
     query = db.query(Member).filter(Member.local_ump_id == current_user.organization_id)
     if active_only:
         query = query.filter(Member.is_active == True)
