@@ -697,12 +697,21 @@
           ? `<span class="badge voter-badge-voted">Votou</span>`
           : `<span class="badge voter-badge-pending">Não votou</span>`
         return `
-          <div class="code-card">
+          <div class="code-card" style="align-items: flex-start;">
             <div>
               <div class="code-card-name" title="${v.full_name}">${v.full_name}</div>
               <div style="margin-top: .3rem;">${voteBadge}</div>
             </div>
-            <div class="code-card-code">${v.access_code}</div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: .4rem;">
+              <div class="code-card-code">${v.access_code}</div>
+              ${!v.has_voted ? `
+                <button class="btn btn-ghost danger btn-sm" 
+                  style="padding: 3px 8px; min-height: auto; font-size: .7rem; width: auto; font-weight: 500;" 
+                  onclick="removeAbsentVoter('${v.id}', '${v.full_name.replace(/'/g, "\\'")}')">
+                  Remover
+                </button>
+              ` : ''}
+            </div>
           </div>
         `
       }).join('')
@@ -988,6 +997,20 @@
         loadScreen()
       } catch (err) {
         alert('Erro ao excluir eleição: ' + err.message)
+      }
+    }
+
+    window.removeAbsentVoter = async (voterId, name) => {
+      if (!confirm(`Deseja realmente remover o eleitor "${name}" (Ausente) desta sessão de votação? Isso reduzirá o quórum e permitirá encerrar o escrutínio atual.`)) {
+        return
+      }
+
+      try {
+        await api.delete(`/api/elections/active/voters/${voterId}`)
+        alert('Eleitor removido com sucesso (quórum ajustado)!')
+        loadScreen()
+      } catch (err) {
+        alert('Erro ao remover eleitor: ' + err.message)
       }
     }
 

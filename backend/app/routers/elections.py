@@ -749,3 +749,29 @@ def advance_election(
         "current_role": session.current_role,
         "current_round": session.current_round,
     }
+
+
+# Remove Voter from Active Session (Adjust Quorum)
+@router.delete("/active/voters/{voter_id}")
+def remove_active_voter(
+    voter_id: UUID,
+    current_user: User = Depends(require_local_ump),
+    db: Session = Depends(get_db),
+):
+    session = db.query(ElectionSession).filter(
+        ElectionSession.local_ump_id == current_user.organization_id,
+        ElectionSession.status != 'completed'
+    ).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Nenhuma eleição ativa encontrada.")
+
+    voter = db.query(ElectionVoter).filter(
+        ElectionVoter.id == voter_id,
+        ElectionVoter.election_session_id == session.id
+    ).first()
+    if not voter:
+        raise HTTPException(status_code=404, detail="Eleitor não encontrado nesta sessão.")
+
+    db.delete(voter)
+    db.commit()
+    return {"detail": "Eleitor removido da sessão com sucesso."}
