@@ -464,6 +464,25 @@ def load_default_attendees(
             db.add(a)
             added.append(a)
 
+    # Para Federação: carrega delegados
+    if 'delegate' not in existing_types and m.organization_type == 'federation':
+        delegates = db.query(Member).filter(
+            Member.local_ump_id == current_user.organization_id,
+            Member.is_active == True,
+            (Member.local_society.is_(None)) | (Member.local_society != 'Diretoria')
+        ).order_by(Member.full_name).all()
+        for dg in delegates:
+            a = MeetingAttendee(
+                meeting_id    = m.id,
+                attendee_type = 'delegate',
+                name          = dg.full_name,
+                local_name    = dg.local_society,
+                source_id     = dg.id,
+                is_present    = True,
+            )
+            db.add(a)
+            added.append(a)
+
     db.commit()
     db.refresh(m)
     return {"added": len(added), "meeting": _meeting_out(m)}
