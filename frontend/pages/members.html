@@ -52,9 +52,21 @@
     .month-fee-card .fee-status { font-size: .65rem; margin-top: .2rem; }
     .month-fee-card .fee-amount { font-size: .75rem; font-weight: 600; margin-top: .15rem; }
     .month-fee-card .fee-date   { font-size: .62rem; color: var(--slate-400); margin-top: .1rem; }
+    
+    .is-federation #fees-config-card {
+      display: none !important;
+    }
   </style>
 </head>
 <body>
+<script>
+  try {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user.organization_type === 'federation') {
+      document.body.classList.add('is-federation');
+    }
+  } catch (e) {}
+</script>
 
 <div class="app-shell">
   <aside class="sidebar">
@@ -90,10 +102,33 @@
     <main class="page-content">
       <div class="page-header">
         <div class="page-header-info">
-          <h1 id="page-title">Sócios</h1>
-          <p>Gerencie os sócios da sua sociedade</p>
+          <h1 id="page-title">
+            <script>
+              try {
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                document.write(user.organization_type === 'federation' ? 'Delegados' : 'Sócios');
+              } catch (e) { document.write('Sócios'); }
+            </script>
+          </h1>
+          <p id="page-desc">
+            <script>
+              try {
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                document.write(user.organization_type === 'federation' 
+                  ? 'Cadastre os delegados da reunião. Necessário para atas e eleições.' 
+                  : 'Gerencie os sócios da sua sociedade');
+              } catch (e) { document.write('Gerencie os sócios da sua sociedade'); }
+            </script>
+          </p>
         </div>
-        <button class="btn btn-primary" id="btn-new-member">+ Novo sócio</button>
+        <button class="btn btn-primary" id="btn-new-member">
+          <script>
+            try {
+              const user = JSON.parse(localStorage.getItem('user') || '{}');
+              document.write(user.organization_type === 'federation' ? '+ Novo Delegado' : '+ Novo Sócio');
+            } catch (e) { document.write('+ Novo sócio'); }
+          </script>
+        </button>
       </div>
 
       <div id="page-alert" class="hidden"></div>
@@ -162,7 +197,9 @@
     </div>
     <div class="field mb-4 hidden" id="fed-society-field">
       <label>Sociedade Local</label>
-      <input class="input" type="text" id="m-society" placeholder="Ex: Central de UMP" />
+      <select class="input" id="m-society">
+        <option value="">Carregando sociedades...</option>
+      </select>
     </div>
     <div class="field mb-4 local-only-field">
       <label>Tipo</label>
@@ -327,11 +364,25 @@
     document.querySelector('[data-page="members"]')?.classList.add('active')
     initModalClose()
 
+    let federationLocalUmps = []
+    async function loadFederationLocalUmps() {
+      try {
+        federationLocalUmps = await api.get('/api/federations/me/local-umps')
+        const select = document.getElementById('m-society')
+        select.innerHTML = '<option value="">Selecione a Sociedade Local...</option>' + 
+          federationLocalUmps.map(l => `<option value="${l.name}">${l.name}</option>`).join('')
+      } catch (err) {
+        console.error('Erro ao carregar UMPs locais:', err)
+        document.getElementById('m-society').innerHTML = '<option value="">Erro ao carregar UMPs locais</option>'
+      }
+    }
+
     const isFed = isFederation()
     if (isFed) {
       document.getElementById('fees-config-card').classList.add('hidden')
       document.getElementById('fed-society-field').classList.remove('hidden')
       document.querySelectorAll('.local-only-field').forEach(el => el.classList.add('hidden'))
+      loadFederationLocalUmps()
     }
 
     // Nomenclatura dinâmica

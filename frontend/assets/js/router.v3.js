@@ -107,7 +107,7 @@ const ADMIN_FEDERATION_ID = 'cf5aaa60-0fd1-4ee5-a0cd-a37849b87a09'
 function buildNavHTML(user, societyType) {
   societyType = societyType || localStorage.getItem('society_type') || 'UMP'
   const userRoles = user?.roles ?? []
-  const memberLabel = MEMBER_LABELS[societyType] || 'Sócios'
+  const memberLabel = isFederation() ? 'Delegados' : (MEMBER_LABELS[societyType] || 'Sócios')
 
   return NAV_ITEMS
     .filter(item => {
