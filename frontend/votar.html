@@ -300,6 +300,13 @@
         🔄 Verificar Próxima Rodada
       </button>
     </div>
+
+    <!-- Sair / Trocar de Código -->
+    <div style="margin-top: 1.5rem; border-top: 1.5px solid var(--gray200); padding-top: 1rem; text-align: center;">
+      <button class="btn btn-secondary" id="btn-logout" style="width: auto; margin: 0 auto; padding: .5rem 1.25rem; font-size: .85rem; min-height: auto; display: inline-flex;">
+        🚪 Sair / Votar com outro código
+      </button>
+    </div>
   </div>
 
 </div>
@@ -471,6 +478,7 @@
   document.getElementById('btn-refresh-status').addEventListener('click', async () => {
     const btn = document.getElementById('btn-refresh-status')
     setLoading(btn, true, 'Verificar Próxima Rodada')
+    clearAlert('ballot-alert')
     
     try {
       const res = await fetch(`${API_URL}/api/elections/public/session?code=${voterCode}`)
@@ -479,13 +487,36 @@
         throw new Error(err.detail || 'Erro ao carregar sessão.')
       }
       const data = await res.json()
+      
+      const isSameRound = data.current_role === currentSession.current_role && data.current_round === currentSession.current_round
+      const isStillVoted = data.has_voted
+      const isCompleted = data.status === 'completed'
+
       currentSession = data
       renderBallotScreen()
+
+      if (isSameRound && isStillVoted && !isCompleted) {
+        showAlert('ballot-alert', 'O próximo escrutínio ainda não está pronto. Aguarde o administrador liberar a votação.', 'error')
+      } else if (isCompleted) {
+        showAlert('ballot-alert', 'A votação deste cargo/processo eleitoral foi encerrada.', 'success')
+      }
     } catch (err) {
       showAlert('ballot-alert', err.message)
     } finally {
       setLoading(btn, false, '🔄 Verificar Próxima Rodada')
     }
+  })
+
+  // Sair / Votar com outro código
+  document.getElementById('btn-logout').addEventListener('click', () => {
+    voterCode = ''
+    currentSession = null
+    document.getElementById('voter-code').value = ''
+    clearAlert('login-alert')
+    clearAlert('ballot-alert')
+    
+    cardLogin.classList.remove('hidden')
+    cardBallot.classList.add('hidden')
   })
 </script>
 </body>
