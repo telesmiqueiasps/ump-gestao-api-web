@@ -337,9 +337,7 @@ def close_round(
                 session.status = "results"
                 next_step = f"Iniciar votação para {roles[current_idx + 1].replace('_', ' ').title()}"
             else:
-                session.status = "completed"
-                session.current_role = None
-                session.current_round = 1
+                session.status = "results"
                 next_step = "Eleição concluída"
         else:
             # Not elected, transition to results state

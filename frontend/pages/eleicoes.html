@@ -821,12 +821,20 @@
         // Success / Progress Message
         const msgText = document.getElementById('results-message-text')
         const msgBox = document.getElementById('results-message-box')
+        const nextBtn = document.getElementById('btn-next-step')
+        
         if (res.elected) {
           msgBox.className = 'alert alert-success mb-4'
           msgText.innerHTML = `<strong>${res.winner_name}</strong> foi eleito(a) com sucesso!<br/>Próximo passo: ${res.next_step}.`
         } else {
           msgBox.className = 'alert alert-amber mb-4'
           msgText.innerHTML = `Ninguém obteve a maioria absoluta necessária nesta rodada.<br/>Próximo passo: ${res.next_step}.`
+        }
+
+        if (res.next_step.toLowerCase().includes('concluída') || res.next_step.toLowerCase().includes('concluida')) {
+          nextBtn.textContent = 'Concluir Eleição e Salvar'
+        } else {
+          nextBtn.textContent = 'Avançar para o Próximo Passo'
         }
 
         openModal('modal-results')
