@@ -66,30 +66,11 @@ def get_presigned_url(key: str, expires_in: int = 3600) -> str:
 def delete_file(key: str) -> bool:
     client = _get_client()
     try:
-        response = client.list_object_versions(
+        logger.info(f"Deletando arquivo do R2 - key: {key}")
+        client.delete_object(
             Bucket=settings.r2_bucket_name,
-            Prefix=key
+            Key=key
         )
-
-        versions = response.get('Versions', [])
-        delete_markers = response.get('DeleteMarkers', [])
-
-        all_objects = [
-            {'Key': v['Key'], 'VersionId': v['VersionId']}
-            for v in versions
-        ] + [
-            {'Key': d['Key'], 'VersionId': d['VersionId']}
-            for d in delete_markers
-        ]
-
-        logger.info(f"Deletando arquivo do R2 - key: {key} - {len(all_objects)} versão(ões)")
-
-        if all_objects:
-            client.delete_objects(
-                Bucket=settings.r2_bucket_name,
-                Delete={'Objects': all_objects}
-            )
-
         return True
     except Exception as e:
         logger.error(f"Erro ao deletar arquivo do R2: {e}")
@@ -99,30 +80,21 @@ def delete_file(key: str) -> bool:
 def delete_folder(prefix: str) -> bool:
     client = _get_client()
     try:
-        response = client.list_object_versions(
+        response = client.list_objects_v2(
             Bucket=settings.r2_bucket_name,
             Prefix=prefix
         )
 
-        versions = response.get('Versions', [])
-        delete_markers = response.get('DeleteMarkers', [])
-
-        all_objects = [
-            {'Key': v['Key'], 'VersionId': v['VersionId']}
-            for v in versions
-        ] + [
-            {'Key': d['Key'], 'VersionId': d['VersionId']}
-            for d in delete_markers
-        ]
-
-        logger.info(f"Deletando pasta do R2 - prefix: {prefix} - {len(all_objects)} objeto(s)")
-
-        if not all_objects:
+        objects = response.get('Contents', [])
+        if not objects:
             return True
+
+        delete_keys = [{'Key': obj['Key']} for obj in objects]
+        logger.info(f"Deletando pasta do R2 - prefix: {prefix} - {len(delete_keys)} objeto(s)")
 
         client.delete_objects(
             Bucket=settings.r2_bucket_name,
-            Delete={'Objects': all_objects}
+            Delete={'Objects': delete_keys}
         )
 
         return True
