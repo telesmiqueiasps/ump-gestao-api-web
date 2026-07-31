@@ -7,44 +7,31 @@ settings = get_settings()
 
 logger = logging.getLogger(__name__)
 
-_b2_client_instance = None
-_b2_client_lock = threading.Lock()
+_r2_client_instance = None
+_r2_client_lock = threading.Lock()
 
 
 def _get_client():
-    global _b2_client_instance
-    if _b2_client_instance is None:
-        with _b2_client_lock:
-            if _b2_client_instance is None:
+    global _r2_client_instance
+    if _r2_client_instance is None:
+        with _r2_client_lock:
+            if _r2_client_instance is None:
                 import boto3
-                key_id = settings.b2_key_id or ""
+                key_id = settings.r2_access_key_id or ""
                 logger.info(
-                    "B2 client init - key_id prefix: %s... | endpoint: %s | bucket: %s",
+                    "R2 client init - key_id prefix: %s... | endpoint: %s | bucket: %s",
                     key_id[:8],
-                    settings.b2_endpoint_url,
-                    settings.b2_bucket_name,
+                    settings.r2_endpoint_url,
+                    settings.r2_bucket_name,
                 )
-                _b2_client_instance = boto3.client(
+                _r2_client_instance = boto3.client(
                     "s3",
-                    endpoint_url=settings.b2_endpoint_url,
-                    aws_access_key_id=settings.b2_key_id,
-                    aws_secret_access_key=settings.b2_application_key,
-                    region_name="us-west-004",
+                    endpoint_url=settings.r2_endpoint_url,
+                    aws_access_key_id=settings.r2_access_key_id,
+                    aws_secret_access_key=settings.r2_secret_access_key,
+                    region_name="auto",
                 )
-    return _b2_client_instance
-
-
-def _download_base() -> str:
-    """Deriva a base de URL de download público a partir do endpoint S3.
-
-    Exemplos:
-      https://s3.us-east-005.backblazeb2.com  →  https://f005.backblazeb2.com/file/<bucket>
-      https://s3.us-west-004.backblazeb2.com  →  https://f004.backblazeb2.com/file/<bucket>
-      https://s3.eu-central-003.backblazeb2.com → https://f003.backblazeb2.com/file/<bucket>
-    """
-    match = re.search(r'(\w+)-(\w+)-(\d+)', settings.b2_endpoint_url)
-    region_num = match.group(3) if match else "005"
-    return f"https://f{region_num}.backblazeb2.com/file/{settings.b2_bucket_name}"
+    return _r2_client_instance
 
 
 def upload_file(contents: bytes, key: str, content_type: str) -> str:
@@ -52,7 +39,7 @@ def upload_file(contents: bytes, key: str, content_type: str) -> str:
     client = _get_client()
     try:
         client.put_object(
-            Bucket=settings.b2_bucket_name,
+            Bucket=settings.r2_bucket_name,
             Key=key,
             Body=contents,
             ContentType=content_type,
@@ -60,15 +47,17 @@ def upload_file(contents: bytes, key: str, content_type: str) -> str:
     except ClientError as e:
         code = e.response.get("Error", {}).get("Code", "desconhecido")
         msg = e.response.get("Error", {}).get("Message", str(e))
-        raise RuntimeError(f"Falha ao enviar arquivo para o Backblaze B2 (código {code}): {msg}") from e
-    return f"{_download_base()}/{key}"
+        raise RuntimeError(f"Falha ao enviar arquivo para o Cloudflare R2 (código {code}): {msg}") from e
+    
+    public_domain = settings.r2_public_domain.rstrip('/')
+    return f"{public_domain}/{key}"
 
 
 def get_presigned_url(key: str, expires_in: int = 3600) -> str:
     client = _get_client()
     url = client.generate_presigned_url(
         "get_object",
-        Params={"Bucket": settings.b2_bucket_name, "Key": key},
+        Params={"Bucket": settings.r2_bucket_name, "Key": key},
         ExpiresIn=expires_in,
     )
     return url
@@ -78,7 +67,7 @@ def delete_file(key: str) -> bool:
     client = _get_client()
     try:
         response = client.list_object_versions(
-            Bucket=settings.b2_bucket_name,
+            Bucket=settings.r2_bucket_name,
             Prefix=key
         )
 
@@ -93,17 +82,17 @@ def delete_file(key: str) -> bool:
             for d in delete_markers
         ]
 
-        logger.info(f"Deletando arquivo do B2 - key: {key} - {len(all_objects)} versão(ões)")
+        logger.info(f"Deletando arquivo do R2 - key: {key} - {len(all_objects)} versão(ões)")
 
         if all_objects:
             client.delete_objects(
-                Bucket=settings.b2_bucket_name,
+                Bucket=settings.r2_bucket_name,
                 Delete={'Objects': all_objects}
             )
 
         return True
     except Exception as e:
-        logger.error(f"Erro ao deletar arquivo do B2: {e}")
+        logger.error(f"Erro ao deletar arquivo do R2: {e}")
         return False
 
 
@@ -111,7 +100,7 @@ def delete_folder(prefix: str) -> bool:
     client = _get_client()
     try:
         response = client.list_object_versions(
-            Bucket=settings.b2_bucket_name,
+            Bucket=settings.r2_bucket_name,
             Prefix=prefix
         )
 
@@ -126,17 +115,17 @@ def delete_folder(prefix: str) -> bool:
             for d in delete_markers
         ]
 
-        logger.info(f"Deletando pasta do B2 - prefix: {prefix} - {len(all_objects)} objeto(s)")
+        logger.info(f"Deletando pasta do R2 - prefix: {prefix} - {len(all_objects)} objeto(s)")
 
         if not all_objects:
             return True
 
         client.delete_objects(
-            Bucket=settings.b2_bucket_name,
+            Bucket=settings.r2_bucket_name,
             Delete={'Objects': all_objects}
         )
 
         return True
     except Exception as e:
-        logger.error(f"Erro ao deletar pasta do B2: {e}")
+        logger.error(f"Erro ao deletar pasta do R2: {e}")
         return False

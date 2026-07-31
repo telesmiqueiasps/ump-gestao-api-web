@@ -12,11 +12,28 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 7
 
-    # Backblaze B2
-    b2_key_id: str
-    b2_application_key: str
-    b2_bucket_name: str
-    b2_endpoint_url: str
+    # Cloudflare R2
+    r2_access_key_id: str
+    r2_secret_access_key: str
+    r2_bucket_name: str
+    r2_endpoint_url: str
+    r2_public_domain: str
+
+    @property
+    def b2_bucket_name(self) -> str:
+        return self.r2_bucket_name
+
+    @property
+    def b2_key_id(self) -> str:
+        return self.r2_access_key_id
+
+    @property
+    def b2_application_key(self) -> str:
+        return self.r2_secret_access_key
+
+    @property
+    def b2_endpoint_url(self) -> str:
+        return self.r2_endpoint_url
 
     # App
     app_env: str = "development"
