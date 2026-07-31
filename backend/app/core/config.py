@@ -13,11 +13,11 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int = 7
 
     # Cloudflare R2
-    r2_access_key_id: str
-    r2_secret_access_key: str
-    r2_bucket_name: str
-    r2_endpoint_url: str
-    r2_public_domain: str
+    r2_access_key_id: str = ""
+    r2_secret_access_key: str = ""
+    r2_bucket_name: str = ""
+    r2_endpoint_url: str = ""
+    r2_public_domain: str = ""
 
     @property
     def b2_bucket_name(self) -> str:
@@ -50,6 +50,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = False
+        extra = "ignore"
 
 
 @lru_cache()

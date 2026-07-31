@@ -129,9 +129,7 @@ def _resize_image(img_bytes: bytes, max_width: int = 800) -> bytes:
 
 def _download_b2(client, bucket, url):
     try:
-        match = re.search(rf'/file/{re.escape(bucket)}/(.+)$', url)
-        if not match:
-            match = re.search(rf'/{re.escape(bucket)}/(.+)$', url)
+        match = re.search(r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', url)
         if not match:
             return None, None
         key = match.group(1)
@@ -493,9 +491,7 @@ def generate_meeting_report(
 def _extract_b2_key(key_or_url: str, bucket: str) -> str:
     if not key_or_url:
         return ""
-    match = re.search(rf'/file/{re.escape(bucket)}/(.+)$', key_or_url)
-    if not match:
-        match = re.search(rf'/{re.escape(bucket)}/(.+)$', key_or_url)
+    match = re.search(r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', key_or_url)
     if match:
         return match.group(1)
     return key_or_url

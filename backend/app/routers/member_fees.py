@@ -46,9 +46,7 @@ def _delete_receipt_from_b2(receipt_url, settings_obj):
     if not receipt_url:
         return
     bucket_name = settings_obj.b2_bucket_name
-    match = re.search(rf'/file/{re.escape(bucket_name)}/(.+)$', receipt_url)
-    if not match:
-        match = re.search(rf'/{re.escape(bucket_name)}/(.+)$', receipt_url)
+    match = re.search(r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', receipt_url)
     if match:
         folder = '/'.join(match.group(1).split('/')[:-1]) + '/'
         delete_folder(folder)

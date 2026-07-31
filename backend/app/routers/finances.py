@@ -338,9 +338,7 @@ def delete_transaction(
             if contrib.receipt_url:
                 try:
                     bucket_name = settings_obj.b2_bucket_name
-                    match = re.search(rf'/file/{re.escape(bucket_name)}/(.+)$', contrib.receipt_url)
-                    if not match:
-                        match = re.search(rf'/{re.escape(bucket_name)}/(.+)$', contrib.receipt_url)
+                    match = re.search(r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', contrib.receipt_url)
                     if match:
                         folder = '/'.join(match.group(1).split('/')[:-1]) + '/'
                         delete_folder(folder)
@@ -359,7 +357,7 @@ def delete_transaction(
     if receipt_url:
         bucket_name = settings_obj.b2_bucket_name
         key = None
-        match1 = re.search(rf'/file/{re.escape(bucket_name)}/(.+)$', receipt_url)
+        match1 = re.search(r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', receipt_url)
         if match1:
             key = match1.group(1)
         if not key:
@@ -400,7 +398,7 @@ def delete_receipts_by_year(
         receipt_url = str(transaction.receipt_url)
 
         key = None
-        match1 = re.search(rf'/file/{re.escape(bucket_name)}/(.+)$', receipt_url)
+        match1 = re.search(r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', receipt_url)
         if match1:
             key = match1.group(1)
         if not key:
@@ -565,9 +563,7 @@ def close_period(
     b2_client = _get_client()
     bucket_name = settings_obj.b2_bucket_name
     if org_data.get('logo_url'):
-        match = re.search(rf'/file/{re.escape(bucket_name)}/(.+)$', org_data['logo_url'])
-        if not match:
-            match = re.search(rf'/{re.escape(bucket_name)}/(.+)$', org_data['logo_url'])
+        match = re.search(r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', org_data['logo_url'])
         if match:
             try:
                 resp = b2_client.get_object(Bucket=bucket_name, Key=match.group(1))
@@ -699,9 +695,7 @@ def get_report_urls(
     def get_url(stored_url):
         if not stored_url:
             return None
-        match = re.search(rf'/file/{re.escape(bucket_name)}/(.+)$', stored_url)
-        if not match:
-            match = re.search(rf'/{re.escape(bucket_name)}/(.+)$', stored_url)
+        match = re.search(r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', stored_url)
         if not match:
             return None
         return get_presigned_url(match.group(1), expires_in=3600)
@@ -881,7 +875,7 @@ def get_receipt_url(
     # Extrai a key do arquivo da URL armazenada.
     # Formato esperado: https://f005.backblazeb2.com/file/BUCKET/KEY
     stored_url = transaction.receipt_url
-    match = re.search(rf'/file/{re.escape(settings.b2_bucket_name)}/(.+)$', stored_url)
+    match = re.search(r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', stored_url)
     key = match.group(1) if match else stored_url
 
     presigned = get_presigned_url(key, expires_in=3600)

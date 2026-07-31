@@ -154,9 +154,7 @@ def _get_logos(org_data, b2_client=None):
 
     logo_bytes = None
     if org_data.get('logo_url'):
-        match = re.search(rf'/file/{re.escape(bucket)}/(.+)$', org_data['logo_url'])
-        if not match:
-            match = re.search(rf'/{re.escape(bucket)}/(.+)$', org_data['logo_url'])
+        match = re.search(r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', org_data['logo_url'])
         if match:
             try:
                 resp = b2.get_object(Bucket=bucket, Key=match.group(1))
@@ -626,9 +624,7 @@ def get_published_url(
     from app.services.storage import get_presigned_url
     settings_obj = get_settings()
     bucket = settings_obj.b2_bucket_name
-    match = re.search(rf'/file/{re.escape(bucket)}/(.+)$', report.report_url)
-    if not match:
-        match = re.search(rf'/{re.escape(bucket)}/(.+)$', report.report_url)
+    match = re.search(r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', report.report_url)
     if not match:
         raise HTTPException(status_code=400, detail="URL inválida")
 

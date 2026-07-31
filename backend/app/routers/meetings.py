@@ -647,9 +647,7 @@ def generate_meeting_pdf(
     logo_bytes = None
     if org_data.get('logo_url'):
         try:
-            match = re.search(rf'/file/{re.escape(bucket)}/(.+)$', org_data['logo_url'])
-            if not match:
-                match = re.search(rf'/{re.escape(bucket)}/(.+)$', org_data['logo_url'])
+            match = re.search(r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', org_data['logo_url'])
             if match:
                 resp = b2.get_object(Bucket=bucket, Key=match.group(1))
                 logo_bytes = resp['Body'].read()

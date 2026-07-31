@@ -116,9 +116,7 @@ async def upload_logo(
         from app.core.config import get_settings
         import re
         s = get_settings()
-        match = re.search(rf'/file/{re.escape(s.b2_bucket_name)}/(.+)$', federation.logo_url)
-        if not match:
-            match = re.search(rf'/{re.escape(s.b2_bucket_name)}/(.+)$', federation.logo_url)
+        match = re.search(r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', federation.logo_url)
         if match:
             old_key = match.group(1)
             folder = '/'.join(old_key.split('/')[:-1]) + '/'
@@ -151,9 +149,7 @@ def get_logo_url(
     bucket_name = s.b2_bucket_name
     stored_url = federation.logo_url
 
-    match = re.search(rf'/file/{re.escape(bucket_name)}/(.+)$', stored_url)
-    if not match:
-        match = re.search(rf'/{re.escape(bucket_name)}/(.+)$', stored_url)
+    match = re.search(r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', stored_url)
     if not match:
         raise HTTPException(status_code=400, detail="URL da logo inválida")
 

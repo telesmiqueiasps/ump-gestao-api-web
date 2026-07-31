@@ -197,9 +197,7 @@ def generate_stat_pdf(
             settings_obj = get_settings()
             bucket = settings_obj.b2_bucket_name
             b2 = _get_client()
-            match = re.search(rf'/file/{re.escape(bucket)}/(.+)$', logo_url)
-            if not match:
-                match = re.search(rf'/{re.escape(bucket)}/(.+)$', logo_url)
+            match = re.search(r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', logo_url)
             if match:
                 resp = b2.get_object(Bucket=bucket, Key=match.group(1))
                 logo_bytes = resp['Body'].read()

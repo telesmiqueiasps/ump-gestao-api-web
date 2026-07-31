@@ -397,9 +397,7 @@ def get_signed_report_url(
 
     s = get_settings()
     bucket = s.b2_bucket_name
-    match = re.search(rf'/file/{re.escape(bucket)}/(.+)$', sig.report_url)
-    if not match:
-        match = re.search(rf'/{re.escape(bucket)}/(.+)$', sig.report_url)
+    match = re.search(r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', sig.report_url)
     if not match:
         raise HTTPException(400, "URL inválida")
     url = get_presigned_url(match.group(1), expires_in=3600)
@@ -446,9 +444,7 @@ def _generate_signed_pdf(sig: ReportSignature, approver: User, db: Session):
     # Logo
     logo_bytes = None
     if org_data.get('logo_url'):
-        match = re.search(rf'/file/{re.escape(bucket)}/(.+)$', org_data['logo_url'])
-        if not match:
-            match = re.search(rf'/{re.escape(bucket)}/(.+)$', org_data['logo_url'])
+        match = re.search(r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', org_data['logo_url'])
         if match:
             try:
                 resp = b2.get_object(Bucket=bucket, Key=match.group(1))

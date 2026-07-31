@@ -262,7 +262,7 @@ def send_reminders(
                 _settings = get_settings()
                 _bucket = _settings.b2_bucket_name
                 _match = _re.search(
-                    rf'/file/{_re.escape(_bucket)}/(.+)$',
+                    r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$',
                     local.logo_url
                 )
                 if _match:

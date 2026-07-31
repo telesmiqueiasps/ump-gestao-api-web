@@ -182,9 +182,7 @@ def get_local_report_urls(
     def _presign(url):
         if not url:
             return None
-        match = re.search(rf'/file/{re.escape(bucket)}/(.+)$', url)
-        if not match:
-            match = re.search(rf'/{re.escape(bucket)}/(.+)$', url)
+        match = re.search(r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', url)
         if not match:
             return None
         return get_presigned_url(match.group(1), expires_in=3600)
@@ -275,9 +273,7 @@ def get_local_activity_report_url(
 
     settings_obj = get_settings()
     bucket = settings_obj.b2_bucket_name
-    match = re.search(rf'/file/{re.escape(bucket)}/(.+)$', report.report_url)
-    if not match:
-        match = re.search(rf'/{re.escape(bucket)}/(.+)$', report.report_url)
+    match = re.search(r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', report.report_url)
     if not match:
         raise HTTPException(status_code=400, detail="URL inválida")
 
@@ -452,9 +448,7 @@ async def upload_logo(
         from app.core.config import get_settings
         import re
         s = get_settings()
-        match = re.search(rf'/file/{re.escape(s.b2_bucket_name)}/(.+)$', local.logo_url)
-        if not match:
-            match = re.search(rf'/{re.escape(s.b2_bucket_name)}/(.+)$', local.logo_url)
+        match = re.search(r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', local.logo_url)
         if match:
             old_key = match.group(1)
             folder = '/'.join(old_key.split('/')[:-1]) + '/'
@@ -486,9 +480,7 @@ def get_logo_url_local(
     bucket_name = s.b2_bucket_name
     stored_url = local.logo_url
 
-    match = re.search(rf'/file/{re.escape(bucket_name)}/(.+)$', stored_url)
-    if not match:
-        match = re.search(rf'/{re.escape(bucket_name)}/(.+)$', stored_url)
+    match = re.search(r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', stored_url)
     if not match:
         raise HTTPException(status_code=400, detail="URL da logo inválida")
 

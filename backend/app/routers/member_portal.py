@@ -232,9 +232,7 @@ def get_org_public_info(
             settings = get_settings()
             b2 = _get_client()
             bucket = settings.b2_bucket_name
-            match = _re.search(rf'/file/{_re.escape(bucket)}/(.+)$', local.logo_url)
-            if not match:
-                match = _re.search(rf'/{_re.escape(bucket)}/(.+)$', local.logo_url)
+            match = _re.search(r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', local.logo_url)
             if match:
                 resp = b2.get_object(Bucket=bucket, Key=match.group(1))
                 ct = resp.get('ContentType', 'image/png')
