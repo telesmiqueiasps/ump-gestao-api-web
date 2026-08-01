@@ -8,7 +8,7 @@ from app.models.local_ump import LocalUmp
 from app.models.user import User
 from app.models.enums import OrgType, BoardRole
 from app.core.dependencies import get_current_user, require_federation, require_local_ump
-from app.services.storage import upload_file
+from app.services.storage import upload_file, get_file_base64
 
 router = APIRouter()
 
@@ -473,7 +473,7 @@ def get_logo_url_local(
     if not local or not local.logo_url:
         raise HTTPException(status_code=404, detail="Logo não encontrada")
 
-    return {"url": local.logo_url, "base64": None}
+    return {"url": local.logo_url, "base64": get_file_base64(local.logo_url)}
 
 
 @router.post("/me/pix-qr")

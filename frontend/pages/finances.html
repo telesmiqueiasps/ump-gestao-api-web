@@ -1390,7 +1390,7 @@
     const tesoureiro = boardData.find(b => b.role === 'tesoureiro')
 
     // ── Logos ──
-    // Logo da organização — baixar usando a URL direta pública e converter no client-side
+    // Logo da organização — se o backend retornar base64 (livre de CORS), usamos direto. Senão, convertemos no client-side
     updateFinancePDFProgress(70, 'Processando logotipo da organização...')
     let orgLogoB64 = null
     if (orgData.logo_url) {
@@ -1398,10 +1398,12 @@
         const logoUrlEndpoint = isFederation() ? '/api/federations/me/logo-url' : '/api/local-umps/me/logo-url'
         const logoData = await api.get(logoUrlEndpoint)
         const logoUrl = logoData.url || logoData.base64 || null
-        if (logoUrl) {
+        if (logoData.base64 && logoData.base64.startsWith('data:')) {
+          orgLogoB64 = logoData.base64
+        } else if (logoUrl) {
           orgLogoB64 = await imageToBase64(logoUrl)
         }
-        console.log('Logo convertida via URL:', orgLogoB64 ? 'OK' : 'FALHOU')
+        console.log('Logo obtida para o PDF:', orgLogoB64 ? 'OK' : 'FALHOU')
       } catch(err) {
         console.error('Erro ao buscar logo:', err)
         orgLogoB64 = null

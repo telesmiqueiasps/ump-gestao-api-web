@@ -8,7 +8,7 @@ from app.models.federation import Federation
 from app.models.local_ump import LocalUmp
 from app.core.dependencies import get_current_user, require_federation
 from app.models.user import User
-from app.services.storage import upload_file
+from app.services.storage import upload_file, get_file_base64
 
 router = APIRouter()
 
@@ -142,7 +142,7 @@ def get_logo_url(
     if not federation or not federation.logo_url:
         raise HTTPException(status_code=404, detail="Logo não encontrada")
 
-    return {"url": federation.logo_url, "base64": None}
+    return {"url": federation.logo_url, "base64": get_file_base64(federation.logo_url)}
 
 
 # Federação lista suas UMPs Locais

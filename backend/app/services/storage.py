@@ -133,3 +133,23 @@ def resize_image_max_size(image_bytes: bytes, max_size: int = 1200) -> bytes:
     except Exception as e:
         logger.error(f"Erro ao redimensionar imagem: {e}")
         return image_bytes
+
+
+def get_file_base64(url: str) -> str:
+    if not url:
+        return None
+    match = re.search(
+        r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$',
+        url
+    )
+    key = match.group(1) if match else url
+    client = _get_client()
+    try:
+        resp = client.get_object(Bucket=settings.r2_bucket_name, Key=key)
+        content_type = resp.get('ContentType', 'image/png')
+        body = resp['Body'].read()
+        import base64
+        return f"data:{content_type};base64,{base64.b64encode(body).decode('utf-8')}"
+    except Exception as e:
+        logger.error(f"Erro ao obter base64 de {key}: {e}")
+        return None
