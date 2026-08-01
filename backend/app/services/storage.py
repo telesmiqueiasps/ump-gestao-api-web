@@ -101,3 +101,35 @@ def delete_folder(prefix: str) -> bool:
     except Exception as e:
         logger.error(f"Erro ao deletar pasta do R2: {e}")
         return False
+
+
+def resize_image_max_size(image_bytes: bytes, max_size: int = 1200) -> bytes:
+    try:
+        from PIL import Image
+        import io
+        img = Image.open(io.BytesIO(image_bytes))
+        width, height = img.size
+        if width <= max_size and height <= max_size:
+            return image_bytes
+
+        if width > height:
+            new_width = max_size
+            new_height = int(height * (max_size / width))
+        else:
+            new_height = max_size
+            new_width = int(width * (max_size / height))
+
+        resample_filter = getattr(Image, "Resampling", None)
+        if resample_filter is not None:
+            filter_type = resample_filter.LANCZOS
+        else:
+            filter_type = getattr(Image, "ANTIALIAS", Image.BICUBIC)
+
+        img_resized = img.resize((new_width, new_height), filter_type)
+        fmt = img.format or "JPEG"
+        out_buf = io.BytesIO()
+        img_resized.save(out_buf, format=fmt, quality=85)
+        return out_buf.getvalue()
+    except Exception as e:
+        logger.error(f"Erro ao redimensionar imagem: {e}")
+        return image_bytes

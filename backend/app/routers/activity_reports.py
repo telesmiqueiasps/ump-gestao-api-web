@@ -3,7 +3,7 @@ import os
 import re
 import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, BackgroundTasks
 from fastapi.responses import StreamingResponse, Response
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -405,6 +405,9 @@ async def upload_activity_photo(
     if len(contents) > 15 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="Arquivo muito grande. Máx 15MB.")
 
+    from app.services.storage import resize_image_max_size
+    contents = resize_image_max_size(contents, max_size=1200)
+
     order = len(act.photos)
     safe_name = re.sub(r'[^a-zA-Z0-9._-]', '_', file.filename or 'photo')
     key = f"activities/{current_user.organization_id}/{activity_id}/{order}_{safe_name}"
@@ -474,11 +477,98 @@ def get_activity_photo_url(
     return {"url": url}
 
 
-# ── Gerar PDF e publicar ──────────────────────────────────────
+import logging
+logger = logging.getLogger("uvicorn.error")
+
+class MockUser:
+    def __init__(self, org_id, org_type):
+        self.organization_id = org_id
+        self.organization_type = org_type
+
+
+def generate_and_publish_report_task(organization_id, org_type, year: int, report_id):
+    from app.db.session import SessionLocal
+    db = SessionLocal()
+    try:
+        report = db.query(ActivityReport).filter(ActivityReport.id == report_id).first()
+        if not report:
+            logger.error(f"Relatório {report_id} não encontrado na task de background")
+            return
+
+        mock_user = MockUser(organization_id, org_type)
+
+        activities = db.query(Activity).filter(
+            Activity.organization_id == organization_id,
+            Activity.fiscal_year == year,
+        ).order_by(Activity.start_date).all()
+
+        b2_client = _get_client()
+        org_data      = _get_org_data(db, mock_user)
+        board_data    = _get_board_data(db, mock_user, year)
+        act_secs_data = _get_act_secs_data(db, mock_user, year)
+        logo_bytes, ipb_logo_bytes = _get_logos(org_data, b2_client=b2_client)
+        activities_data = _build_activities_data(activities, with_photos=True)
+
+        from app.services.pdf_generator import generate_activity_report
+        pdf_bytes = generate_activity_report(
+            org_data       = org_data,
+            fiscal_year    = year,
+            board_data     = board_data,
+            act_secs_data  = act_secs_data,
+            activities     = activities_data,
+            report         = {
+                "section_intro":              report.section_intro or '',
+                "section_intro_verse":        report.section_intro_verse or '',
+                "section_raio_x_strong":      report.section_raio_x_strong or '',
+                "section_raio_x_weak":        report.section_raio_x_weak or '',
+                "section_raio_x_achieved":    report.section_raio_x_achieved or '',
+                "section_raio_x_not_achieved":report.section_raio_x_not_achieved or '',
+                "section_final_word":         report.section_final_word or '',
+                "section_final_sign_name":    report.section_final_sign_name or '',
+                "section_final_sign_role":    report.section_final_sign_role or '',
+            },
+            logo_bytes     = logo_bytes,
+            ipb_logo_bytes = ipb_logo_bytes,
+            b2_client      = b2_client,
+        )
+
+        key = f"activity-reports/{organization_id}/{year}/relatorio_atividades_{year}.pdf"
+        url = upload_file(pdf_bytes, key, 'application/pdf')
+
+        # Limpa fotos originais do B2/R2 após publicação
+        for act in activities:
+            for photo in act.photos:
+                try:
+                    folder = '/'.join(photo.photo_key.split('/')[:-1]) + '/'
+                    delete_folder(folder)
+                except Exception:
+                    pass
+            db.query(ActivityPhoto).filter(
+                ActivityPhoto.activity_id == act.id
+            ).delete(synchronize_session=False)
+
+        report.report_url = url
+        report.status = 'published'
+        db.commit()
+        logger.info(f"Relatório de atividades de {year} publicado com sucesso em background para org {organization_id}")
+    except Exception as e:
+        logger.error(f"Erro na geração de relatório em background para {organization_id} ({year}): {e}")
+        try:
+            db.rollback()
+            report = db.query(ActivityReport).filter(ActivityReport.id == report_id).first()
+            if report:
+                report.status = 'failed'
+                db.commit()
+        except Exception as ex:
+            logger.error(f"Erro ao salvar status de falha no relatório: {ex}")
+    finally:
+        db.close()
+
 
 @router.post("/report/{year}/publish")
 def publish_report(
     year: int,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -489,63 +579,26 @@ def publish_report(
     if not report:
         raise HTTPException(status_code=404, detail="Relatório não encontrado")
 
-    activities = db.query(Activity).filter(
-        Activity.organization_id == current_user.organization_id,
-        Activity.fiscal_year == year,
-    ).order_by(Activity.start_date).all()
+    if report.status == 'generating':
+        return {"detail": "O relatório já está sendo gerado em background", "status": "generating"}
 
-    b2_client = _get_client()
-    org_data      = _get_org_data(db, current_user)
-    board_data    = _get_board_data(db, current_user, year)
-    act_secs_data = _get_act_secs_data(db, current_user, year)
-    logo_bytes, ipb_logo_bytes = _get_logos(org_data, b2_client=b2_client)
-    activities_data = _build_activities_data(activities, with_photos=True)
-
-    from app.services.pdf_generator import generate_activity_report
-    pdf_bytes = generate_activity_report(
-        org_data       = org_data,
-        fiscal_year    = year,
-        board_data     = board_data,
-        act_secs_data  = act_secs_data,
-        activities     = activities_data,
-        report         = {
-            "section_intro":              report.section_intro or '',
-            "section_intro_verse":        report.section_intro_verse or '',
-            "section_raio_x_strong":      report.section_raio_x_strong or '',
-            "section_raio_x_weak":        report.section_raio_x_weak or '',
-            "section_raio_x_achieved":    report.section_raio_x_achieved or '',
-            "section_raio_x_not_achieved":report.section_raio_x_not_achieved or '',
-            "section_final_word":         report.section_final_word or '',
-            "section_final_sign_name":    report.section_final_sign_name or '',
-            "section_final_sign_role":    report.section_final_sign_role or '',
-        },
-        logo_bytes     = logo_bytes,
-        ipb_logo_bytes = ipb_logo_bytes,
-        b2_client      = b2_client,
-    )
-
-    settings_obj = get_settings()
-    bucket = settings_obj.b2_bucket_name
-    key = f"activity-reports/{current_user.organization_id}/{year}/relatorio_atividades_{year}.pdf"
-    url = upload_file(pdf_bytes, key, 'application/pdf')
-
-    # Limpa fotos originais do B2 após publicação
-    for act in activities:
-        for photo in act.photos:
-            try:
-                folder = '/'.join(photo.photo_key.split('/')[:-1]) + '/'
-                delete_folder(folder)
-            except Exception:
-                pass
-        db.query(ActivityPhoto).filter(
-            ActivityPhoto.activity_id == act.id
-        ).delete(synchronize_session=False)
-
-    report.report_url = url
-    report.status = 'published'
+    report.status = 'generating'
+    report.report_url = None
     db.commit()
 
-    return {"detail": "Relatório publicado com sucesso", "report_url": url}
+    org_type_str = current_user.organization_type.value \
+        if hasattr(current_user.organization_type, 'value') \
+        else str(current_user.organization_type)
+
+    background_tasks.add_task(
+        generate_and_publish_report_task,
+        organization_id=current_user.organization_id,
+        org_type=org_type_str,
+        year=year,
+        report_id=report.id
+    )
+
+    return {"detail": "Geração do relatório iniciada em background", "status": "generating"}
 
 
 @router.get("/report/{year}/preview-pdf")

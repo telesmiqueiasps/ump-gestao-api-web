@@ -612,6 +612,7 @@
   let allActivities = []
   let actEditId = null
   let arAutoSaveTimers = {}
+  let arPollingTimeout = null
 
   // Preenche select de anos
   const arYearSelect = document.getElementById('ar-year-select')
@@ -639,19 +640,39 @@
   }
 
   async function fillArReport(r) {
-    document.getElementById('ar-subtitle').textContent =
-      `Gestão ${r.fiscal_year} · ${r.status === 'published' ? 'Publicado' : 'Rascunho'}`
-
     const isPublished = r.status === 'published'
+    const isGenerating = r.status === 'generating'
+    const isFailed = r.status === 'failed'
+
+    if (arPollingTimeout) {
+      clearTimeout(arPollingTimeout)
+      arPollingTimeout = null
+    }
+
+    let statusText = 'Rascunho'
+    if (isPublished) statusText = 'Publicado'
+    else if (isGenerating) statusText = 'Gerando...'
+    else if (isFailed) statusText = 'Erro na geração'
+
+    document.getElementById('ar-subtitle').textContent =
+      `Gestão ${r.fiscal_year} · ${statusText}`
 
     const badge = document.getElementById('ar-status-badge')
-    badge.textContent = isPublished ? '✓ Publicado' : 'Rascunho'
-    badge.className = `badge ${isPublished ? 'badge-green' : 'badge-slate'}`
+    badge.textContent = statusText
+    if (isPublished) {
+      badge.className = 'badge badge-green'
+    } else if (isGenerating) {
+      badge.className = 'badge badge-amber'
+    } else if (isFailed) {
+      badge.className = 'badge badge-red'
+    } else {
+      badge.className = 'badge badge-slate'
+    }
 
     document.getElementById('btn-ar-preview').style.display =
-      isPublished ? 'none' : 'inline-flex'
+      (isPublished || isGenerating) ? 'none' : 'inline-flex'
     document.getElementById('btn-ar-publish').style.display =
-      isPublished ? 'none' : 'inline-flex'
+      (isPublished || isGenerating) ? 'none' : 'inline-flex'
     document.getElementById('btn-ar-view').style.display =
       isPublished ? 'inline-flex' : 'none'
 
@@ -676,18 +697,19 @@
       } catch {}
     }
 
-    // Bloqueia edição quando publicado
+    // Bloqueia edição quando publicado ou em geração
+    const isEditable = !isPublished && !isGenerating
     const textareas = document.querySelectorAll(
       '#ar-tab-intro textarea, #ar-tab-raio-x textarea, #ar-tab-palavra textarea'
     )
     textareas.forEach(ta => {
-      ta.disabled = isPublished
-      ta.style.opacity = isPublished ? '.65' : '1'
-      ta.style.cursor = isPublished ? 'not-allowed' : ''
+      ta.disabled = !isEditable
+      ta.style.opacity = isEditable ? '1' : '.65'
+      ta.style.cursor = isEditable ? '' : 'not-allowed'
     })
-    document.getElementById('btn-new-activity').disabled = isPublished
+    document.getElementById('btn-new-activity').disabled = !isEditable
     document.getElementById('btn-save-sign').style.display =
-      isPublished ? 'none' : 'inline-flex'
+      isEditable ? 'inline-flex' : 'none'
 
     // Banner informativo quando publicado
     const existing = document.getElementById('ar-published-banner')
@@ -706,6 +728,20 @@
       `
       const toolbar = document.getElementById('tab-atividades').querySelector('div')
       document.getElementById('tab-atividades').insertBefore(banner, toolbar)
+    }
+
+    // Gerencia alertas e agendamento de polling
+    if (isGenerating) {
+      showAlert('ar-alert', '⏳ O relatório final está sendo gerado em background. Isso pode levar alguns segundos. Por favor, aguarde...', 'success')
+      arPollingTimeout = setTimeout(loadActivityReport, 5000)
+    } else if (isFailed) {
+      showAlert('ar-alert', '❌ Erro ao gerar o relatório final em background. Por favor, verifique as fotos anexadas às suas atividades e tente publicar novamente.', 'error')
+    } else if (isPublished) {
+      const alertEl = document.getElementById('ar-alert')
+      if (alertEl && (alertEl.textContent.includes('Gerando') || alertEl.textContent.includes('gerado') || alertEl.textContent.includes('Iniciando'))) {
+        clearAlert('ar-alert')
+        showAlert('ar-alert', '✅ Relatório publicado com sucesso!', 'success')
+      }
     }
 
     setupArAutoSave()
@@ -1000,14 +1036,12 @@
     )) return
 
     setLoading(btn, true, '✅ Publicar')
-    showAlert('ar-alert', '⏳ Gerando PDF e publicando... Aguarde.', 'success')
+    showAlert('ar-alert', '⏳ Iniciando geração do PDF... Aguarde.', 'success')
     try {
       await api.post(`/api/activity-reports/report/${arCurrentYear}/publish`)
       arReport = await api.get(`/api/activity-reports/report/${arCurrentYear}`)
       await fillArReport(arReport)
       await loadActivities()
-      clearAlert('ar-alert')
-      showAlert('ar-alert', '✅ Relatório publicado com sucesso!', 'success')
     } catch(err) {
       clearAlert('ar-alert')
       showAlert('ar-alert', err.message, 'error')

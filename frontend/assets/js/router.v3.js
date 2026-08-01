@@ -171,11 +171,11 @@ async function _getProfile(api, endpoint) {
 }
 
 // ── Cache de logo (1 hora) ─────────────────────────────────────────────────
-const _LOGO_KEY  = 'cached_logo_b64'
+const _LOGO_KEY  = 'cached_logo_url'
 const _LOGO_TIME = 'cached_logo_time'
 const _LOGO_TTL  = 60 * 60 * 1000
 
-async function _getLogoB64(api, orgType) {
+async function _getLogoUrl(api, orgType) {
   const cached = localStorage.getItem(_LOGO_KEY)
   const cachedTime = localStorage.getItem(_LOGO_TIME)
   if (cached && cachedTime && (Date.now() - parseInt(cachedTime)) < _LOGO_TTL)
@@ -185,12 +185,12 @@ async function _getLogoB64(api, orgType) {
       ? '/api/federations/me/logo-url'
       : '/api/local-umps/me/logo-url'
     const data = await api.get(endpoint)
-    const b64 = data.base64 || null
-    if (b64) {
-      localStorage.setItem(_LOGO_KEY, b64)
+    const url = data.url || data.base64 || null
+    if (url) {
+      localStorage.setItem(_LOGO_KEY, url)
       localStorage.setItem(_LOGO_TIME, Date.now().toString())
     }
-    return b64
+    return url
   } catch {
     return cached || null
   }
@@ -361,10 +361,10 @@ export async function renderShell() {
 
   checkNoticesBadge()
   import('./api.js').then(({ api: _a }) =>
-    _getLogoB64(_a, user.organization_type).then(b64 => {
-      if (!b64) return
+    _getLogoUrl(_a, user.organization_type).then(url => {
+      if (!url) return
       const logoEl = document.querySelector('.sidebar-brand-logo')
-      if (logoEl) logoEl.src = b64
+      if (logoEl) logoEl.src = url
     }).catch(() => {})
   )
   initMobileMenu()

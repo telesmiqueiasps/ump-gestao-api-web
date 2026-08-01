@@ -497,6 +497,23 @@ def _extract_b2_key(key_or_url: str, bucket: str) -> str:
     return key_or_url
 
 
+import httpx
+
+def _download_photo_http(photo_key: str) -> bytes:
+    from app.core.config import get_settings
+    settings = get_settings()
+    if not settings.r2_public_domain:
+        return None
+    url = f"{settings.r2_public_domain.rstrip('/')}/{photo_key.lstrip('/')}"
+    try:
+        resp = httpx.get(url, timeout=10.0)
+        if resp.status_code == 200:
+            return resp.content
+    except Exception as e:
+        logger.error("Falha no download via HTTP [url: %s]: %s", url, e)
+    return None
+
+
 def _process_single_photo_worker(b2_client, bucket, photo_key, photo_bytes, image_cache, cache_lock):
     cache_key = photo_key if photo_key else (id(photo_bytes) if photo_bytes else None)
     if not cache_key:
@@ -507,14 +524,19 @@ def _process_single_photo_worker(b2_client, bucket, photo_key, photo_bytes, imag
             return image_cache[cache_key]
 
     raw_bytes = photo_bytes
-    if raw_bytes is None and photo_key and b2_client:
+    if raw_bytes is None and photo_key:
         clean_key = _extract_b2_key(photo_key, bucket)
-        try:
-            resp = b2_client.get_object(Bucket=bucket, Key=clean_key)
-            raw_bytes = resp['Body'].read()
-        except Exception as e:
-            logger.error("Falha no download direto da foto no B2 [key: %s]: %s", clean_key, e)
-            raw_bytes = None
+        # Tenta primeiro por HTTP (muito mais rápido e consome menos overhead)
+        raw_bytes = _download_photo_http(clean_key)
+
+        # Fallback para o cliente tradicional S3 se o download HTTP falhar ou não estiver configurado
+        if not raw_bytes and b2_client:
+            try:
+                resp = b2_client.get_object(Bucket=bucket, Key=clean_key)
+                raw_bytes = resp['Body'].read()
+            except Exception as e:
+                logger.error("Falha no download direto da foto no B2/R2 [key: %s]: %s", clean_key, e)
+                raw_bytes = None
 
     if not raw_bytes:
         res = (b'', 1, 1)
@@ -568,8 +590,8 @@ def _download_and_process_photos_parallel(activities: list, b2_client, bucket: s
         return 0
 
     cache_lock = threading.Lock()
-    # Limita a no máximo 3 workers simultâneos para manter o consumo de RAM baixo no limite de 512MB do Render
-    max_workers = min(3, len(tasks))
+    # Aumentado de 3 para no máximo 20 workers simultâneos para downloads ultrarrápidos no Cloudflare
+    max_workers = min(20, len(tasks))
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = [
             executor.submit(_process_single_photo_worker, b2_client, bucket, k, b, image_cache, cache_lock)
