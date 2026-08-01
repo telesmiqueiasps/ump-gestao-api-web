@@ -2043,6 +2043,9 @@ def generate_receipts_report(
             _ps(11, GRAY_TXT, align=TA_CENTER)
         ))
 
+    doc.build(story)
+    return buf.getvalue()
+
 
 def generate_uph_stat_report(
     org_data: dict,
