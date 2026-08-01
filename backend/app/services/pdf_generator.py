@@ -497,7 +497,7 @@ def _extract_b2_key(key_or_url: str, bucket: str) -> str:
     return key_or_url
 
 
-import httpx
+import urllib.request
 
 def _download_photo_http(photo_key: str) -> bytes:
     from app.core.config import get_settings
@@ -506,9 +506,13 @@ def _download_photo_http(photo_key: str) -> bytes:
         return None
     url = f"{settings.r2_public_domain.rstrip('/')}/{photo_key.lstrip('/')}"
     try:
-        resp = httpx.get(url, timeout=10.0)
-        if resp.status_code == 200:
-            return resp.content
+        req = urllib.request.Request(
+            url,
+            headers={'User-Agent': 'Mozilla/5.0'}
+        )
+        with urllib.request.urlopen(req, timeout=10) as response:
+            if response.status == 200:
+                return response.read()
     except Exception as e:
         logger.error("Falha no download via HTTP [url: %s]: %s", url, e)
     return None
