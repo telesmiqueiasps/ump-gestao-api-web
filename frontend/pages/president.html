@@ -787,7 +787,6 @@
     try {
       allActivities = await api.get(`/api/activity-reports/activities/${arCurrentYear}`)
       renderActivities()
-      await loadPhotoUrls()
     } catch(err) {
       document.getElementById('activities-list').innerHTML =
         `<div class="alert alert-error">${err.message}</div>`
@@ -841,10 +840,7 @@
             ${(act.photos || []).map(p => `
               <div style="position:relative;display:inline-block">
                 <img
-                  data-key="${p.photo_key}"
-                  data-id="${p.id}"
-                  data-act="${act.id}"
-                  src="/assets/img/logo.png"
+                  src="${p.photo_url}"
                   class="photo-thumb"
                   title="${isPublished ? 'Foto' : 'Clique no X para remover'}"
                   style="object-fit:cover;background:var(--slate-100)"
@@ -879,20 +875,7 @@
     })
   }
 
-  async function loadPhotoUrls() {
-    const imgs = document.querySelectorAll('img[data-key]')
-    for (const img of imgs) {
-      const actId   = img.dataset.act
-      const photoId = img.dataset.id
-      try {
-        const data = await api.get(
-          `/api/activity-reports/activities/${actId}/photos/${photoId}/url`
-        )
-        img.src = data.url
-        img.style.objectFit = 'cover'
-      } catch {}
-    }
-  }
+
 
   document.getElementById('btn-save-sign').addEventListener('click', async () => {
     const btn = document.getElementById('btn-save-sign')
