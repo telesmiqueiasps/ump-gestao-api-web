@@ -613,6 +613,8 @@
   let actEditId = null
   let arAutoSaveTimers = {}
   let arPollingTimeout = null
+  let arPollingAttempts = 0
+  let previewProgressInterval = null
 
   // Preenche select de anos
   const arYearSelect = document.getElementById('ar-year-select')
@@ -632,10 +634,47 @@
   async function loadActivityReport() {
     try {
       arReport = await api.get(`/api/activity-reports/report/${arCurrentYear}`)
+      if (arReport && arReport.status === 'generating') {
+        arPollingAttempts++
+      } else {
+        arPollingAttempts = 0
+      }
       await fillArReport(arReport)
       await loadActivities()
     } catch(err) {
       showAlert('ar-alert', err.message, 'error')
+    }
+  }
+
+  function updatePublishProgress(percentage, text) {
+    const alertEl = document.getElementById('ar-alert')
+    if (!alertEl) return
+
+    let progressFill = alertEl.querySelector('.progress-bar-fill')
+    if (!progressFill) {
+      alertEl.className = 'alert alert-success'
+      alertEl.classList.remove('hidden')
+      alertEl.innerHTML = `
+        <div style="display:flex;align-items:center;gap:.75rem;width:100%">
+          <span class="spinner spinner-sm" style="flex-shrink:0"></span>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:.85rem;margin-bottom:.25rem;color:var(--slate-700)">Processando Relatório de Atividades...</div>
+            <div style="background:var(--slate-200,#e2e8f0);border-radius:9999px;height:6px;overflow:hidden;position:relative;width:100%">
+              <div class="progress-bar-fill" style="background:var(--green-600,#16a34a);height:100%;width:0%;transition:width 0.4s ease;border-radius:9999px"></div>
+            </div>
+            <div class="progress-bar-text" style="font-size:.7rem;color:var(--slate-500);margin-top:.25rem">Iniciando...</div>
+          </div>
+        </div>
+      `
+      progressFill = alertEl.querySelector('.progress-bar-fill')
+    }
+
+    if (progressFill) {
+      progressFill.style.width = `${percentage}%`
+    }
+    const progressText = alertEl.querySelector('.progress-bar-text')
+    if (progressText && text) {
+      progressText.textContent = text
     }
   }
 
@@ -732,13 +771,31 @@
 
     // Gerencia alertas e agendamento de polling
     if (isGenerating) {
-      showAlert('ar-alert', '⏳ O relatório final está sendo gerado em background. Isso pode levar alguns segundos. Por favor, aguarde...', 'success')
+      let pct = 30
+      let text = 'Conectando ao storage e baixando fotos...'
+      if (arPollingAttempts === 2) {
+        pct = 55
+        text = 'Redimensionando imagens e compilando páginas...'
+      } else if (arPollingAttempts === 3) {
+        pct = 75
+        text = 'Formatando tabelas e assinaturas...'
+      } else if (arPollingAttempts >= 4) {
+        pct = 90
+        text = 'Publicando PDF no Cloudflare R2...'
+      }
+      updatePublishProgress(pct, text)
       arPollingTimeout = setTimeout(loadActivityReport, 5000)
     } else if (isFailed) {
       showAlert('ar-alert', '❌ Erro ao gerar o relatório final em background. Por favor, verifique as fotos anexadas às suas atividades e tente publicar novamente.', 'error')
     } else if (isPublished) {
       const alertEl = document.getElementById('ar-alert')
-      if (alertEl && (alertEl.textContent.includes('Gerando') || alertEl.textContent.includes('gerado') || alertEl.textContent.includes('Iniciando'))) {
+      if (alertEl && alertEl.querySelector('.progress-bar-fill')) {
+        updatePublishProgress(100, 'Relatório publicado com sucesso!')
+        setTimeout(() => {
+          clearAlert('ar-alert')
+          showAlert('ar-alert', '✅ Relatório publicado com sucesso!', 'success')
+        }, 1500)
+      } else if (alertEl && (alertEl.textContent.includes('Gerando') || alertEl.textContent.includes('gerado') || alertEl.textContent.includes('Iniciando'))) {
         clearAlert('ar-alert')
         showAlert('ar-alert', '✅ Relatório publicado com sucesso!', 'success')
       }
@@ -966,6 +1023,13 @@
     if (!file) return
     const act = allActivities.find(a => a.id === actId)
     if (act && (act.photos || []).length >= 4) { alert('Máximo de 4 fotos por atividade.'); return }
+
+    // Mostra o spinner no botão "+" correspondente
+    const label = input.parentElement
+    const originalHTML = label.innerHTML
+    label.style.pointerEvents = 'none'
+    label.innerHTML = '<span class="spinner spinner-sm" style="margin:0"></span>'
+
     try {
       const fd = new FormData()
       fd.append('file', file)
@@ -973,7 +1037,11 @@
       await loadActivities()
     } catch(err) {
       showAlert('ar-alert', err.message, 'error')
-    } finally { input.value = '' }
+      label.innerHTML = originalHTML
+      label.style.pointerEvents = ''
+    } finally {
+      if (input && input.value) input.value = ''
+    }
   }
 
   window.removePhoto = async (actId, photoId) => {
@@ -988,6 +1056,24 @@
   document.getElementById('btn-ar-preview').addEventListener('click', async () => {
     const btn = document.getElementById('btn-ar-preview')
     setLoading(btn, true, '📄 Prévia PDF')
+
+    let currentPct = 10
+    updatePublishProgress(currentPct, 'Obtendo dados do relatório...')
+
+    if (previewProgressInterval) clearInterval(previewProgressInterval)
+    previewProgressInterval = setInterval(() => {
+      if (currentPct < 90) {
+        currentPct += Math.floor(Math.random() * 15) + 5
+        if (currentPct > 90) currentPct = 90
+
+        let text = 'Processando imagens...'
+        if (currentPct > 40 && currentPct <= 70) text = 'Gerando prévia do PDF...'
+        else if (currentPct > 70) text = 'Formatando páginas do documento...'
+
+        updatePublishProgress(currentPct, text)
+      }
+    }, 1200)
+
     try {
       const token = localStorage.getItem('access_token')
       const res = await fetch(
@@ -995,11 +1081,18 @@
         { headers: { 'Authorization': `Bearer ${token}` } }
       )
       if (!res.ok) throw new Error('Erro ao gerar prévia')
+
+      if (previewProgressInterval) clearInterval(previewProgressInterval)
+      updatePublishProgress(100, 'Prévia concluída!')
+      setTimeout(() => clearAlert('ar-alert'), 1000)
+
       const blob = await res.blob()
       const objUrl = URL.createObjectURL(blob)
       window.open(objUrl, '_blank')
       setTimeout(() => URL.revokeObjectURL(objUrl), 10000)
     } catch(err) {
+      if (previewProgressInterval) clearInterval(previewProgressInterval)
+      clearAlert('ar-alert')
       showAlert('ar-alert', err.message, 'error')
     } finally { setLoading(btn, false, '📄 Prévia PDF') }
   })
@@ -1019,7 +1112,7 @@
     )) return
 
     setLoading(btn, true, '✅ Publicar')
-    showAlert('ar-alert', '⏳ Iniciando geração do PDF... Aguarde.', 'success')
+    updatePublishProgress(10, 'Iniciando publicação...')
     try {
       await api.post(`/api/activity-reports/report/${arCurrentYear}/publish`)
       arReport = await api.get(`/api/activity-reports/report/${arCurrentYear}`)

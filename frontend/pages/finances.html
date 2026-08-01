@@ -1284,7 +1284,40 @@
     }
   }
 
+  function updateFinancePDFProgress(percentage, text) {
+    const alertEl = document.getElementById('screen-months-alert')
+    if (!alertEl) return
+
+    let progressFill = alertEl.querySelector('.progress-bar-fill')
+    if (!progressFill) {
+      alertEl.className = 'alert alert-success'
+      alertEl.classList.remove('hidden')
+      alertEl.innerHTML = `
+        <div style="display:flex;align-items:center;gap:.75rem;width:100%">
+          <span class="spinner spinner-sm" style="flex-shrink:0"></span>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:.85rem;margin-bottom:.25rem;color:var(--slate-700)">Gerando Relatório Financeiro PDF...</div>
+            <div style="background:var(--slate-200,#e2e8f0);border-radius:9999px;height:6px;overflow:hidden;position:relative;width:100%">
+              <div class="progress-bar-fill" style="background:var(--green-600,#16a34a);height:100%;width:0%;transition:width 0.3s ease;border-radius:9999px"></div>
+            </div>
+            <div class="progress-bar-text" style="font-size:.7rem;color:var(--slate-500);margin-top:.25rem">Iniciando...</div>
+          </div>
+        </div>
+      `
+      progressFill = alertEl.querySelector('.progress-bar-fill')
+    }
+
+    if (progressFill) {
+      progressFill.style.width = `${percentage}%`
+    }
+    const progressText = alertEl.querySelector('.progress-bar-text')
+    if (progressText && text) {
+      progressText.textContent = text
+    }
+  }
+
   async function generatePDF() {
+    updateFinancePDFProgress(5, 'Carregando estrutura...')
     const { jsPDF } = window.jspdf
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
 
@@ -1297,6 +1330,7 @@
     const isFedera = isFederation()
     const orgEndpoint = isFedera ? '/api/federations/me' : '/api/local-umps/me'
 
+    updateFinancePDFProgress(15, 'Recuperando dados da organização e diretoria...')
     const [orgData, boardData, statsData] = await Promise.all([
       api.get(orgEndpoint),
       api.get(`/api/board/?fiscal_year=${currentYear}`).catch(() => []),
@@ -1306,10 +1340,13 @@
     ])
 
     // Busca pre-signed URLs dos comprovantes em lotes de 5
+    updateFinancePDFProgress(30, 'Buscando comprovantes de transações...')
     const allTxs = monthsData.flatMap(m => m.transactions)
     const txsWithReceipt = allTxs.filter(t => t.receipt_url)
     const receiptUrls = {}
     for (let i = 0; i < txsWithReceipt.length; i += 5) {
+      const pct = 30 + Math.floor((i / Math.max(1, txsWithReceipt.length)) * 35)
+      updateFinancePDFProgress(pct, `Carregando comprovante ${i + 1} de ${txsWithReceipt.length}...`)
       const batch = txsWithReceipt.slice(i, i + 5)
       const results = await Promise.all(
         batch.map(async t => {
@@ -1354,6 +1391,7 @@
 
     // ── Logos ──
     // Logo da organização — baixar usando a URL direta pública e converter no client-side
+    updateFinancePDFProgress(70, 'Processando logotipo da organização...')
     let orgLogoB64 = null
     if (orgData.logo_url) {
       try {
@@ -1369,6 +1407,7 @@
         orgLogoB64 = null
       }
     }
+    updateFinancePDFProgress(80, 'Processando balanços e compilando páginas...')
 
     // Totais gerais
     const totalIn  = monthsData.reduce((s, m) => s + m.total_in, 0)
@@ -1748,7 +1787,13 @@
       doc.line(margin, pageH - 11, pageW - margin, pageH - 11)
     }
 
+    updateFinancePDFProgress(95, 'Renderizando documento final...')
     doc.save(`Relatorio_Financeiro_${currentYear}_${slugify(orgData.name)}.pdf`)
+    updateFinancePDFProgress(100, 'Relatório gerado com sucesso!')
+    setTimeout(() => {
+      const alertEl = document.getElementById('screen-months-alert')
+      if (alertEl) alertEl.classList.add('hidden')
+    }, 1500)
   }
 </script>
 
