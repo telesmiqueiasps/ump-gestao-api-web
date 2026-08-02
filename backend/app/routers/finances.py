@@ -200,7 +200,7 @@ def list_transactions(
 
     transactions = db.query(FinancialTransaction).filter(
         FinancialTransaction.period_id == period.id,
-    ).order_by(FinancialTransaction.transaction_date).limit(500).all()
+    ).order_by(FinancialTransaction.transaction_date, FinancialTransaction.created_at, FinancialTransaction.id).all()
 
     return {
         "period": _period_out(period, db),
@@ -222,7 +222,7 @@ def get_transactions_by_month(
 
     transactions = db.query(FinancialTransaction).filter(
         FinancialTransaction.period_id == period.id,
-    ).order_by(FinancialTransaction.transaction_date).limit(500).all()
+    ).order_by(FinancialTransaction.transaction_date, FinancialTransaction.created_at, FinancialTransaction.id).all()
 
     # Agrupa transações por mês
     tx_by_month: dict = {}
@@ -237,11 +237,11 @@ def get_transactions_by_month(
         month_key = f"{year}-{str(month_num).zfill(2)}"
         txs = tx_by_month.get(month_key, [])
 
-        total_in  = sum(float(t.amount) for t in txs if t.transaction_type in INCOME_TYPES)
-        total_out = sum(float(t.amount) for t in txs if t.transaction_type in EXPENSE_TYPES)
+        total_in  = round(sum(float(t.amount) for t in txs if t.transaction_type in INCOME_TYPES), 2)
+        total_out = round(sum(float(t.amount) for t in txs if t.transaction_type in EXPENSE_TYPES), 2)
 
-        opening = running_balance
-        running_balance += total_in - total_out
+        opening = round(running_balance, 2)
+        running_balance = round(running_balance + total_in - total_out, 2)
 
         months_list.append({
             "month_key": month_key,
@@ -258,8 +258,8 @@ def get_transactions_by_month(
     return {
         "period": _period_out(period, db),
         "months": months_list,
-        "total_in": sum(m["total_in"] for m in months_list),
-        "total_out": sum(m["total_out"] for m in months_list),
+        "total_in": round(sum(m["total_in"] for m in months_list), 2),
+        "total_out": round(sum(m["total_out"] for m in months_list), 2),
     }
 
 
