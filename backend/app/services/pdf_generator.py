@@ -130,34 +130,31 @@ def _resize_image(img_bytes: bytes, max_width: int = 800) -> bytes:
 def _download_b2(client, bucket, url):
     if not url:
         return None, None
-    match = re.search(r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', url)
-    if not match:
-        return None, None
-    key = match.group(1)
 
-    # Tenta baixar direto via HTTP do R2 (mais rápido, consome menos recursos)
-    try:
-        from app.core.config import get_settings
-        settings = get_settings()
-        if settings.r2_public_domain:
-            public_url = f"{settings.r2_public_domain.rstrip('/')}/{key.lstrip('/')}"
+    # Tenta baixar direto via HTTP caso seja uma URL pública completa (muito mais rápido e robusto)
+    if url.startswith(('http://', 'https://')):
+        try:
             import urllib.request
             req = urllib.request.Request(
-                public_url,
+                url,
                 headers={'User-Agent': 'Mozilla/5.0'}
             )
             with urllib.request.urlopen(req, timeout=10) as response:
                 if response.status == 200:
                     return response.read(), response.headers.get_content_type()
-    except Exception as e:
-        logger.error("Falha no download HTTP do comprovante: %s", e)
+        except Exception as e:
+            logger.error("Falha no download HTTP direto do comprovante [%s]: %s", url, e)
 
-    # Fallback clássico S3
+    # Fallback clássico S3 caso a URL não seja HTTP direta ou o download HTTP falhe
     try:
+        match = re.search(r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', url)
+        if not match:
+            return None, None
+        key = match.group(1)
         resp = client.get_object(Bucket=bucket, Key=key)
         return resp['Body'].read(), resp.get('ContentType', 'image/png')
     except Exception as e:
-        logger.error("Falha no download S3 do comprovante [key: %s]: %s", key, e)
+        logger.error("Falha no download S3 do comprovante [%s]: %s", url, e)
         return None, None
 
 

@@ -668,6 +668,22 @@
   </div>
 </div>
 
+<!-- Modal Carregamento de Encerramento (Não fechável) -->
+<div class="modal-overlay" id="modal-closing-progress" style="z-index:9999">
+  <div class="modal modal-sm" style="text-align:center; padding: 2.25rem 1.5rem; border-radius:12px; box-shadow:0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)">
+    <div style="display:flex; flex-direction:column; align-items:center; gap:1.25rem; justify-content:center;">
+      <span class="spinner" style="width:40px; height:40px; border-width:4px; border-top-color:var(--brand-orange, #e8630a);"></span>
+      <div style="flex:1;">
+        <h3 style="font-weight:700; font-size:1.15rem; color:var(--slate-800); margin-bottom:.5rem;">🔒 Encerrando Período</h3>
+        <p style="font-size:.875rem; color:var(--slate-500); line-height:1.45; margin:0;">
+          Baixando comprovantes e gerando relatórios PDF assinados digitalmente.<br>
+          <span style="color:var(--brand-orange, #e8630a); font-weight:600; font-size:.8rem; margin-top:.5rem; display:block;">Este processo pode levar até 2 minutos. Por favor, não feche a página.</span>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script type="module">
   import { requireAuth, isFederation, isLocalUmp, hasRole, getUser } from '../assets/js/auth.js'
   import { renderShell, renderBottomNav, canAccessPage } from '../assets/js/router.v3.js'
@@ -679,6 +695,9 @@
   renderBottomNav('finances')
   document.querySelector('[data-page="finances"]')?.classList.add('active')
   initModalClose()
+  document.getElementById('modal-closing-progress').addEventListener('click', (e) => {
+    e.stopPropagation()
+  }, true)
 
   const TYPES = {
     outras_receitas: { label: 'Outras Receitas', nature: 'in' },
@@ -843,15 +862,21 @@
               `✓ Relatório de comprovantes gerado\n` +
               `✓ Ação irreversível`
             )) return
+            
+            // Abre o modal de carregamento animado de encerramento
+            openModal('modal-closing-progress')
             btnClose.disabled = true
-            btnClose.textContent = '⏳ Gerando...'
-            showAlert('screen-months-alert', '⏳ Encerrando e gerando relatórios assinados...', 'success')
+            
             try {
-              await api.post(`/api/finances/periods/${currentPeriod.id}/close`)
+              // Passa timeout de 5 minutos (300.000 ms) para a chamada de fechamento
+              await api.post(`/api/finances/periods/${currentPeriod.id}/close`, null, 300000)
+              closeModal('modal-closing-progress')
               clearAlert('screen-months-alert')
               showAlert('screen-months-alert', '✅ Período encerrado! Relatórios assinados gerados.', 'success')
               await loadPage()
             } catch(err) {
+              closeModal('modal-closing-progress')
+              btnClose.disabled = false
               clearAlert('screen-months-alert')
               showAlert('screen-months-alert', err.message, 'error')
               await loadPage()

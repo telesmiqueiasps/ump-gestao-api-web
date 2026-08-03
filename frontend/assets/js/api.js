@@ -1,7 +1,7 @@
 const BASE_URL = 'https://ump-gestao-api.onrender.com'
 // Em desenvolvimento use: const BASE_URL = 'http://localhost:8000'
 
-async function request(method, path, body = null, isFormData = false) {
+async function request(method, path, body = null, isFormData = false, customTimeout = 30000) {
   const token = localStorage.getItem('access_token')
 
   const headers = {}
@@ -9,7 +9,7 @@ async function request(method, path, body = null, isFormData = false) {
   if (!isFormData) headers['Content-Type'] = 'application/json'
 
   const controller = new AbortController()
-  const timeoutId  = setTimeout(() => controller.abort(), 30000)
+  const timeoutId  = setTimeout(() => controller.abort(), customTimeout)
 
   const options = { method, headers, signal: controller.signal }
   if (body) options.body = isFormData ? body : JSON.stringify(body)
@@ -69,9 +69,9 @@ function logout() {
 }
 
 export const api = {
-  get:    (path)              => request('GET',    path),
-  post:   (path, body)        => request('POST',   path, body),
-  put:    (path, body)        => request('PUT',    path, body),
-  delete: (path)              => request('DELETE', path),
-  upload: (path, formData)    => request('POST',   path, formData, true),
+  get:    (path, customTimeout)              => request('GET',    path, null, false, customTimeout),
+  post:   (path, body, customTimeout)        => request('POST',   path, body, false, customTimeout),
+  put:    (path, body, customTimeout)        => request('PUT',    path, body, false, customTimeout),
+  delete: (path, customTimeout)              => request('DELETE', path, null, false, customTimeout),
+  upload: (path, formData, customTimeout)    => request('POST',   path, formData, true, customTimeout),
 }
