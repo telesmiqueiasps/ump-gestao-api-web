@@ -181,6 +181,8 @@
       <dl>
         <dt>Organização</dt><dd id="d-org">—</dd>
         <dt>Exercício</dt><dd id="d-year">—</dd>
+        <dt id="lbl-requester">Solicitante</dt><dd id="d-requester">—</dd>
+        <dt id="lbl-reviewer">Aprovador</dt><dd id="d-reviewer">—</dd>
         <dt>Data de encerramento</dt><dd id="d-date">—</dd>
         <dt>Hash SHA-256</dt><dd><span class="code-mono" id="d-hash">—</span></dd>
         <dt>Status</dt><dd><span class="badge badge-valid">VÁLIDO</span></dd>
@@ -193,6 +195,21 @@
     <div class="result-icon">❌</div>
     <div class="result-title">Documento Inválido</div>
     <p class="result-msg">Nenhuma assinatura digital foi encontrada para este código de validação. O documento pode ser falso ou o código pode estar incorreto.</p>
+  </div>
+
+  <!-- Invalidado / Revogado -->
+  <div class="state" id="state-invalidated">
+    <div class="result-icon">⚠️</div>
+    <div class="result-title">Assinatura Invalidada</div>
+    <p class="result-msg">Esta assinatura digital foi invalidada ou revogada pelo administrador.</p>
+    <div class="doc-details">
+      <dl>
+        <dt>Organização</dt><dd id="di-org">—</dd>
+        <dt>Exercício</dt><dd id="di-year">—</dd>
+        <dt>Motivo</dt><dd id="di-reason">—</dd>
+        <dt>Status</dt><dd><span class="badge badge-invalidated">REVOGADO</span></dd>
+      </dl>
+    </div>
   </div>
 
   <!-- Erro de rede / servidor -->
@@ -232,8 +249,15 @@
     }
 
     try {
-      const res  = await fetch(`${API_BASE}/api/finances/validate/${encodeURIComponent(code)}`)
-      const data = await res.json()
+      // 1. Tenta validar como Assinatura de Relatório (/api/signatures/validate/...)
+      let res = await fetch(`${API_BASE}/api/signatures/validate/${encodeURIComponent(code)}`)
+      let data = await res.json()
+
+      // 2. Se não encontrar, tenta como Período Financeiro (/api/finances/validate/...)
+      if (!res.ok || data.valid === false) {
+        res = await fetch(`${API_BASE}/api/finances/validate/${encodeURIComponent(code)}`)
+        data = await res.json()
+      }
 
       if (!res.ok) {
         showState('state-invalid')
@@ -241,17 +265,37 @@
       }
 
       if (data.valid === true) {
-        document.getElementById('d-org').textContent       = data.organization || '—'
-        document.getElementById('d-year').textContent      = data.fiscal_year || '—'
-        document.getElementById('d-reviewer').textContent  = data.approver || '—'
-        document.getElementById('d-date').textContent      = fmt(data.approved_at)
-        document.getElementById('d-requester').textContent = data.requester || '—'
+        document.getElementById('d-org').textContent   = data.organization || '—'
+        document.getElementById('d-year').textContent  = data.fiscal_year || '—'
+        
+        const dateVal = data.closed_at || data.approved_at
+        document.getElementById('d-date').textContent  = fmt(dateVal)
+        
         const hash = data.data_hash || ''
-        document.getElementById('d-hash').textContent      = hash.length > 48 ? hash.substring(0, 48) + '...' : hash
+        document.getElementById('d-hash').textContent  = hash.length > 48 ? hash.substring(0, 48) + '...' : hash
+        
+        // Exibe ou oculta os campos de Solicitante e Aprovador dinamicamente
+        const setField = (lblId, valId, val) => {
+          const lblEl = document.getElementById(lblId)
+          const valEl = document.getElementById(valId)
+          if (lblEl && valEl) {
+            if (val) {
+              valEl.textContent = val
+              lblEl.style.display = ''
+              valEl.style.display = ''
+            } else {
+              lblEl.style.display = 'none'
+              valEl.style.display = 'none'
+            }
+          }
+        }
+        
+        setField('lbl-requester', 'd-requester', data.requester)
+        setField('lbl-reviewer', 'd-reviewer', data.approver)
+        
         showState('state-valid')
 
-      } else if (data.reason !== undefined) {
-        // invalidated
+      } else if (data.status === 'invalidated' || data.reason !== undefined) {
         document.getElementById('di-org').textContent    = data.organization || '—'
         document.getElementById('di-year').textContent   = data.fiscal_year || '—'
         document.getElementById('di-reason').textContent = data.reason || 'Não informado'

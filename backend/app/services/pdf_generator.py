@@ -2037,8 +2037,14 @@ def generate_receipts_report(
                                                _ps(8, RED_C, align=TA_CENTER)))
                 elif is_pdf:
                     story.append(Paragraph(
-                        'Comprovante em formato PDF — arquivo original mantido no armazenamento.',
-                        _ps(9, GRAY_TXT, align=TA_CENTER)))
+                        'Comprovante em formato PDF — Páginas anexadas a seguir.',
+                        _ps(9, GRAY_TXT, align=TA_CENTER)
+                    ))
+                    story.append(Spacer(1, 10*mm))
+                    story.append(Paragraph(
+                        f'<font color="white">[PDF_PLACEHOLDER:{receipt_num}]</font>',
+                        _ps(6, WHITE, align=TA_CENTER)
+                    ))
                 else:
                     story.append(Paragraph(
                         'Comprovante não disponível.',
@@ -2063,7 +2069,53 @@ def generate_receipts_report(
         ))
 
     doc.build(story)
-    return buf.getvalue()
+    rl_bytes = buf.getvalue()
+
+    # Mescla os PDFs reais sequencialmente usando pypdf
+    try:
+        from pypdf import PdfReader, PdfWriter
+        
+        # Mapeamento para sabermos qual URL baixar de acordo com o receipt_num
+        receipt_urls = {}
+        r_idx = 0
+        for month in months_data:
+            for t in month.get('transactions', []):
+                r_idx += 1
+                if t.get('receipt_url'):
+                    receipt_urls[r_idx] = t['receipt_url']
+
+        writer = PdfWriter()
+        rl_reader = PdfReader(io.BytesIO(rl_bytes))
+
+        for page in rl_reader.pages:
+            text = page.extract_text()
+            # Procura pela tag invisible [PDF_PLACEHOLDER:X]
+            match = re.search(r'\[PDF_PLACEHOLDER:(\d+)\]', text)
+            if match:
+                # Adiciona a página informativa do ReportLab
+                writer.add_page(page)
+                
+                # Baixa e anexa o PDF original do R2
+                r_num = int(match.group(1))
+                url = receipt_urls.get(r_num)
+                if url:
+                    try:
+                        pdf_bytes, ct = _download_b2(b2_client, bucket_name, url)
+                        if pdf_bytes:
+                            pdf_reader = PdfReader(io.BytesIO(pdf_bytes))
+                            for pdf_page in pdf_reader.pages:
+                                writer.add_page(pdf_page)
+                    except Exception as e:
+                        logger.error(f"Erro ao mesclar PDF do comprovante {r_num}: {e}")
+            else:
+                writer.add_page(page)
+
+        merged_buf = io.BytesIO()
+        writer.write(merged_buf)
+        return merged_buf.getvalue()
+    except Exception as e:
+        logger.error(f"Erro geral no pós-processamento de PDFs mesclados: {e}")
+        return rl_bytes
 
 
 def generate_uph_stat_report(
