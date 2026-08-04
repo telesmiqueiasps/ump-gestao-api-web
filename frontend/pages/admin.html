@@ -83,9 +83,11 @@
 
       <div id="page-alert" class="hidden"></div>
 
-      <!-- Abas -->
+      <!-- Abas (Fixas no topo ao rolar) -->
       <div style="display:flex;border-bottom:2px solid var(--slate-100);
-                  margin-bottom:1.25rem;overflow-x:auto">
+                  margin-bottom:1.25rem;overflow-x:auto;
+                  position:sticky;top:0;background:#f8fafc;z-index:99;
+                  padding:.5rem 0;margin-top:-.5rem">
         <button class="admin-tab active" data-tab="users"
           onclick="switchAdminTab('users')">👥 Usuários</button>
         <button class="admin-tab" data-tab="federations"
