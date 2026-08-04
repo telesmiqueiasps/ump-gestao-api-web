@@ -22,13 +22,22 @@
     .org-chip.federation { background:#eff6ff;color:#1d4ed8; }
     .org-chip.local_ump  { background:#f0fdf4;color:#166534; }
     .inactive-overlay { opacity:.5; }
-    .admin-tab {
-      padding:.5rem 1.25rem;border:none;background:none;
-      font-size:.875rem;font-weight:500;color:var(--slate-500);
-      cursor:pointer;border-bottom:2px solid transparent;
-      margin-bottom:-2px;font-family:inherit;transition:all .15s;
+    .admin-tabs-nav {
+      display:inline-flex;background:var(--slate-100, #e2e8f0);
+      padding:4px;border-radius:10px;gap:4px;
+      align-self:center;
     }
-    .admin-tab.active { color:#1a2a6c;border-bottom-color:#1a2a6c; }
+    .admin-tab {
+      padding:6px 14px;border:none;background:none;
+      font-size:.8rem;font-weight:600;color:var(--slate-600);
+      cursor:pointer;border-radius:8px;font-family:inherit;
+      transition:all .15s ease;
+    }
+    .admin-tab:hover { color:var(--slate-900); }
+    .admin-tab.active {
+      background:#fff;color:#1a2a6c;
+      box-shadow:0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    }
     .password-reveal {
       background:var(--green-50);border:1.5px solid var(--green-200);
       border-radius:var(--radius-lg);padding:.75rem 1rem;
@@ -74,27 +83,23 @@
     </header>
 
     <main class="page-content">
-      <div class="page-header">
+      <div class="page-header" style="align-items:center;margin-bottom:.5rem">
         <div class="page-header-info">
           <h1>⚙️ Painel Admin</h1>
           <p>Gestão de usuários, organizações e configurações do sistema</p>
         </div>
+        <!-- Abas no Cabeçalho (Estilo Controle Segmentado Premium) -->
+        <div class="admin-tabs-nav">
+          <button class="admin-tab active" data-tab="users"
+            onclick="switchAdminTab('users')">👥 Usuários</button>
+          <button class="admin-tab" data-tab="federations"
+            onclick="switchAdminTab('federations')">🏛️ Federações</button>
+          <button class="admin-tab" data-tab="local-umps"
+            onclick="switchAdminTab('local-umps')">🏠 UMPs Locais</button>
+        </div>
       </div>
 
       <div id="page-alert" class="hidden"></div>
-
-      <!-- Abas (Fixas no topo ao rolar) -->
-      <div style="display:flex;border-bottom:2px solid var(--slate-100);
-                  margin-bottom:1.25rem;overflow-x:auto;
-                  position:sticky;top:0;background:#f8fafc;z-index:99;
-                  padding:.5rem 0;margin-top:-.5rem">
-        <button class="admin-tab active" data-tab="users"
-          onclick="switchAdminTab('users')">👥 Usuários</button>
-        <button class="admin-tab" data-tab="federations"
-          onclick="switchAdminTab('federations')">🏛️ Federações</button>
-        <button class="admin-tab" data-tab="local-umps"
-          onclick="switchAdminTab('local-umps')">🏠 UMPs Locais</button>
-      </div>
 
       <!-- ABA: Usuários -->
       <div id="admin-tab-users">
