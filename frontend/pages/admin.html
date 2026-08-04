@@ -90,6 +90,8 @@
           onclick="switchAdminTab('users')">👥 Usuários</button>
         <button class="admin-tab" data-tab="federations"
           onclick="switchAdminTab('federations')">🏛️ Federações</button>
+        <button class="admin-tab" data-tab="local-umps"
+          onclick="switchAdminTab('local-umps')">🏠 UMPs Locais</button>
       </div>
 
       <!-- ABA: Usuários -->
@@ -114,6 +116,16 @@
           <button class="btn btn-primary" id="btn-open-new-fed">+ Nova Federação</button>
         </div>
         <div id="feds-list" style="display:flex;flex-direction:column;gap:.6rem">
+          <div class="loading-center"><div class="spinner"></div></div>
+        </div>
+      </div>
+
+      <!-- ABA: UMPs Locais -->
+      <div id="admin-tab-local-umps" style="display:none">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:1rem;visibility:hidden">
+          <button class="btn btn-primary">+ Nova UMP Local</button>
+        </div>
+        <div id="locals-list" style="display:flex;flex-direction:column;gap:.6rem">
           <div class="loading-center"><div class="spinner"></div></div>
         </div>
       </div>
@@ -277,7 +289,11 @@
       tab === 'users' ? 'block' : 'none'
     document.getElementById('admin-tab-federations').style.display =
       tab === 'federations' ? 'block' : 'none'
+    document.getElementById('admin-tab-local-umps').style.display =
+      tab === 'local-umps' ? 'block' : 'none'
+      
     if (tab === 'federations') loadFederations()
+    if (tab === 'local-umps') loadLocalUmps()
   }
 
   // ── Usuários ──────────────────────────────────────────────────
@@ -287,8 +303,9 @@
     try {
       const params = search ? `?search=${encodeURIComponent(search)}` : ''
       const users = await api.get(`/api/admin/users${params}`)
-      document.getElementById('users-count').textContent =
-        `${users.length} usuário${users.length !== 1 ? 's' : ''}`
+      document.getElementById('users-count').textContent = search 
+        ? `Encontrado(s) ${users.length} usuário(s)` 
+        : `Exibindo os primeiros ${users.length} usuários (pesquise para filtrar)`
       renderUsers(users)
     } catch(err) {
       list.innerHTML = `<div class="alert alert-error">${err.message}</div>`
@@ -318,6 +335,9 @@
             </div>
             <div style="font-size:.78rem;color:var(--slate-500);margin-top:.1rem">
               ${u.email}
+            </div>
+            <div style="font-family:monospace;font-size:.7rem;color:var(--slate-400);margin-top:.2rem">
+              ID: ${u.id}
             </div>
             <div style="display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.4rem">
               ${u.all_orgs.map(org => `
@@ -434,6 +454,37 @@
           </div>
           <div style="font-family:monospace;font-size:.7rem;color:var(--slate-400)">
             ${f.id}
+          </div>
+        </div>
+      `).join('')
+    } catch(err) {
+      list.innerHTML = `<div class="alert alert-error">${err.message}</div>`
+    }
+  }
+
+  // ── UMPs Locais ──────────────────────────────────────────────
+  async function loadLocalUmps() {
+    const list = document.getElementById('locals-list')
+    list.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>'
+    try {
+      const locals = await api.get('/api/admin/local-umps')
+      if (!locals.length) {
+        list.innerHTML = `<div style="text-align:center;padding:2rem;
+          color:var(--slate-400)">Nenhuma UMP local cadastrada.</div>`
+        return
+      }
+      list.innerHTML = locals.map(l => `
+        <div class="card" style="display:flex;align-items:center;
+             justify-content:space-between;flex-wrap:wrap;gap:.75rem">
+          <div>
+            <div style="font-weight:600;font-size:.95rem">${l.name}</div>
+            <div style="font-size:.78rem;color:var(--slate-500);margin-top:.15rem">
+              ${l.presbytery_name}
+              · ${l.user_count} usuário${l.user_count !== 1 ? 's' : ''}
+            </div>
+          </div>
+          <div style="font-family:monospace;font-size:.7rem;color:var(--slate-400)">
+            ID: ${l.id}
           </div>
         </div>
       `).join('')

@@ -101,6 +101,10 @@ def list_all_users(
             sqlfunc.lower(User.full_name).contains(term) |
             sqlfunc.lower(User.email).contains(term)
         )
+    else:
+        # Limita a 50 usuários por padrão para evitar lentidão e timeout (problema de N+1 queries)
+        query = query.limit(50)
+        
     seen_emails: set = set()
     result = []
     for u in query.order_by(User.full_name).all():
@@ -289,6 +293,29 @@ def list_all_federations(
             "presbytery_name": f.presbytery_name,
             "society_type":    f.society_type,
             "is_active":       f.is_active,
+            "user_count":      user_count,
+        })
+    return result
+
+
+# ── Listar todas as UMPs Locais ────────────────────────────────
+
+@router.get("/local-umps")
+def list_all_local_umps(
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    locals = db.query(LocalUmp).order_by(LocalUmp.name).all()
+    result = []
+    for l in locals:
+        user_count = db.query(User).filter(
+            User.organization_id == l.id
+        ).count()
+        result.append({
+            "id":              str(l.id),
+            "name":            l.name,
+            "presbytery_name": l.presbytery_name,
+            "is_active":       l.is_active,
             "user_count":      user_count,
         })
     return result
