@@ -94,7 +94,7 @@ def list_all_users(
     current_user: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
-    query = db.query(User)
+    query = db.query(User).order_by(User.full_name)
     if search:
         term = search.lower()
         query = query.filter(
@@ -107,7 +107,7 @@ def list_all_users(
         
     seen_emails: set = set()
     result = []
-    for u in query.order_by(User.full_name).all():
+    for u in query.all():
         if u.email.lower() not in seen_emails:
             seen_emails.add(u.email.lower())
             result.append(_user_out(u, db))
