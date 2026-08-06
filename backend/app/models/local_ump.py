@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean, Text, Integer, Numeric, ForeignKey, DateTime, Date
+from sqlalchemy import Column, String, Boolean, Text, Integer, Numeric, ForeignKey, DateTime, Date, Float
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func, text
 from sqlalchemy.orm import relationship
@@ -15,6 +15,16 @@ class LocalUmp(Base):
     pastor_name = Column(String(200))
     presbytery_name = Column(String(200))
     address = Column(Text)
+    
+    # Novos campos de endereço e geolocalização
+    cep = Column(String(9), nullable=True)
+    logradouro = Column(String(150), nullable=True)
+    numero = Column(String(20), nullable=True)
+    bairro = Column(String(100), nullable=True)
+    cidade = Column(String(100), nullable=True)
+    estado = Column(String(2), nullable=True)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
     logo_url = Column(Text)
     theme_color = Column(String(7), nullable=True, default='#1a2a6c')
     society_type = Column(String(10), nullable=True, default='UMP')

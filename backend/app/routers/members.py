@@ -24,6 +24,12 @@ class MemberCreate(BaseModel):
     join_date: Optional[datetime.date] = None
     is_board_member: Optional[bool] = False
     local_society: Optional[str] = None
+    cep: Optional[str] = None
+    logradouro: Optional[str] = None
+    numero: Optional[str] = None
+    bairro: Optional[str] = None
+    cidade: Optional[str] = None
+    estado: Optional[str] = None
 
 
 class MemberUpdate(BaseModel):
@@ -34,6 +40,12 @@ class MemberUpdate(BaseModel):
     birth_date: Optional[datetime.date] = None
     is_board_member: Optional[bool] = None
     local_society: Optional[str] = None
+    cep: Optional[str] = None
+    logradouro: Optional[str] = None
+    numero: Optional[str] = None
+    bairro: Optional[str] = None
+    cidade: Optional[str] = None
+    estado: Optional[str] = None
 
 
 class FeeCreate(BaseModel):
@@ -141,9 +153,20 @@ def create_member(
             db.add(shadow_ump)
             db.flush()
 
+    # Geocodificação automática de endereço
+    lat, lon = None, None
+    if payload.logradouro and payload.cidade and payload.estado:
+        from app.services.geocoder import geocode_address
+        lat, lon = geocode_address(
+            payload.logradouro, payload.numero, payload.bairro,
+            payload.cidade, payload.estado, payload.cep
+        )
+
     member = Member(
         local_ump_id=current_user.organization_id,
-        **payload.model_dump()
+        **payload.model_dump(),
+        latitude=lat,
+        longitude=lon
     )
     db.add(member)
     db.commit()
@@ -217,8 +240,26 @@ def update_member(
     ).first()
     if not member:
         raise HTTPException(status_code=404, detail="Sócio não encontrado")
-    for field, value in payload.model_dump(exclude_none=True).items():
+    # Verifica se houve alteração em algum campo de endereço
+    address_changed = False
+    dump = payload.model_dump(exclude_none=True)
+    for field in ['cep', 'logradouro', 'numero', 'bairro', 'cidade', 'estado']:
+        if field in dump and getattr(member, field) != dump[field]:
+            address_changed = True
+            break
+
+    for field, value in dump.items():
         setattr(member, field, value)
+        
+    if address_changed:
+        from app.services.geocoder import geocode_address
+        lat, lon = geocode_address(
+            member.logradouro, member.numero, member.bairro,
+            member.cidade, member.estado, member.cep
+        )
+        member.latitude = lat
+        member.longitude = lon
+
     db.commit()
     db.refresh(member)
     return _to_out(member)
@@ -326,4 +367,12 @@ def _to_out(m: Member) -> dict:
         "is_active": m.is_active,
         "is_board_member": m.is_board_member or False,
         "local_society": m.local_society,
+        "cep": m.cep,
+        "logradouro": m.logradouro,
+        "numero": m.numero,
+        "bairro": m.bairro,
+        "cidade": m.cidade,
+        "estado": m.estado,
+        "latitude": m.latitude,
+        "longitude": m.longitude,
     }

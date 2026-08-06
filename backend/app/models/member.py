@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean, Date, Enum as SAEnum, ForeignKey, Numeric, Text, DateTime
+from sqlalchemy import Column, String, Boolean, Date, Enum as SAEnum, ForeignKey, Numeric, Text, DateTime, Float
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func, text
 from sqlalchemy.orm import relationship
@@ -20,6 +20,16 @@ class Member(Base):
     is_active = Column(Boolean, default=True)
     is_board_member = Column(Boolean, default=False)
     local_society = Column(String(100), nullable=True)
+    
+    # Novos campos de endereço e geolocalização
+    cep = Column(String(9), nullable=True)
+    logradouro = Column(String(150), nullable=True)
+    numero = Column(String(20), nullable=True)
+    bairro = Column(String(100), nullable=True)
+    cidade = Column(String(100), nullable=True)
+    estado = Column(String(2), nullable=True)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
 
     local_ump = relationship("LocalUmp", back_populates="members")
     fees = relationship("MembershipFee", back_populates="member")

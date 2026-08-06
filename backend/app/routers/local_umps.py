@@ -23,6 +23,12 @@ class LocalUmpCreate(BaseModel):
     address: Optional[str] = None
     fiscal_year: Optional[int] = None
     initial_balance: Optional[float] = 0.0
+    cep: Optional[str] = None
+    logradouro: Optional[str] = None
+    numero: Optional[str] = None
+    bairro: Optional[str] = None
+    cidade: Optional[str] = None
+    estado: Optional[str] = None
 
 
 class LocalUmpUpdate(BaseModel):
@@ -42,6 +48,12 @@ class LocalUmpUpdate(BaseModel):
     reminder_hour: Optional[int] = None
     reminder_minute: Optional[int] = None
     member_portal_enabled: Optional[bool] = None
+    cep: Optional[str] = None
+    logradouro: Optional[str] = None
+    numero: Optional[str] = None
+    bairro: Optional[str] = None
+    cidade: Optional[str] = None
+    estado: Optional[str] = None
 
 
 # Federação cria uma UMP Local
@@ -51,9 +63,20 @@ def create_local_ump(
     current_user: User = Depends(require_federation),
     db: Session = Depends(get_db),
 ):
+    # Geocodificação automática
+    lat, lon = None, None
+    if payload.logradouro and payload.cidade and payload.estado:
+        from app.services.geocoder import geocode_address
+        lat, lon = geocode_address(
+            payload.logradouro, payload.numero, payload.bairro,
+            payload.cidade, payload.estado, payload.cep
+        )
+
     local = LocalUmp(
         federation_id=current_user.organization_id,
-        **payload.model_dump()
+        **payload.model_dump(),
+        latitude=lat,
+        longitude=lon
     )
     db.add(local)
     db.commit()
@@ -296,8 +319,25 @@ def update_local_ump(
     if not local:
         raise HTTPException(status_code=404, detail="UMP Local não encontrada")
 
-    for field, value in payload.model_dump(exclude_none=True).items():
+    # Reaproveita lógica de atualização de endereço e geocodificação
+    dump = payload.model_dump(exclude_none=True)
+    address_changed = False
+    for field in ['cep', 'logradouro', 'numero', 'bairro', 'cidade', 'estado']:
+        if field in dump and getattr(local, field) != dump[field]:
+            address_changed = True
+            break
+
+    for field, value in dump.items():
         setattr(local, field, value)
+
+    if address_changed:
+        from app.services.geocoder import geocode_address
+        lat, lon = geocode_address(
+            local.logradouro, local.numero, local.bairro,
+            local.cidade, local.estado, local.cep
+        )
+        local.latitude = lat
+        local.longitude = lon
 
     db.commit()
     db.refresh(local)
@@ -331,8 +371,24 @@ def update_my_local_ump(
     if "reminder_minute" in restricted:
         restricted["reminder_minute"] = max(0, min(59, restricted["reminder_minute"]))
 
+    # Reaproveita lógica de atualização de endereço e geocodificação
+    address_changed = False
+    for field in ['cep', 'logradouro', 'numero', 'bairro', 'cidade', 'estado']:
+        if field in restricted and getattr(local, field) != restricted[field]:
+            address_changed = True
+            break
+
     for field, value in restricted.items():
         setattr(local, field, value)
+
+    if address_changed:
+        from app.services.geocoder import geocode_address
+        lat, lon = geocode_address(
+            local.logradouro, local.numero, local.bairro,
+            local.cidade, local.estado, local.cep
+        )
+        local.latitude = lat
+        local.longitude = lon
 
     db.commit()
     db.refresh(local)
@@ -612,4 +668,12 @@ def _to_out(l: LocalUmp) -> dict:
         "reminder_minute":       l.reminder_minute if l.reminder_minute is not None else 0,
         "member_portal_enabled": l.member_portal_enabled if l.member_portal_enabled is not None else True,
         "portal_url":            f"https://ump-socio.netlify.app/socio.html?org={str(l.id)}",
+        "cep":                   l.cep,
+        "logradouro":            l.logradouro,
+        "numero":                l.numero,
+        "bairro":                l.bairro,
+        "cidade":                l.cidade,
+        "estado":                l.estado,
+        "latitude":              l.latitude,
+        "longitude":             l.longitude,
     }

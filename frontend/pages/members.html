@@ -18,6 +18,9 @@
   <link rel="stylesheet" href="../assets/css/main.css?v=9" />
   <link rel="stylesheet" href="../assets/css/components.css?v=9" />
   <link rel="stylesheet" href="../assets/css/layout.v2.css?v=9" />
+  <!-- Leaflet Map library -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <style>
     .contrib-tab {
       padding: .45rem 1rem;
@@ -121,14 +124,19 @@
             </script>
           </p>
         </div>
-        <button class="btn btn-primary" id="btn-new-member">
-          <script>
-            try {
-              const user = JSON.parse(localStorage.getItem('user') || '{}');
-              document.write(user.organization_type === 'federation' ? '+ Novo Delegado' : '+ Novo Sócio');
-            } catch (e) { document.write('+ Novo sócio'); }
-          </script>
-        </button>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+          <button class="btn btn-secondary local-only-field" id="btn-show-map" style="display:inline-flex;align-items:center;gap:.35rem">
+            🗺️ Ver Mapa
+          </button>
+          <button class="btn btn-primary" id="btn-new-member">
+            <script>
+              try {
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                document.write(user.organization_type === 'federation' ? '+ Novo Delegado' : '+ Novo Sócio');
+              } catch (e) { document.write('+ Novo sócio'); }
+            </script>
+          </button>
+        </div>
       </div>
 
       <div id="page-alert" class="hidden"></div>
@@ -237,6 +245,39 @@
         Marque se este sócio também é membro da diretoria — ele não será listado como sócio nas atas.
       </p>
     </div>
+    
+    <!-- Campos de Endereço -->
+    <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--slate-400);margin-bottom:.6rem" class="local-only-field">
+      📌 Endereço Residencial
+    </div>
+    <div class="grid-3 mb-4 local-only-field">
+      <div class="field">
+        <label>CEP</label>
+        <input class="input" type="text" id="m-cep" placeholder="00000-000" maxlength="9" onblur="buscarCepSocio()" />
+      </div>
+      <div class="field" style="grid-column: span 2">
+        <label>Logradouro (Rua/Av.)</label>
+        <input class="input" type="text" id="m-logradouro" placeholder="Nome da rua" />
+      </div>
+    </div>
+    <div class="grid-3 mb-4 local-only-field">
+      <div class="field">
+        <label>Número</label>
+        <input class="input" type="text" id="m-numero" placeholder="Nº" />
+      </div>
+      <div class="field">
+        <label>Bairro</label>
+        <input class="input" type="text" id="m-bairro" placeholder="Bairro" />
+      </div>
+      <div class="field">
+        <label>Cidade / UF</label>
+        <div style="display:flex;gap:.35rem">
+          <input class="input" type="text" id="m-cidade" placeholder="Cidade" style="flex:1;min-width:0" />
+          <input class="input" type="text" id="m-estado" placeholder="UF" style="width:45px;text-transform:uppercase" maxlength="2" />
+        </div>
+      </div>
+    </div>
+
     <div id="member-alert" class="hidden mb-4"></div>
     <div class="modal-footer">
       <button class="btn btn-secondary modal-close">Cancelar</button>
@@ -349,6 +390,22 @@
   </div>
 </div>
 
+<!-- Modal Mapa de Sócios -->
+<div class="modal-overlay" id="modal-map">
+  <div class="modal modal-lg" style="max-width:95vw;width:900px;height:650px;max-height:92vh;display:flex;flex-direction:column">
+    <div class="modal-header" style="flex-shrink:0">
+      <h2>🗺️ Mapa de Sócios</h2>
+      <button class="modal-close">✕</button>
+    </div>
+    <div style="flex:1;min-height:0;position:relative;border-radius:var(--radius-lg);overflow:hidden;border:1.5px solid var(--slate-200);margin-bottom:1rem">
+      <div id="leaflet-map" style="width:100%;height:100%;z-index:1"></div>
+    </div>
+    <div class="modal-footer" style="flex-shrink:0">
+      <button class="btn btn-secondary modal-close">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
   import { requireAuth, isLocalUmp, isFederation } from '../assets/js/auth.js?v=9'
   import { renderShell, canAccessPage, renderBottomNav } from '../assets/js/router.v3.js?v=9'
@@ -444,9 +501,11 @@
       loadMembers()
     }
 
+    let allMembers = []
     async function loadMembers() {
       try {
         const data = await api.get(`/api/members/?active_only=${activeOnly}`)
+        allMembers = data
         const isFed = isFederation()
         document.getElementById('member-count').textContent = isFed 
           ? `${data.length} delegado${data.length !== 1 ? 's' : ''}` 
@@ -521,7 +580,7 @@
             <td>
               <div class="row-actions">
                 ${!isFed ? `<button class="btn btn-ghost btn-icon" title="Contribuições" onclick="openContributions('${m.id}','${m.full_name.replace(/'/g, "\\'")}')">📋</button>` : ''}
-                <button class="btn btn-ghost btn-icon" title="Editar" onclick="editMember('${m.id}','${m.full_name.replace(/'/g, "\\'")}','${m.member_type}','${m.email??''}','${m.phone??''}','${m.birth_date??''}','${m.join_date??''}',${m.is_board_member?true:false},'${(m.local_society??'').replace(/'/g, "\\'")}')">✎</button>
+                <button class="btn btn-ghost btn-icon" title="Editar" onclick="editMember('${m.id}')">✎</button>
                 ${m.is_active ? `<button class="btn btn-ghost btn-icon danger" title="Desativar" onclick="deactivate('${m.id}','${m.full_name.replace(/'/g, "\\'")}')">✕</button>` : ''}
               </div>
             </td>
@@ -544,24 +603,40 @@
       document.getElementById('m-is-board').checked = false
       if (isFed) {
         document.getElementById('m-society').value = ''
+      } else {
+        document.getElementById('m-cep').value = ''
+        document.getElementById('m-logradouro').value = ''
+        document.getElementById('m-numero').value = ''
+        document.getElementById('m-bairro').value = ''
+        document.getElementById('m-cidade').value = ''
+        document.getElementById('m-estado').value = ''
       }
       clearAlert('member-alert')
       openModal('modal-member')
     })
 
-    window.editMember = (id, name, type, email, phone, birth, join, isBoardMember, localSociety = '') => {
+    window.editMember = (id) => {
+      const m = allMembers.find(member => member.id === id)
+      if (!m) return
       editId = id
       const isFed = isFederation()
       document.getElementById('modal-member-title').textContent = isFed ? 'Editar Delegado' : 'Editar Sócio'
-      document.getElementById('m-name').value  = name
-      document.getElementById('m-type').value  = type
-      document.getElementById('m-email').value = email
-      document.getElementById('m-phone').value = phone
-      document.getElementById('m-birth').value = birth
-      document.getElementById('m-join').value  = join
-      document.getElementById('m-is-board').checked = !!isBoardMember
+      document.getElementById('m-name').value  = m.full_name
+      document.getElementById('m-type').value  = m.member_type
+      document.getElementById('m-email').value = m.email || ''
+      document.getElementById('m-phone').value = m.phone || ''
+      document.getElementById('m-birth').value = m.birth_date || ''
+      document.getElementById('m-join').value  = m.join_date || ''
+      document.getElementById('m-is-board').checked = !!m.is_board_member
       if (isFed) {
-        document.getElementById('m-society').value = localSociety
+        document.getElementById('m-society').value = m.local_society || ''
+      } else {
+        document.getElementById('m-cep').value = m.cep || ''
+        document.getElementById('m-logradouro').value = m.logradouro || ''
+        document.getElementById('m-numero').value = m.numero || ''
+        document.getElementById('m-bairro').value = m.bairro || ''
+        document.getElementById('m-cidade').value = m.cidade || ''
+        document.getElementById('m-estado').value = m.estado || ''
       }
       clearAlert('member-alert')
       openModal('modal-member')
@@ -587,6 +662,15 @@
         join_date:      document.getElementById('m-join').value  || null,
         is_board_member: document.getElementById('m-is-board').checked,
         local_society:  isFed ? document.getElementById('m-society').value.trim() || null : null,
+      }
+
+      if (!isFed) {
+        payload.cep = document.getElementById('m-cep').value.trim() || null
+        payload.logradouro = document.getElementById('m-logradouro').value.trim() || null
+        payload.numero = document.getElementById('m-numero').value.trim() || null
+        payload.bairro = document.getElementById('m-bairro').value.trim() || null
+        payload.cidade = document.getElementById('m-cidade').value.trim() || null
+        payload.estado = document.getElementById('m-estado').value.trim() || null
       }
 
       setLoading(btn, true, 'Salvar')
@@ -839,6 +923,132 @@
       }
       e.target.value = v.replace(/-$/,'')
     })
+
+    // Máscara de CEP
+    document.getElementById('m-cep').addEventListener('input', (e) => {
+      let v = e.target.value.replace(/\D/g,'')
+      if (v.length > 8) v = v.slice(0,8)
+      if (v.length > 5) {
+        v = v.replace(/^(\d{5})(\d{1,3})/, '$1-$2')
+      }
+      e.target.value = v
+    })
+
+    window.buscarCepSocio = async () => {
+      const cepInput = document.getElementById('m-cep');
+      let cep = cepInput.value.replace(/\D/g, '');
+      if (cep.length !== 8) return;
+      
+      document.getElementById('m-logradouro').value = 'Buscando...';
+      document.getElementById('m-bairro').value = 'Buscando...';
+      document.getElementById('m-cidade').value = 'Buscando...';
+      document.getElementById('m-estado').value = '';
+      
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = await response.json();
+        if (data.erro) {
+          showAlert('member-alert', 'CEP não encontrado.', 'error');
+          document.getElementById('m-logradouro').value = '';
+          document.getElementById('m-bairro').value = '';
+          document.getElementById('m-cidade').value = '';
+          return;
+        }
+        document.getElementById('m-logradouro').value = data.logradouro || '';
+        document.getElementById('m-bairro').value = data.bairro || '';
+        document.getElementById('m-cidade').value = data.localidade || '';
+        document.getElementById('m-estado').value = data.uf || '';
+        clearAlert('member-alert');
+      } catch (err) {
+        showAlert('member-alert', 'Erro ao consultar o CEP. Digite o endereço manualmente.', 'warning');
+        document.getElementById('m-logradouro').value = '';
+        document.getElementById('m-bairro').value = '';
+        document.getElementById('m-cidade').value = '';
+      }
+    }
+
+    let map = null;
+    let markersLayer = null;
+
+    window.openMapModal = () => {
+      openModal('modal-map');
+      
+      setTimeout(() => {
+        if (!map) {
+          map = L.map('leaflet-map').setView([-7.12, -34.86], 12);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+          }).addTo(map);
+          markersLayer = L.layerGroup().addTo(map);
+        } else {
+          markersLayer.clearLayers();
+          map.invalidateSize();
+        }
+        
+        const activeMembersWithCoords = allMembers.filter(m => 
+          m.is_active && 
+          m.latitude !== null && m.latitude !== undefined && 
+          m.longitude !== null && m.longitude !== undefined
+        );
+        
+        if (activeMembersWithCoords.length === 0) {
+          map.setView([-7.12, -34.86], 12);
+          return;
+        }
+        
+        const bounds = [];
+        activeMembersWithCoords.forEach(m => {
+          bounds.push([m.latitude, m.longitude]);
+          
+          const initials = m.full_name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+          const avatarUrl = m.avatar_url || null;
+          
+          let markerHtml = '';
+          if (avatarUrl) {
+            markerHtml = `
+              <div class="marker-container" style="position:relative;width:40px;height:40px;">
+                <div style="width:36px;height:36px;border-radius:50%;border:3px solid #1a2a6c;overflow:hidden;background:#fff;box-shadow:var(--shadow)">
+                  <img src="${avatarUrl}" style="width:100%;height:100%;object-fit:cover;"/>
+                </div>
+                <div style="position:absolute;bottom:-2px;left:14px;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid #1a2a6c;"></div>
+              </div>`;
+          } else {
+            markerHtml = `
+              <div class="marker-container" style="position:relative;width:40px;height:40px;">
+                <div style="width:36px;height:36px;border-radius:50%;border:3px solid #1a2a6c;overflow:hidden;background:#1a2a6c;color:#fff;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;box-shadow:var(--shadow)">
+                  ${initials}
+                </div>
+                <div style="position:absolute;bottom:-2px;left:14px;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid #1a2a6c;"></div>
+              </div>`;
+          }
+          
+          const icon = L.divIcon({
+            className: 'custom-map-marker',
+            html: markerHtml,
+            iconSize: [40, 40],
+            iconAnchor: [20, 40]
+          });
+          
+          const phoneText = m.phone ? `<br><span style="font-size:11px;color:#1e293b;">📞 ${m.phone}</span>` : '';
+          const addressText = m.logradouro ? `<br><span style="font-size:11px;color:#64748b;margin-top:4px;display:block;">📍 ${m.logradouro}, ${m.numero || 'S/N'} - ${m.bairro || ''}</span>` : '';
+
+          L.marker([m.latitude, m.longitude], { icon: icon })
+            .addTo(markersLayer)
+            .bindPopup(`
+              <div style="font-family:inherit;padding:2px;min-width:150px">
+                <strong style="font-size:13px;color:#1a2a6c;display:block;margin-bottom:2px">${m.full_name}</strong>
+                <span class="badge ${m.member_type === 'ativo' ? 'badge-blue' : 'badge-slate'}" style="font-size:10px;padding:2px 6px">${m.member_type === 'ativo' ? 'Ativo' : 'Cooperador'}</span>
+                ${phoneText}
+                ${addressText}
+              </div>
+            `);
+        });
+        
+        map.fitBounds(bounds, { padding: [50, 50] });
+      }, 250);
+    }
+
+    document.getElementById('btn-show-map').addEventListener('click', openMapModal);
 
     // ── Init ──
     await Promise.all([loadFeesConfig(), loadMembers()])
