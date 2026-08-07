@@ -13,27 +13,43 @@ def geocode_address(logradouro: str, numero: str, bairro: str, cidade: str, esta
     if not cidade or not estado:
         return None, None
         
-    # Definimos as tentativas de mais específicas para mais genéricas.
-    # Evitamos incluir CEP e Bairro nas tentativas detalhadas da rua, pois o OSM brasileiro 
-    # frequentemente falha se a query for excessivamente restrita.
     attempts = []
     
-    if logradouro:
-        # 1. Rua + Número + Cidade + Estado
-        if numero:
-            attempts.append([logradouro, numero, cidade, estado, "Brazil"])
-        # 2. Rua + Cidade + Estado
-        attempts.append([logradouro, cidade, estado, "Brazil"])
+    # Normalizar strings
+    logradouro_clean = (logradouro or "").strip()
+    numero_clean = (numero or "").strip()
+    bairro_clean = (bairro or "").strip()
+    cidade_clean = (cidade or "").strip()
+    estado_clean = (estado or "").strip()
+    cep_clean = (cep or "").strip()
+    
+    if logradouro_clean:
+        if numero_clean:
+            # 1. Rua, Número, CEP, Cidade, Estado
+            if cep_clean:
+                attempts.append([f"{logradouro_clean}, {numero_clean}", cep_clean, cidade_clean, estado_clean, "Brazil"])
+            # 2. Rua, Número, Bairro, Cidade, Estado
+            if bairro_clean:
+                attempts.append([f"{logradouro_clean}, {numero_clean}", bairro_clean, cidade_clean, estado_clean, "Brazil"])
+            # 3. Rua, Número, Cidade, Estado
+            attempts.append([f"{logradouro_clean}, {numero_clean}", cidade_clean, estado_clean, "Brazil"])
+            
+        # Fallbacks da rua para aproximar do segmento correto (caso o número exato falhe)
+        if cep_clean:
+            attempts.append([logradouro_clean, cep_clean, cidade_clean, estado_clean, "Brazil"])
+        if bairro_clean:
+            attempts.append([logradouro_clean, bairro_clean, cidade_clean, estado_clean, "Brazil"])
+        attempts.append([logradouro_clean, cidade_clean, estado_clean, "Brazil"])
         
-    if bairro:
-        # 3. Bairro + Cidade + Estado
-        attempts.append([bairro, cidade, estado, "Brazil"])
+    if bairro_clean:
+        # 7. Bairro, Cidade, Estado
+        attempts.append([bairro_clean, cidade_clean, estado_clean, "Brazil"])
         
-    # 4. Cidade + Estado (Último recurso)
-    attempts.append([cidade, estado, "Brazil"])
+    # 8. Cidade, Estado
+    attempts.append([cidade_clean, estado_clean, "Brazil"])
     
     for parts in attempts:
-        query_str = ", ".join(parts)
+        query_str = ", ".join([p for p in parts if p])
         url = "https://nominatim.openstreetmap.org/search?" + urllib.parse.urlencode({
             "q": query_str,
             "format": "json",

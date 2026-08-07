@@ -163,6 +163,14 @@ def list_my_local_umps(
             "pastor_name": l.pastor_name,
             "fiscal_year": l.fiscal_year,
             "is_active": l.is_active,
+            "logo_url": l.logo_url,
+            "logradouro": l.logradouro,
+            "numero": l.numero,
+            "bairro": l.bairro,
+            "cidade": l.cidade,
+            "estado": l.estado,
+            "latitude": l.latitude,
+            "longitude": l.longitude,
         }
         for l in locals_
     ]

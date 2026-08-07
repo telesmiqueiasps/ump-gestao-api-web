@@ -251,7 +251,7 @@ def update_member(
     for field, value in dump.items():
         setattr(member, field, value)
         
-    if address_changed:
+    if address_changed or member.latitude is None or member.longitude is None:
         from app.services.geocoder import geocode_address
         lat, lon = geocode_address(
             member.logradouro, member.numero, member.bairro,

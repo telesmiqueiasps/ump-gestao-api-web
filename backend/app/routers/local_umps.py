@@ -330,7 +330,7 @@ def update_local_ump(
     for field, value in dump.items():
         setattr(local, field, value)
 
-    if address_changed:
+    if address_changed or local.latitude is None or local.longitude is None:
         from app.services.geocoder import geocode_address
         lat, lon = geocode_address(
             local.logradouro, local.numero, local.bairro,
@@ -381,7 +381,7 @@ def update_my_local_ump(
     for field, value in restricted.items():
         setattr(local, field, value)
 
-    if address_changed:
+    if address_changed or local.latitude is None or local.longitude is None:
         from app.services.geocoder import geocode_address
         lat, lon = geocode_address(
             local.logradouro, local.numero, local.bairro,
