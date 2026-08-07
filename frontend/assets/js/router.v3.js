@@ -558,7 +558,7 @@ window.showOrgSwitchModal = function(orgs) {
 window.switchToOrg = window._switchToOrg = async function(userId) {
   try {
     const response = await fetch(
-      'https://ump-gestao-api.onrender.com/api/auth/login/select-org',
+      'https://umpgestaopopb-825585682536.us-west1.run.app/api/auth/login/select-org',
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

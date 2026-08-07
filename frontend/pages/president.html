@@ -1077,7 +1077,7 @@
     try {
       const token = localStorage.getItem('access_token')
       const res = await fetch(
-        `https://ump-gestao-api.onrender.com/api/activity-reports/report/${arCurrentYear}/preview-pdf`,
+        `https://umpgestaopopb-825585682536.us-west1.run.app/api/activity-reports/report/${arCurrentYear}/preview-pdf`,
         { headers: { 'Authorization': `Bearer ${token}` } }
       )
       if (!res.ok) throw new Error('Erro ao gerar prévia')

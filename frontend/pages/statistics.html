@@ -468,7 +468,7 @@
     setLoading(btn, true, '📄 Gerar PDF')
     try {
       const token = localStorage.getItem('access_token')
-      const url = `https://ump-gestao-api.onrender.com/api/uph-statistics/${currentYear}/pdf`
+      const url = `https://umpgestaopopb-825585682536.us-west1.run.app/api/uph-statistics/${currentYear}/pdf`
       const response = await fetch(url, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
