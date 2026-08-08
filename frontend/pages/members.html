@@ -901,13 +901,6 @@
         console.error('Erro na consulta ViaCEP:', e)
       }
     }
-        loadMembers()
-      } catch(err) {
-        showAlert('member-alert', err.message, 'error')
-      } finally {
-        setLoading(btn, false, 'Salvar')
-      }
-    })
 
     window.deactivate = async (id, name) => {
       if (!confirm(`Desativar ${name}?`)) return
