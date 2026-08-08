@@ -128,6 +128,9 @@
           <button class="btn btn-secondary local-only-field" id="btn-show-map" style="display:inline-flex;align-items:center;gap:.35rem">
             🗺️ Ver Mapa
           </button>
+          <button class="btn btn-secondary local-only-field" id="btn-open-config" style="display:inline-flex;align-items:center;gap:.35rem">
+            ⚙️ Valores
+          </button>
           <button class="btn btn-primary" id="btn-new-member">
             <script>
               try {
@@ -141,31 +144,12 @@
 
       <div id="page-alert" class="hidden"></div>
 
-      <!-- Card de configuração de valores -->
-      <div class="card mb-4" id="fees-config-card">
-        <div class="card-header">
-          <h2>⚙️ Configuração de Valores</h2>
-          <button class="btn btn-secondary btn-sm" id="btn-toggle-config">Editar</button>
-        </div>
-        <div id="config-form" style="display:none;margin-top:1rem">
-          <div class="grid-2 mb-4">
-            <div class="field">
-              <label>Valor da Mensalidade Mensal (R$)</label>
-              <input class="input" type="number" step="0.01" id="config-monthly-value" placeholder="0,00" />
-            </div>
-            <div class="field">
-              <label>Valor da ACI do Ano (R$)</label>
-              <input class="input" type="number" step="0.01" id="config-aci-value" placeholder="0,00" />
-            </div>
-          </div>
-          <div id="config-alert" class="hidden mb-3"></div>
-          <button class="btn btn-primary btn-sm" id="btn-save-config">Salvar configurações</button>
-        </div>
-      </div>
-
-      <div class="filter-bar">
+      <div class="filter-bar mb-4" style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
         <button class="filter-btn active" id="filter-active" onclick="setFilter(true)">Ativos</button>
         <button class="filter-btn" id="filter-all" onclick="setFilter(false)">Todos</button>
+        <div style="flex:1;min-width:200px;max-width:300px;margin-left:auto">
+          <input class="input" type="text" id="search-members" placeholder="🔍 Buscar por nome..." style="padding:.35rem .75rem;font-size:.825rem;height:auto" />
+        </div>
         <span class="filter-count" id="member-count"></span>
       </div>
 
@@ -406,6 +390,30 @@
   </div>
 </div>
 
+<!-- Modal Configuração de Valores -->
+<div class="modal-overlay" id="modal-fees-config">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2>⚙️ Configuração de Valores</h2>
+      <button class="modal-close">✕</button>
+    </div>
+    <div class="field mb-3">
+      <label>Valor da Mensalidade Mensal (R$)</label>
+      <input class="input" type="number" step="0.01" id="config-monthly-value" placeholder="0,00" />
+    </div>
+    <div class="field mb-4">
+      <label>Valor da ACI do Ano (R$)</label>
+      <input class="input" type="number" step="0.01" id="config-aci-value" placeholder="0,00" />
+    </div>
+    <div id="config-alert" class="hidden mb-3"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary modal-close">Cancelar</button>
+      <button class="btn btn-primary" id="btn-save-config">Salvar</button>
+    </div>
+  </div>
+</div>
+
+
 <script type="module">
   import { requireAuth, isLocalUmp, isFederation } from '../assets/js/auth.js?v=9'
   import { renderShell, canAccessPage, renderBottomNav } from '../assets/js/router.v3.js?v=9'
@@ -436,7 +444,6 @@
 
     const isFed = isFederation()
     if (isFed) {
-      document.getElementById('fees-config-card').classList.add('hidden')
       document.getElementById('fed-society-field').classList.remove('hidden')
       document.querySelectorAll('.local-only-field').forEach(el => el.classList.add('hidden'))
       loadFederationLocalUmps()
@@ -467,29 +474,26 @@
       } catch {}
     }
 
-    // ── Configuração: toggle e salvar ──
-    document.getElementById('btn-toggle-config').addEventListener('click', () => {
-      const form = document.getElementById('config-form')
-      const open = form.style.display === 'none'
-      form.style.display = open ? 'block' : 'none'
-      document.getElementById('btn-toggle-config').textContent = open ? 'Fechar' : 'Editar'
+    // ── Configuração: abrir modal e salvar ──
+    document.getElementById('btn-open-config').addEventListener('click', () => {
+      clearAlert('config-alert')
+      openModal('modal-fees-config')
     })
 
     document.getElementById('btn-save-config').addEventListener('click', async () => {
       const btn = document.getElementById('btn-save-config')
-      setLoading(btn, true, 'Salvar configurações')
+      setLoading(btn, true, 'Salvar')
       try {
         feesConfig = await api.put('/api/member-fees/config', {
           monthly_fee_value: parseFloat(document.getElementById('config-monthly-value').value || 0),
           aci_year_value:    parseFloat(document.getElementById('config-aci-value').value || 0),
         })
-        document.getElementById('config-form').style.display = 'none'
-        document.getElementById('btn-toggle-config').textContent = 'Editar'
-        showAlert('config-alert', 'Configurações salvas!', 'success')
+        closeModal('modal-fees-config')
+        showAlert('page-alert', 'Configurações salvas com sucesso!', 'success')
       } catch(err) {
         showAlert('config-alert', err.message, 'error')
       } finally {
-        setLoading(btn, false, 'Salvar configurações')
+        setLoading(btn, false, 'Salvar')
       }
     })
 
@@ -506,15 +510,25 @@
       try {
         const data = await api.get(`/api/members/?active_only=${activeOnly}`)
         allMembers = data
-        const isFed = isFederation()
-        document.getElementById('member-count').textContent = isFed 
-          ? `${data.length} delegado${data.length !== 1 ? 's' : ''}` 
-          : `${data.length} sócio${data.length !== 1 ? 's' : ''}`
-        renderTable(data)
+        filterAndRenderMembers()
       } catch(err) {
         showAlert('page-alert', err.message, 'error')
       }
     }
+
+    function filterAndRenderMembers() {
+      const query = document.getElementById('search-members').value.toLowerCase().trim()
+      const filtered = allMembers.filter(m => 
+        m.full_name.toLowerCase().includes(query)
+      )
+      const isFed = isFederation()
+      document.getElementById('member-count').textContent = isFed 
+        ? `${filtered.length} delegado${filtered.length !== 1 ? 's' : ''}` 
+        : `${filtered.length} sócio${filtered.length !== 1 ? 's' : ''}`
+      renderTable(filtered)
+    }
+
+    document.getElementById('search-members').addEventListener('input', filterAndRenderMembers)
 
     function renderTable(members) {
       const tbody = document.getElementById('members-body')
