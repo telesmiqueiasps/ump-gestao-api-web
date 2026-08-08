@@ -775,7 +775,7 @@
         if (photoFile && savedMember && savedMember.id) {
           const formData = new FormData()
           formData.append('file', photoFile)
-          await api.post(`/api/members/${savedMember.id}/avatar`, formData)
+          await api.upload(`/api/members/${savedMember.id}/avatar`, formData)
         }
 
         closeModal('modal-member')

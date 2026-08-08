@@ -39,7 +39,19 @@ async function request(method, path, body = null, isFormData = false, customTime
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: 'Erro desconhecido' }))
-    throw new Error(err.detail || `Erro ${res.status}`)
+    let message = 'Erro desconhecido'
+    if (typeof err.detail === 'string') {
+      message = err.detail
+    } else if (Array.isArray(err.detail)) {
+      message = err.detail.map(d => d.msg || d.detail || JSON.stringify(d)).join(', ')
+    } else if (err.detail && typeof err.detail === 'object') {
+      message = JSON.stringify(err.detail)
+    } else if (err.message) {
+      message = err.message
+    } else {
+      message = `Erro ${res.status}`
+    }
+    throw new Error(message)
   }
 
   if (res.status === 204) return null
