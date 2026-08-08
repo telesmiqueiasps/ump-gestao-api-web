@@ -30,6 +30,7 @@ class Member(Base):
     estado = Column(String(2), nullable=True)
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
+    avatar_url = Column(String(500), nullable=True)
 
     local_ump = relationship("LocalUmp", back_populates="members")
     fees = relationship("MembershipFee", back_populates="member")

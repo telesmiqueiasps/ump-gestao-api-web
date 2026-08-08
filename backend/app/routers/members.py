@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 from sqlalchemy import extract
 from pydantic import BaseModel, EmailStr
@@ -32,6 +32,7 @@ class MemberCreate(BaseModel):
     estado: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    avatar_url: Optional[str] = None
 
 
 class MemberUpdate(BaseModel):
@@ -50,6 +51,7 @@ class MemberUpdate(BaseModel):
     estado: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    avatar_url: Optional[str] = None
 
 
 class FeeCreate(BaseModel):
@@ -301,17 +303,71 @@ def delete_or_deactivate_member(
     ).first()
     if not member:
         raise HTTPException(status_code=404, detail="Sócio não encontrado")
-    
+
+    avatar_to_delete = member.avatar_url
+
     try:
         # Tenta exclusão física
         db.delete(member)
         db.commit()
+
+        # Remove arquivo do Cloudflare R2 após exclusão no banco
+        if avatar_to_delete:
+            from app.services.storage import delete_file, extract_key_from_url
+            key = extract_key_from_url(avatar_to_delete)
+            if key:
+                delete_file(key)
     except Exception:
         # Em caso de constraint de chave estrangeira (ex: já votou/tem lançamentos), faz o fallback para desativação
         db.rollback()
         member = db.query(Member).filter(Member.id == member_id).first()
         member.is_active = False
         db.commit()
+
+
+# Upload de avatar/foto do sócio para o Cloudflare R2
+@router.post("/{member_id}/avatar")
+async def upload_member_avatar(
+    member_id: UUID,
+    file: UploadFile = File(...),
+    current_user: User = Depends(require_local_or_federation),
+    db: Session = Depends(get_db),
+):
+    member = db.query(Member).filter(
+        Member.id == member_id,
+        Member.local_ump_id == current_user.organization_id,
+    ).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Sócio não encontrado")
+
+    contents = await file.read()
+    if len(contents) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="A foto deve ter no máximo 10MB")
+
+    ext = "jpg"
+    if file.filename and "." in file.filename:
+        ext = file.filename.split(".")[-1].lower()
+    if ext not in ["jpg", "jpeg", "png", "webp"]:
+        ext = "jpg"
+
+    content_type = file.content_type or f"image/{ext}"
+    timestamp = int(datetime.datetime.now().timestamp())
+    key = f"members/avatars/{member_id}_{timestamp}.{ext}"
+
+    # Se já possuía foto anterior, remove do R2
+    if member.avatar_url:
+        from app.services.storage import delete_file, extract_key_from_url
+        old_key = extract_key_from_url(member.avatar_url)
+        if old_key:
+            delete_file(old_key)
+
+    from app.services.storage import upload_file
+    public_url = upload_file(contents, key, content_type)
+
+    member.avatar_url = public_url
+    db.commit()
+    db.refresh(member)
+    return _to_out(member)
 
 
 # Registrar mensalidade
@@ -398,4 +454,5 @@ def _to_out(m: Member) -> dict:
         "estado": m.estado,
         "latitude": m.latitude,
         "longitude": m.longitude,
+        "avatar_url": m.avatar_url,
     }

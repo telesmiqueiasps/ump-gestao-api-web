@@ -76,7 +76,31 @@ export function nameToColor(name) {
   return colors[Math.abs(hash) % colors.length]
 }
 
-export function avatarHtml(name, size = 40, fontSize = '1rem') {
+export function avatarHtml(name, size = 40, fontSize = '1rem', avatarUrl = null) {
+  if (avatarUrl) {
+    const cleanName = (name || '').replace(/"/g, '')
+    const fallbackBg = nameToColor(name)
+    const initials = (name || '?')
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map(n => n[0].toUpperCase())
+      .join('')
+    return `
+      <div style="
+        width:${size}px;height:${size}px;
+        border-radius:50%;
+        overflow:hidden;
+        background:${fallbackBg};
+        border:1.5px solid var(--slate-200);
+        flex-shrink:0;
+        box-shadow:var(--shadow-sm);
+        display:flex;align-items:center;justify-content:center;
+      ">
+        <img src="${avatarUrl}" alt="${cleanName}" style="width:100%;height:100%;object-fit:cover;" onerror="this.remove()"/>
+        <span style="color:#fff;font-size:${fontSize};font-weight:700;letter-spacing:-.5px;display:none">${initials}</span>
+      </div>`.replace('onerror="this.remove()"', `onerror="this.style.display='none';this.nextElementSibling.style.display='block'"`)
+  }
   const initials = (name || '?')
     .split(' ')
     .filter(Boolean)

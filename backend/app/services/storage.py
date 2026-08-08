@@ -153,3 +153,21 @@ def get_file_base64(url: str) -> str:
     except Exception as e:
         logger.error(f"Erro ao obter base64 de {key}: {e}")
         return None
+
+
+def extract_key_from_url(url: str) -> str | None:
+    if not url:
+        return None
+    public_domain = settings.r2_public_domain.rstrip('/')
+    if url.startswith(public_domain):
+        return url.replace(f"{public_domain}/", "")
+    match = re.search(
+        r'(?:members/.+|activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$',
+        url
+    )
+    if match:
+        return match.group(0)
+    if "http" in url:
+        parts = url.split("/")
+        return "/".join(parts[3:]) if len(parts) > 3 else parts[-1]
+    return url

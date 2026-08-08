@@ -380,7 +380,7 @@
     grid.innerHTML = locals.map(l => `
       <div class="local-card ${!l.is_active ? 'inactive' : ''}">
         <div class="local-card-header">
-          ${avatarHtml(l.name, 44, '1rem')}
+          ${avatarHtml(l.name, 44, '1rem', l.logo_url)}
           <div style="flex:1;min-width:0">
             <div class="local-card-name">${l.name}</div>
             <div class="local-card-church">${l.church_name || ''}</div>
