@@ -15,9 +15,29 @@ import app.models # Ensure all models are loaded
 # Create missing database tables automatically on start
 try:
     Base.metadata.create_all(bind=engine)
+    from sqlalchemy import text
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE members ADD COLUMN IF NOT EXISTS cep VARCHAR(9);"))
+        conn.execute(text("ALTER TABLE members ADD COLUMN IF NOT EXISTS logradouro VARCHAR(150);"))
+        conn.execute(text("ALTER TABLE members ADD COLUMN IF NOT EXISTS numero VARCHAR(20);"))
+        conn.execute(text("ALTER TABLE members ADD COLUMN IF NOT EXISTS bairro VARCHAR(100);"))
+        conn.execute(text("ALTER TABLE members ADD COLUMN IF NOT EXISTS cidade VARCHAR(100);"))
+        conn.execute(text("ALTER TABLE members ADD COLUMN IF NOT EXISTS estado VARCHAR(2);"))
+        conn.execute(text("ALTER TABLE members ADD COLUMN IF NOT EXISTS latitude FLOAT;"))
+        conn.execute(text("ALTER TABLE members ADD COLUMN IF NOT EXISTS longitude FLOAT;"))
+        conn.execute(text("ALTER TABLE members ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(500);"))
+
+        conn.execute(text("ALTER TABLE local_umps ADD COLUMN IF NOT EXISTS cep VARCHAR(9);"))
+        conn.execute(text("ALTER TABLE local_umps ADD COLUMN IF NOT EXISTS logradouro VARCHAR(150);"))
+        conn.execute(text("ALTER TABLE local_umps ADD COLUMN IF NOT EXISTS numero VARCHAR(20);"))
+        conn.execute(text("ALTER TABLE local_umps ADD COLUMN IF NOT EXISTS bairro VARCHAR(100);"))
+        conn.execute(text("ALTER TABLE local_umps ADD COLUMN IF NOT EXISTS cidade VARCHAR(100);"))
+        conn.execute(text("ALTER TABLE local_umps ADD COLUMN IF NOT EXISTS estado VARCHAR(2);"))
+        conn.execute(text("ALTER TABLE local_umps ADD COLUMN IF NOT EXISTS latitude FLOAT;"))
+        conn.execute(text("ALTER TABLE local_umps ADD COLUMN IF NOT EXISTS longitude FLOAT;"))
 except Exception as e:
     import logging
-    logging.getLogger("uvicorn").error(f"Error creating database tables: {e}")
+    logging.getLogger("uvicorn").error(f"Error creating database tables or migrating columns: {e}")
 
 settings = get_settings()
 
