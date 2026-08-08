@@ -29,6 +29,8 @@ class LocalUmpCreate(BaseModel):
     bairro: Optional[str] = None
     cidade: Optional[str] = None
     estado: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 
 class LocalUmpUpdate(BaseModel):
@@ -54,6 +56,8 @@ class LocalUmpUpdate(BaseModel):
     bairro: Optional[str] = None
     cidade: Optional[str] = None
     estado: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 
 # Federação cria uma UMP Local
@@ -63,20 +67,22 @@ def create_local_ump(
     current_user: User = Depends(require_federation),
     db: Session = Depends(get_db),
 ):
-    # Geocodificação automática
-    lat, lon = None, None
-    if payload.logradouro and payload.cidade and payload.estado:
+    # Geocodificação automática caso coordenadas manuais não tenham sido fornecidas
+    lat, lon = payload.latitude, payload.longitude
+    if (lat is None or lon is None) and payload.logradouro and payload.cidade and payload.estado:
         from app.services.geocoder import geocode_address
-        lat, lon = geocode_address(
+        lat, lon, _ = geocode_address(
             payload.logradouro, payload.numero, payload.bairro,
             payload.cidade, payload.estado, payload.cep
         )
 
+    dump_data = payload.model_dump()
+    dump_data["latitude"] = lat
+    dump_data["longitude"] = lon
+
     local = LocalUmp(
         federation_id=current_user.organization_id,
-        **payload.model_dump(),
-        latitude=lat,
-        longitude=lon
+        **dump_data
     )
     db.add(local)
     db.commit()
@@ -327,12 +333,14 @@ def update_local_ump(
             address_changed = True
             break
 
+    has_manual_coords = ("latitude" in dump and dump["latitude"] is not None) and ("longitude" in dump and dump["longitude"] is not None)
+
     for field, value in dump.items():
         setattr(local, field, value)
 
-    if address_changed or local.latitude is None or local.longitude is None:
+    if not has_manual_coords and (address_changed or local.latitude is None or local.longitude is None):
         from app.services.geocoder import geocode_address
-        lat, lon = geocode_address(
+        lat, lon, _ = geocode_address(
             local.logradouro, local.numero, local.bairro,
             local.cidade, local.estado, local.cep
         )
@@ -378,12 +386,14 @@ def update_my_local_ump(
             address_changed = True
             break
 
+    has_manual_coords = ("latitude" in restricted and restricted["latitude"] is not None) and ("longitude" in restricted and restricted["longitude"] is not None)
+
     for field, value in restricted.items():
         setattr(local, field, value)
 
-    if address_changed or local.latitude is None or local.longitude is None:
+    if not has_manual_coords and (address_changed or local.latitude is None or local.longitude is None):
         from app.services.geocoder import geocode_address
-        lat, lon = geocode_address(
+        lat, lon, _ = geocode_address(
             local.logradouro, local.numero, local.bairro,
             local.cidade, local.estado, local.cep
         )

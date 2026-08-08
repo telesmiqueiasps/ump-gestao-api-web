@@ -149,6 +149,23 @@
       </div>
     </div>
 
+    <!-- Mini-Mapa de Geolocalização -->
+    <div class="field mb-4" style="margin-top: 1rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">
+        <label style="font-weight:600;font-size:.82rem;color:var(--slate-700)">🗺️ Localização no Mapa (Sede)</label>
+        <button class="btn btn-secondary btn-sm" type="button" id="btn-locate-l-map" style="font-size:.78rem;padding: 3px 10px;">
+          🔍 Localizar no Mapa
+        </button>
+      </div>
+      <div id="l-precision-badge" class="alert mb-2" style="display:none;font-size:.78rem;padding:.4rem .65rem;border-radius:6px"></div>
+      <div id="l-form-map" style="width:100%;height:180px;border-radius:10px;border:1.5px solid var(--slate-200);position:relative;overflow:hidden"></div>
+      <p style="font-size:.72rem;color:var(--slate-400);margin-top:.3rem">
+        📍 Clique no mapa ou arraste o pino para ajustar a posição exata da igreja/sede.
+      </p>
+      <input type="hidden" id="l-latitude" />
+      <input type="hidden" id="l-longitude" />
+    </div>
+
     <div id="local-alert" class="hidden mb-4"></div>
 
     <div class="modal-footer">
@@ -433,6 +450,7 @@
     document.getElementById('l-bairro').value      = ''
     document.getElementById('l-cidade').value      = ''
     document.getElementById('l-estado').value      = ''
+    initLocalFormMap(null, null, 'nenhum')
     clearAlert('local-alert')
     openModal('modal-local')
   })
@@ -456,6 +474,7 @@
       document.getElementById('l-bairro').value      = data.bairro ?? ''
       document.getElementById('l-cidade').value      = data.cidade ?? ''
       document.getElementById('l-estado').value      = data.estado ?? ''
+      initLocalFormMap(data.latitude, data.longitude, (data.latitude && data.longitude) ? 'manual' : 'nenhum')
       clearAlert('local-alert')
       openModal('modal-local')
     } catch(err) {
@@ -487,6 +506,13 @@
       estado:          document.getElementById('l-estado').value.trim() || null,
     }
 
+    const latVal = parseFloat(document.getElementById('l-latitude')?.value)
+    const lonVal = parseFloat(document.getElementById('l-longitude')?.value)
+    if (!isNaN(latVal) && !isNaN(lonVal)) {
+      payload.latitude = latVal
+      payload.longitude = lonVal
+    }
+
     try {
       if (editId) {
         await api.put(`/api/local-umps/${editId}`, payload)
@@ -501,6 +527,152 @@
       setLoading(btn, false, 'Salvar')
     }
   })
+
+  // ── Mini-Mapa Interativo no Formulário de UMP Local ──
+  let localFormMap = null
+  let localFormMarker = null
+
+  function initLocalFormMap(lat, lon, precision) {
+    const mapContainer = document.getElementById('l-form-map')
+    if (!mapContainer) return
+
+    const latInput = document.getElementById('l-latitude')
+    const lonInput = document.getElementById('l-longitude')
+
+    const hasCoords = lat !== null && lat !== undefined && lon !== null && lon !== undefined
+    const defaultLat = hasCoords ? lat : -7.12
+    const defaultLon = hasCoords ? lon : -34.86
+    const zoomLevel = hasCoords ? 16 : 12
+
+    latInput.value = hasCoords ? lat : ''
+    lonInput.value = hasCoords ? lon : ''
+
+    updateLocalPrecisionBadge(precision || (hasCoords ? 'manual' : 'nenhum'))
+
+    setTimeout(() => {
+      if (!localFormMap) {
+        localFormMap = L.map('l-form-map').setView([defaultLat, defaultLon], zoomLevel)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© OpenStreetMap'
+        }).addTo(localFormMap)
+
+        localFormMap.on('click', (e) => {
+          setLocalMarker(e.latlng.lat, e.latlng.lng, 'manual')
+        })
+      } else {
+        localFormMap.setView([defaultLat, defaultLon], zoomLevel)
+        localFormMap.invalidateSize()
+      }
+
+      if (hasCoords) {
+        setLocalMarker(defaultLat, defaultLon, precision || 'manual')
+      } else if (localFormMarker) {
+        localFormMap.removeLayer(localFormMarker)
+        localFormMarker = null
+      }
+    }, 250)
+  }
+
+  function setLocalMarker(lat, lon, precision) {
+    const latInput = document.getElementById('l-latitude')
+    const lonInput = document.getElementById('l-longitude')
+
+    latInput.value = lat
+    lonInput.value = lon
+
+    if (localFormMarker) {
+      localFormMarker.setLatLng([lat, lon])
+    } else if (localFormMap) {
+      localFormMarker = L.marker([lat, lon], { draggable: true }).addTo(localFormMap)
+      localFormMarker.on('dragend', (e) => {
+        const pos = e.target.getLatLng()
+        latInput.value = pos.lat
+        lonInput.value = pos.lng
+        updateLocalPrecisionBadge('manual')
+      })
+    }
+
+    if (localFormMap) {
+      localFormMap.panTo([lat, lon])
+    }
+
+    updateLocalPrecisionBadge(precision)
+  }
+
+  function updateLocalPrecisionBadge(precision) {
+    const badge = document.getElementById('l-precision-badge')
+    if (!badge) return
+    badge.style.display = 'block'
+
+    if (precision === 'manual' || precision === 'exato') {
+      badge.className = 'alert alert-success mb-2'
+      badge.innerHTML = '🟢 <strong>Localização Exata:</strong> Posição da igreja confirmada no mapa.'
+    } else if (precision === 'aproximado_rua') {
+      badge.className = 'alert alert-amber mb-2'
+      badge.innerHTML = '🟡 <strong>Localização Aproximada (Rua):</strong> Arraste o pino no mapa para marcar a igreja exata.'
+    } else if (precision === 'bairro' || precision === 'cidade') {
+      badge.className = 'alert alert-amber mb-2'
+      badge.innerHTML = '🟠 <strong>Localização Aproximada (Bairro/Cidade):</strong> Clique no mapa para posicionar a igreja.'
+    } else {
+      badge.className = 'alert alert-error mb-2'
+      badge.innerHTML = '⚪ <strong>Sem coordenadas:</strong> Preencha o endereço e clique em "Localizar no Mapa" ou clique no mapa.'
+    }
+  }
+
+  async function locateLocalOnMap() {
+    const logradouro = document.getElementById('l-logradouro').value.trim()
+    const numero = document.getElementById('l-numero').value.trim()
+    const bairro = document.getElementById('l-bairro').value.trim()
+    const cidade = document.getElementById('l-cidade').value.trim()
+    const estado = document.getElementById('l-estado').value.trim()
+    const cep = document.getElementById('l-cep').value.trim()
+
+    if (!logradouro || !cidade || !estado) {
+      alert('Por favor, preencha a Rua, Cidade e Estado para buscar no mapa.')
+      return
+    }
+
+    const btn = document.getElementById('btn-locate-l-map')
+    setLoading(btn, true, 'Buscando...')
+
+    try {
+      const res = await api.get(`/api/members/geocode-search?logradouro=${encodeURIComponent(logradouro)}&numero=${encodeURIComponent(numero)}&bairro=${encodeURIComponent(bairro)}&cidade=${encodeURIComponent(cidade)}&estado=${encodeURIComponent(estado)}&cep=${encodeURIComponent(cep)}`)
+      if (res.latitude && res.longitude) {
+        setLocalMarker(res.latitude, res.longitude, res.precision)
+      } else {
+        updateLocalPrecisionBadge('nenhum')
+        alert('Endereço não localizado automaticamente. Por favor, clique no mapa para marcar a igreja.')
+      }
+    } catch (err) {
+      alert('Erro ao buscar localização: ' + err.message)
+    } finally {
+      setLoading(btn, false, '🔍 Localizar no Mapa')
+    }
+  }
+
+  document.getElementById('btn-locate-l-map')?.addEventListener('click', locateLocalOnMap)
+
+  window.buscarCepLocal = async () => {
+    const cepInput = document.getElementById('l-cep')
+    const cep = (cepInput.value || '').replace(/\D/g, '')
+    if (cep.length !== 8) return
+
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
+      if (res.ok) {
+        const data = await res.json()
+        if (!data.erro) {
+          if (data.logradouro) document.getElementById('l-logradouro').value = data.logradouro
+          if (data.bairro) document.getElementById('l-bairro').value = data.bairro
+          if (data.localidade) document.getElementById('l-cidade').value = data.localidade
+          if (data.uf) document.getElementById('l-estado').value = data.uf
+          locateLocalOnMap()
+        }
+      }
+    } catch (e) {
+      console.error('Erro na consulta ViaCEP:', e)
+    }
+  }
 
   window.deactivateLocal = async (id, name) => {
     if (!confirm(

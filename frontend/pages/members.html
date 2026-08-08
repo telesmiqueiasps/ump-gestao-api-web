@@ -274,6 +274,23 @@
       </div>
     </div>
 
+    <!-- Mini-Mapa de Geolocalização -->
+    <div class="field mb-4 local-only-field" style="margin-top: 1rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">
+        <label style="font-weight:600;font-size:.82rem;color:var(--slate-700)">🗺️ Localização no Mapa</label>
+        <button class="btn btn-secondary btn-sm" type="button" id="btn-locate-m-map" style="font-size:.78rem;padding: 3px 10px;">
+          🔍 Localizar no Mapa
+        </button>
+      </div>
+      <div id="m-precision-badge" class="alert mb-2" style="display:none;font-size:.78rem;padding:.4rem .65rem;border-radius:6px"></div>
+      <div id="m-form-map" style="width:100%;height:180px;border-radius:10px;border:1.5px solid var(--slate-200);position:relative;overflow:hidden"></div>
+      <p style="font-size:.72rem;color:var(--slate-400);margin-top:.3rem">
+        📍 Clique no mapa ou arraste o pino para ajustar a posição exata da residência.
+      </p>
+      <input type="hidden" id="m-latitude" />
+      <input type="hidden" id="m-longitude" />
+    </div>
+
     <div id="member-alert" class="hidden mb-4"></div>
     <div class="modal-footer">
       <button class="btn btn-secondary modal-close">Cancelar</button>
@@ -653,6 +670,7 @@
         document.getElementById('m-bairro').value = ''
         document.getElementById('m-cidade').value = ''
         document.getElementById('m-estado').value = ''
+        initMemberFormMap(null, null, 'nenhum')
       }
       clearAlert('member-alert')
       openModal('modal-member')
@@ -680,6 +698,7 @@
         document.getElementById('m-bairro').value = m.bairro || ''
         document.getElementById('m-cidade').value = m.cidade || ''
         document.getElementById('m-estado').value = m.estado || ''
+        initMemberFormMap(m.latitude, m.longitude, (m.latitude && m.longitude) ? 'manual' : 'nenhum')
       }
       clearAlert('member-alert')
       openModal('modal-member')
@@ -714,6 +733,13 @@
         payload.bairro = document.getElementById('m-bairro').value.trim() || null
         payload.cidade = document.getElementById('m-cidade').value.trim() || null
         payload.estado = document.getElementById('m-estado').value.trim() || null
+
+        const latVal = parseFloat(document.getElementById('m-latitude')?.value)
+        const lonVal = parseFloat(document.getElementById('m-longitude')?.value)
+        if (!isNaN(latVal) && !isNaN(lonVal)) {
+          payload.latitude = latVal
+          payload.longitude = lonVal
+        }
       }
 
       setLoading(btn, true, 'Salvar')
@@ -721,6 +747,160 @@
         if (editId) await api.put(`/api/members/${editId}`, payload)
         else        await api.post('/api/members/', payload)
         closeModal('modal-member')
+        loadMembers()
+      } catch(err) {
+        showAlert('member-alert', err.message, 'error')
+      } finally {
+        setLoading(btn, false, 'Salvar')
+      }
+    })
+
+    // ── Mini-Mapa Interativo no Formulário do Sócio ──
+    let memberFormMap = null
+    let memberFormMarker = null
+
+    function initMemberFormMap(lat, lon, precision) {
+      if (isFederation()) return
+      const mapContainer = document.getElementById('m-form-map')
+      if (!mapContainer) return
+
+      const latInput = document.getElementById('m-latitude')
+      const lonInput = document.getElementById('m-longitude')
+
+      const hasCoords = lat !== null && lat !== undefined && lon !== null && lon !== undefined
+      const defaultLat = hasCoords ? lat : -7.12
+      const defaultLon = hasCoords ? lon : -34.86
+      const zoomLevel = hasCoords ? 16 : 12
+
+      latInput.value = hasCoords ? lat : ''
+      lonInput.value = hasCoords ? lon : ''
+
+      updateMemberPrecisionBadge(precision || (hasCoords ? 'manual' : 'nenhum'))
+
+      setTimeout(() => {
+        if (!memberFormMap) {
+          memberFormMap = L.map('m-form-map').setView([defaultLat, defaultLon], zoomLevel)
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+          }).addTo(memberFormMap)
+
+          memberFormMap.on('click', (e) => {
+            setMemberMarker(e.latlng.lat, e.latlng.lng, 'manual')
+          })
+        } else {
+          memberFormMap.setView([defaultLat, defaultLon], zoomLevel)
+          memberFormMap.invalidateSize()
+        }
+
+        if (hasCoords) {
+          setMemberMarker(defaultLat, defaultLon, precision || 'manual')
+        } else if (memberFormMarker) {
+          memberFormMap.removeLayer(memberFormMarker)
+          memberFormMarker = null
+        }
+      }, 250)
+    }
+
+    function setMemberMarker(lat, lon, precision) {
+      const latInput = document.getElementById('m-latitude')
+      const lonInput = document.getElementById('m-longitude')
+
+      latInput.value = lat
+      lonInput.value = lon
+
+      if (memberFormMarker) {
+        memberFormMarker.setLatLng([lat, lon])
+      } else if (memberFormMap) {
+        memberFormMarker = L.marker([lat, lon], { draggable: true }).addTo(memberFormMap)
+        memberFormMarker.on('dragend', (e) => {
+          const pos = e.target.getLatLng()
+          latInput.value = pos.lat
+          lonInput.value = pos.lng
+          updateMemberPrecisionBadge('manual')
+        })
+      }
+
+      if (memberFormMap) {
+        memberFormMap.panTo([lat, lon])
+      }
+
+      updateMemberPrecisionBadge(precision)
+    }
+
+    function updateMemberPrecisionBadge(precision) {
+      const badge = document.getElementById('m-precision-badge')
+      if (!badge) return
+      badge.style.display = 'block'
+
+      if (precision === 'manual' || precision === 'exato') {
+        badge.className = 'alert alert-success mb-2'
+        badge.innerHTML = '🟢 <strong>Localização Exata:</strong> Posição confirmada no mapa.'
+      } else if (precision === 'aproximado_rua') {
+        badge.className = 'alert alert-amber mb-2'
+        badge.innerHTML = '🟡 <strong>Localização Aproximada (Rua):</strong> Arraste o pino no mapa para marcar o ponto exato.'
+      } else if (precision === 'bairro' || precision === 'cidade') {
+        badge.className = 'alert alert-amber mb-2'
+        badge.innerHTML = '🟠 <strong>Localização Aproximada (Bairro/Cidade):</strong> Clique no mapa para marcar a residência.'
+      } else {
+        badge.className = 'alert alert-error mb-2'
+        badge.innerHTML = '⚪ <strong>Sem coordenadas:</strong> Preencha o endereço e clique em "Localizar no Mapa" ou clique no mapa.'
+      }
+    }
+
+    async function locateMemberOnMap() {
+      const logradouro = document.getElementById('m-logradouro').value.trim()
+      const numero = document.getElementById('m-numero').value.trim()
+      const bairro = document.getElementById('m-bairro').value.trim()
+      const cidade = document.getElementById('m-cidade').value.trim()
+      const estado = document.getElementById('m-estado').value.trim()
+      const cep = document.getElementById('m-cep').value.trim()
+
+      if (!logradouro || !cidade || !estado) {
+        alert('Por favor, preencha a Rua, Cidade e Estado para buscar no mapa.')
+        return
+      }
+
+      const btn = document.getElementById('btn-locate-m-map')
+      setLoading(btn, true, 'Buscando...')
+
+      try {
+        const res = await api.get(`/api/members/geocode-search?logradouro=${encodeURIComponent(logradouro)}&numero=${encodeURIComponent(numero)}&bairro=${encodeURIComponent(bairro)}&cidade=${encodeURIComponent(cidade)}&estado=${encodeURIComponent(estado)}&cep=${encodeURIComponent(cep)}`)
+        if (res.latitude && res.longitude) {
+          setMemberMarker(res.latitude, res.longitude, res.precision)
+        } else {
+          updateMemberPrecisionBadge('nenhum')
+          alert('Endereço não localizado automaticamente. Por favor, clique no mapa para marcar a posição.')
+        }
+      } catch (err) {
+        alert('Erro ao buscar localização: ' + err.message)
+      } finally {
+        setLoading(btn, false, '🔍 Localizar no Mapa')
+      }
+    }
+
+    document.getElementById('btn-locate-m-map')?.addEventListener('click', locateMemberOnMap)
+
+    window.buscarCepSocio = async () => {
+      const cepInput = document.getElementById('m-cep')
+      const cep = (cepInput.value || '').replace(/\D/g, '')
+      if (cep.length !== 8) return
+
+      try {
+        const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
+        if (res.ok) {
+          const data = await res.json()
+          if (!data.erro) {
+            if (data.logradouro) document.getElementById('m-logradouro').value = data.logradouro
+            if (data.bairro) document.getElementById('m-bairro').value = data.bairro
+            if (data.localidade) document.getElementById('m-cidade').value = data.localidade
+            if (data.uf) document.getElementById('m-estado').value = data.uf
+            locateMemberOnMap()
+          }
+        }
+      } catch (e) {
+        console.error('Erro na consulta ViaCEP:', e)
+      }
+    }
         loadMembers()
       } catch(err) {
         showAlert('member-alert', err.message, 'error')

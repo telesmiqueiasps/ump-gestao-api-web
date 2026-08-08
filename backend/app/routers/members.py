@@ -30,6 +30,8 @@ class MemberCreate(BaseModel):
     bairro: Optional[str] = None
     cidade: Optional[str] = None
     estado: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 
 class MemberUpdate(BaseModel):
@@ -46,6 +48,8 @@ class MemberUpdate(BaseModel):
     bairro: Optional[str] = None
     cidade: Optional[str] = None
     estado: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 
 class FeeCreate(BaseModel):
@@ -153,25 +157,42 @@ def create_member(
             db.add(shadow_ump)
             db.flush()
 
-    # Geocodificação automática de endereço
-    lat, lon = None, None
-    if payload.logradouro and payload.cidade and payload.estado:
+    # Geocodificação automática de endereço (caso coordenadas manuais não tenham sido fornecidas)
+    lat, lon = payload.latitude, payload.longitude
+    if (lat is None or lon is None) and payload.logradouro and payload.cidade and payload.estado:
         from app.services.geocoder import geocode_address
-        lat, lon = geocode_address(
+        lat, lon, _ = geocode_address(
             payload.logradouro, payload.numero, payload.bairro,
             payload.cidade, payload.estado, payload.cep
         )
 
+    dump_data = payload.model_dump()
+    dump_data["latitude"] = lat
+    dump_data["longitude"] = lon
+
     member = Member(
         local_ump_id=current_user.organization_id,
-        **payload.model_dump(),
-        latitude=lat,
-        longitude=lon
+        **dump_data
     )
     db.add(member)
     db.commit()
     db.refresh(member)
     return _to_out(member)
+
+
+@router.get("/geocode-search")
+def geocode_search(
+    logradouro: Optional[str] = None,
+    numero: Optional[str] = None,
+    bairro: Optional[str] = None,
+    cidade: Optional[str] = None,
+    estado: Optional[str] = None,
+    cep: Optional[str] = None,
+    current_user: User = Depends(require_local_or_federation),
+):
+    from app.services.geocoder import geocode_address
+    lat, lon, precision = geocode_address(logradouro, numero, bairro, cidade, estado, cep)
+    return {"latitude": lat, "longitude": lon, "precision": precision}
 
 
 @router.get("/birthdays")
@@ -240,9 +261,11 @@ def update_member(
     ).first()
     if not member:
         raise HTTPException(status_code=404, detail="Sócio não encontrado")
-    # Verifica se houve alteração em algum campo de endereço
-    address_changed = False
+    
     dump = payload.model_dump(exclude_none=True)
+    has_manual_coords = ("latitude" in dump and dump["latitude"] is not None) and ("longitude" in dump and dump["longitude"] is not None)
+
+    address_changed = False
     for field in ['cep', 'logradouro', 'numero', 'bairro', 'cidade', 'estado']:
         if field in dump and getattr(member, field) != dump[field]:
             address_changed = True
@@ -251,9 +274,9 @@ def update_member(
     for field, value in dump.items():
         setattr(member, field, value)
         
-    if address_changed or member.latitude is None or member.longitude is None:
+    if not has_manual_coords and (address_changed or member.latitude is None or member.longitude is None):
         from app.services.geocoder import geocode_address
-        lat, lon = geocode_address(
+        lat, lon, _ = geocode_address(
             member.logradouro, member.numero, member.bairro,
             member.cidade, member.estado, member.cep
         )
