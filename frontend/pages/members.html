@@ -144,6 +144,18 @@
 
       <div id="page-alert" class="hidden"></div>
 
+      <!-- Cards de Totais (Local apenas) -->
+      <div class="summary-grid mb-4 local-only-field" id="members-summary-bar" style="grid-template-columns: repeat(2, 1fr);">
+        <div class="summary-item">
+          <div class="label" id="label-active-members" style="text-transform: uppercase; font-size: .68rem; font-weight: 700; color: var(--slate-400); letter-spacing: 0.5px;">Sócios Ativos</div>
+          <div class="value blue" id="total-active-members" style="font-size: 1.5rem; font-weight: 700; color: var(--blue-600); margin-top: 0.25rem;">0</div>
+        </div>
+        <div class="summary-item">
+          <div class="label" id="label-cooperating-members" style="text-transform: uppercase; font-size: .68rem; font-weight: 700; color: var(--slate-400); letter-spacing: 0.5px;">Sócios Cooperadores</div>
+          <div class="value" id="total-cooperating-members" style="font-size: 1.5rem; font-weight: 700; color: var(--slate-600); margin-top: 0.25rem;">0</div>
+        </div>
+      </div>
+
       <div class="filter-bar mb-4" style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
         <button class="filter-btn active" id="filter-active" onclick="setFilter(true)">Ativos</button>
         <button class="filter-btn" id="filter-all" onclick="setFilter(false)">Todos</button>
@@ -452,6 +464,13 @@
     // Nomenclatura dinâmica
     document.getElementById('page-title').textContent = isFed ? 'Delegados' : getSocietyLabel('membros')
     document.getElementById('btn-new-member').textContent = isFed ? '+ Novo Delegado' : '+ Novo ' + getSocietyLabel('membro')
+    if (!isFed) {
+      const labelMembros = getSocietyLabel('membros')
+      const suffixAtivos = labelMembros === 'Associadas' ? 'Ativas' : 'Ativos'
+      const suffixCoop = labelMembros === 'Associadas' ? 'Cooperadoras' : 'Cooperadores'
+      document.getElementById('label-active-members').textContent = `${labelMembros} ${suffixAtivos}`
+      document.getElementById('label-cooperating-members').textContent = `${labelMembros} ${suffixCoop}`
+    }
 
     let activeOnly = true
     let editId = null
@@ -510,10 +529,20 @@
       try {
         const data = await api.get(`/api/members/?active_only=${activeOnly}`)
         allMembers = data
+        updateSummaryCards()
         filterAndRenderMembers()
       } catch(err) {
         showAlert('page-alert', err.message, 'error')
       }
+    }
+
+    function updateSummaryCards() {
+      if (isFederation()) return
+      const activeCount = allMembers.filter(m => m.is_active && m.member_type === 'ativo').length
+      const coopCount = allMembers.filter(m => m.is_active && m.member_type === 'cooperador').length
+      
+      document.getElementById('total-active-members').textContent = activeCount
+      document.getElementById('total-cooperating-members').textContent = coopCount
     }
 
     function filterAndRenderMembers() {

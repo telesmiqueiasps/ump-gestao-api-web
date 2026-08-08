@@ -110,11 +110,19 @@
       <!-- Stats organizacionais -->
       <div class="grid-3" id="stats-org">
         <div class="stat-card" id="stat-members-card" style="display:none">
-          <div class="stat-icon slate">◉</div>
+          <div class="stat-icon blue">◉</div>
           <div>
-            <div class="stat-label">Sócios Ativos</div>
-            <div class="stat-value" id="stat-members">—</div>
-            <div class="stat-sub">Cadastrados na sociedade</div>
+            <div class="stat-label" id="label-stat-members-active">Sócios Ativos</div>
+            <div class="stat-value" id="stat-members-active">—</div>
+            <div class="stat-sub">Tipo ativo na sociedade</div>
+          </div>
+        </div>
+        <div class="stat-card" id="stat-members-coop-card" style="display:none">
+          <div class="stat-icon slate">○</div>
+          <div>
+            <div class="stat-label" id="label-stat-members-coop">Sócios Cooperadores</div>
+            <div class="stat-value" id="stat-members-coop">—</div>
+            <div class="stat-sub">Tipo cooperador na sociedade</div>
           </div>
         </div>
         <div class="stat-card">
@@ -227,9 +235,16 @@
     // Mostrar cards condicionais
     if (isLocalUmp()) {
       document.getElementById('stat-members-card').style.display = 'flex'
-    document.querySelector('#stat-members-card .stat-label').textContent = getSocietyLabel('membros') + ' Ativos'
-  }
-  if (isFederation()) document.getElementById('stat-locals-card').style.display = 'flex'
+      document.getElementById('stat-members-coop-card').style.display = 'flex'
+
+      const labelMembros = getSocietyLabel('membros')
+      const suffixAtivos = labelMembros === 'Associadas' ? 'Ativas' : 'Ativos'
+      const suffixCoop = labelMembros === 'Associadas' ? 'Cooperadoras' : 'Cooperadores'
+
+      document.getElementById('label-stat-members-active').textContent = `${labelMembros} ${suffixAtivos}`
+      document.getElementById('label-stat-members-coop').textContent = `${labelMembros} ${suffixCoop}`
+    }
+    if (isFederation()) document.getElementById('stat-locals-card').style.display = 'flex'
 
   // Carregar dados
   async function loadDashboard() {
@@ -293,9 +308,14 @@
     // Sócios e ACI (apenas UMP Local, indexes 2 e 3)
     if (isLocalUmp()) {
       if (results[2].status === 'fulfilled') {
-        document.getElementById('stat-members').textContent = results[2].value.length
+        const membersList = results[2].value || []
+        const activeCount = membersList.filter(m => m.member_type === 'ativo').length
+        const coopCount   = membersList.filter(m => m.member_type === 'cooperador').length
+        document.getElementById('stat-members-active').textContent = activeCount
+        document.getElementById('stat-members-coop').textContent   = coopCount
       } else {
-        document.getElementById('stat-members').textContent = '0'
+        document.getElementById('stat-members-active').textContent = '0'
+        document.getElementById('stat-members-coop').textContent   = '0'
       }
 
       if (results[3].status === 'fulfilled') {
