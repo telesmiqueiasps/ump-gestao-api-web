@@ -10,144 +10,410 @@
   <title>Eleições — Gestão UMP</title>
   <link rel="icon" type="image/png" href="/assets/img/logo.png" />
   <link rel="manifest" href="/manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../assets/css/main.css?v=9" />
   <link rel="stylesheet" href="../assets/css/components.css?v=9" />
   <link rel="stylesheet" href="../assets/css/layout.css?v=9" />
   <style>
+    /* ── ELECTIONS HERO BANNER ── */
+    .election-hero {
+      background: linear-gradient(135deg, #1a2a6c 0%, #2a3f9f 50%, #0d1640 100%);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem 2rem;
+      color: #ffffff;
+      margin-bottom: 1.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      box-shadow: 0 10px 30px -5px rgba(26, 42, 108, 0.35);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .election-hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -10%;
+      width: 320px;
+      height: 320px;
+      background: radial-gradient(circle, rgba(232, 99, 10, 0.25) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .election-hero-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .election-hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(8px);
+      padding: .25rem .75rem;
+      border-radius: 20px;
+      font-size: .75rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: .6rem;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background-color: #22c55e;
+      border-radius: 50%;
+      box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+      }
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+      }
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+      }
+    }
+
+    .election-hero h1 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: .3rem;
+      letter-spacing: -0.5px;
+    }
+
+    .election-hero p {
+      color: rgba(255, 255, 255, 0.82);
+      font-size: .95rem;
+      max-width: 580px;
+    }
+
+    .election-hero-icon {
+      font-size: 3.5rem;
+      line-height: 1;
+      opacity: 0.9;
+      filter: drop-shadow(0 6px 12px rgba(0,0,0,0.2));
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── ROLE CHECKBOX CARDS ── */
     .role-checkbox-group {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: .75rem;
-      margin-bottom: 1.5rem;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.85rem;
+      margin-top: .75rem;
     }
 
     .role-checkbox-card {
-      border: 1.5px solid var(--slate-200);
-      border-radius: var(--radius);
-      padding: .75rem 1rem;
       display: flex;
       align-items: center;
-      gap: .6rem;
-      background: #fff;
+      gap: 0.75rem;
+      border: 1.5px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      padding: 0.85rem 1.1rem;
+      background: #ffffff;
       cursor: pointer;
-      transition: all .15s;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      font-size: .92rem;
+      font-weight: 500;
+      color: var(--slate-700);
+      user-select: none;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     }
 
     .role-checkbox-card:hover {
       border-color: var(--blue-500);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(42, 63, 159, 0.1);
+    }
+
+    .role-checkbox-card:has(input:checked) {
+      border-color: var(--blue-600) !important;
+      background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%) !important;
+      font-weight: 600;
+      color: var(--blue-900) !important;
+      box-shadow: 0 4px 14px rgba(42, 63, 159, 0.12);
     }
 
     .role-checkbox-card input {
-      width: 18px;
-      height: 18px;
+      width: 19px;
+      height: 19px;
+      accent-color: var(--blue-600);
       cursor: pointer;
+      margin: 0;
     }
 
-    .link-copy-box {
-      background: var(--slate-50);
+    .role-icon-badge {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--slate-100);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      transition: background 0.2s ease;
+    }
+
+    .role-checkbox-card:has(input:checked) .role-icon-badge {
+      background: #ffffff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+
+    /* ── ELIGIBILITY MEMBER CARDS ── */
+    .eligibility-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .eligibility-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .eligibility-card {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
       border: 1.5px solid var(--slate-200);
       border-radius: var(--radius);
-      padding: .75rem 1rem;
+      padding: 0.65rem 0.85rem;
+      background: #ffffff;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      font-size: 0.88rem;
+      user-select: none;
+    }
+
+    .eligibility-card:hover {
+      border-color: var(--blue-500);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      background: #fafafa;
+    }
+
+    .eligibility-card:has(input:checked) {
+      border-color: #3b82f6 !important;
+      background: #eff6ff !important;
+    }
+
+    .eligibility-card input {
+      width: 17px;
+      height: 17px;
+      accent-color: var(--blue-600);
+      cursor: pointer;
+      margin: 0;
+    }
+
+    .member-avatar-chip {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--blue-500), var(--blue-700));
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      text-transform: uppercase;
+    }
+
+    /* ── PUBLIC URNA LINK BOX ── */
+    .link-copy-box {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #ffffff;
+      border-radius: var(--radius-lg);
+      padding: 1.1rem 1.3rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 1rem;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.75rem;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .link-copy-text {
-      font-family: monospace;
-      font-size: .85rem;
-      color: var(--slate-700);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .88rem;
+      color: #38bdf8;
       word-break: break-all;
-    }
-
-    .voter-badge-voted {
-      background: var(--green-100);
-      color: var(--green-700);
+      margin-top: .2rem;
       font-weight: 600;
     }
 
-    .voter-badge-pending {
-      background: var(--slate-100);
-      color: var(--slate-500);
-      font-weight: 500;
+    /* ── VOTER CODES & BADGES ── */
+    .voter-badge-voted {
+      background: #dcfce7;
+      color: #15803d;
+      font-weight: 700;
+      border: 1px solid #bbf7d0;
+      padding: .2rem .55rem;
+      border-radius: 20px;
     }
 
+    .voter-badge-pending {
+      background: #fffbeb;
+      color: #b45309;
+      font-weight: 600;
+      border: 1px solid #fde68a;
+      padding: .2rem .55rem;
+      border-radius: 20px;
+    }
+
+    .code-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: .85rem;
+    }
+
+    .code-card {
+      border: 1.5px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      padding: .85rem 1rem;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .75rem;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+    }
+
+    .code-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.07);
+      border-color: var(--blue-500);
+    }
+
+    .code-card-name {
+      font-size: .88rem;
+      font-weight: 700;
+      color: var(--slate-800);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 170px;
+    }
+
+    .code-card-code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #c2410c;
+      background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+      padding: .25rem .65rem;
+      border-radius: 8px;
+      border: 1.5px dashed #f97316;
+      letter-spacing: 1px;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    /* ── RESULT BARS IN MODAL ── */
     .result-bar-container {
-      margin-bottom: 1rem;
+      margin-bottom: 1.1rem;
+      background: var(--slate-50);
+      border-radius: var(--radius);
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--slate-200);
     }
 
     .result-bar-header {
       display: flex;
       justify-content: space-between;
-      font-size: .85rem;
-      font-weight: 600;
-      margin-bottom: .3rem;
+      font-size: .88rem;
+      font-weight: 700;
+      color: var(--slate-800);
+      margin-bottom: .45rem;
     }
 
     .result-bar-bg {
-      background: var(--slate-100);
-      height: 10px;
-      border-radius: 5px;
+      background: var(--slate-200);
+      height: 12px;
+      border-radius: 6px;
       overflow: hidden;
     }
 
     .result-bar-fill {
-      background: var(--blue-600);
+      background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%);
       height: 100%;
-      border-radius: 5px;
-      transition: width .3s ease;
+      border-radius: 6px;
+      transition: width .5s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .step-badge {
-      background: var(--blue-50);
-      color: var(--blue-600);
-      padding: .2rem .6rem;
-      border-radius: var(--radius-sm);
-      font-size: .75rem;
+    .result-bar-winner {
+      border: 1.5px solid #f59e0b;
+      background: #fffbeb;
+    }
+
+    .result-bar-winner .result-bar-fill {
+      background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+    }
+
+    /* ── TABS NAVIGATION ── */
+    .tab-btn {
+      background: none;
+      border: none;
+      padding: .6rem 1rem;
+      cursor: pointer;
       font-weight: 600;
-      display: inline-block;
-      margin-bottom: .5rem;
-    }
-
-    .code-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: .75rem;
-    }
-
-    .code-card {
-      border: 1px solid var(--slate-200);
-      border-radius: var(--radius);
-      padding: .75rem;
-      background: #fff;
-      display: flex;
+      font-family: inherit;
+      font-size: .88rem;
+      color: var(--slate-500);
+      border-bottom: 3px solid transparent;
+      transition: all .2s;
+      display: inline-flex;
       align-items: center;
-      justify-content: space-between;
+      gap: .4rem;
     }
 
-    .code-card-name {
-      font-size: .85rem;
-      font-weight: 600;
+    .tab-btn:hover {
       color: var(--slate-800);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 180px;
     }
 
-    .code-card-code {
-      font-family: monospace;
-      font-size: .95rem;
+    .tab-btn.active {
+      color: var(--blue-600) !important;
+      border-bottom-color: var(--blue-600) !important;
       font-weight: 700;
-      color: var(--brand-orange);
-      background: var(--amber-50);
-      padding: .2rem .5rem;
-      border-radius: 5px;
-      border: 1px solid var(--amber-200);
     }
 
+    .tab-badge {
+      background: var(--slate-200);
+      color: var(--slate-700);
+      font-size: .75rem;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-weight: 700;
+    }
+
+    .tab-btn.active .tab-badge {
+      background: var(--blue-100);
+      color: var(--blue-700);
+    }
+
+    /* ── PRINT AREA STYLES ── */
     @media print {
       body * {
         display: none !important;
@@ -183,99 +449,6 @@
         font-family: monospace;
         font-weight: bold;
       }
-    }
-
-    .tab-btn {
-      background: none;
-      border: none;
-      padding: .5rem .75rem;
-      cursor: pointer;
-      font-weight: 600;
-      font-family: inherit;
-      font-size: .85rem;
-      color: var(--slate-500);
-      border-bottom: 3px solid transparent;
-      transition: all .2s;
-    }
-
-    .tab-btn:hover {
-      color: var(--slate-800);
-    }
-
-    .tab-btn.active {
-      color: var(--blue-600) !important;
-      border-bottom-color: var(--blue-600) !important;
-    }
-
-    .role-checkbox-group {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: .75rem;
-      margin-top: .5rem;
-    }
-
-    .role-checkbox-card {
-      display: flex;
-      align-items: center;
-      gap: .65rem;
-      border: 1px solid var(--slate-200);
-      border-radius: 6px;
-      padding: .75rem 1rem;
-      background: #fff;
-      cursor: pointer;
-      transition: all .15s;
-      font-size: .9rem;
-      user-select: none;
-    }
-
-    .role-checkbox-card:hover {
-      border-color: var(--slate-300);
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    }
-
-    .role-checkbox-card:has(input:checked) {
-      border-color: var(--blue-400) !important;
-      background: var(--blue-50) !important;
-      font-weight: 600;
-      color: var(--blue-900);
-    }
-
-    .role-checkbox-card input {
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
-      margin: 0;
-    }
-
-    .eligibility-card {
-      display: flex;
-      align-items: center;
-      gap: .6rem;
-      border: 1px solid var(--slate-200);
-      border-radius: 6px;
-      padding: .5rem .75rem;
-      background: #fff;
-      cursor: pointer;
-      transition: all .15s;
-      font-size: .85rem;
-      user-select: none;
-    }
-
-    .eligibility-card:hover {
-      border-color: var(--slate-300);
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    }
-
-    .eligibility-card:has(input:checked) {
-      border-color: var(--blue-400) !important;
-      background: var(--blue-50) !important;
-    }
-
-    .eligibility-card input {
-      width: 16px;
-      height: 16px;
-      cursor: pointer;
-      margin: 0;
     }
   </style>
 </head>
@@ -313,11 +486,16 @@
       </header>
 
       <main class="page-content">
-        <div class="page-header">
-          <div class="page-header-info">
-            <h1>Eleições</h1>
-            <p>Módulo de eleição interna secreta e simplificada</p>
+        <!-- ── HERO BANNER ── -->
+        <div class="election-hero">
+          <div class="election-hero-content">
+            <div class="election-hero-badge">
+              <span class="pulse-dot"></span> Módulo Eleitoral Ativo
+            </div>
+            <h1>Eleições & Apuração</h1>
+            <p>Sistema de votação secreta, controle de quórum e apuração dinâmica em tempo real.</p>
           </div>
+          <div class="election-hero-icon">🗳️</div>
         </div>
 
         <div id="page-alert" class="hidden"></div>
@@ -326,65 +504,77 @@
         <section id="section-config" class="hidden">
           <div class="card mb-4">
             <div class="card-header">
-              <h2>1. Configurar Sessão</h2>
+              <h2>1. Configurar Sessão Eleitoral</h2>
             </div>
             <div class="field mb-4" style="margin-bottom: 1.5rem;">
-              <label for="election-title" style="font-size: 1.05rem; font-weight: 700; color: var(--slate-800); margin-bottom: .6rem; display: block;">Título da Eleição</label>
-              <input class="input" type="text" id="election-title" placeholder="Ex: Eleição de Diretoria - 2026" style="font-size: 1.05rem; padding: .75rem 1rem; height: auto;" />
+              <label for="election-title" style="font-size: 1rem; font-weight: 700; color: var(--slate-800); margin-bottom: .5rem; display: block;">Título da Eleição</label>
+              <input class="input" type="text" id="election-title" placeholder="Ex: Eleição de Diretoria - 2026" style="font-size: 1rem; padding: .75rem 1rem; height: auto;" />
             </div>
 
-            <div style="border-bottom: 1.5px dashed var(--slate-200); margin: 1.75rem 0 1.5rem 0;"></div>
+            <div style="border-bottom: 1.5px dashed var(--slate-200); margin: 1.5rem 0;"></div>
 
-            <h3 class="mb-2" style="font-size: 1rem; font-weight: 700; color: var(--slate-850);">Cargos a disputar</h3>
-            <p class="text-sm text-slate-500 mb-3">Marque os cargos a serem disputados.</p>
+            <h3 class="mb-1" style="font-size: 1rem; font-weight: 700; color: var(--slate-800);">Cargos a disputar</h3>
+            <p class="text-sm text-slate-500 mb-3">Marque os cargos que farão parte do escrutínio nesta eleição.</p>
+            
             <div class="role-checkbox-group">
               <label class="role-checkbox-card">
                 <input type="checkbox" name="roles" value="presidente" checked />
+                <span class="role-icon-badge">👑</span>
                 <span>Presidente</span>
               </label>
               <label class="role-checkbox-card">
                 <input type="checkbox" name="roles" value="vice_presidente" checked />
+                <span class="role-icon-badge">🤝</span>
                 <span>Vice-Presidente</span>
               </label>
               <label class="role-checkbox-card">
                 <input type="checkbox" name="roles" value="1_secretario" checked />
+                <span class="role-icon-badge">✍️</span>
                 <span>1º Secretário(a)</span>
               </label>
               <label class="role-checkbox-card">
                 <input type="checkbox" name="roles" value="2_secretario" />
+                <span class="role-icon-badge">📑</span>
                 <span>2º Secretário(a)</span>
               </label>
               <label class="role-checkbox-card">
                 <input type="checkbox" name="roles" value="secretario_executivo" />
+                <span class="role-icon-badge">⚙️</span>
                 <span>Secretário Executivo</span>
               </label>
               <label class="role-checkbox-card">
                 <input type="checkbox" name="roles" value="tesoureiro" checked />
+                <span class="role-icon-badge">💼</span>
                 <span>Tesoureiro(a)</span>
               </label>
             </div>
           </div>
 
           <div class="card mb-4">
-            <div class="card-header">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
               <h2 id="config-members-header-title">2. Sócios Votados (Elegibilidade)</h2>
+              <span id="eligible-count-badge" class="badge badge-blue">0 aptos</span>
             </div>
-            <p class="text-sm text-slate-500 mb-3" id="config-members-header-desc">Todos os sócios ativos listados
-              abaixo podem votar. Desmarque aqueles que <strong>não</strong> podem ser votados (impedidos).</p>
+            <p class="text-sm text-slate-500 mb-3" id="config-members-header-desc">Todos os sócios ativos listados abaixo podem votar. Desmarque aqueles que <strong>não</strong> podem ser votados (impedidos).</p>
 
-            <div style="margin-bottom: 1rem; position: relative;">
-              <input class="input" type="text" id="input-search-members" placeholder="🔍 Pesquisar sócio por nome..."
-                style="padding-left: 2.2rem; font-size: .9rem;" />
-              <span
-                style="position: absolute; left: .75rem; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--slate-400); font-size: .95rem;"></span>
+            <div class="eligibility-toolbar">
+              <div style="position: relative; flex: 1; min-width: 240px;">
+                <input class="input" type="text" id="input-search-members" placeholder="🔍 Pesquisar por nome..." style="padding-left: 2.4rem; font-size: .9rem;" />
+              </div>
+              <div class="eligibility-actions">
+                <button class="btn btn-secondary btn-sm" id="btn-select-all-members" type="button">Marcar Todos</button>
+                <button class="btn btn-secondary btn-sm" id="btn-deselect-all-members" type="button">Desmarcar Todos</button>
+              </div>
             </div>
 
-            <div class="members-eligibility-grid" id="config-members-grid"
-              style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .5rem; max-height: 280px; overflow-y: auto; padding: .5rem; border: 1.5px solid var(--slate-200); border-radius: var(--radius); background: var(--slate-50);">
+            <div class="members-eligibility-grid" id="config-members-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: .6rem; max-height: 300px; overflow-y: auto; padding: .6rem; border: 1.5px solid var(--slate-200); border-radius: var(--radius); background: var(--slate-50);">
               <!-- Cards injected dynamically via JS -->
             </div>
+
             <div style="margin-top: 1.5rem; text-align: right;">
-              <button class="btn btn-primary" id="btn-start-session">Criar e Gerar Códigos</button>
+              <button class="btn btn-primary btn-lg" id="btn-start-session" style="box-shadow: 0 4px 14px rgba(26,42,108,0.25);">
+                ✨ Criar e Gerar Códigos
+              </button>
             </div>
           </div>
         </section>
@@ -399,84 +589,77 @@
             </div>
 
             <div id="active-config-panel" class="hidden" style="padding: 1rem 0 0 0;">
-              <div class="alert alert-success mb-3" style="display: flex; align-items: center; gap: .75rem;">
-                <span style="font-size: 1.5rem;">🔑</span>
+              <div class="alert alert-success mb-3" style="display: flex; align-items: center; gap: .75rem; border-left: 4px solid #16a34a;">
+                <span style="font-size: 1.6rem;">🔑</span>
                 <div>
                   <strong>Eleição Configurada com Sucesso!</strong><br />
-                  Os códigos de acesso dos sócios já foram gerados. Distribua os códigos exibidos abaixo e clique em
-                  <strong>Iniciar Votação</strong> para liberar a urna eletrônica pública.
+                  Os códigos de acesso dos sócios foram gerados. Distribua as senhas exibidas abaixo e clique em <strong>Iniciar Votação</strong> para liberar a urna eletrônica pública.
                 </div>
               </div>
-              <div style="display: flex; gap: .75rem;">
-                <button class="btn btn-success" id="btn-activate-voting">Iniciar Votação</button>
-                <button class="btn btn-danger btn-secondary" id="btn-cancel-election-config">Cancelar Sessão
-                  Eleitoral</button>
+              <div style="display: flex; gap: .75rem; flex-wrap: wrap;">
+                <button class="btn btn-success" id="btn-activate-voting">🚀 Iniciar Votação</button>
+                <button class="btn btn-danger btn-secondary" id="btn-cancel-election-config">Cancelar Sessão Eleitoral</button>
               </div>
             </div>
 
             <div id="active-voting-panel" class="hidden" style="padding: 1rem 0 0 0;">
-              <div id="voting-status-banner"
-                style="background: var(--blue-50); border: 1.5px solid var(--blue-200); border-radius: var(--radius-lg); padding: 1.25rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; gap: 1rem; transition: all .25s ease;">
+              <div id="voting-status-banner" style="background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%); border: 1.5px solid #bae6fd; border-radius: var(--radius-lg); padding: 1.4rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; gap: 1rem; transition: all .25s ease; box-shadow: 0 4px 16px rgba(14,165,233,0.1);">
                 <div>
-                  <span class="step-badge"
-                    style="background: var(--blue-700); color: #fff; border-radius: 20px; padding: .25rem .75rem; font-size: .75rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: .4rem; display: inline-block;"
-                    id="active-step-badge">1º Escrutínio</span>
-                  <h3
-                    style="font-size: 1.5rem; font-weight: 800; color: var(--blue-900); margin: 0; transition: color .25s ease;"
-                    id="active-role-display">Presidente</h3>
+                  <span class="step-badge" style="background: var(--blue-700); color: #fff; border-radius: 20px; padding: .25rem .85rem; font-size: .75rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: .4rem; display: inline-block;" id="active-step-badge">1º Escrutínio</span>
+                  <h3 style="font-size: 1.6rem; font-weight: 800; color: var(--blue-900); margin: 0; transition: color .25s ease;" id="active-role-display">Presidente</h3>
                 </div>
                 <div style="text-align: right;">
-                  <div class="stat-value" id="active-votes-count"
-                    style="font-size: 1.8rem; font-weight: 800; color: var(--blue-900); transition: color .25s ease;">0
-                    / 0</div>
-                  <div class="stat-label" style="font-size: .8rem; color: var(--slate-500); font-weight: 500;">Votos
-                    Registrados (<span id="active-percent-count" style="font-weight: 700;">0%</span>)</div>
+                  <div class="stat-value" id="active-votes-count" style="font-size: 1.9rem; font-weight: 800; color: var(--blue-900); transition: color .25s ease;">0 / 0</div>
+                  <div class="stat-label" style="font-size: .82rem; color: var(--slate-600); font-weight: 600;">Votos Registrados (<span id="active-percent-count" style="font-weight: 800; color: var(--blue-600);">0%</span>)</div>
                 </div>
               </div>
 
-              <div
-                style="border-top: 1.5px solid var(--slate-200); padding-top: 1.5rem; text-align: right; display: flex; justify-content: space-between; align-items: center;">
+              <div style="border-top: 1.5px solid var(--slate-200); padding-top: 1.5rem; text-align: right; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
                 <button class="btn btn-danger btn-secondary" id="btn-cancel-election-active">Cancelar Eleição</button>
-                <button class="btn btn-danger" id="btn-close-round"
-                  style="box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);">Encerrar Votação</button>
+                <button class="btn btn-danger" id="btn-close-round" style="box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);">🔒 Encerrar Votação</button>
               </div>
             </div>
           </div>
 
-          <!-- Codes & Public Link Card (Always visible when there is an active session) -->
+          <!-- Codes & Public Link Card -->
           <div class="card mb-4" id="active-codes-card">
             <div class="card-header">
-              <h2>Códigos de Acesso & Urna Pública</h2>
+              <h2>Urna Pública & Senhas de Voto</h2>
             </div>
 
             <div class="link-copy-box">
               <div>
-                <strong class="text-sm">Link da Urna Eletrônica Secreta:</strong>
+                <strong class="text-sm" style="color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; font-size: .75rem;">Link da Urna Eletrônica Secreta:</strong>
                 <div class="link-copy-text" id="voting-url-text">http://...</div>
               </div>
-              <button class="btn btn-secondary btn-sm" id="btn-copy-url">Copiar Link</button>
+              <button class="btn btn-primary btn-sm" id="btn-copy-url" style="white-space: nowrap;">📋 Copiar Link</button>
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-              <h3>Lista de Eleitores e Códigos</h3>
-              <div style="display: flex; gap: .5rem;">
-                <button class="btn btn-secondary btn-sm" id="btn-copy-codes">Copiar Todos os Códigos</button>
-                <button class="btn btn-secondary btn-sm" id="btn-print-codes">Imprimir Senhas</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: .75rem;">
+              <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--slate-800);">Lista de Eleitores e Senhas</h3>
+              <div style="display: flex; gap: .5rem; flex-wrap: wrap;">
+                <button class="btn btn-secondary btn-sm" id="btn-copy-codes">📄 Copiar Todos os Códigos</button>
+                <button class="btn btn-secondary btn-sm" id="btn-print-codes">🖨️ Imprimir Senhas</button>
               </div>
             </div>
 
-            <!-- Tab Navigation for Voters -->
-            <div class="tabs-nav"
-              style="display: flex; gap: .75rem; border-bottom: 2px solid var(--slate-200); padding-bottom: .25rem; margin-bottom: 1.25rem;">
-              <button class="tab-btn active" id="tab-voters-all">
-                Todos / Senhas (<span id="count-tab-all">0</span>)
-              </button>
-              <button class="tab-btn" id="tab-voters-voted">
-                Já Votaram (<span id="count-tab-voted">0</span>)
-              </button>
-              <button class="tab-btn" id="tab-voters-pending">
-                Faltam Votar (<span id="count-tab-pending">0</span>)
-              </button>
+            <!-- Tab Navigation & Filter -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--slate-200); margin-bottom: 1.25rem; flex-wrap: wrap; gap: .75rem;">
+              <div class="tabs-nav" style="display: flex; gap: .5rem;">
+                <button class="tab-btn active" id="tab-voters-all">
+                  Todos <span class="tab-badge" id="count-tab-all">0</span>
+                </button>
+                <button class="tab-btn" id="tab-voters-voted">
+                  Já Votaram <span class="tab-badge" id="count-tab-voted">0</span>
+                </button>
+                <button class="tab-btn" id="tab-voters-pending">
+                  Faltam Votar <span class="tab-badge" id="count-tab-pending">0</span>
+                </button>
+              </div>
+
+              <div style="min-width: 200px; padding-bottom: .25rem;">
+                <input class="input" type="text" id="input-search-voters" placeholder="🔍 Filtrar eleitor..." style="font-size: .85rem; padding: .4rem .75rem; height: auto;" />
+              </div>
             </div>
 
             <div class="code-grid mb-2" id="voters-code-container">
@@ -489,24 +672,22 @@
         <div class="modal-overlay" id="modal-results">
           <div class="modal">
             <div class="modal-header">
-              <h2>Resultado da Votação</h2>
+              <h2>📊 Resultado da Apuração</h2>
               <button class="modal-close">✕</button>
             </div>
             <div id="results-alert" class="hidden mb-3"></div>
 
             <div style="margin-bottom: 1.5rem;">
               <div class="step-badge" id="results-step-label">Presidente - 1º Escrutínio</div>
-              <div style="font-size: 1.25rem; font-weight: 700; color: var(--slate-800); margin-top: .2rem;"
-                id="results-total-label">Total de votos: 0</div>
+              <div style="font-size: 1.3rem; font-weight: 800; color: var(--slate-800); margin-top: .3rem;" id="results-total-label">Total de votos: 0</div>
             </div>
 
             <div id="results-bars-container" class="mb-4">
               <!-- Results bars injected here -->
             </div>
 
-            <div class="alert alert-success mb-4" id="results-message-box"
-              style="display: flex; align-items: flex-start; gap: .6rem;">
-              <span style="font-size: 1.2rem;">✨</span>
+            <div class="alert alert-success mb-4" id="results-message-box" style="display: flex; align-items: flex-start; gap: .75rem; border-left: 4px solid #16a34a;">
+              <span style="font-size: 1.4rem;">🏆</span>
               <div id="results-message-text">...</div>
             </div>
 
@@ -528,18 +709,16 @@
               <p style="font-size: .85rem; color: var(--slate-500);" id="det-modal-date">Data: —</p>
             </div>
 
-            <div
-              style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 1.5px solid var(--slate-150); padding-bottom: .75rem;">
-              <h3>Resultados da Apuração</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 1.5px solid var(--slate-150); padding-bottom: .75rem;">
+              <h3 style="font-size: 1.05rem; font-weight: 700;">Resultados da Apuração</h3>
               <button class="btn btn-primary btn-sm" id="btn-det-download-pdf">📥 Baixar PDF Oficial</button>
             </div>
 
-            <div id="det-modal-content" style="max-height: 400px; overflow-y: auto; padding-right: .5rem;">
+            <div id="det-modal-content" style="max-height: 420px; overflow-y: auto; padding-right: .5rem;">
               <!-- Content dynamically generated -->
             </div>
 
-            <div class="modal-footer"
-              style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1.5px solid var(--slate-100);">
+            <div class="modal-footer" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1.5px solid var(--slate-100);">
               <button class="btn btn-secondary modal-close">Fechar</button>
             </div>
           </div>
@@ -549,7 +728,7 @@
         <section id="section-history" class="hidden">
           <div class="card">
             <div class="card-header">
-              <h2>Histórico de Eleições</h2>
+              <h2>📜 Histórico de Eleições Concluídas</h2>
             </div>
             <div class="table-wrap">
               <table>
@@ -682,12 +861,25 @@
         }
       }
 
+      function getInitials(name) {
+        if (!name) return '?'
+        const parts = name.trim().split(' ')
+        if (parts.length === 1) return parts[0].substring(0, 2)
+        return (parts[0][0] + parts[parts.length - 1][0])
+      }
+
       function renderMembersGrid() {
         const query = document.getElementById('input-search-members').value.trim().toLowerCase()
         const grid = document.getElementById('config-members-grid')
         const isFed = isFederation()
 
         const filtered = allActiveMembers.filter(m => m.full_name.toLowerCase().includes(query))
+
+        const countBadge = document.getElementById('eligible-count-badge')
+        if (countBadge) {
+          const eligibleCount = allActiveMembers.length - ineligibleMemberIds.size
+          countBadge.textContent = `${eligibleCount} de ${allActiveMembers.length} aptos`
+        }
 
         if (!filtered.length) {
           grid.innerHTML = isFed
@@ -698,11 +890,13 @@
 
         grid.innerHTML = filtered.map(m => {
           const isChecked = !ineligibleMemberIds.has(m.id)
+          const initials = getInitials(m.full_name)
           return `
           <label class="eligibility-card" style="display: flex; align-items: center; justify-content: space-between; gap: .5rem;">
-            <div style="display: flex; align-items: center; gap: .5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
+            <div style="display: flex; align-items: center; gap: .55rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
               <input type="checkbox" class="can-be-voted-cb" data-member-id="${m.id}" ${isChecked ? 'checked' : ''} onchange="toggleMemberEligibility('${m.id}', this.checked)" />
-              <span style="font-weight: 500; color: var(--slate-700); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${m.full_name}">${m.full_name}</span>
+              <div class="member-avatar-chip">${initials}</div>
+              <span style="font-weight: 600; color: var(--slate-700); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${m.full_name}">${m.full_name}</span>
             </div>
           </label>
         `
@@ -715,7 +909,23 @@
         } else {
           ineligibleMemberIds.add(memberId)
         }
+        const countBadge = document.getElementById('eligible-count-badge')
+        if (countBadge) {
+          const eligibleCount = allActiveMembers.length - ineligibleMemberIds.size
+          countBadge.textContent = `${eligibleCount} de ${allActiveMembers.length} aptos`
+        }
       }
+
+      // Action toolbar handlers for eligibility
+      document.getElementById('btn-select-all-members')?.addEventListener('click', () => {
+        ineligibleMemberIds.clear()
+        renderMembersGrid()
+      })
+
+      document.getElementById('btn-deselect-all-members')?.addEventListener('click', () => {
+        allActiveMembers.forEach(m => ineligibleMemberIds.add(m.id))
+        renderMembersGrid()
+      })
 
       // Bind search input typing event
       document.getElementById('input-search-members').addEventListener('input', renderMembersGrid)
@@ -744,7 +954,7 @@
         const ineligibleIds = Array.from(ineligibleMemberIds)
 
         const btn = document.getElementById('btn-start-session')
-        setLoading(btn, true, 'Criar e Gerar Códigos')
+        setLoading(btn, true, '✨ Criar e Gerar Códigos')
 
         try {
           await api.post('/api/elections/', {
@@ -756,7 +966,7 @@
         } catch (err) {
           showAlert('page-alert', err.message, 'error')
         } finally {
-          setLoading(btn, false, 'Criar e Gerar Códigos')
+          setLoading(btn, false, '✨ Criar e Gerar Códigos')
         }
       })
 
@@ -819,14 +1029,14 @@
       // Start voting
       document.getElementById('btn-activate-voting').addEventListener('click', async () => {
         const btn = document.getElementById('btn-activate-voting')
-        setLoading(btn, true, 'Iniciar Votação')
+        setLoading(btn, true, '🚀 Iniciar Votação')
         try {
           await api.post('/api/elections/active/start')
           loadScreen()
         } catch (err) {
           showAlert('page-alert', err.message, 'error')
         } finally {
-          setLoading(btn, false, 'Iniciar Votação')
+          setLoading(btn, false, '🚀 Iniciar Votação')
         }
       })
 
@@ -852,6 +1062,7 @@
       const tabAll = document.getElementById('tab-voters-all')
       const tabVoted = document.getElementById('tab-voters-voted')
       const tabPending = document.getElementById('tab-voters-pending')
+      const inputSearchVoters = document.getElementById('input-search-voters')
 
       function switchVotersTab(tab) {
         currentVotersTab = tab
@@ -865,12 +1076,16 @@
       tabVoted.onclick = () => switchVotersTab('voted')
       tabPending.onclick = () => switchVotersTab('pending')
 
+      inputSearchVoters?.addEventListener('input', renderVotersGrid)
+
       function renderVotersGrid() {
         const container = document.getElementById('voters-code-container')
         if (!lastVotersData || !lastVotersData.length) {
-          container.innerHTML = '<p class="text-slate-400 text-center py-3" style="grid-column: 1/-1;">Nenhum eleitor cadastrado.</p>'
+          container.innerHTML = '<p class="text-slate-400 text-center py-4" style="grid-column: 1/-1;">Nenhum eleitor cadastrado.</p>'
           return
         }
+
+        const searchQuery = (inputSearchVoters?.value || '').trim().toLowerCase()
 
         let filtered = lastVotersData
         if (currentVotersTab === 'voted') {
@@ -879,26 +1094,38 @@
           filtered = lastVotersData.filter(v => !v.has_voted)
         }
 
+        if (searchQuery) {
+          filtered = filtered.filter(v => 
+            v.full_name.toLowerCase().includes(searchQuery) || 
+            (v.access_code && v.access_code.toLowerCase().includes(searchQuery))
+          )
+        }
+
         if (!filtered.length) {
-          container.innerHTML = '<p class="text-slate-400 text-center py-3" style="grid-column: 1/-1;">Nenhum eleitor nesta categoria.</p>'
+          container.innerHTML = '<p class="text-slate-400 text-center py-4" style="grid-column: 1/-1;">Nenhum eleitor nesta categoria.</p>'
           return
         }
 
         container.innerHTML = filtered.map(v => {
           const voteBadge = v.has_voted
-            ? `<span class="badge voter-badge-voted">Votou</span>`
-            : `<span class="badge voter-badge-pending">Não votou</span>`
+            ? `<span class="badge voter-badge-voted">✓ Votou</span>`
+            : `<span class="badge voter-badge-pending">⏳ Não votou</span>`
+          const initials = getInitials(v.full_name)
+
           return `
-          <div class="code-card" style="align-items: flex-start;">
-            <div>
-              <div class="code-card-name" title="${v.full_name}">${v.full_name}</div>
-              <div style="margin-top: .3rem;">${voteBadge}</div>
+          <div class="code-card">
+            <div style="display: flex; align-items: center; gap: .6rem; flex: 1; overflow: hidden;">
+              <div class="member-avatar-chip">${initials}</div>
+              <div style="overflow: hidden;">
+                <div class="code-card-name" title="${v.full_name}">${v.full_name}</div>
+                <div style="margin-top: .2rem;">${voteBadge}</div>
+              </div>
             </div>
-            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: .4rem;">
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: .35rem;">
               <div class="code-card-code">${v.access_code}</div>
               ${!v.has_voted ? `
                 <button class="btn btn-ghost danger btn-sm" 
-                  style="padding: 3px 8px; min-height: auto; font-size: .7rem; width: auto; font-weight: 500;" 
+                  style="padding: 2px 7px; min-height: auto; font-size: .7rem; width: auto; font-weight: 500;" 
                   onclick="removeAbsentVoter('${v.id}', '${v.full_name.replace(/'/g, "\\'")}')">
                   Remover
                 </button>
@@ -935,26 +1162,26 @@
 
           // Style based on all voted status
           if (isAllVoted) {
-            banner.style.background = '#f0fdf4'
-            banner.style.borderColor = '#bbf7d0'
+            banner.style.background = 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)'
+            banner.style.borderColor = '#86efac'
             badge.style.background = '#16a34a'
             badge.style.color = '#fff'
-            roleDisplay.style.color = '#166534'
-            votesCount.style.color = '#166534'
+            roleDisplay.style.color = '#14532d'
+            votesCount.style.color = '#14532d'
 
             closeBtn.className = 'btn btn-success'
             closeBtn.innerHTML = '🗳️ Encerrar Votação (Todos Votaram!)'
-            closeBtn.style.boxShadow = '0 4px 12px rgba(22, 163, 74, 0.25)'
+            closeBtn.style.boxShadow = '0 4px 14px rgba(22, 163, 74, 0.3)'
           } else {
-            banner.style.background = 'var(--blue-50)'
-            banner.style.borderColor = 'var(--blue-200)'
+            banner.style.background = 'linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%)'
+            banner.style.borderColor = '#bae6fd'
             badge.style.background = 'var(--blue-700)'
             badge.style.color = '#fff'
             roleDisplay.style.color = 'var(--blue-900)'
             votesCount.style.color = 'var(--blue-900)'
 
             closeBtn.className = 'btn btn-danger'
-            closeBtn.innerHTML = 'Encerrar Votação'
+            closeBtn.innerHTML = '🔒 Encerrar Votação'
             closeBtn.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.25)'
           }
 
@@ -973,14 +1200,14 @@
           // Configure click event copy button
           document.getElementById('btn-copy-url').onclick = () => {
             navigator.clipboard.writeText(votingUrl)
-            alert('Link público copiado!')
+            alert('Link público da urna copiado com sucesso!')
           }
 
           // Copy all codes text
           document.getElementById('btn-copy-codes').onclick = () => {
             const text = stats.voters.map(v => `${v.full_name}: ${v.access_code}`).join('\n')
             navigator.clipboard.writeText(text)
-            alert('Lista de códigos copiada para a área de transferência!')
+            alert('Lista de senhas copiada para a área de transferência!')
           }
 
           // Print Codes
@@ -1033,14 +1260,20 @@
           // Injected bars
           const barsContainer = document.getElementById('results-bars-container')
           if (!res.results.length) {
-            barsContainer.innerHTML = '<p class="text-slate-400 text-center py-3">Nenhum voto foi computado.</p>'
+            barsContainer.innerHTML = '<p class="text-slate-400 text-center py-4">Nenhum voto foi computado nesta rodada.</p>'
           } else {
-            barsContainer.innerHTML = res.results.map(r => {
+            // Sort by votes descending to display winner on top
+            const sortedResults = [...res.results].sort((a, b) => b.votes - a.votes)
+
+            barsContainer.innerHTML = sortedResults.map((r, idx) => {
               const pct = res.total_votes > 0 ? Math.round((r.votes / res.total_votes) * 100) : 0
+              const isFirst = idx === 0 && r.votes > 0
+              const rankIcon = isFirst ? '👑 ' : ''
+
               return `
-              <div class="result-bar-container">
+              <div class="result-bar-container ${isFirst ? 'result-bar-winner' : ''}">
                 <div class="result-bar-header">
-                  <span>${r.name}</span>
+                  <span>${rankIcon}${r.name}</span>
                   <span>${r.votes} voto${r.votes !== 1 ? 's' : ''} (${pct}%)</span>
                 </div>
                 <div class="result-bar-bg">
@@ -1106,13 +1339,13 @@
 
           tbody.innerHTML = list.map(h => {
             const positionsHtml = Object.entries(h.elected_positions).map(([role, name]) => {
-              return `<div><strong>${ROLE_LABELS[role] || role}:</strong> ${name}</div>`
+              return `<div style="margin-bottom: .25rem;"><span style="color: var(--slate-500); font-weight: 500;">${ROLE_LABELS[role] || role}:</span> <strong>${name}</strong></div>`
             }).join('')
 
             return `
             <tr>
-              <td>${formatDate(h.created_at.split('T')[0])}</td>
-              <td style="font-weight: 600;">${h.title}</td>
+              <td style="white-space: nowrap; font-weight: 500; color: var(--slate-600);">${formatDate(h.created_at.split('T')[0])}</td>
+              <td style="font-weight: 700; color: var(--slate-800);">${h.title}</td>
               <td>${positionsHtml || '—'}</td>
               <td>
                 <div class="row-actions" style="justify-content: center;">
@@ -1137,7 +1370,7 @@
         clearAlert('page-alert')
 
         const content = document.getElementById('det-modal-content')
-        content.innerHTML = '<p class="text-slate-400 text-center py-3">Carregando detalhes da apuração... ⏳</p>'
+        content.innerHTML = '<p class="text-slate-400 text-center py-4">Carregando detalhes da apuração... ⏳</p>'
         openModal('modal-election-details')
 
         try {
@@ -1149,23 +1382,23 @@
           let html = ''
           details.roles_disputed.forEach(r => {
             const winnerText = r.winner_name
-              ? `<div style="font-size: .85rem; font-weight: 600; color: var(--green-600); margin-bottom: .6rem;">✨ Eleito(a): ${r.winner_name}</div>`
-              : `<div style="font-size: .85rem; font-weight: 600; color: var(--brand-red); margin-bottom: .6rem;">❌ Cargo não concluído ou sem eleito</div>`
+              ? `<div style="font-size: .88rem; font-weight: 700; color: var(--green-600); margin-bottom: .6rem; display: flex; align-items: center; gap: .4rem;">✨ Eleito(a): ${r.winner_name}</div>`
+              : `<div style="font-size: .88rem; font-weight: 700; color: var(--brand-red); margin-bottom: .6rem;">❌ Cargo não concluído ou sem eleito</div>`
 
             let roundsHtml = ''
             r.rounds.forEach(rnd => {
               let candidatesHtml = rnd.results.map(cand => {
                 return `
-                <div style="display:flex; justify-content:space-between; font-size:.8rem; padding:.25rem 0; border-bottom:1px dashed var(--slate-200)">
-                  <span>${cand.name}</span>
-                  <span style="font-weight:600">${cand.votes} voto${cand.votes !== 1 ? 's' : ''} (${Math.round(cand.percentage)}%)</span>
+                <div style="display:flex; justify-content:space-between; font-size:.85rem; padding:.3rem 0; border-bottom:1px dashed var(--slate-200)">
+                  <span style="font-weight: 500;">${cand.name}</span>
+                  <span style="font-weight:700">${cand.votes} voto${cand.votes !== 1 ? 's' : ''} (${Math.round(cand.percentage)}%)</span>
                 </div>
               `
               }).join('')
 
               roundsHtml += `
-              <div style="margin-bottom: 1rem; background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: var(--radius); padding: .75rem;">
-                <div style="font-size: .8rem; font-weight: 700; color: var(--slate-700); margin-bottom: .4rem; display:flex; justify-content:space-between;">
+              <div style="background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: var(--radius); padding: .75rem; margin-bottom: .75rem;">
+                <div style="font-size: .82rem; font-weight: 700; color: var(--slate-700); margin-bottom: .4rem; display:flex; justify-content:space-between;">
                   <span>• ${rnd.round}º Escrutínio</span>
                   <span>Total: ${rnd.total_votes} votos</span>
                 </div>
@@ -1175,15 +1408,15 @@
             })
 
             html += `
-            <div style="margin-bottom: 1.5rem; border: 1.5px solid var(--slate-200); border-radius: var(--radius-lg); padding: 1rem; background: #fff;">
-              <h4 style="font-size: .95rem; font-weight: 700; color: var(--slate-800); margin-bottom: .3rem;">${r.role_label}</h4>
+            <div style="margin-bottom: 1.25rem; border: 1.5px solid var(--slate-200); border-radius: var(--radius-lg); padding: 1rem; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+              <h4 style="font-size: 1rem; font-weight: 700; color: var(--slate-800); margin-bottom: .4rem;">${r.role_label}</h4>
               ${winnerText}
               <div style="margin-top: .5rem;">${roundsHtml}</div>
             </div>
           `
           })
 
-          content.innerHTML = html || '<p class="text-slate-400 text-center py-3">Nenhum detalhe de voto encontrado para esta eleição.</p>'
+          content.innerHTML = html || '<p class="text-slate-400 text-center py-4">Nenhum detalhe de voto encontrado para esta eleição.</p>'
 
         } catch (err) {
           content.innerHTML = `<div class="alert alert-error">${err.message}</div>`
