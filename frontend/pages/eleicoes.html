@@ -11,51 +11,137 @@
   <link rel="icon" type="image/png" href="/assets/img/logo.png" />
   <link rel="manifest" href="/manifest.json" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../assets/css/main.css?v=9" />
   <link rel="stylesheet" href="../assets/css/components.css?v=9" />
   <link rel="stylesheet" href="../assets/css/layout.css?v=9" />
   <style>
+    /* ── ELECTIONS HERO BANNER ── */
+    .election-hero-card {
+      background: linear-gradient(135deg, #1a2a6c 0%, #253b80 100%);
+      border-radius: 16px;
+      padding: 1.5rem 1.8rem;
+      color: #ffffff;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      box-shadow: 0 8px 25px -4px rgba(26, 42, 108, 0.28);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .election-hero-card::after {
+      content: '';
+      position: absolute;
+      top: -40%;
+      right: -5%;
+      width: 250px;
+      height: 250px;
+      background: radial-gradient(circle, rgba(232, 99, 10, 0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .election-hero-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      background: rgba(255, 255, 255, 0.14);
+      backdrop-filter: blur(8px);
+      padding: .25rem .75rem;
+      border-radius: 20px;
+      font-size: .75rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: .5rem;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background-color: #22c55e;
+      border-radius: 50%;
+      box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+      }
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+      }
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+      }
+    }
+
+    .election-hero-card h1 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: .25rem;
+      letter-spacing: -0.4px;
+    }
+
+    .election-hero-card p {
+      color: rgba(255, 255, 255, 0.85);
+      font-size: .92rem;
+      margin: 0;
+    }
+
     /* ── ROLE CHECKBOX CARDS ── */
     .role-checkbox-group {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-      gap: 0.75rem;
-      margin-top: .6rem;
+      gap: 0.85rem;
+      margin-top: .75rem;
     }
 
     .role-checkbox-card {
       display: flex;
       align-items: center;
-      gap: 0.65rem;
+      gap: 0.75rem;
       border: 1.5px solid var(--slate-200);
-      border-radius: 8px;
-      padding: 0.75rem 1rem;
+      border-radius: 12px;
+      padding: 0.85rem 1.1rem;
       background: #ffffff;
       cursor: pointer;
-      transition: all 0.15s ease;
-      font-size: .9rem;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      font-size: .92rem;
       font-weight: 500;
       color: var(--slate-700);
       user-select: none;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
     }
 
     .role-checkbox-card:hover {
       border-color: var(--blue-400);
-      background: var(--slate-50);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(42, 63, 159, 0.08);
+      background: #fafafa;
     }
 
     .role-checkbox-card:has(input:checked) {
-      border-color: var(--blue-600) !important;
-      background: var(--blue-50) !important;
+      border-color: #2a3f9f !important;
+      background: linear-gradient(135deg, #f0f4ff 0%, #e8eeff 100%) !important;
       font-weight: 600;
-      color: var(--blue-900) !important;
+      color: #1a2a6c !important;
+      box-shadow: 0 4px 14px rgba(42, 63, 159, 0.12);
+      transform: translateY(-2px);
     }
 
     .role-checkbox-card input {
       width: 18px;
       height: 18px;
-      accent-color: var(--blue-600);
+      accent-color: #1a2a6c;
       cursor: pointer;
       margin: 0;
     }
@@ -76,50 +162,58 @@
       gap: 0.5rem;
     }
 
+    .eligibility-actions .btn {
+      border-radius: 20px;
+      font-weight: 600;
+      padding: .35rem .85rem;
+    }
+
     .eligibility-card {
       display: flex;
       align-items: center;
-      gap: 0.6rem;
+      gap: 0.65rem;
       border: 1.5px solid var(--slate-200);
-      border-radius: 8px;
-      padding: 0.6rem 0.8rem;
+      border-radius: 10px;
+      padding: 0.65rem 0.85rem;
       background: #ffffff;
       cursor: pointer;
-      transition: all 0.15s ease;
+      transition: all 0.18s ease;
       font-size: 0.88rem;
       user-select: none;
     }
 
     .eligibility-card:hover {
       border-color: var(--blue-400);
-      background: var(--slate-50);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      background: #fafafa;
     }
 
     .eligibility-card:has(input:checked) {
-      border-color: var(--blue-500) !important;
-      background: var(--blue-50) !important;
+      border-color: #3b82f6 !important;
+      background: #eff6ff !important;
     }
 
     .eligibility-card input {
       width: 17px;
       height: 17px;
-      accent-color: var(--blue-600);
+      accent-color: #1a2a6c;
       cursor: pointer;
       margin: 0;
     }
 
     /* ── PUBLIC URNA LINK BOX ── */
     .link-copy-box {
-      background: var(--slate-900);
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
       color: #ffffff;
-      border-radius: var(--radius-lg);
-      padding: 1rem 1.25rem;
+      border-radius: 14px;
+      padding: 1.1rem 1.35rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 1rem;
       margin-bottom: 1.5rem;
-      border: 1px solid var(--slate-800);
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .link-copy-text {
@@ -136,43 +230,45 @@
       background: #dcfce7;
       color: #15803d;
       font-weight: 600;
-      border: 1px solid #bbf7d0;
-      padding: .15rem .5rem;
-      border-radius: 14px;
+      border: 1px solid #86efac;
+      padding: .2rem .6rem;
+      border-radius: 20px;
       font-size: .75rem;
     }
 
     .voter-badge-pending {
-      background: var(--slate-100);
-      color: var(--slate-600);
+      background: #f1f5f9;
+      color: #64748b;
       font-weight: 500;
-      border: 1px solid var(--slate-200);
-      padding: .15rem .5rem;
-      border-radius: 14px;
+      border: 1px solid #cbd5e1;
+      padding: .2rem .6rem;
+      border-radius: 20px;
       font-size: .75rem;
     }
 
     .code-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: .75rem;
+      grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
+      gap: .85rem;
     }
 
     .code-card {
       border: 1.5px solid var(--slate-200);
-      border-radius: var(--radius);
-      padding: .75rem 1rem;
+      border-radius: 12px;
+      padding: .85rem 1rem;
       background: #ffffff;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: .75rem;
-      transition: all 0.15s ease;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
     }
 
     .code-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
       border-color: var(--blue-400);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     }
 
     .code-card-name {
@@ -187,13 +283,13 @@
 
     .code-card-code {
       font-family: 'JetBrains Mono', monospace;
-      font-size: .95rem;
+      font-size: .98rem;
       font-weight: 700;
-      color: var(--brand-orange);
-      background: var(--amber-50);
-      padding: .2rem .55rem;
-      border-radius: 6px;
-      border: 1px solid var(--amber-200);
+      color: #c2410c;
+      background: #fff7ed;
+      padding: .25rem .65rem;
+      border-radius: 8px;
+      border: 1.5px solid #fed7aa;
       letter-spacing: 0.5px;
     }
 
@@ -201,8 +297,8 @@
     .result-bar-container {
       margin-bottom: 1rem;
       background: var(--slate-50);
-      border-radius: var(--radius);
-      padding: 0.75rem 1rem;
+      border-radius: 12px;
+      padding: 0.8rem 1rem;
       border: 1px solid var(--slate-200);
     }
 
@@ -212,21 +308,21 @@
       font-size: .88rem;
       font-weight: 600;
       color: var(--slate-800);
-      margin-bottom: .4rem;
+      margin-bottom: .45rem;
     }
 
     .result-bar-bg {
       background: var(--slate-200);
-      height: 10px;
-      border-radius: 5px;
+      height: 12px;
+      border-radius: 8px;
       overflow: hidden;
     }
 
     .result-bar-fill {
-      background: var(--blue-600);
+      background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%);
       height: 100%;
-      border-radius: 5px;
-      transition: width .4s ease;
+      border-radius: 8px;
+      transition: width .4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .result-bar-winner {
@@ -235,48 +331,55 @@
     }
 
     .result-bar-winner .result-bar-fill {
-      background: #d97706;
+      background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
     }
 
-    /* ── TABS NAVIGATION ── */
+    /* ── TABS NAVIGATION (PILLS) ── */
+    .tabs-nav {
+      display: flex;
+      gap: .5rem;
+    }
+
     .tab-btn {
-      background: none;
-      border: none;
-      padding: .5rem .85rem;
+      background: var(--slate-100);
+      border: 1px solid var(--slate-200);
+      padding: .5rem 1rem;
       cursor: pointer;
       font-weight: 600;
       font-family: inherit;
-      font-size: .88rem;
-      color: var(--slate-500);
-      border-bottom: 3px solid transparent;
-      transition: all .2s;
+      font-size: .85rem;
+      color: var(--slate-600);
+      border-radius: 20px;
+      transition: all .2s ease;
       display: inline-flex;
       align-items: center;
       gap: .4rem;
     }
 
     .tab-btn:hover {
+      background: var(--slate-200);
       color: var(--slate-800);
     }
 
     .tab-btn.active {
-      color: var(--blue-600) !important;
-      border-bottom-color: var(--blue-600) !important;
-      font-weight: 700;
+      background: #1a2a6c !important;
+      border-color: #1a2a6c !important;
+      color: #ffffff !important;
+      box-shadow: 0 3px 10px rgba(26, 42, 108, 0.25);
     }
 
     .tab-badge {
-      background: var(--slate-200);
-      color: var(--slate-700);
+      background: rgba(0, 0, 0, 0.08);
+      color: currentColor;
       font-size: .75rem;
       padding: 2px 7px;
       border-radius: 10px;
-      font-weight: 600;
+      font-weight: 700;
     }
 
     .tab-btn.active .tab-badge {
-      background: var(--blue-100);
-      color: var(--blue-700);
+      background: rgba(255, 255, 255, 0.22);
+      color: #ffffff;
     }
 
     /* ── PRINT AREA STYLES ── */
@@ -352,14 +455,14 @@
       </header>
 
       <main class="page-content">
-        <!-- ── CLEAN PAGE HEADER ── -->
-        <div class="page-header" style="margin-bottom: 1.5rem;">
-          <div class="page-header-info">
-            <div style="display: flex; align-items: center; gap: .6rem;">
-              <h1 style="font-size: 1.5rem; font-weight: 700; color: var(--slate-800);">Eleições</h1>
-              <span class="badge badge-blue" style="font-size: .75rem;">Módulo Eleitoral</span>
+        <!-- ── HERO BANNER CARD ── -->
+        <div class="election-hero-card">
+          <div>
+            <div class="election-hero-pill">
+              <span class="pulse-dot"></span> Sessão Eleitoral
             </div>
-            <p style="color: var(--slate-500); font-size: .9rem; margin-top: .2rem;">Votação secreta, controle de quórum e escrutínio em tempo real.</p>
+            <h1>Eleições & Votação</h1>
+            <p>Votação secreta, controle de quórum e escrutínio automatizado em tempo real.</p>
           </div>
         </div>
 
@@ -367,13 +470,13 @@
 
         <!-- ── SECTION: CONFIG ── -->
         <section id="section-config" class="hidden">
-          <div class="card mb-4">
+          <div class="card mb-4" style="border-radius: 16px;">
             <div class="card-header">
               <h2>1. Configurar Sessão Eleitoral</h2>
             </div>
             <div class="field mb-4" style="margin-bottom: 1.5rem;">
               <label for="election-title" style="font-size: .95rem; font-weight: 700; color: var(--slate-800); margin-bottom: .4rem; display: block;">Título da Eleição</label>
-              <input class="input" type="text" id="election-title" placeholder="Ex: Eleição de Diretoria - 2026" style="font-size: .95rem; padding: .7rem 1rem; height: auto;" />
+              <input class="input" type="text" id="election-title" placeholder="Ex: Eleição de Diretoria - 2026" style="font-size: .95rem; padding: .75rem 1rem; border-radius: 10px; height: auto;" />
             </div>
 
             <div style="border-bottom: 1.5px dashed var(--slate-200); margin: 1.5rem 0;"></div>
@@ -409,16 +512,16 @@
             </div>
           </div>
 
-          <div class="card mb-4">
+          <div class="card mb-4" style="border-radius: 16px;">
             <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
               <h2 id="config-members-header-title">2. Sócios Votados (Elegibilidade)</h2>
-              <span id="eligible-count-badge" class="badge badge-blue">0 aptos</span>
+              <span id="eligible-count-badge" style="background: #eef2ff; color: #1e40af; border: 1px solid #c7d2fe; border-radius: 20px; padding: 0.3rem 0.75rem; font-weight: 600; font-size: 0.8rem;">0 aptos</span>
             </div>
             <p class="text-sm text-slate-500 mb-3" id="config-members-header-desc">Todos os sócios ativos listados abaixo podem votar. Desmarque aqueles que <strong>não</strong> podem ser votados (impedidos).</p>
 
             <div class="eligibility-toolbar">
               <div style="position: relative; flex: 1; min-width: 240px;">
-                <input class="input" type="text" id="input-search-members" placeholder="🔍 Pesquisar por nome..." style="padding-left: 2.2rem; font-size: .88rem;" />
+                <input class="input" type="text" id="input-search-members" placeholder="🔍 Pesquisar por nome..." style="padding-left: 2.2rem; font-size: .88rem; border-radius: 10px;" />
               </div>
               <div class="eligibility-actions">
                 <button class="btn btn-secondary btn-sm" id="btn-select-all-members" type="button">Marcar Todos</button>
@@ -426,12 +529,12 @@
               </div>
             </div>
 
-            <div class="members-eligibility-grid" id="config-members-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .5rem; max-height: 280px; overflow-y: auto; padding: .5rem; border: 1.5px solid var(--slate-200); border-radius: var(--radius); background: var(--slate-50);">
+            <div class="members-eligibility-grid" id="config-members-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .55rem; max-height: 290px; overflow-y: auto; padding: .6rem; border: 1.5px solid var(--slate-200); border-radius: 12px; background: var(--slate-50);">
               <!-- Cards injected dynamically via JS -->
             </div>
 
             <div style="margin-top: 1.5rem; text-align: right;">
-              <button class="btn btn-primary" id="btn-start-session">Criar e Gerar Códigos</button>
+              <button class="btn btn-primary" id="btn-start-session" style="border-radius: 10px; padding: .65rem 1.4rem; font-weight: 600;">Criar e Gerar Códigos</button>
             </div>
           </div>
         </section>
@@ -439,14 +542,14 @@
         <!-- ── SECTION: ACTIVE ── -->
         <section id="section-active" class="hidden">
           <!-- Status Panel -->
-          <div class="card mb-4">
+          <div class="card mb-4" style="border-radius: 16px;">
             <div class="card-header">
               <h2 id="active-title">Eleição Ativa</h2>
               <span class="badge badge-amber" id="active-status-badge">Configuração</span>
             </div>
 
             <div id="active-config-panel" class="hidden" style="padding: 1rem 0 0 0;">
-              <div class="alert alert-success mb-3" style="display: flex; align-items: center; gap: .75rem;">
+              <div class="alert alert-success mb-3" style="display: flex; align-items: center; gap: .75rem; border-radius: 12px;">
                 <span style="font-size: 1.4rem;">🔑</span>
                 <div>
                   <strong>Eleição Configurada com Sucesso!</strong><br />
@@ -454,32 +557,32 @@
                 </div>
               </div>
               <div style="display: flex; gap: .75rem; flex-wrap: wrap;">
-                <button class="btn btn-success" id="btn-activate-voting">Iniciar Votação</button>
-                <button class="btn btn-danger btn-secondary" id="btn-cancel-election-config">Cancelar Sessão Eleitoral</button>
+                <button class="btn btn-success" id="btn-activate-voting" style="border-radius: 10px; font-weight: 600;">Iniciar Votação</button>
+                <button class="btn btn-danger btn-secondary" id="btn-cancel-election-config" style="border-radius: 10px;">Cancelar Sessão Eleitoral</button>
               </div>
             </div>
 
             <div id="active-voting-panel" class="hidden" style="padding: 1rem 0 0 0;">
-              <div id="voting-status-banner" style="background: var(--blue-50); border: 1.5px solid var(--blue-200); border-radius: var(--radius-lg); padding: 1.25rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; gap: 1rem; transition: all .25s ease;">
+              <div id="voting-status-banner" style="background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%); border: 1.5px solid #bfdbfe; border-radius: 16px; padding: 1.35rem 1.5rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; gap: 1rem; transition: all .25s ease; box-shadow: 0 4px 16px rgba(59,130,246,0.08);">
                 <div>
-                  <span class="step-badge" style="background: var(--blue-700); color: #fff; border-radius: 20px; padding: .25rem .75rem; font-size: .75rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: .4rem; display: inline-block;" id="active-step-badge">1º Escrutínio</span>
-                  <h3 style="font-size: 1.5rem; font-weight: 800; color: var(--blue-900); margin: 0; transition: color .25s ease;" id="active-role-display">Presidente</h3>
+                  <span class="step-badge" style="background: #1e3a8a; color: #fff; border-radius: 20px; padding: .25rem .85rem; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: .4rem; display: inline-block;" id="active-step-badge">1º Escrutínio</span>
+                  <h3 style="font-size: 1.55rem; font-weight: 800; color: #1e3a8a; margin: 0; transition: color .25s ease;" id="active-role-display">Presidente</h3>
                 </div>
                 <div style="text-align: right;">
-                  <div class="stat-value" id="active-votes-count" style="font-size: 1.8rem; font-weight: 800; color: var(--blue-900); transition: color .25s ease;">0 / 0</div>
-                  <div class="stat-label" style="font-size: .8rem; color: var(--slate-600); font-weight: 500;">Votos Registrados (<span id="active-percent-count" style="font-weight: 700; color: var(--blue-600);">0%</span>)</div>
+                  <div class="stat-value" id="active-votes-count" style="font-size: 1.85rem; font-weight: 800; color: #1e3a8a; transition: color .25s ease;">0 / 0</div>
+                  <div class="stat-label" style="font-size: .8rem; color: var(--slate-600); font-weight: 600;">Votos Registrados (<span id="active-percent-count" style="font-weight: 800; color: #2563eb;">0%</span>)</div>
                 </div>
               </div>
 
               <div style="border-top: 1.5px solid var(--slate-200); padding-top: 1.5rem; text-align: right; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-                <button class="btn btn-danger btn-secondary" id="btn-cancel-election-active">Cancelar Eleição</button>
-                <button class="btn btn-danger" id="btn-close-round" style="box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);">Encerrar Votação</button>
+                <button class="btn btn-danger btn-secondary" id="btn-cancel-election-active" style="border-radius: 10px;">Cancelar Eleição</button>
+                <button class="btn btn-danger" id="btn-close-round" style="box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25); border-radius: 10px; font-weight: 600;">Encerrar Votação</button>
               </div>
             </div>
           </div>
 
           <!-- Codes & Public Link Card -->
-          <div class="card mb-4" id="active-codes-card">
+          <div class="card mb-4" id="active-codes-card" style="border-radius: 16px;">
             <div class="card-header">
               <h2>Urna Pública & Senhas de Voto</h2>
             </div>
@@ -489,20 +592,20 @@
                 <strong class="text-sm" style="color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; font-size: .75rem;">Link da Urna Eletrônica Secreta:</strong>
                 <div class="link-copy-text" id="voting-url-text">http://...</div>
               </div>
-              <button class="btn btn-secondary btn-sm" id="btn-copy-url" style="white-space: nowrap;">Copiar Link</button>
+              <button class="btn btn-primary btn-sm" id="btn-copy-url" style="white-space: nowrap; border-radius: 20px;">Copiar Link</button>
             </div>
 
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: .75rem;">
               <h3 style="font-size: 1rem; font-weight: 700; color: var(--slate-800);">Lista de Eleitores e Senhas</h3>
               <div style="display: flex; gap: .5rem; flex-wrap: wrap;">
-                <button class="btn btn-secondary btn-sm" id="btn-copy-codes">Copiar Todos os Códigos</button>
-                <button class="btn btn-secondary btn-sm" id="btn-print-codes">Imprimir Senhas</button>
+                <button class="btn btn-secondary btn-sm" id="btn-copy-codes" style="border-radius: 20px;">Copiar Todos os Códigos</button>
+                <button class="btn btn-secondary btn-sm" id="btn-print-codes" style="border-radius: 20px;">Imprimir Senhas</button>
               </div>
             </div>
 
             <!-- Tab Navigation & Filter -->
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--slate-200); margin-bottom: 1.25rem; flex-wrap: wrap; gap: .75rem;">
-              <div class="tabs-nav" style="display: flex; gap: .5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: .75rem;">
+              <div class="tabs-nav">
                 <button class="tab-btn active" id="tab-voters-all">
                   Todos <span class="tab-badge" id="count-tab-all">0</span>
                 </button>
@@ -514,8 +617,8 @@
                 </button>
               </div>
 
-              <div style="min-width: 200px; padding-bottom: .25rem;">
-                <input class="input" type="text" id="input-search-voters" placeholder="🔍 Filtrar eleitor..." style="font-size: .85rem; padding: .4rem .75rem; height: auto;" />
+              <div style="min-width: 200px;">
+                <input class="input" type="text" id="input-search-voters" placeholder="🔍 Filtrar eleitor..." style="font-size: .85rem; padding: .45rem .85rem; border-radius: 20px; height: auto;" />
               </div>
             </div>
 
@@ -527,7 +630,7 @@
 
         <!-- ── MODAL: RESULTS ── -->
         <div class="modal-overlay" id="modal-results">
-          <div class="modal">
+          <div class="modal" style="border-radius: 16px;">
             <div class="modal-header">
               <h2>Resultado da Apuração</h2>
               <button class="modal-close">✕</button>
@@ -543,20 +646,20 @@
               <!-- Results bars injected here -->
             </div>
 
-            <div class="alert alert-success mb-4" id="results-message-box" style="display: flex; align-items: flex-start; gap: .75rem;">
+            <div class="alert alert-success mb-4" id="results-message-box" style="display: flex; align-items: flex-start; gap: .75rem; border-radius: 12px;">
               <span style="font-size: 1.3rem;">✨</span>
               <div id="results-message-text">...</div>
             </div>
 
             <div class="modal-footer">
-              <button class="btn btn-primary" id="btn-next-step">Avançar para o Próximo Passo</button>
+              <button class="btn btn-primary" id="btn-next-step" style="border-radius: 10px; font-weight: 600;">Avançar para o Próximo Passo</button>
             </div>
           </div>
         </div>
 
         <!-- ── MODAL: ELECTION DETAILS ── -->
         <div class="modal-overlay" id="modal-election-details">
-          <div class="modal modal-lg">
+          <div class="modal modal-lg" style="border-radius: 16px;">
             <div class="modal-header">
               <h2 id="det-modal-title">Detalhes da Eleição</h2>
               <button class="modal-close">✕</button>
@@ -568,7 +671,7 @@
 
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 1.5px solid var(--slate-150); padding-bottom: .75rem;">
               <h3 style="font-size: 1rem; font-weight: 700;">Resultados da Apuração</h3>
-              <button class="btn btn-primary btn-sm" id="btn-det-download-pdf">📥 Baixar PDF Oficial</button>
+              <button class="btn btn-primary btn-sm" id="btn-det-download-pdf" style="border-radius: 20px;">📥 Baixar PDF Oficial</button>
             </div>
 
             <div id="det-modal-content" style="max-height: 420px; overflow-y: auto; padding-right: .5rem;">
@@ -576,14 +679,14 @@
             </div>
 
             <div class="modal-footer" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1.5px solid var(--slate-100);">
-              <button class="btn btn-secondary modal-close">Fechar</button>
+              <button class="btn btn-secondary modal-close" style="border-radius: 10px;">Fechar</button>
             </div>
           </div>
         </div>
 
         <!-- ── SECTION: HISTORY ── -->
         <section id="section-history" class="hidden">
-          <div class="card">
+          <div class="card" style="border-radius: 16px;">
             <div class="card-header">
               <h2>Histórico de Eleições Concluídas</h2>
             </div>
@@ -849,6 +952,7 @@
               advBtn.className = 'btn btn-success'
               advBtn.id = 'btn-panel-advance'
               advBtn.textContent = 'Liberar Próxima Fase'
+              advBtn.style.borderRadius = '10px'
               advBtn.onclick = async () => {
                 setLoading(advBtn, true, 'Liberando...')
                 try {
@@ -963,7 +1067,7 @@
           <div class="code-card">
             <div style="overflow: hidden; flex: 1;">
               <div class="code-card-name" title="${v.full_name}">${v.full_name}</div>
-              <div style="margin-top: .2rem;">${voteBadge}</div>
+              <div style="margin-top: .25rem;">${voteBadge}</div>
             </div>
             <div style="display: flex; flex-direction: column; align-items: flex-end; gap: .35rem;">
               <div class="code-card-code">${v.access_code}</div>
@@ -1006,8 +1110,8 @@
 
           // Style based on all voted status
           if (isAllVoted) {
-            banner.style.background = '#f0fdf4'
-            banner.style.borderColor = '#bbf7d0'
+            banner.style.background = 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)'
+            banner.style.borderColor = '#86efac'
             badge.style.background = '#16a34a'
             badge.style.color = '#fff'
             roleDisplay.style.color = '#14532d'
@@ -1017,12 +1121,12 @@
             closeBtn.innerHTML = 'Encerrar Votação (Todos Votaram!)'
             closeBtn.style.boxShadow = '0 4px 14px rgba(22, 163, 74, 0.3)'
           } else {
-            banner.style.background = 'var(--blue-50)'
-            banner.style.borderColor = 'var(--blue-200)'
-            badge.style.background = 'var(--blue-700)'
+            banner.style.background = 'linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%)'
+            banner.style.borderColor = '#bfdbfe'
+            badge.style.background = '#1e3a8a'
             badge.style.color = '#fff'
-            roleDisplay.style.color = 'var(--blue-900)'
-            votesCount.style.color = 'var(--blue-900)'
+            roleDisplay.style.color = '#1e3a8a'
+            votesCount.style.color = '#1e3a8a'
 
             closeBtn.className = 'btn btn-danger'
             closeBtn.innerHTML = 'Encerrar Votação'
@@ -1240,7 +1344,7 @@
               }).join('')
 
               roundsHtml += `
-              <div style="background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: var(--radius); padding: .75rem; margin-bottom: .75rem;">
+              <div style="background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: 10px; padding: .75rem; margin-bottom: .75rem;">
                 <div style="font-size: .82rem; font-weight: 700; color: var(--slate-700); margin-bottom: .4rem; display:flex; justify-content:space-between;">
                   <span>• ${rnd.round}º Escrutínio</span>
                   <span>Total: ${rnd.total_votes} votos</span>
@@ -1251,7 +1355,7 @@
             })
 
             html += `
-            <div style="margin-bottom: 1.25rem; border: 1.5px solid var(--slate-200); border-radius: var(--radius-lg); padding: 1rem; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+            <div style="margin-bottom: 1.25rem; border: 1.5px solid var(--slate-200); border-radius: 14px; padding: 1rem; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
               <h4 style="font-size: 1rem; font-weight: 700; color: var(--slate-800); margin-bottom: .4rem;">${r.role_label}</h4>
               ${winnerText}
               <div style="margin-top: .5rem;">${roundsHtml}</div>
