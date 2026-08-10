@@ -12,7 +12,7 @@
   <link rel="manifest" href="/manifest.json" />
   <link rel="stylesheet" href="../assets/css/main.css?v=9" />
   <link rel="stylesheet" href="../assets/css/components.css?v=9" />
-  <link rel="stylesheet" href="../assets/css/layout.css?v=9" />
+  <link rel="stylesheet" href="../assets/css/layout.v2.css?v=9" />
   <style>
     .role-checkbox-group {
       display: grid;
@@ -53,6 +53,7 @@
       justify-content: space-between;
       gap: 1rem;
       margin-bottom: 1.5rem;
+      flex-wrap: wrap;
     }
 
     .link-copy-text {
@@ -113,7 +114,7 @@
 
     .code-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
       gap: .75rem;
     }
 
@@ -185,6 +186,16 @@
       }
     }
 
+    .tabs-nav {
+      display: flex;
+      gap: .75rem;
+      border-bottom: 2px solid var(--slate-200);
+      padding-bottom: .25rem;
+      margin-bottom: 1.25rem;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
     .tab-btn {
       background: none;
       border: none;
@@ -196,6 +207,8 @@
       color: var(--slate-500);
       border-bottom: 3px solid transparent;
       transition: all .2s;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     .tab-btn:hover {
@@ -276,6 +289,24 @@
       height: 16px;
       cursor: pointer;
       margin: 0;
+    }
+
+    @media (max-width: 576px) {
+      #voting-status-banner {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 1rem;
+      }
+      #voting-status-banner > div:last-child {
+        text-align: left !important;
+        width: 100%;
+      }
+      .link-copy-box {
+        justify-content: center;
+      }
+      .link-copy-box button {
+        width: 100%;
+      }
     }
   </style>
 </head>
@@ -407,7 +438,7 @@
                   <strong>Iniciar Votação</strong> para liberar a urna eletrônica pública.
                 </div>
               </div>
-              <div style="display: flex; gap: .75rem;">
+              <div style="display: flex; gap: .75rem; flex-wrap: wrap;">
                 <button class="btn btn-success" id="btn-activate-voting">Iniciar Votação</button>
                 <button class="btn btn-danger btn-secondary" id="btn-cancel-election-config">Cancelar Sessão
                   Eleitoral</button>
@@ -435,7 +466,7 @@
               </div>
 
               <div
-                style="border-top: 1.5px solid var(--slate-200); padding-top: 1.5rem; text-align: right; display: flex; justify-content: space-between; align-items: center;">
+                style="border-top: 1.5px solid var(--slate-200); padding-top: 1.5rem; text-align: right; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .75rem;">
                 <button class="btn btn-danger btn-secondary" id="btn-cancel-election-active">Cancelar Eleição</button>
                 <button class="btn btn-danger" id="btn-close-round"
                   style="box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);">Encerrar Votação</button>
@@ -457,17 +488,16 @@
               <button class="btn btn-secondary btn-sm" id="btn-copy-url">Copiar Link</button>
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .75rem; margin-bottom: 1rem;">
               <h3>Lista de Eleitores e Códigos</h3>
-              <div style="display: flex; gap: .5rem;">
+              <div style="display: flex; gap: .5rem; flex-wrap: wrap;">
                 <button class="btn btn-secondary btn-sm" id="btn-copy-codes">Copiar Todos os Códigos</button>
                 <button class="btn btn-secondary btn-sm" id="btn-print-codes">Imprimir Senhas</button>
               </div>
             </div>
 
             <!-- Tab Navigation for Voters -->
-            <div class="tabs-nav"
-              style="display: flex; gap: .75rem; border-bottom: 2px solid var(--slate-200); padding-bottom: .25rem; margin-bottom: 1.25rem;">
+            <div class="tabs-nav">
               <button class="tab-btn active" id="tab-voters-all">
                 Todos / Senhas (<span id="count-tab-all">0</span>)
               </button>
