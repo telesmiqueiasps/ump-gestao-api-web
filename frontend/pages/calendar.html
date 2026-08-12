@@ -46,32 +46,33 @@
       text-transform: capitalize;
     }
 
-    /* ── Legenda ── */
+    /* ── Legenda Dinâmica ── */
     .calendar-legend {
       display: flex;
       align-items: center;
       gap: 1.25rem;
       background: #fff;
-      padding: .6rem 1rem;
-      border-radius: var(--radius);
+      padding: .75rem 1.25rem;
+      border-radius: var(--radius-lg);
       border: 1.5px solid var(--slate-200);
       margin-bottom: 1.25rem;
       font-size: .8rem;
       color: var(--slate-600);
       flex-wrap: wrap;
+      box-shadow: var(--shadow-sm);
     }
     .legend-item {
       display: flex;
       align-items: center;
-      gap: .4rem;
+      gap: .5rem;
     }
     .legend-color {
-      width: 12px;
-      height: 12px;
+      width: 14px;
+      height: 14px;
       border-radius: 4px;
+      flex-shrink: 0;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
     }
-    .legend-color.fed-default { background: var(--blue-600); }
-    .legend-color.local-default { background: var(--green-600); }
 
     /* ── Grade do Calendário ── */
     .calendar-grid-container {
@@ -153,7 +154,7 @@
       padding: .2rem .4rem;
       border-radius: var(--radius-sm);
       color: #fff;
-      font-weight: 500;
+      font-weight: 600;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -379,19 +380,9 @@
         </div>
       </div>
 
-      <!-- Legenda das Organizações -->
-      <div class="calendar-legend">
-        <div class="legend-item">
-          <div class="legend-color fed-default"></div>
-          <span>Federação (Padrão)</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-color local-default"></div>
-          <span id="legend-local-label">UMP Local (Padrão)</span>
-        </div>
-        <div class="legend-item" style="margin-left: auto; font-style: italic; opacity: 0.8;">
-          💡 As programações usam as cores e logos de cada sociedade.
-        </div>
+      <!-- Legenda das Organizações (Preenchida dinamicamente) -->
+      <div class="calendar-legend" id="calendar-legend">
+        <!-- Gerada via JS conforme as programações ativas -->
       </div>
 
       <!-- Visualização 1: Grade de Calendário -->
@@ -438,15 +429,17 @@
       <h2 id="detail-title" style="line-height: 1.3; font-size: 1.25rem;">—</h2>
       <button class="modal-close" onclick="closeModal('modal-event-detail')">✕</button>
     </div>
-    <div style="display:flex;flex-direction:column;gap:.75rem; margin-top: 1rem;">
-      <div style="display:flex;align-items:center;gap:.5rem">
-        <span style="font-size:1.1rem">🏢</span>
-        <div>
-          <p class="text-xs text-slate-400">Organizador</p>
-          <p class="font-semi text-sm" id="detail-organizer" style="display:flex;align-items:center;gap:4px;">—</p>
-        </div>
-      </div>
 
+    <!-- Destaque do Organizador com Logo e Nome da Sociedade -->
+    <div id="detail-org-banner" style="background: var(--slate-50); border: 1.5px solid var(--slate-200); border-radius: var(--radius-lg); padding: 0.85rem 1rem; display: flex; align-items: center; gap: 0.85rem; margin-top: 1rem; margin-bottom: 1rem; border-left: 4.5px solid var(--brand-blue); transition: border-color 0.15s ease;">
+      <img id="detail-org-logo" src="" style="width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 2.5px solid #fff; box-shadow: var(--shadow-sm); flex-shrink: 0;" onerror="this.src='/assets/img/logo.png';" />
+      <div>
+        <p class="text-xs text-slate-400 font-medium" style="margin: 0; text-transform: uppercase; letter-spacing: 0.4px;">Realização / Sociedade</p>
+        <h4 class="font-bold text-sm" id="detail-organizer" style="color: var(--slate-850); margin: 0; margin-top: 2px; font-size: 0.95rem;">—</h4>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:.75rem">
       <div style="display:flex;align-items:center;gap:.5rem">
         <span style="font-size:1.1rem">⏰</span>
         <div>
@@ -538,6 +531,41 @@
   let currentUser = null
   let societyType = 'UMP'
 
+  // Paleta de Cores Premium (Cores bem distintas e com excelente contraste para texto branco)
+  const PRESET_COLORS = [
+    '#1a2a6c', // Navy Blue
+    '#e8630a', // Orange
+    '#15803d', // Green
+    '#dc2626', // Red
+    '#7c3aed', // Purple/Violet
+    '#0891b2', // Cyan
+    '#db2777', // Pink
+    '#b45309', // Amber
+    '#4f46e5', // Indigo
+    '#0d9488', // Teal
+    '#c026d3', // Fuchsia
+    '#475569', // Slate
+    '#be123c', // Rose
+    '#0369a1', // Light Blue
+    '#166534', // Forest Green
+    '#854d0e'  // Mustard/Amber Dark
+  ]
+
+  // Mapeamento dinâmico de IDs de organização para as cores
+  const orgColorMap = {}
+  let colorCounter = 0
+
+  function getColorForOrg(orgId) {
+    if (!orgId) return '#1a2a6c'
+    if (orgColorMap[orgId]) {
+      return orgColorMap[orgId]
+    }
+    const color = PRESET_COLORS[colorCounter % PRESET_COLORS.length]
+    orgColorMap[orgId] = color
+    colorCounter++
+    return color
+  }
+
   // Configuração de nomes e meses em português
   const MONTH_NAMES = [
     "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -560,9 +588,6 @@
 
     currentUser = getUser()
     societyType = localStorage.getItem('society_type') || 'UMP'
-    
-    // Atualizar labels conforme tipo de sociedade
-    document.getElementById('legend-local-label').textContent = `${societyType} Local (Padrão)`
 
     // Exibir botão de adicionar se possuir privilégios
     if (canManageEvents()) {
@@ -640,11 +665,51 @@
     // Atualiza título do cabeçalho
     document.getElementById('month-title').textContent = `${MONTH_NAMES[month]} de ${year}`
 
+    // Renderiza legenda dinamicamente
+    renderDynamicLegend()
+
     if (viewMode === 'grid') {
       renderGridView(year, month)
     } else {
       renderAgendaView(year, month)
     }
+  }
+
+  // Renderiza a Legenda Dinamicamente baseada nos eventos e nas cores mapeadas
+  function renderDynamicLegend() {
+    const legendEl = document.getElementById('calendar-legend')
+    legendEl.innerHTML = ''
+
+    const uniqueOrgs = {}
+    allEvents.forEach(event => {
+      const orgId = event.local_ump_id || event.federation_id
+      if (!uniqueOrgs[orgId]) {
+        uniqueOrgs[orgId] = {
+          name: event.organizer_name,
+          color: getColorForOrg(orgId)
+        }
+      }
+    })
+
+    const orgsList = Object.values(uniqueOrgs)
+
+    if (orgsList.length === 0) {
+      legendEl.innerHTML = `
+        <div style="font-style: italic; opacity: 0.6; display: flex; align-items: center; gap: 0.5rem; width: 100%;">
+          <span>📅 Nenhuma programação cadastrada neste período.</span>
+        </div>`
+      return
+    }
+
+    orgsList.forEach(org => {
+      const item = document.createElement('div')
+      item.className = 'legend-item'
+      item.innerHTML = `
+        <div class="legend-color" style="background: ${org.color}"></div>
+        <span style="font-weight: 600; color: var(--slate-700);">${org.name}</span>
+      `
+      legendEl.appendChild(item)
+    })
   }
 
   // Renderiza Grade do Calendário
@@ -676,7 +741,7 @@
       gridBody.appendChild(cell)
     }
 
-    // 3. Dias do próximo mês para completar a última linha se necessário (grade de 6 semanas = 42 células)
+    // 3. Dias do próximo mês para completar a última linha
     const totalCells = 42
     const remainingCells = totalCells - gridBody.children.length
     for (let dayNum = 1; dayNum <= remainingCells; dayNum++) {
@@ -722,10 +787,13 @@
     dotsEl.className = 'calendar-dots-container'
 
     dayEvents.forEach(event => {
+      const orgId = event.local_ump_id || event.federation_id
+      const orgColor = getColorForOrg(orgId)
+
       // Bloco do Evento (Desktop)
       const evItem = document.createElement('div')
       evItem.className = `calendar-event-item`
-      evItem.style.backgroundColor = event.theme_color || '#1a2a6c'
+      evItem.style.backgroundColor = orgColor
       evItem.style.color = '#ffffff'
       evItem.title = `${event.title} (${event.organizer_name})`
       
@@ -744,7 +812,7 @@
       // Bolinha (Mobile)
       const dot = document.createElement('div')
       dot.className = `calendar-dot`
-      dot.style.backgroundColor = event.theme_color || '#1a2a6c'
+      dot.style.backgroundColor = orgColor
       dotsEl.appendChild(dot)
     })
 
@@ -765,14 +833,12 @@
     return cell
   }
 
-  // Filtra eventos que ocorrem em uma determinada data
+  // Filtra eventos que ocorrem em uma data
   function getEventsForDate(date) {
-    const targetStr = date.toDateString()
     return allEvents.filter(event => {
       const start = new Date(event.start_date)
       const end = event.end_date ? new Date(event.end_date) : start
       
-      // Reseta as horas para comparar apenas os dias
       const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate())
       const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate())
       const checkDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
@@ -811,10 +877,12 @@
     dayEvents.forEach(event => {
       const start = new Date(event.start_date)
       const timeStr = start.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      const orgId = event.local_ump_id || event.federation_id
+      const orgColor = getColorForOrg(orgId)
 
       const item = document.createElement('div')
       item.className = `event-card-item`
-      item.style.borderLeft = `4px solid ${event.theme_color || '#1a2a6c'}`
+      item.style.borderLeft = `4px solid ${orgColor}`
       
       const logoHtml = event.logo_url 
         ? `<img src="${event.logo_url}" style="width: 14px; height: 14px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 4px; border: 1px solid var(--slate-200);" onerror="this.style.display='none'" />` 
@@ -876,9 +944,10 @@
       const start = new Date(event.start_date)
       const startDay = start.getDate()
       const startMonthShort = start.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')
-      
       const startTime = start.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-      
+      const orgId = event.local_ump_id || event.federation_id
+      const orgColor = getColorForOrg(orgId)
+
       let dateStr = ""
       if (event.end_date) {
         const end = new Date(event.end_date)
@@ -898,7 +967,7 @@
       item.className = 'agenda-item'
       item.style.cursor = 'pointer'
       item.innerHTML = `
-        <div class="agenda-date-box" style="border-top: 3px solid ${event.theme_color || '#1a2a6c'}">
+        <div class="agenda-date-box" style="border-top: 3px solid ${orgColor}">
           <div class="agenda-date-day">${startDay}</div>
           <div class="agenda-date-month">${startMonthShort}</div>
         </div>
@@ -924,18 +993,25 @@
   function openEventDetails(event) {
     activeEventForDetail = event
     
-    // Configura título com borda indicativa da cor tema do organizador
+    // Título do Evento
     const titleEl = document.getElementById('detail-title')
     titleEl.textContent = event.title
-    titleEl.style.borderLeft = `4px solid ${event.theme_color || '#1a2a6c'}`
-    titleEl.style.paddingLeft = '8px'
     
-    // Configura organizador com logotipo
-    const logoHtml = event.logo_url 
-      ? `<img src="${event.logo_url}" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 6px; border: 1px solid var(--slate-200);" onerror="this.style.display='none'" />` 
-      : ''
-    document.getElementById('detail-organizer').innerHTML = `${logoHtml}<span>${event.organizer_name}</span>`
+    // Obter cor da organização
+    const orgId = event.local_ump_id || event.federation_id
+    const orgColor = getColorForOrg(orgId)
+
+    // Configurar o banner de destaque da Sociedade Organizadora
+    const bannerEl = document.getElementById('detail-org-banner')
+    bannerEl.style.borderLeftColor = orgColor
     
+    const logoEl = document.getElementById('detail-org-logo')
+    logoEl.src = event.logo_url || '/assets/img/logo.png'
+    
+    const nameEl = document.getElementById('detail-organizer')
+    nameEl.textContent = event.organizer_name
+
+    // Horários
     const start = new Date(event.start_date)
     const startTime = start.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 
@@ -952,6 +1028,7 @@
     
     document.getElementById('detail-time').textContent = dateStr
 
+    // Localização
     if (event.location) {
       document.getElementById('detail-location-container').style.display = 'flex'
       document.getElementById('detail-location').textContent = event.location
@@ -959,6 +1036,7 @@
       document.getElementById('detail-location-container').style.display = 'none'
     }
 
+    // Descrição
     document.getElementById('detail-description').textContent = event.description || 'Nenhuma descrição fornecida.'
 
     // Controle de edição/exclusão do criador
@@ -971,11 +1049,9 @@
   // Verifica se o usuário logado é dono do evento
   function isCreatorOfEvent(event) {
     if (!currentUser) return false
-    // Se o evento for da local e o usuário pertencer à mesma local
     if (event.local_ump_id && currentUser.organization_type === 'local_ump' && event.local_ump_id === currentUser.organization_id) {
       return true
     }
-    // Se o evento for da federação e o usuário pertencer à federação
     if (!event.local_ump_id && currentUser.organization_type === 'federation' && event.federation_id === currentUser.organization_id) {
       return true
     }
@@ -1000,7 +1076,6 @@
     document.getElementById('form-location').value = ''
     document.getElementById('form-end-date').value = ''
     
-    // Define horário atual arredondado para hora cheia como default nos inputs datetime-local
     const now = new Date()
     now.setMinutes(0, 0, 0)
     
