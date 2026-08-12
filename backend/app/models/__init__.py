@@ -12,3 +12,4 @@ from app.models.meeting import Meeting, MeetingAttendee
 from app.models.activity_report import ActivityReport, Activity, ActivityPhoto
 from app.models.uph_statistic import UphStatistic
 from app.models.election import ElectionSession, ElectionVoter, ElectionVote
+from app.models.calendar_event import CalendarEvent

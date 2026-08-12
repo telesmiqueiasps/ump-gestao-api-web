@@ -72,6 +72,11 @@ const NAV_ITEMS = [
     roles: null
   },
   {
+    page: 'calendar', label: 'Calendário', icon: '📅',
+    path: '/pages/calendar.html',
+    roles: null
+  },
+  {
     page: 'eleicoes',
     label: 'Eleições',
     icon: '/assets/img/eleicao.png',
