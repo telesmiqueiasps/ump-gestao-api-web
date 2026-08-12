@@ -72,7 +72,7 @@ const NAV_ITEMS = [
     roles: null
   },
   {
-    page: 'calendar', label: 'Calendário', icon: '📅',
+    page: 'calendar', label: 'Calendário', icon: '/assets/img/calendario.png',
     path: '/pages/calendar.html',
     roles: null
   },

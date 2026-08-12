@@ -19,7 +19,7 @@ class CalendarEventCreate(BaseModel):
     title: str
     description: Optional[str] = None
     start_date: datetime.datetime
-    end_date: datetime.datetime
+    end_date: Optional[datetime.datetime] = None
     location: Optional[str] = None
 
 
@@ -34,12 +34,19 @@ class CalendarEventUpdate(BaseModel):
 def _to_out(event: CalendarEvent) -> dict:
     organizer_name = ""
     organizer_type = "federation"
+    theme_color = "#1a2a6c"
+    logo_url = None
+
     if event.local_ump_id:
         organizer_name = event.local_ump.name if event.local_ump else "UMP Local"
         organizer_type = "local_ump"
+        theme_color = event.local_ump.theme_color or "#16a34a"
+        logo_url = event.local_ump.logo_url
     else:
         organizer_name = event.federation.name if event.federation else "Federação"
         organizer_type = "federation"
+        theme_color = event.federation.theme_color or "#1a2a6c"
+        logo_url = event.federation.logo_url
 
     return {
         "id": str(event.id),
@@ -53,7 +60,9 @@ def _to_out(event: CalendarEvent) -> dict:
         "created_by": str(event.created_by),
         "created_at": event.created_at.isoformat() if event.created_at else None,
         "organizer_name": organizer_name,
-        "organizer_type": organizer_type
+        "organizer_type": organizer_type,
+        "theme_color": theme_color,
+        "logo_url": logo_url
     }
 
 
@@ -91,7 +100,7 @@ def create_calendar_event(
     )),
     db: Session = Depends(get_db)
 ):
-    if payload.end_date < payload.start_date:
+    if payload.end_date and payload.end_date < payload.start_date:
         raise HTTPException(status_code=400, detail="A data de término não pode ser anterior à data de início")
 
     # Resolve federation and local context
@@ -153,7 +162,7 @@ def update_calendar_event(
     # Check updated dates validity
     new_start = update_data.get("start_date", event.start_date)
     new_end = update_data.get("end_date", event.end_date)
-    if new_end < new_start:
+    if new_end and new_start and new_end < new_start:
         raise HTTPException(status_code=400, detail="A data de término não pode ser anterior à data de início")
 
     for field, value in update_data.items():

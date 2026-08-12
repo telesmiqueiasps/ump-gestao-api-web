@@ -15,7 +15,7 @@ class CalendarEvent(Base):
     title = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)
     start_date = Column(DateTime(timezone=True), nullable=False)
-    end_date = Column(DateTime(timezone=True), nullable=False)
+    end_date = Column(DateTime(timezone=True), nullable=True)
     location = Column(String(200), nullable=True)
     
     created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)

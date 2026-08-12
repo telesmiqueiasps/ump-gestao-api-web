@@ -70,8 +70,8 @@
       height: 12px;
       border-radius: 4px;
     }
-    .legend-color.federation { background: var(--blue-600); }
-    .legend-color.local { background: var(--green-600); }
+    .legend-color.fed-default { background: var(--blue-600); }
+    .legend-color.local-default { background: var(--green-600); }
 
     /* ── Grade do Calendário ── */
     .calendar-grid-container {
@@ -158,19 +158,13 @@
       overflow: hidden;
       text-overflow: ellipsis;
       line-height: 1.3;
-      border-left: 3px solid transparent;
+      border-left: 3px solid rgba(255, 255, 255, 0.4);
       transition: opacity var(--transition);
+      display: flex;
+      align-items: center;
     }
     .calendar-event-item:hover {
       opacity: .85;
-    }
-    .calendar-event-item.federation {
-      background: var(--blue-600);
-      border-left-color: var(--brand-orange);
-    }
-    .calendar-event-item.local {
-      background: var(--green-600);
-      border-left-color: var(--green-700);
     }
 
     .calendar-dots-container {
@@ -184,8 +178,6 @@
       height: 6px;
       border-radius: 50%;
     }
-    .calendar-dot.federation { background: var(--blue-600); }
-    .calendar-dot.local { background: var(--green-600); }
 
     /* ── Seção de Eventos do Dia (Mobile) ── */
     .day-events-panel {
@@ -296,8 +288,6 @@
     .event-card-item:last-child {
       margin-bottom: 0;
     }
-    .event-card-item.federation { border-left: 4px solid var(--blue-600); }
-    .event-card-item.local { border-left: 4px solid var(--green-600); }
 
     .event-card-badge {
       font-size: .65rem;
@@ -306,8 +296,6 @@
       border-radius: 4px;
       margin-left: auto;
     }
-    .event-card-badge.federation { background: var(--blue-50); color: var(--blue-700); }
-    .event-card-badge.local { background: #f0fdf4; color: #15803d; }
 
     /* ── Responsividade ── */
     @media (max-width: 767px) {
@@ -394,12 +382,15 @@
       <!-- Legenda das Organizações -->
       <div class="calendar-legend">
         <div class="legend-item">
-          <div class="legend-color federation"></div>
-          <span>Federação</span>
+          <div class="legend-color fed-default"></div>
+          <span>Federação (Padrão)</span>
         </div>
         <div class="legend-item">
-          <div class="legend-color local"></div>
-          <span id="legend-local-label">UMP Local</span>
+          <div class="legend-color local-default"></div>
+          <span id="legend-local-label">UMP Local (Padrão)</span>
+        </div>
+        <div class="legend-item" style="margin-left: auto; font-style: italic; opacity: 0.8;">
+          💡 As programações usam as cores e logos de cada sociedade.
         </div>
       </div>
 
@@ -443,16 +434,16 @@
 <!-- MODAL 1: Detalhes da Programação -->
 <div class="modal-overlay" id="modal-event-detail">
   <div class="modal">
-    <div class="modal-header">
-      <h2 id="detail-title">—</h2>
+    <div class="modal-header" style="border-bottom: 1px solid var(--slate-100); padding-bottom: 0.75rem;">
+      <h2 id="detail-title" style="line-height: 1.3; font-size: 1.25rem;">—</h2>
       <button class="modal-close" onclick="closeModal('modal-event-detail')">✕</button>
     </div>
-    <div style="display:flex;flex-direction:column;gap:.75rem">
+    <div style="display:flex;flex-direction:column;gap:.75rem; margin-top: 1rem;">
       <div style="display:flex;align-items:center;gap:.5rem">
         <span style="font-size:1.1rem">🏢</span>
         <div>
           <p class="text-xs text-slate-400">Organizador</p>
-          <p class="font-semi text-sm" id="detail-organizer">—</p>
+          <p class="font-semi text-sm" id="detail-organizer" style="display:flex;align-items:center;gap:4px;">—</p>
         </div>
       </div>
 
@@ -509,8 +500,8 @@
           <input class="input" type="datetime-local" id="form-start-date" required />
         </div>
         <div class="field">
-          <label>Fim *</label>
-          <input class="input" type="datetime-local" id="form-end-date" required />
+          <label>Fim (Opcional)</label>
+          <input class="input" type="datetime-local" id="form-end-date" />
         </div>
       </div>
 
@@ -571,7 +562,7 @@
     societyType = localStorage.getItem('society_type') || 'UMP'
     
     // Atualizar labels conforme tipo de sociedade
-    document.getElementById('legend-local-label').textContent = `${societyType} Local`
+    document.getElementById('legend-local-label').textContent = `${societyType} Local (Padrão)`
 
     // Exibir botão de adicionar se possuir privilégios
     if (canManageEvents()) {
@@ -634,6 +625,7 @@
     render()
   }
 
+  // Volta para data atual
   function goToday() {
     currentDate = new Date()
     selectedDate = new Date()
@@ -730,13 +722,19 @@
     dotsEl.className = 'calendar-dots-container'
 
     dayEvents.forEach(event => {
-      const isFed = event.organizer_type === 'federation'
-      
       // Bloco do Evento (Desktop)
       const evItem = document.createElement('div')
-      evItem.className = `calendar-event-item ${isFed ? 'federation' : 'local'}`
-      evItem.textContent = event.title
+      evItem.className = `calendar-event-item`
+      evItem.style.backgroundColor = event.theme_color || '#1a2a6c'
+      evItem.style.color = '#ffffff'
       evItem.title = `${event.title} (${event.organizer_name})`
+      
+      const logoHtml = event.logo_url 
+        ? `<img src="${event.logo_url}" style="width: 12px; height: 12px; border-radius: 50%; object-fit: cover; margin-right: 4px; vertical-align: middle; display: inline-block;" onerror="this.style.display='none'" />` 
+        : ''
+        
+      evItem.innerHTML = `${logoHtml}<span style="overflow:hidden; text-overflow:ellipsis;">${event.title}</span>`
+      
       evItem.addEventListener('click', (e) => {
         e.stopPropagation() // Impede disparar o clique do dia
         openEventDetails(event)
@@ -745,7 +743,8 @@
 
       // Bolinha (Mobile)
       const dot = document.createElement('div')
-      dot.className = `calendar-dot ${isFed ? 'federation' : 'local'}`
+      dot.className = `calendar-dot`
+      dot.style.backgroundColor = event.theme_color || '#1a2a6c'
       dotsEl.appendChild(dot)
     })
 
@@ -771,7 +770,7 @@
     const targetStr = date.toDateString()
     return allEvents.filter(event => {
       const start = new Date(event.start_date)
-      const end = new Date(event.end_date)
+      const end = event.end_date ? new Date(event.end_date) : start
       
       // Reseta as horas para comparar apenas os dias
       const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate())
@@ -810,13 +809,17 @@
 
     listEl.innerHTML = ''
     dayEvents.forEach(event => {
-      const isFed = event.organizer_type === 'federation'
       const start = new Date(event.start_date)
-      
       const timeStr = start.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 
       const item = document.createElement('div')
-      item.className = `event-card-item ${isFed ? 'federation' : 'local'}`
+      item.className = `event-card-item`
+      item.style.borderLeft = `4px solid ${event.theme_color || '#1a2a6c'}`
+      
+      const logoHtml = event.logo_url 
+        ? `<img src="${event.logo_url}" style="width: 14px; height: 14px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 4px; border: 1px solid var(--slate-200);" onerror="this.style.display='none'" />` 
+        : ''
+
       item.innerHTML = `
         <div class="agenda-content">
           <div class="agenda-title">${event.title}</div>
@@ -824,7 +827,9 @@
             <span>⏰ ${timeStr}</span>
             ${event.location ? `<span>📍 ${event.location}</span>` : ''}
           </div>
-          <span class="event-card-badge ${isFed ? 'federation' : 'local'}">${event.organizer_name}</span>
+          <span class="event-card-badge" style="background: var(--slate-50); color: var(--slate-700); border: 1px solid var(--slate-200); display: inline-flex; align-items: center; align-self: flex-start; margin-top: 4px;">
+            ${logoHtml}${event.organizer_name}
+          </span>
         </div>
       `
       item.addEventListener('click', () => openEventDetails(event))
@@ -840,7 +845,7 @@
     // Filtra eventos ocorrendo no mês atual selecionado
     const monthEvents = allEvents.filter(event => {
       const start = new Date(event.start_date)
-      const end = new Date(event.end_date)
+      const end = event.end_date ? new Date(event.end_date) : start
       return (start.getFullYear() === year && start.getMonth() === month) || 
              (end.getFullYear() === year && end.getMonth() === month)
     }).sort((a, b) => new Date(a.start_date) - new Date(b.start_date))
@@ -868,25 +873,32 @@
     const listEl = section.querySelector('#agenda-items-list')
 
     monthEvents.forEach(event => {
-      const isFed = event.organizer_type === 'federation'
       const start = new Date(event.start_date)
-      const end = new Date(event.end_date)
-
       const startDay = start.getDate()
       const startMonthShort = start.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')
       
       const startTime = start.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-      const endTime = end.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
       
-      const dateStr = start.toDateString() === end.toDateString()
-        ? `${start.toLocaleDateString('pt-BR')} das ${startTime} às ${endTime}`
-        : `De ${start.toLocaleDateString('pt-BR')} ${startTime} até ${end.toLocaleDateString('pt-BR')} ${endTime}`
+      let dateStr = ""
+      if (event.end_date) {
+        const end = new Date(event.end_date)
+        const endTime = end.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        dateStr = start.toDateString() === end.toDateString()
+          ? `${start.toLocaleDateString('pt-BR')} das ${startTime} às ${endTime}`
+          : `De ${start.toLocaleDateString('pt-BR')} ${startTime} até ${end.toLocaleDateString('pt-BR')} ${endTime}`
+      } else {
+        dateStr = `${start.toLocaleDateString('pt-BR')} às ${startTime}`
+      }
+
+      const logoHtml = event.logo_url 
+        ? `<img src="${event.logo_url}" style="width: 14px; height: 14px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 4px; border: 1px solid var(--slate-200);" onerror="this.style.display='none'" />` 
+        : ''
 
       const item = document.createElement('div')
       item.className = 'agenda-item'
       item.style.cursor = 'pointer'
       item.innerHTML = `
-        <div class="agenda-date-box">
+        <div class="agenda-date-box" style="border-top: 3px solid ${event.theme_color || '#1a2a6c'}">
           <div class="agenda-date-day">${startDay}</div>
           <div class="agenda-date-month">${startMonthShort}</div>
         </div>
@@ -895,7 +907,9 @@
           <div class="agenda-meta">
             <span>⏰ ${dateStr}</span>
             ${event.location ? `<span>📍 ${event.location}</span>` : ''}
-            <span class="event-card-badge ${isFed ? 'federation' : 'local'}">${event.organizer_name}</span>
+            <span class="event-card-badge" style="background: var(--slate-50); color: var(--slate-700); border: 1px solid var(--slate-200); display: inline-flex; align-items: center;">
+              ${logoHtml}${event.organizer_name}
+            </span>
           </div>
           ${event.description ? `<p class="agenda-description">${event.description}</p>` : ''}
         </div>
@@ -909,17 +923,32 @@
   let activeEventForDetail = null
   function openEventDetails(event) {
     activeEventForDetail = event
-    document.getElementById('detail-title').textContent = event.title
-    document.getElementById('detail-organizer').textContent = event.organizer_name
+    
+    // Configura título com borda indicativa da cor tema do organizador
+    const titleEl = document.getElementById('detail-title')
+    titleEl.textContent = event.title
+    titleEl.style.borderLeft = `4px solid ${event.theme_color || '#1a2a6c'}`
+    titleEl.style.paddingLeft = '8px'
+    
+    // Configura organizador com logotipo
+    const logoHtml = event.logo_url 
+      ? `<img src="${event.logo_url}" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 6px; border: 1px solid var(--slate-200);" onerror="this.style.display='none'" />` 
+      : ''
+    document.getElementById('detail-organizer').innerHTML = `${logoHtml}<span>${event.organizer_name}</span>`
     
     const start = new Date(event.start_date)
-    const end = new Date(event.end_date)
     const startTime = start.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-    const endTime = end.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 
-    const dateStr = start.toDateString() === end.toDateString()
-      ? `${start.toLocaleDateString('pt-BR')} das ${startTime} às ${endTime}`
-      : `De ${start.toLocaleDateString('pt-BR')} ${startTime} até ${end.toLocaleDateString('pt-BR')} ${endTime}`
+    let dateStr = ""
+    if (event.end_date) {
+      const end = new Date(event.end_date)
+      const endTime = end.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      dateStr = start.toDateString() === end.toDateString()
+        ? `${start.toLocaleDateString('pt-BR')} das ${startTime} às ${endTime}`
+        : `De ${start.toLocaleDateString('pt-BR')} ${startTime} até ${end.toLocaleDateString('pt-BR')} ${endTime}`
+    } else {
+      dateStr = `${start.toLocaleDateString('pt-BR')} às ${startTime}`
+    }
     
     document.getElementById('detail-time').textContent = dateStr
 
@@ -969,17 +998,14 @@
     document.getElementById('form-title').value = ''
     document.getElementById('form-description').value = ''
     document.getElementById('form-location').value = ''
+    document.getElementById('form-end-date').value = ''
     
     // Define horário atual arredondado para hora cheia como default nos inputs datetime-local
     const now = new Date()
     now.setMinutes(0, 0, 0)
     
     const startStr = formatToDatetimeLocalInput(now)
-    now.setHours(now.getHours() + 1)
-    const endStr = formatToDatetimeLocalInput(now)
-
     document.getElementById('form-start-date').value = startStr
-    document.getElementById('form-end-date').value = endStr
     document.getElementById('form-error-alert').classList.add('hidden')
 
     openModal('modal-event-form')
@@ -1006,26 +1032,29 @@
 
     errorEl.classList.add('hidden')
 
-    if (!title || !startDateVal || !endDateVal) {
+    if (!title || !startDateVal) {
       errorEl.textContent = 'Preencha todos os campos obrigatórios (*)'
       errorEl.classList.remove('hidden')
       return
     }
 
     const startDate = new Date(startDateVal)
-    const endDate = new Date(endDateVal)
+    let endDate = null
 
-    if (endDate < startDate) {
-      errorEl.textContent = 'A data de término não pode ser anterior à data de início'
-      errorEl.classList.remove('hidden')
-      return
+    if (endDateVal) {
+      endDate = new Date(endDateVal)
+      if (endDate < startDate) {
+        errorEl.textContent = 'A data de término não pode ser anterior à data de início'
+        errorEl.classList.remove('hidden')
+        return
+      }
     }
 
     const payload = {
       title,
       description: description || null,
       start_date: startDate.toISOString(),
-      end_date: endDate.toISOString(),
+      end_date: endDate ? endDate.toISOString() : null,
       location: location || null
     }
 
@@ -1079,10 +1108,15 @@
     document.getElementById('form-location').value = activeEventForDetail.location || ''
     
     const start = new Date(activeEventForDetail.start_date)
-    const end = new Date(activeEventForDetail.end_date)
-
     document.getElementById('form-start-date').value = formatToDatetimeLocalInput(start)
-    document.getElementById('form-end-date').value = formatToDatetimeLocalInput(end)
+
+    if (activeEventForDetail.end_date) {
+      const end = new Date(activeEventForDetail.end_date)
+      document.getElementById('form-end-date').value = formatToDatetimeLocalInput(end)
+    } else {
+      document.getElementById('form-end-date').value = ''
+    }
+
     document.getElementById('form-error-alert').classList.add('hidden')
 
     closeModal('modal-event-detail')
