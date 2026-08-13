@@ -27,7 +27,7 @@ def _clean_phone(phone: str) -> str:
 
 class MemberLoginPayload(BaseModel):
     org_id: UUID
-    phone: str
+    email: str
     pin: str
 
 
@@ -47,21 +47,16 @@ def member_login(
         raise HTTPException(status_code=403,
             detail="Portal de sócios desativado para esta organização")
 
-    clean_input = _clean_phone(payload.phone)
-    all_members = db.query(Member).filter(
+    email_input = payload.email.strip().lower()
+    member = db.query(Member).filter(
         Member.local_ump_id == payload.org_id,
         Member.is_active == True,
-    ).all()
-
-    member = None
-    for m in all_members:
-        if _clean_phone(m.phone) == clean_input:
-            member = m
-            break
+        Member.email.ilike(email_input),
+    ).first()
 
     if not member:
         raise HTTPException(status_code=401,
-            detail="Número de celular não encontrado")
+            detail="E-mail não cadastrado para esta organização")
 
     if not member.birth_date:
         raise HTTPException(status_code=403,
@@ -249,3 +244,23 @@ def get_org_public_info(
         "logo_b64": logo_b64,
         "portal_enabled": local.member_portal_enabled if local.member_portal_enabled is not None else True,
     }
+
+
+@router.get("/calendar")
+def get_member_calendar_events(
+    auth=Depends(get_portal_member),
+    db: Session = Depends(get_db),
+):
+    from app.models.calendar_event import CalendarEvent
+    from app.routers.calendar import _to_out
+    
+    member, org_id = auth
+    local = db.query(LocalUmp).filter(LocalUmp.id == member.local_ump_id).first()
+    if not local:
+        raise HTTPException(status_code=404, detail="UMP Local não encontrada")
+
+    events = db.query(CalendarEvent).filter(
+        CalendarEvent.federation_id == local.federation_id
+    ).order_by(CalendarEvent.start_date.asc()).all()
+
+    return [_to_out(event) for event in events]

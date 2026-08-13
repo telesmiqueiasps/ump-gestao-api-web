@@ -6,6 +6,10 @@ self.addEventListener('install', (event) => {
       return cache.addAll([
         '/socio.html',
         '/assets/img/logo.png',
+        '/assets/img/mensalidades.png',
+        '/assets/img/aci.png',
+        '/assets/img/calendario.png',
+        '/assets/img/pagar.png',
       ])
     }).then(() => self.skipWaiting())
   )
