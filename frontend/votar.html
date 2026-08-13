@@ -360,6 +360,9 @@
     const codeParam = urlParams.get('code')
     if (codeParam) {
       document.getElementById('voter-code').value = codeParam.toUpperCase().trim()
+      setTimeout(() => {
+        document.getElementById('btn-login-code').click()
+      }, 150)
     }
 
     // Set local UMP/UPH/etc label if available

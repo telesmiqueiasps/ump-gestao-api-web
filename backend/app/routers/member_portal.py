@@ -264,3 +264,39 @@ def get_member_calendar_events(
     ).order_by(CalendarEvent.start_date.asc()).all()
 
     return [_to_out(event) for event in events]
+
+
+@router.get("/election")
+def get_member_election_status(
+    auth=Depends(get_portal_member),
+    db: Session = Depends(get_db),
+):
+    from app.models.election import ElectionSession, ElectionVoter
+    member, org_id = auth
+    
+    # Check if there is an active election for this local UMP
+    session = db.query(ElectionSession).filter(
+        ElectionSession.local_ump_id == member.local_ump_id,
+        ElectionSession.status != 'completed'
+    ).first()
+    
+    if not session:
+        return {"has_active_election": False}
+        
+    # Check if this member is a voter in this election
+    voter = db.query(ElectionVoter).filter(
+        ElectionVoter.election_session_id == session.id,
+        ElectionVoter.member_id == member.id
+    ).first()
+    
+    return {
+        "has_active_election": True,
+        "session_id": str(session.id),
+        "title": session.title,
+        "status": session.status,
+        "current_role": session.current_role,
+        "current_round": session.current_round,
+        "access_code": voter.access_code if voter else None,
+        "has_voted_current_round": voter.has_voted_current_round if voter else False,
+        "can_be_voted": voter.can_be_voted if voter else True,
+    }

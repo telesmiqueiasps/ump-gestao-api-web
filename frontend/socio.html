@@ -312,6 +312,15 @@
       font-size:.875rem;font-family:inherit;color:var(--slate-700);
       outline:none;cursor:pointer;
     }
+    .tab-icon-emoji {
+      font-size: 1.15rem;
+      filter: grayscale(1) opacity(0.6);
+      transition: all .2s ease;
+    }
+    .tab.active .tab-icon-emoji {
+      filter: none !important; opacity: 1 !important;
+      transform: scale(1.15);
+    }
   </style>
 </head>
 <body>
@@ -423,6 +432,10 @@
         <img src="/img/calendario.png" alt="" class="tab-icon"/>
         <span>Calendário</span>
       </button>
+      <button class="tab" data-tab="election" onclick="switchTab('election')">
+        <span class="tab-icon-emoji">🗳️</span>
+        <span>Eleições</span>
+      </button>
       <button class="tab" data-tab="pix" onclick="switchTab('pix')">
         <img src="/img/pagar.png" alt="" class="tab-icon"/>
         <span>Pagar</span>
@@ -489,6 +502,12 @@
       <!-- Lista / Agenda -->
       <div id="calendar-agenda-view" style="display:none">
         <div class="agenda-container" id="agenda-container"></div>
+      </div>
+    </div>
+    
+    <div id="tab-election" style="display:none">
+      <div id="election-content">
+        <!-- Injetado via JS -->
       </div>
     </div>
   </div>
@@ -578,6 +597,7 @@
           setupYearSelect()
           loadYear()
           loadEvents()
+          loadElection()
           setupPushNotifications()
 
           const tabParam = params.get('tab')
@@ -645,6 +665,7 @@
       setupYearSelect()
       loadYear()
       loadEvents()
+      loadElection()
       setupPushNotifications()
 
       const params = new URLSearchParams(window.location.search)
@@ -802,10 +823,107 @@
     document.getElementById('tab-fees').style.display     = tab === 'fees' ? 'block' : 'none'
     document.getElementById('tab-aci').style.display      = tab === 'aci'  ? 'block' : 'none'
     document.getElementById('tab-calendar').style.display = tab === 'calendar' ? 'block' : 'none'
+    document.getElementById('tab-election').style.display = tab === 'election' ? 'block' : 'none'
     document.getElementById('tab-pix').style.display      = tab === 'pix'  ? 'block' : 'none'
     if (tab === 'calendar') {
       renderCalendar()
+    } else if (tab === 'election') {
+      loadElection()
     }
+  }
+
+  // ── Variáveis e Funções das Eleições ──
+  let activeElection = null
+
+  async function loadElection() {
+    try {
+      activeElection = await fetchAuth('/api/member-portal/election')
+      renderElection()
+    } catch (err) {
+      console.error("Erro ao carregar eleição:", err)
+    }
+  }
+
+  function getRoleLabel(role) {
+    const ROLE_LABELS = {
+      presidente: 'Presidente',
+      vice_presidente: 'Vice-Presidente',
+      '1_secretario': '1º Secretário(a)',
+      '2_secretario': '2º Secretário(a)',
+      secretario_executivo: 'Secretário Executivo',
+      tesoureiro: 'Tesoureiro(a)'
+    }
+    return ROLE_LABELS[role] || role
+  }
+
+  function renderElection() {
+    const container = document.getElementById('election-content')
+    if (!activeElection || !activeElection.has_active_election) {
+      container.innerHTML = `
+        <div style="text-align:center;padding:2.5rem 1rem;color:var(--slate-400)">
+          <div style="font-size:2.5rem;margin-bottom:.75rem">🗳️</div>
+          <h3 style="font-size:.95rem;font-weight:700;color:var(--slate-700);margin-bottom:.25rem">Nenhuma Eleição Ativa</h3>
+          <p style="font-size:.78rem;line-height:1.4">Quando a diretoria da sua UMP Local iniciar uma sessão eleitoral, ela aparecerá aqui.</p>
+        </div>`
+      return
+    }
+
+    const data = activeElection
+    container.innerHTML = `
+      <div class="card" style="border: 1.5px solid var(--brand); border-radius: var(--radius-lg); padding: 1.25rem; background: #fff;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+          <h3 style="font-size:1.05rem;font-weight:800;color:var(--brand);margin:0">${data.title}</h3>
+          <span class="badge ${data.status === 'voting' ? 'badge-blue' : 'badge-slate'}" style="font-size:.65rem;padding:3px 8px;border-radius:4px;font-weight:700">${data.status === 'voting' ? 'Votação Ativa' : 'Configuração'}</span>
+        </div>
+        
+        ${data.status === 'config' ? `
+          <div style="background:#f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: .85rem; font-size: .8rem; color:#475569; line-height: 1.4; margin-bottom: 1rem">
+            <strong>Aguardando início pela diretoria.</strong><br>
+            A sessão foi criada, mas a votação ainda não foi aberta.
+          </div>
+        ` : ''}
+
+        ${data.status === 'results' ? `
+          <div style="background:#f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: .85rem; font-size: .8rem; color:#475569; line-height: 1.4; margin-bottom: 1rem">
+            <strong>Escrutínio Encerrado / Apuração.</strong><br>
+            Aguardando a liberação da próxima rodada pela mesa diretora.
+          </div>
+        ` : ''}
+
+        ${data.status === 'voting' ? `
+          <div style="background:#eff6ff; border: 1.5px solid #bfdbfe; border-radius: 8px; padding: .85rem; font-size: .82rem; color:#1e40af; line-height: 1.4; margin-bottom: 1rem">
+            <strong>Urna Aberta!</strong><br>
+            Votação em andamento para o cargo de <strong>${getRoleLabel(data.current_role)}</strong> (${data.current_round}º Escrutínio).
+          </div>
+        ` : ''}
+
+        ${data.access_code ? `
+          <div style="text-align:center;margin:1.25rem 0;background:#f8fafc;border:1px dashed var(--slate-300);border-radius:10px;padding:1rem">
+            <p style="font-size:.7rem;color:var(--slate-400);text-transform:uppercase;letter-spacing:.5px;margin:0 0 .3rem 0;font-weight:600">Seu Código Secreto de Votante</p>
+            <div style="font-family:monospace;font-size:1.6rem;font-weight:800;color:#e65100;letter-spacing:1px">${data.access_code}</div>
+          </div>
+          
+          ${data.status === 'voting' ? (
+            data.has_voted_current_round ? `
+              <div style="text-align:center;color:#166534;font-weight:600;font-size:.85rem;padding:.5rem 0">
+                ✓ Seu voto secreto para esta rodada foi registrado!
+              </div>
+            ` : `
+              <button class="btn btn-primary" onclick="openUrna('${data.access_code}')" style="margin-top:.5rem">
+                🗳️ Acessar Urna Secreta
+              </button>
+            `
+          ) : ''}
+        ` : `
+          <div style="background:#fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: .85rem; font-size: .8rem; color:#991b1b; line-height: 1.4">
+            Você não está registrado como votante nesta eleição.
+          </div>
+        `}
+      </div>`
+  }
+
+  window.openUrna = (code) => {
+    window.open(`/votar.html?code=${code}`, '_blank')
   }
 
   // ── Variáveis e Funções do Calendário ──
