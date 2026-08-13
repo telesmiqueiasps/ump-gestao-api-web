@@ -830,14 +830,13 @@
       // ── SECTION ACTIVE ──
       async function renderActiveElection() {
         document.getElementById('active-title').textContent = activeSession.title
-
+ 
         const badge = document.getElementById('active-status-badge')
         const configPanel = document.getElementById('active-config-panel')
         const votingPanel = document.getElementById('active-voting-panel')
-
+ 
         const btnCloseRound = document.getElementById('btn-close-round')
-        let advBtn = document.getElementById('btn-panel-advance')
-
+ 
         if (activeSession.status === 'config') {
           badge.className = 'badge badge-amber'
           badge.textContent = 'Configuração'
@@ -846,37 +845,19 @@
         } else {
           badge.className = 'badge badge-green'
           badge.textContent = 'Votação Ativa'
-
+ 
           if (activeSession.status === 'results') {
             badge.className = 'badge badge-amber'
             badge.textContent = 'Apuração (Pausada)'
-
-            btnCloseRound.classList.add('hidden')
-            if (!advBtn) {
-              const parent = btnCloseRound.parentNode
-              advBtn = document.createElement('button')
-              advBtn.className = 'btn btn-success'
-              advBtn.id = 'btn-panel-advance'
-              advBtn.textContent = 'Liberar Próxima Fase'
-              advBtn.onclick = async () => {
-                setLoading(advBtn, true, 'Liberando...')
-                try {
-                  await api.post('/api/elections/active/advance')
-                  loadScreen()
-                } catch (err) {
-                  alert('Erro ao avançar: ' + err.message)
-                } finally {
-                  setLoading(advBtn, false, 'Liberar Próxima Fase')
-                }
-              }
-              parent.appendChild(advBtn)
-            }
-            advBtn.classList.remove('hidden')
+            btnCloseRound.className = 'btn btn-success'
+            btnCloseRound.textContent = 'Apuração / Avançar'
+            btnCloseRound.style.boxShadow = '0 4px 12px rgba(22, 163, 74, 0.25)'
           } else {
-            btnCloseRound.classList.remove('hidden')
-            if (advBtn) advBtn.classList.add('hidden')
+            btnCloseRound.className = 'btn btn-danger'
+            btnCloseRound.textContent = 'Encerrar Votação'
+            btnCloseRound.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.25)'
           }
-
+ 
           configPanel.classList.add('hidden')
           votingPanel.classList.remove('hidden')
         }
@@ -1116,82 +1097,91 @@
         }
       }, 4000)
 
-      // Close Round
-      document.getElementById('btn-close-round').addEventListener('click', async () => {
-        const btn = document.getElementById('btn-close-round')
-        setLoading(btn, true, 'Encerrar Votação')
+      function showActiveResultsModal(res) {
+        // Show Results Modal
+        document.getElementById('results-step-label').textContent = `${ROLE_LABELS[activeSession.current_role] || activeSession.current_role} — ${activeSession.current_round}º Escrutínio`
+        document.getElementById('results-total-label').textContent = `Total de votos: ${res.total_votes}`
+
+        // Injected bars
+        const barsContainer = document.getElementById('results-bars-container')
+        if (!res.results.length) {
+          barsContainer.innerHTML = '<p class="text-slate-400 text-center py-3">Nenhum voto foi computado.</p>'
+        } else {
+          barsContainer.innerHTML = res.results.map(r => {
+            const pct = res.total_votes > 0 ? Math.round((r.votes / res.total_votes) * 100) : 0
+            return `
+            <div class="result-bar-container">
+              <div class="result-bar-header">
+                <span>${r.name}</span>
+                <span>${r.votes} voto${r.votes !== 1 ? 's' : ''} (${pct}%)</span>
+              </div>
+              <div class="result-bar-bg">
+                <div class="result-bar-fill" style="width: ${pct}%"></div>
+              </div>
+            </div>
+          `
+          }).join('')
+        }
+
+        // Success / Progress Message
+        const msgText = document.getElementById('results-message-text')
+        const msgBox = document.getElementById('results-message-box')
+        const nextBtn = document.getElementById('btn-next-step')
+
+        if (res.elected) {
+          msgBox.className = 'alert alert-success mb-4'
+          msgText.innerHTML = `<strong>${res.winner_name}</strong> foi eleito(a) com sucesso!<br/>Próximo passo: ${res.next_step}.`
+        } else {
+          msgBox.className = 'alert alert-amber mb-4'
+          msgText.innerHTML = `Ninguém obteve a maioria absoluta necessária nesta rodada.<br/>Próximo passo: ${res.next_step}.`
+        }
+
+        if (res.next_step.toLowerCase().includes('concluída') || res.next_step.toLowerCase().includes('concluida')) {
+          nextBtn.textContent = 'Concluir Eleição e Salvar'
+        } else {
+          nextBtn.textContent = 'Avançar para o Próximo Passo'
+        }
+
+        openModal('modal-results')
+
+        // Setup click handler for next step button
+        document.getElementById('btn-next-step').onclick = async () => {
+          const nextBtn = document.getElementById('btn-next-step')
+          setLoading(nextBtn, true, 'Avançar para o Próximo Passo')
+          try {
+            await api.post('/api/elections/active/advance')
+            closeModal('modal-results')
+            loadScreen()
+          } catch (err) {
+            alert('Erro ao avançar de fase: ' + err.message)
+          } finally {
+            setLoading(nextBtn, false, 'Avançar para o Próximo Passo')
+          }
+        }
+      }
+
+      // Close Round / View Results
+      const btnCloseRound = document.getElementById('btn-close-round')
+      btnCloseRound.onclick = async () => {
+        const isResults = activeSession && activeSession.status === 'results'
+        const loadingText = isResults ? 'Carregando Apuração...' : 'Encerrar Votação'
+        setLoading(btnCloseRound, true, loadingText)
         clearAlert('results-alert')
 
         try {
-          const res = await api.post('/api/elections/active/close-round')
-
-          // Show Results Modal
-          document.getElementById('results-step-label').textContent = `${ROLE_LABELS[activeSession.current_role] || activeSession.current_role} — ${activeSession.current_round}º Escrutínio`
-          document.getElementById('results-total-label').textContent = `Total de votos: ${res.total_votes}`
-
-          // Injected bars
-          const barsContainer = document.getElementById('results-bars-container')
-          if (!res.results.length) {
-            barsContainer.innerHTML = '<p class="text-slate-400 text-center py-3">Nenhum voto foi computado.</p>'
+          let res
+          if (isResults) {
+            res = await api.get('/api/elections/active/results')
           } else {
-            barsContainer.innerHTML = res.results.map(r => {
-              const pct = res.total_votes > 0 ? Math.round((r.votes / res.total_votes) * 100) : 0
-              return `
-              <div class="result-bar-container">
-                <div class="result-bar-header">
-                  <span>${r.name}</span>
-                  <span>${r.votes} voto${r.votes !== 1 ? 's' : ''} (${pct}%)</span>
-                </div>
-                <div class="result-bar-bg">
-                  <div class="result-bar-fill" style="width: ${pct}%"></div>
-                </div>
-              </div>
-            `
-            }).join('')
+            res = await api.post('/api/elections/active/close-round')
           }
-
-          // Success / Progress Message
-          const msgText = document.getElementById('results-message-text')
-          const msgBox = document.getElementById('results-message-box')
-          const nextBtn = document.getElementById('btn-next-step')
-
-          if (res.elected) {
-            msgBox.className = 'alert alert-success mb-4'
-            msgText.innerHTML = `<strong>${res.winner_name}</strong> foi eleito(a) com sucesso!<br/>Próximo passo: ${res.next_step}.`
-          } else {
-            msgBox.className = 'alert alert-amber mb-4'
-            msgText.innerHTML = `Ninguém obteve a maioria absoluta necessária nesta rodada.<br/>Próximo passo: ${res.next_step}.`
-          }
-
-          if (res.next_step.toLowerCase().includes('concluída') || res.next_step.toLowerCase().includes('concluida')) {
-            nextBtn.textContent = 'Concluir Eleição e Salvar'
-          } else {
-            nextBtn.textContent = 'Avançar para o Próximo Passo'
-          }
-
-          openModal('modal-results')
-
-          // Setup click handler for next step button
-          document.getElementById('btn-next-step').onclick = async () => {
-            const nextBtn = document.getElementById('btn-next-step')
-            setLoading(nextBtn, true, 'Avançar para o Próximo Passo')
-            try {
-              await api.post('/api/elections/active/advance')
-              closeModal('modal-results')
-              loadScreen()
-            } catch (err) {
-              alert('Erro ao avançar de fase: ' + err.message)
-            } finally {
-              setLoading(nextBtn, false, 'Avançar para o Próximo Passo')
-            }
-          }
-
+          showActiveResultsModal(res)
         } catch (err) {
           showAlert('page-alert', err.message, 'error')
         } finally {
-          setLoading(btn, false, 'Encerrar Votação')
+          setLoading(btnCloseRound, false, isResults ? 'Apuração / Avançar' : 'Encerrar Votação')
         }
-      })
+      }
 
       // ── SECTION HISTORY ──
       async function loadHistory() {

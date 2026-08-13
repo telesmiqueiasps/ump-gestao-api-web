@@ -382,6 +382,89 @@ def close_round(
         "total_votes": total_votes,
     }
 
+
+# Get Current Round Results (when status is 'results')
+@router.get("/active/results")
+def get_current_round_results(
+    current_user: User = Depends(require_local_or_federation),
+    db: Session = Depends(get_db),
+):
+    session = db.query(ElectionSession).filter(
+        ElectionSession.local_ump_id == current_user.organization_id,
+        ElectionSession.status == 'results'
+    ).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Nenhuma apuração ativa encontrada.")
+
+    # Fetch votes for the current role and round
+    votes = db.query(ElectionVote).filter(
+        ElectionVote.election_session_id == session.id,
+        ElectionVote.role == session.current_role,
+        ElectionVote.round == session.current_round
+    ).all()
+
+    total_votes = len(votes)
+    results = {}
+    for v in votes:
+        cid = v.candidate_member_id
+        results[cid] = results.get(cid, 0) + 1
+
+    results_list = []
+    for cid, count in results.items():
+        if cid is None:
+            name = "Branco/Nulo"
+            cid_str = "blank"
+        else:
+            m = db.query(Member).filter(Member.id == cid).first()
+            name = m.full_name if m else "Desconhecido"
+            cid_str = str(cid)
+        results_list.append({"candidate_id": cid_str, "name": name, "votes": count})
+    
+    results_list.sort(key=lambda x: x["votes"], reverse=True)
+
+    # Determine if winner is already elected (same logic as close_round)
+    elected = False
+    winner_name = None
+    next_step = ""
+
+    if total_votes > 0:
+        majority_threshold = total_votes / 2
+        top_candidate = results_list[0]
+        
+        if session.current_round in (1, 2):
+            if top_candidate["candidate_id"] != "blank" and top_candidate["votes"] > majority_threshold:
+                elected = True
+        else:
+            if top_candidate["candidate_id"] != "blank":
+                elected = True
+
+        if elected:
+            winner_name = top_candidate["name"]
+            roles = session.roles_to_dispute
+            current_idx = roles.index(session.current_role)
+            if current_idx + 1 < len(roles):
+                next_step = f"Iniciar votação para {roles[current_idx + 1].replace('_', ' ').title()}"
+            else:
+                next_step = "Eleição concluída"
+        else:
+            if session.current_round == 1:
+                next_step = "Iniciar 2º Escrutínio (todos os candidatos continuam)"
+            elif session.current_round == 2:
+                next_step = "Iniciar 3º Escrutínio (apenas os 2 mais votados)"
+            else:
+                next_step = "Empate no 3º Escrutínio. Uma nova votação da rodada 3 foi configurada."
+    else:
+        next_step = "Nenhum voto registrado. Repetindo a rodada atual."
+
+    return {
+        "elected": elected,
+        "winner_name": winner_name,
+        "next_step": next_step,
+        "results": results_list,
+        "total_votes": total_votes,
+    }
+
+
 # Cancel Active Election Session
 @router.post("/active/cancel")
 def cancel_election(
