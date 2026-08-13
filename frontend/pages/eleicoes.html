@@ -164,25 +164,45 @@
         left: 0;
         top: 0;
         width: 100%;
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.3cm;
       }
 
       .print-code-card {
-        border: 2px dashed #000;
-        padding: 1.5cm;
-        margin-bottom: 1cm;
+        border: 1.5px dashed #000 !important;
+        padding: 0.3cm !important;
+        margin-bottom: 0 !important;
         page-break-inside: avoid;
-        text-align: center;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 0.3cm !important;
+        text-align: left !important;
+        box-sizing: border-box;
       }
 
       .print-code-card h2 {
-        font-size: 1.6rem;
-        margin-bottom: 0.5cm;
+        font-size: 0.82rem !important;
+        margin: 0 0 0.05cm 0 !important;
+        font-weight: 800;
+      }
+
+      .print-code-card p {
+        margin: 0 !important;
+        font-size: 0.65rem !important;
       }
 
       .print-code-card .print-code {
-        font-size: 2.5rem;
+        font-size: 1.1rem !important;
         font-family: monospace;
         font-weight: bold;
+        background: #f1f5f9 !important;
+        border: 1px solid #cbd5e1 !important;
+        padding: 0.05cm 0.2cm !important;
+        border-radius: 4px !important;
+        display: inline-block !important;
+        margin-top: 0.05cm;
       }
     }
 
@@ -481,11 +501,16 @@
             </div>
 
             <div class="link-copy-box">
-              <div>
+              <div style="flex:1; min-width:200px">
                 <strong class="text-sm">Link da Urna Eletrônica Secreta:</strong>
                 <div class="link-copy-text" id="voting-url-text">http://...</div>
               </div>
-              <button class="btn btn-secondary btn-sm" id="btn-copy-url">Copiar Link</button>
+              <div style="display:flex; gap:.4rem; align-items:center; flex-wrap:wrap">
+                <button class="btn btn-secondary btn-sm" id="btn-show-qr" style="display:inline-flex;align-items:center;gap:.3rem">
+                  📱 Ver QR Code
+                </button>
+                <button class="btn btn-secondary btn-sm" id="btn-copy-url">Copiar Link</button>
+              </div>
             </div>
 
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .75rem; margin-bottom: 1rem;">
@@ -603,6 +628,23 @@
   </div>
 
   <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <!-- Modal QR Code da Urna Pública -->
+  <div class="modal-overlay" id="modal-voting-qr">
+    <div class="modal" style="max-width:340px; text-align:center; padding:1.5rem">
+      <div class="modal-header" style="justify-content:space-between; margin-bottom:.5rem">
+        <h3 style="font-size:1.05rem; font-weight:700; color:var(--slate-850)">Urna Pública</h3>
+        <button class="modal-close">✕</button>
+      </div>
+      <p style="font-size:.78rem; color:var(--slate-500); margin-bottom:1rem">Aponte a câmera do celular para acessar a votação</p>
+      <div style="background:#fff; border: 1.5px solid var(--slate-200); border-radius:12px; padding:12px; display:inline-block; margin-bottom:1rem">
+        <img id="voting-qr-image" src="" style="width:200px; height:200px; display:block" alt="QR Code da Urna" />
+      </div>
+      <div style="text-align:right">
+        <button class="btn btn-secondary btn-sm modal-close">Fechar</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Hidden Print Area for voter codes -->
   <div id="print-area" style="display:none"></div>
@@ -1000,6 +1042,13 @@
 
           renderVotersGrid()
 
+          // Configure click event QR button
+          document.getElementById('btn-show-qr').onclick = () => {
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(votingUrl)}`
+            document.getElementById('voting-qr-image').src = qrUrl
+            openModal('modal-voting-qr')
+          }
+
           // Configure click event copy button
           document.getElementById('btn-copy-url').onclick = () => {
             navigator.clipboard.writeText(votingUrl)
@@ -1016,15 +1065,22 @@
           // Print Codes
           document.getElementById('btn-print-codes').onclick = () => {
             const printArea = document.getElementById('print-area')
-            printArea.innerHTML = stats.voters.map(v => `
-            <div class="print-code-card">
-              <h2>${activeSession.title}</h2>
-              <p>Código Secreto de Voto para o sócio(a):</p>
-              <div style="font-size: 1.4rem; font-weight: bold; margin: 10px 0;">${v.full_name}</div>
-              <div class="print-code">${v.access_code}</div>
-              <p style="margin-top: 10px; font-size: 0.9rem;">Acesse: ${votingUrl}</p>
-            </div>
-          `).join('')
+            printArea.innerHTML = stats.voters.map(v => {
+              const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(votingUrl)}`
+              return `
+              <div class="print-code-card">
+                <div style="flex: 1; min-width: 0;">
+                  <h2>${activeSession.title}</h2>
+                  <p>Código Secreto de Voto para:</p>
+                  <div style="font-size: 0.9rem; font-weight: bold; margin: 4px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${v.full_name}</div>
+                  <div class="print-code">${v.access_code}</div>
+                </div>
+                <div style="text-align: center; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 3px;">
+                  <img src="${qrUrl}" style="width: 60px; height: 60px; display: block;" />
+                  <span style="font-size: 0.52rem; font-family: monospace;">Acesse a Urna</span>
+                </div>
+              </div>
+            `}).join('')
             window.print()
           }
 
