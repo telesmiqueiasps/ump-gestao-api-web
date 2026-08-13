@@ -150,13 +150,8 @@
     }
 
     @media print {
-      body * {
+      body > :not(#print-area) {
         display: none !important;
-      }
-
-      #print-area,
-      #print-area * {
-        display: block !important;
       }
 
       #print-area {
@@ -1081,7 +1076,25 @@
                 </div>
               </div>
             `}).join('')
-            window.print()
+
+            // Wait for all QR codes to finish loading from the API before opening the print dialog
+            const images = printArea.querySelectorAll('img')
+            let loadedCount = 0
+            if (images.length === 0) {
+              window.print()
+            } else {
+              images.forEach(img => {
+                img.onload = img.onerror = () => {
+                  loadedCount++
+                  if (loadedCount === images.length) {
+                    window.print()
+                  }
+                }
+                if (img.complete) {
+                  img.onload()
+                }
+              })
+            }
           }
 
         } catch (err) {
