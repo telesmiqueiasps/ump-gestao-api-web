@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -28,16 +29,19 @@
       gap: 1rem;
       flex-wrap: wrap;
     }
+
     .toolbar-left {
       display: flex;
       align-items: center;
       gap: .75rem;
     }
+
     .toolbar-right {
       display: flex;
       align-items: center;
       gap: .5rem;
     }
+
     .month-title {
       font-size: 1.35rem;
       font-weight: 700;
@@ -61,17 +65,19 @@
       flex-wrap: wrap;
       box-shadow: var(--shadow-sm);
     }
+
     .legend-item {
       display: flex;
       align-items: center;
       gap: .5rem;
     }
+
     .legend-color {
       width: 14px;
       height: 14px;
       border-radius: 4px;
       flex-shrink: 0;
-      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1);
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1);
     }
 
     /* ── Grade do Calendário ── */
@@ -82,22 +88,26 @@
       overflow: hidden;
       box-shadow: var(--shadow-sm);
     }
+
     .calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
       background: var(--slate-200);
       gap: 1px;
     }
+
     .calendar-day-header {
-      background: var(--slate-50);
+      background: var(--blue-50);
       padding: .8rem;
       text-align: center;
-      font-weight: 600;
+      font-weight: 700;
       font-size: .78rem;
-      color: var(--slate-500);
+      color: var(--blue-600);
       text-transform: uppercase;
       letter-spacing: .5px;
+      border-bottom: 1.5px solid var(--blue-100);
     }
+
     .calendar-day-cell {
       min-height: 110px;
       padding: .6rem;
@@ -109,26 +119,32 @@
       cursor: pointer;
       transition: background var(--transition);
     }
+
     .calendar-day-cell:hover {
       background: var(--slate-50);
     }
+
     .calendar-day-cell.other-month {
       background: var(--slate-50);
     }
+
     .calendar-day-cell.other-month .calendar-day-number {
       color: var(--slate-400);
       opacity: .6;
     }
+
     .calendar-day-cell.selected {
       background: var(--blue-50);
       box-shadow: inset 0 0 0 2px var(--blue-500);
     }
+
     .calendar-day-number {
       font-weight: 600;
       font-size: .85rem;
       color: var(--slate-800);
       align-self: flex-start;
     }
+
     .calendar-day-cell.today .calendar-day-number {
       background: var(--brand-orange);
       color: #fff;
@@ -149,6 +165,7 @@
       flex: 1;
       overflow: hidden;
     }
+
     .calendar-event-item {
       font-size: .7rem;
       padding: .2rem .4rem;
@@ -164,6 +181,7 @@
       display: flex;
       align-items: center;
     }
+
     .calendar-event-item:hover {
       opacity: .85;
     }
@@ -174,6 +192,7 @@
       justify-content: center;
       margin-top: auto;
     }
+
     .calendar-dot {
       width: 6px;
       height: 6px;
@@ -190,6 +209,7 @@
       margin-top: 1.25rem;
       box-shadow: var(--shadow-sm);
     }
+
     .day-events-title {
       font-size: .95rem;
       font-weight: 700;
@@ -205,21 +225,25 @@
       flex-direction: column;
       gap: 1rem;
     }
+
     .agenda-month-section {
       background: #fff;
       border-radius: var(--radius-lg);
       border: 1.5px solid var(--slate-200);
       padding: 1.25rem;
     }
+
     .agenda-item {
       display: flex;
       gap: 1.25rem;
       padding: .85rem 0;
       border-bottom: 1px solid var(--slate-100);
     }
+
     .agenda-item:last-child {
       border-bottom: none;
     }
+
     .agenda-date-box {
       display: flex;
       flex-direction: column;
@@ -232,12 +256,14 @@
       height: 58px;
       flex-shrink: 0;
     }
+
     .agenda-date-day {
       font-size: 1.2rem;
       font-weight: 700;
       color: var(--slate-800);
       line-height: 1;
     }
+
     .agenda-date-month {
       font-size: .65rem;
       font-weight: 600;
@@ -245,17 +271,20 @@
       text-transform: uppercase;
       margin-top: .15rem;
     }
+
     .agenda-content {
       flex: 1;
       display: flex;
       flex-direction: column;
       gap: .25rem;
     }
+
     .agenda-title {
       font-size: .9rem;
       font-weight: 600;
       color: var(--slate-800);
     }
+
     .agenda-meta {
       display: flex;
       align-items: center;
@@ -264,6 +293,7 @@
       color: var(--slate-500);
       flex-wrap: wrap;
     }
+
     .agenda-description {
       font-size: .8rem;
       color: var(--slate-600);
@@ -283,9 +313,11 @@
       transition: border-color var(--transition);
       cursor: pointer;
     }
+
     .event-card-item:hover {
       border-color: var(--slate-200);
     }
+
     .event-card-item:last-child {
       margin-bottom: 0;
     }
@@ -306,589 +338,603 @@
         justify-content: center;
         padding: .25rem;
       }
+
       .calendar-event-list {
         display: none;
       }
+
       .calendar-dots-container {
         display: flex;
       }
+
       .day-events-panel {
         display: block;
       }
     }
   </style>
 </head>
+
 <body>
 
-<div class="app-shell">
-  <!-- Sidebar -->
-  <aside class="sidebar">
-    <div class="sidebar-brand">
-      <img src="/assets/img/logo.png" class="sidebar-brand-logo" alt="Logo UMP" onerror="this.style.display='none'" />
-      <div class="sidebar-brand-text">
-        <h1>GESTÃO FPOPB</h1>
-        <p>Plataforma de Gestão</p>
+  <div class="app-shell">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <img src="/assets/img/logo.png" class="sidebar-brand-logo" alt="Logo UMP" onerror="this.style.display='none'" />
+        <div class="sidebar-brand-text">
+          <h1>GESTÃO FPOPB</h1>
+          <p>Plataforma de Gestão</p>
+        </div>
       </div>
+      <nav class="sidebar-nav" id="sidebar-nav"></nav>
+      <div class="sidebar-footer">v1.0.0</div>
+    </aside>
+
+    <!-- Main Area -->
+    <div class="main-area">
+      <header class="header">
+        <div class="header-left">
+          <button class="btn-menu" id="btn-menu">☰</button>
+          <div class="header-org">
+            <span class="header-org-name" id="header-org-name"></span>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="header-user">
+            <div class="header-user-name" id="header-name"></div>
+            <div class="header-user-role" id="header-role"></div>
+          </div>
+          <div class="header-avatar" id="header-avatar"></div>
+          <button class="btn-logout" id="btn-logout" title="Sair"><img src="/assets/img/sair.png" alt="Sair"
+              style="width:20px;height:20px;display:block" /></button>
+        </div>
+      </header>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div class="page-header-info">
+            <h1>Calendário</h1>
+            <p>Programações e atividades da Federação e Sociedades Locais</p>
+          </div>
+          <div class="page-header-actions">
+            <button class="btn btn-primary" id="btn-add-event" style="display:none">
+              <span>+</span> Nova Programação
+            </button>
+          </div>
+        </div>
+
+        <!-- Barra de Controle do Calendário -->
+        <div class="calendar-toolbar">
+          <div class="toolbar-left">
+            <button class="btn btn-secondary btn-sm" id="btn-prev-month">&lt;</button>
+            <button class="btn btn-secondary btn-sm" id="btn-today">Hoje</button>
+            <button class="btn btn-secondary btn-sm" id="btn-next-month">&gt;</button>
+            <h2 class="month-title" id="month-title">—</h2>
+          </div>
+          <div class="toolbar-right">
+            <button class="btn btn-secondary btn-sm active" id="btn-view-grid">📅 Grade</button>
+            <button class="btn btn-secondary btn-sm" id="btn-view-agenda">📋 Agenda</button>
+          </div>
+        </div>
+
+        <!-- Legenda das Organizações (Preenchida dinamicamente) -->
+        <div class="calendar-legend" id="calendar-legend">
+          <!-- Gerada via JS conforme as programações ativas -->
+        </div>
+
+        <!-- Visualização 1: Grade de Calendário -->
+        <div id="calendar-grid-view">
+          <div class="calendar-grid-container">
+            <div class="calendar-grid" id="calendar-grid-header">
+              <div class="calendar-day-header">Dom</div>
+              <div class="calendar-day-header">Seg</div>
+              <div class="calendar-day-header">Ter</div>
+              <div class="calendar-day-header">Qua</div>
+              <div class="calendar-day-header">Qui</div>
+              <div class="calendar-day-header">Sex</div>
+              <div class="calendar-day-header">Sáb</div>
+            </div>
+            <div class="calendar-grid" id="calendar-grid-body">
+              <!-- Dias injetados via JS -->
+            </div>
+          </div>
+
+          <!-- Seção de detalhes do dia selecionado (exibido em mobile) -->
+          <div class="day-events-panel" id="day-events-panel">
+            <h3 class="day-events-title" id="day-events-title">Programações para o dia</h3>
+            <div class="stack" id="day-events-list">
+              <!-- Programações do dia selecionado injetadas via JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Visualização 2: Lista / Agenda -->
+        <div id="calendar-agenda-view" style="display:none">
+          <div class="agenda-container" id="agenda-container">
+            <!-- Timeline de programações injetada via JS -->
+          </div>
+        </div>
+      </main>
     </div>
-    <nav class="sidebar-nav" id="sidebar-nav"></nav>
-    <div class="sidebar-footer">v1.0.0</div>
-  </aside>
-
-  <!-- Main Area -->
-  <div class="main-area">
-    <header class="header">
-      <div class="header-left">
-        <button class="btn-menu" id="btn-menu">☰</button>
-        <div class="header-org">
-          <span class="header-org-name" id="header-org-name"></span>
-        </div>
-      </div>
-      <div class="header-right">
-        <div class="header-user">
-          <div class="header-user-name" id="header-name"></div>
-          <div class="header-user-role" id="header-role"></div>
-        </div>
-        <div class="header-avatar" id="header-avatar"></div>
-        <button class="btn-logout" id="btn-logout" title="Sair"><img src="/assets/img/sair.png" alt="Sair" style="width:20px;height:20px;display:block" /></button>
-      </div>
-    </header>
-
-    <main class="page-content">
-      <div class="page-header">
-        <div class="page-header-info">
-          <h1>📅 Calendário</h1>
-          <p>Programações e atividades da Federação e Sociedades Locais</p>
-        </div>
-        <div class="page-header-actions">
-          <button class="btn btn-primary" id="btn-add-event" style="display:none">
-            <span>+</span> Nova Programação
-          </button>
-        </div>
-      </div>
-
-      <!-- Barra de Controle do Calendário -->
-      <div class="calendar-toolbar">
-        <div class="toolbar-left">
-          <button class="btn btn-secondary btn-sm" id="btn-prev-month">&lt;</button>
-          <button class="btn btn-secondary btn-sm" id="btn-today">Hoje</button>
-          <button class="btn btn-secondary btn-sm" id="btn-next-month">&gt;</button>
-          <h2 class="month-title" id="month-title">—</h2>
-        </div>
-        <div class="toolbar-right">
-          <button class="btn btn-secondary btn-sm active" id="btn-view-grid">📅 Grade</button>
-          <button class="btn btn-secondary btn-sm" id="btn-view-agenda">📋 Agenda</button>
-        </div>
-      </div>
-
-      <!-- Legenda das Organizações (Preenchida dinamicamente) -->
-      <div class="calendar-legend" id="calendar-legend">
-        <!-- Gerada via JS conforme as programações ativas -->
-      </div>
-
-      <!-- Visualização 1: Grade de Calendário -->
-      <div id="calendar-grid-view">
-        <div class="calendar-grid-container">
-          <div class="calendar-grid" id="calendar-grid-header">
-            <div class="calendar-day-header">Dom</div>
-            <div class="calendar-day-header">Seg</div>
-            <div class="calendar-day-header">Ter</div>
-            <div class="calendar-day-header">Qua</div>
-            <div class="calendar-day-header">Qui</div>
-            <div class="calendar-day-header">Sex</div>
-            <div class="calendar-day-header">Sáb</div>
-          </div>
-          <div class="calendar-grid" id="calendar-grid-body">
-            <!-- Dias injetados via JS -->
-          </div>
-        </div>
-
-        <!-- Seção de detalhes do dia selecionado (exibido em mobile) -->
-        <div class="day-events-panel" id="day-events-panel">
-          <h3 class="day-events-title" id="day-events-title">Programações para o dia</h3>
-          <div class="stack" id="day-events-list">
-            <!-- Programações do dia selecionado injetadas via JS -->
-          </div>
-        </div>
-      </div>
-
-      <!-- Visualização 2: Lista / Agenda -->
-      <div id="calendar-agenda-view" style="display:none">
-        <div class="agenda-container" id="agenda-container">
-          <!-- Timeline de programações injetada via JS -->
-        </div>
-      </div>
-    </main>
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
   </div>
-  <div class="sidebar-overlay" id="sidebar-overlay"></div>
-</div>
 
-<!-- MODAL 1: Detalhes da Programação -->
-<div class="modal-overlay" id="modal-event-detail">
-  <div class="modal">
-    <div class="modal-header" style="border-bottom: 1px solid var(--slate-100); padding-bottom: 0.75rem;">
-      <h2 id="detail-title" style="line-height: 1.3; font-size: 1.25rem;">—</h2>
-      <button class="modal-close" onclick="closeModal('modal-event-detail')">✕</button>
-    </div>
-
-    <!-- Destaque do Organizador com Logo e Nome da Sociedade -->
-    <div id="detail-org-banner" style="background: var(--slate-50); border: 1.5px solid var(--slate-200); border-radius: var(--radius-lg); padding: 0.85rem 1rem; display: flex; align-items: center; gap: 0.85rem; margin-top: 1rem; margin-bottom: 1rem; border-left: 4.5px solid var(--brand-blue); transition: border-color 0.15s ease;">
-      <img id="detail-org-logo" src="" style="width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 2.5px solid #fff; box-shadow: var(--shadow-sm); flex-shrink: 0;" onerror="this.src='/assets/img/logo.png';" />
-      <div>
-        <p class="text-xs text-slate-400 font-medium" style="margin: 0; text-transform: uppercase; letter-spacing: 0.4px;">Realização / Sociedade</p>
-        <h4 class="font-bold text-sm" id="detail-organizer" style="color: var(--slate-850); margin: 0; margin-top: 2px; font-size: 0.95rem;">—</h4>
+  <!-- MODAL 1: Detalhes da Programação -->
+  <div class="modal-overlay" id="modal-event-detail">
+    <div class="modal">
+      <div class="modal-header" style="border-bottom: 1px solid var(--slate-100); padding-bottom: 0.75rem;">
+        <h2 id="detail-title" style="line-height: 1.3; font-size: 1.25rem;">—</h2>
+        <button class="modal-close" onclick="closeModal('modal-event-detail')">✕</button>
       </div>
-    </div>
 
-    <div style="display:flex;flex-direction:column;gap:.75rem">
-      <div style="display:flex;align-items:center;gap:.5rem">
-        <span style="font-size:1.1rem">⏰</span>
+      <!-- Destaque do Organizador com Logo e Nome da Sociedade -->
+      <div id="detail-org-banner"
+        style="background: var(--slate-50); border: 1.5px solid var(--slate-200); border-radius: var(--radius-lg); padding: 0.85rem 1rem; display: flex; align-items: center; gap: 0.85rem; margin-top: 1rem; margin-bottom: 1rem; border-left: 4.5px solid var(--brand-blue); transition: border-color 0.15s ease;">
+        <img id="detail-org-logo" src=""
+          style="width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 2.5px solid #fff; box-shadow: var(--shadow-sm); flex-shrink: 0;"
+          onerror="this.src='/assets/img/logo.png';" />
         <div>
-          <p class="text-xs text-slate-400">Horário</p>
-          <p class="font-semi text-sm" id="detail-time">—</p>
+          <p class="text-xs text-slate-400 font-medium"
+            style="margin: 0; text-transform: uppercase; letter-spacing: 0.4px;">Realização / Sociedade</p>
+          <h4 class="font-bold text-sm" id="detail-organizer"
+            style="color: var(--slate-850); margin: 0; margin-top: 2px; font-size: 0.95rem;">—</h4>
         </div>
       </div>
 
-      <div style="display:flex;align-items:center;gap:.5rem" id="detail-location-container">
-        <span style="font-size:1.1rem">📍</span>
-        <div>
-          <p class="text-xs text-slate-400">Localização</p>
-          <p class="font-semi text-sm" id="detail-location">—</p>
+      <div style="display:flex;flex-direction:column;gap:.75rem">
+        <div style="display:flex;align-items:center;gap:.5rem">
+          <span style="font-size:1.1rem">⏰</span>
+          <div>
+            <p class="text-xs text-slate-400">Horário</p>
+            <p class="font-semi text-sm" id="detail-time">—</p>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:.5rem" id="detail-location-container">
+          <span style="font-size:1.1rem">📍</span>
+          <div>
+            <p class="text-xs text-slate-400">Localização</p>
+            <p class="font-semi text-sm" id="detail-location">—</p>
+          </div>
+        </div>
+
+        <div style="border-top:1px solid var(--slate-100);padding-top:.75rem;margin-top:.25rem">
+          <p class="text-xs text-slate-400 mb-1">Descrição</p>
+          <p class="text-sm" id="detail-description"
+            style="white-space:pre-wrap;line-height:1.5;color:var(--slate-700)">—</p>
         </div>
       </div>
 
-      <div style="border-top:1px solid var(--slate-100);padding-top:.75rem;margin-top:.25rem">
-        <p class="text-xs text-slate-400 mb-1">Descrição</p>
-        <p class="text-sm" id="detail-description" style="white-space:pre-wrap;line-height:1.5;color:var(--slate-700)">—</p>
+      <div class="modal-footer" style="margin-top:1.5rem;justify-content:space-between">
+        <div id="owner-actions" style="display:none;gap:.5rem">
+          <button class="btn btn-danger btn-sm" id="btn-delete-event">Excluir</button>
+          <button class="btn btn-secondary btn-sm" id="btn-edit-event">Editar</button>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="closeModal('modal-event-detail')">Fechar</button>
       </div>
-    </div>
-    
-    <div class="modal-footer" style="margin-top:1.5rem;justify-content:space-between">
-      <div id="owner-actions" style="display:none;gap:.5rem">
-        <button class="btn btn-danger btn-sm" id="btn-delete-event">Excluir</button>
-        <button class="btn btn-secondary btn-sm" id="btn-edit-event">Editar</button>
-      </div>
-      <button class="btn btn-secondary btn-sm" onclick="closeModal('modal-event-detail')">Fechar</button>
     </div>
   </div>
-</div>
 
-<!-- MODAL 2: Criar / Editar Programação -->
-<div class="modal-overlay" id="modal-event-form">
-  <div class="modal">
-    <div class="modal-header">
-      <h2 id="form-modal-title">Nova Programação</h2>
-      <button class="modal-close" onclick="closeModal('modal-event-form')">✕</button>
+  <!-- MODAL 2: Criar / Editar Programação -->
+  <div class="modal-overlay" id="modal-event-form">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="form-modal-title">Nova Programação</h2>
+        <button class="modal-close" onclick="closeModal('modal-event-form')">✕</button>
+      </div>
+      <form id="event-form" style="display:flex;flex-direction:column;gap:1rem">
+        <input type="hidden" id="form-event-id" />
+
+        <div class="field">
+          <label>Título da Programação *</label>
+          <input class="input" type="text" id="form-title" required placeholder="Ex: Acampamento de Jovens"
+            maxlength="200" />
+        </div>
+
+        <div class="grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div class="field">
+            <label>Início *</label>
+            <input class="input" type="datetime-local" id="form-start-date" required />
+          </div>
+          <div class="field">
+            <label>Fim (Opcional)</label>
+            <input class="input" type="datetime-local" id="form-end-date" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Local / Link Online</label>
+          <input class="input" type="text" id="form-location" placeholder="Ex: Templo Central ou Link do Zoom"
+            maxlength="200" />
+        </div>
+
+        <div class="field">
+          <label>Descrição / Detalhes</label>
+          <textarea class="input" id="form-description" rows="4"
+            placeholder="Adicione informações extras sobre a programação..."></textarea>
+        </div>
+
+        <div id="form-error-alert" class="alert alert-danger hidden"></div>
+
+        <div class="modal-footer" style="margin-top:.5rem">
+          <button class="btn btn-secondary" type="button" onclick="closeModal('modal-event-form')">Cancelar</button>
+          <button class="btn btn-primary" type="submit" id="btn-save-event">Salvar</button>
+        </div>
+      </form>
     </div>
-    <form id="event-form" style="display:flex;flex-direction:column;gap:1rem">
-      <input type="hidden" id="form-event-id" />
-      
-      <div class="field">
-        <label>Título da Programação *</label>
-        <input class="input" type="text" id="form-title" required placeholder="Ex: Acampamento de Jovens" maxlength="200" />
-      </div>
-
-      <div class="grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
-        <div class="field">
-          <label>Início *</label>
-          <input class="input" type="datetime-local" id="form-start-date" required />
-        </div>
-        <div class="field">
-          <label>Fim (Opcional)</label>
-          <input class="input" type="datetime-local" id="form-end-date" />
-        </div>
-      </div>
-
-      <div class="field">
-        <label>Local / Link Online</label>
-        <input class="input" type="text" id="form-location" placeholder="Ex: Templo Central ou Link do Zoom" maxlength="200" />
-      </div>
-
-      <div class="field">
-        <label>Descrição / Detalhes</label>
-        <textarea class="input" id="form-description" rows="4" placeholder="Adicione informações extras sobre a programação..."></textarea>
-      </div>
-
-      <div id="form-error-alert" class="alert alert-danger hidden"></div>
-
-      <div class="modal-footer" style="margin-top:.5rem">
-        <button class="btn btn-secondary" type="button" onclick="closeModal('modal-event-form')">Cancelar</button>
-        <button class="btn btn-primary" type="submit" id="btn-save-event">Salvar</button>
-      </div>
-    </form>
   </div>
-</div>
 
-<script type="module">
-  import { requireAuth, getUser, isFederation, isLocalUmp, hasRole } from '../assets/js/auth.js?v=9'
-  import { renderShell, canAccessPage, renderBottomNav } from '../assets/js/router.v3.js?v=9'
-  import { api } from '../assets/js/api.js?v=9'
+  <script type="module">
+    import { requireAuth, getUser, isFederation, isLocalUmp, hasRole } from '../assets/js/auth.js?v=9'
+    import { renderShell, canAccessPage, renderBottomNav } from '../assets/js/router.v3.js?v=9'
+    import { api } from '../assets/js/api.js?v=9'
 
-  // Variáveis Globais de Estado
-  let currentDate = new Date()
-  let allEvents = []
-  let selectedDate = new Date()
-  let viewMode = 'grid' // 'grid' ou 'agenda'
-  let currentUser = null
-  let societyType = 'UMP'
+    // Variáveis Globais de Estado
+    let currentDate = new Date()
+    let allEvents = []
+    let selectedDate = new Date()
+    let viewMode = 'grid' // 'grid' ou 'agenda'
+    let currentUser = null
+    let societyType = 'UMP'
 
-  // Paleta de Cores Premium (Cores bem distintas e com excelente contraste para texto branco)
-  const PRESET_COLORS = [
-    '#1a2a6c', // Navy Blue
-    '#e8630a', // Orange
-    '#15803d', // Green
-    '#dc2626', // Red
-    '#7c3aed', // Purple/Violet
-    '#0891b2', // Cyan
-    '#db2777', // Pink
-    '#b45309', // Amber
-    '#4f46e5', // Indigo
-    '#0d9488', // Teal
-    '#c026d3', // Fuchsia
-    '#475569', // Slate
-    '#be123c', // Rose
-    '#0369a1', // Light Blue
-    '#166534', // Forest Green
-    '#854d0e'  // Mustard/Amber Dark
-  ]
+    // Paleta de Cores Premium (Cores bem distintas e com excelente contraste para texto branco)
+    const PRESET_COLORS = [
+      '#1a2a6c', // Navy Blue
+      '#e8630a', // Orange
+      '#15803d', // Green
+      '#dc2626', // Red
+      '#7c3aed', // Purple/Violet
+      '#0891b2', // Cyan
+      '#db2777', // Pink
+      '#b45309', // Amber
+      '#4f46e5', // Indigo
+      '#0d9488', // Teal
+      '#c026d3', // Fuchsia
+      '#475569', // Slate
+      '#be123c', // Rose
+      '#0369a1', // Light Blue
+      '#166534', // Forest Green
+      '#854d0e'  // Mustard/Amber Dark
+    ]
 
-  // Mapeamento dinâmico de IDs de organização para as cores
-  const orgColorMap = {}
-  let colorCounter = 0
+    // Mapeamento dinâmico de IDs de organização para as cores
+    const orgColorMap = {}
+    let colorCounter = 0
 
-  function getColorForOrg(orgId) {
-    if (!orgId) return '#1a2a6c'
-    if (orgColorMap[orgId]) {
-      return orgColorMap[orgId]
-    }
-    const color = PRESET_COLORS[colorCounter % PRESET_COLORS.length]
-    orgColorMap[orgId] = color
-    colorCounter++
-    return color
-  }
-
-  // Configuração de nomes e meses em português
-  const MONTH_NAMES = [
-    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
-  ]
-
-  // Permissões de escrita
-  function canManageEvents() {
-    return hasRole('presidente', 'vice_presidente', '1_secretario', '2_secretario', 'secretario_executivo')
-  }
-
-  // Inicialização da Página
-  (async () => {
-    if (!requireAuth()) throw new Error('Não autenticado')
-    if (!canAccessPage('calendar')) window.location.href = '/pages/dashboard.html'
-
-    await renderShell()
-    renderBottomNav('calendar')
-    document.querySelector('[data-page="calendar"]')?.classList.add('active')
-
-    currentUser = getUser()
-    societyType = localStorage.getItem('society_type') || 'UMP'
-
-    // Exibir botão de adicionar se possuir privilégios
-    if (canManageEvents()) {
-      document.getElementById('btn-add-event').style.display = 'inline-flex'
-    }
-
-    // Configurar listeners de navegação
-    document.getElementById('btn-prev-month').addEventListener('click', prevMonth)
-    document.getElementById('btn-next-month').addEventListener('click', nextMonth)
-    document.getElementById('btn-today').addEventListener('click', goToday)
-    document.getElementById('btn-view-grid').addEventListener('click', () => switchView('grid'))
-    document.getElementById('btn-view-agenda').addEventListener('click', () => switchView('agenda'))
-    document.getElementById('btn-add-event').addEventListener('click', () => openCreateModal())
-    document.getElementById('event-form').addEventListener('submit', handleFormSubmit)
-    document.getElementById('btn-delete-event').addEventListener('click', handleDeleteEvent)
-    document.getElementById('btn-edit-event').addEventListener('click', handleEditEvent)
-
-    // Fechar modais ao clicar no background overlay
-    document.querySelectorAll('.modal-overlay').forEach(modal => {
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal) closeModal(modal.id)
-      })
-    })
-
-    // Carregar dados e renderizar
-    await loadEvents()
-  })()
-
-  // Buscar eventos do backend
-  async function loadEvents() {
-    try {
-      allEvents = await api.get('/api/calendar/')
-      render()
-    } catch (err) {
-      console.error("Erro ao carregar programações:", err)
-      alert("Falha ao carregar as programações do calendário.")
-    }
-  }
-
-  // Comuta a visualização (Grade vs Agenda)
-  function switchView(mode) {
-    viewMode = mode
-    document.getElementById('btn-view-grid').classList.toggle('active', mode === 'grid')
-    document.getElementById('btn-view-agenda').classList.toggle('active', mode === 'agenda')
-    
-    document.getElementById('calendar-grid-view').style.display = mode === 'grid' ? 'block' : 'none'
-    document.getElementById('calendar-agenda-view').style.display = mode === 'agenda' ? 'block' : 'none'
-
-    render()
-  }
-
-  // Navegação de Meses
-  function prevMonth() {
-    currentDate.setMonth(currentDate.getMonth() - 1)
-    render()
-  }
-
-  function nextMonth() {
-    currentDate.setMonth(currentDate.getMonth() + 1)
-    render()
-  }
-
-  // Volta para data atual
-  function goToday() {
-    currentDate = new Date()
-    selectedDate = new Date()
-    render()
-  }
-
-  // Renderização Geral
-  function render() {
-    const year = currentDate.getFullYear()
-    const month = currentDate.getMonth()
-
-    // Atualiza título do cabeçalho
-    document.getElementById('month-title').textContent = `${MONTH_NAMES[month]} de ${year}`
-
-    // Renderiza legenda dinamicamente
-    renderDynamicLegend()
-
-    if (viewMode === 'grid') {
-      renderGridView(year, month)
-    } else {
-      renderAgendaView(year, month)
-    }
-  }
-
-  // Renderiza a Legenda Dinamicamente baseada nos eventos e nas cores mapeadas
-  function renderDynamicLegend() {
-    const legendEl = document.getElementById('calendar-legend')
-    legendEl.innerHTML = ''
-
-    const uniqueOrgs = {}
-    allEvents.forEach(event => {
-      const orgId = event.local_ump_id || event.federation_id
-      if (!uniqueOrgs[orgId]) {
-        uniqueOrgs[orgId] = {
-          name: event.organizer_name,
-          color: getColorForOrg(orgId)
-        }
+    function getColorForOrg(orgId) {
+      if (!orgId) return '#1a2a6c'
+      if (orgColorMap[orgId]) {
+        return orgColorMap[orgId]
       }
-    })
+      const color = PRESET_COLORS[colorCounter % PRESET_COLORS.length]
+      orgColorMap[orgId] = color
+      colorCounter++
+      return color
+    }
 
-    const orgsList = Object.values(uniqueOrgs)
+    // Configuração de nomes e meses em português
+    const MONTH_NAMES = [
+      "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+      "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+    ]
 
-    if (orgsList.length === 0) {
-      legendEl.innerHTML = `
+    // Permissões de escrita
+    function canManageEvents() {
+      return hasRole('presidente', 'vice_presidente', '1_secretario', '2_secretario', 'secretario_executivo')
+    }
+
+    // Inicialização da Página
+    (async () => {
+      if (!requireAuth()) throw new Error('Não autenticado')
+      if (!canAccessPage('calendar')) window.location.href = '/pages/dashboard.html'
+
+      await renderShell()
+      renderBottomNav('calendar')
+      document.querySelector('[data-page="calendar"]')?.classList.add('active')
+
+      currentUser = getUser()
+      societyType = localStorage.getItem('society_type') || 'UMP'
+
+      // Exibir botão de adicionar se possuir privilégios
+      if (canManageEvents()) {
+        document.getElementById('btn-add-event').style.display = 'inline-flex'
+      }
+
+      // Configurar listeners de navegação
+      document.getElementById('btn-prev-month').addEventListener('click', prevMonth)
+      document.getElementById('btn-next-month').addEventListener('click', nextMonth)
+      document.getElementById('btn-today').addEventListener('click', goToday)
+      document.getElementById('btn-view-grid').addEventListener('click', () => switchView('grid'))
+      document.getElementById('btn-view-agenda').addEventListener('click', () => switchView('agenda'))
+      document.getElementById('btn-add-event').addEventListener('click', () => openCreateModal())
+      document.getElementById('event-form').addEventListener('submit', handleFormSubmit)
+      document.getElementById('btn-delete-event').addEventListener('click', handleDeleteEvent)
+      document.getElementById('btn-edit-event').addEventListener('click', handleEditEvent)
+
+      // Fechar modais ao clicar no background overlay
+      document.querySelectorAll('.modal-overlay').forEach(modal => {
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) closeModal(modal.id)
+        })
+      })
+
+      // Carregar dados e renderizar
+      await loadEvents()
+    })()
+
+    // Buscar eventos do backend
+    async function loadEvents() {
+      try {
+        allEvents = await api.get('/api/calendar/')
+        render()
+      } catch (err) {
+        console.error("Erro ao carregar programações:", err)
+        alert("Falha ao carregar as programações do calendário.")
+      }
+    }
+
+    // Comuta a visualização (Grade vs Agenda)
+    function switchView(mode) {
+      viewMode = mode
+      document.getElementById('btn-view-grid').classList.toggle('active', mode === 'grid')
+      document.getElementById('btn-view-agenda').classList.toggle('active', mode === 'agenda')
+
+      document.getElementById('calendar-grid-view').style.display = mode === 'grid' ? 'block' : 'none'
+      document.getElementById('calendar-agenda-view').style.display = mode === 'agenda' ? 'block' : 'none'
+
+      render()
+    }
+
+    // Navegação de Meses
+    function prevMonth() {
+      currentDate.setMonth(currentDate.getMonth() - 1)
+      render()
+    }
+
+    function nextMonth() {
+      currentDate.setMonth(currentDate.getMonth() + 1)
+      render()
+    }
+
+    // Volta para data atual
+    function goToday() {
+      currentDate = new Date()
+      selectedDate = new Date()
+      render()
+    }
+
+    // Renderização Geral
+    function render() {
+      const year = currentDate.getFullYear()
+      const month = currentDate.getMonth()
+
+      // Atualiza título do cabeçalho
+      document.getElementById('month-title').textContent = `${MONTH_NAMES[month]} de ${year}`
+
+      // Renderiza legenda dinamicamente
+      renderDynamicLegend()
+
+      if (viewMode === 'grid') {
+        renderGridView(year, month)
+      } else {
+        renderAgendaView(year, month)
+      }
+    }
+
+    // Renderiza a Legenda Dinamicamente baseada nos eventos e nas cores mapeadas
+    function renderDynamicLegend() {
+      const legendEl = document.getElementById('calendar-legend')
+      legendEl.innerHTML = ''
+
+      const uniqueOrgs = {}
+      allEvents.forEach(event => {
+        const orgId = event.local_ump_id || event.federation_id
+        if (!uniqueOrgs[orgId]) {
+          uniqueOrgs[orgId] = {
+            name: event.organizer_name,
+            color: getColorForOrg(orgId)
+          }
+        }
+      })
+
+      const orgsList = Object.values(uniqueOrgs)
+
+      if (orgsList.length === 0) {
+        legendEl.innerHTML = `
         <div style="font-style: italic; opacity: 0.6; display: flex; align-items: center; gap: 0.5rem; width: 100%;">
           <span>📅 Nenhuma programação cadastrada neste período.</span>
         </div>`
-      return
-    }
+        return
+      }
 
-    orgsList.forEach(org => {
-      const item = document.createElement('div')
-      item.className = 'legend-item'
-      item.innerHTML = `
+      orgsList.forEach(org => {
+        const item = document.createElement('div')
+        item.className = 'legend-item'
+        item.innerHTML = `
         <div class="legend-color" style="background: ${org.color}"></div>
         <span style="font-weight: 600; color: var(--slate-700);">${org.name}</span>
       `
-      legendEl.appendChild(item)
-    })
-  }
-
-  // Renderiza Grade do Calendário
-  function renderGridView(year, month) {
-    const gridBody = document.getElementById('calendar-grid-body')
-    gridBody.innerHTML = ''
-
-    const firstDayIndex = new Date(year, month, 1).getDay()
-    const daysInMonth = new Date(year, month + 1, 0).getDate()
-    const daysInPrevMonth = new Date(year, month, 0).getDate()
-
-    const today = new Date()
-
-    // 1. Dias do mês anterior para alinhar a grade
-    for (let i = firstDayIndex; i > 0; i--) {
-      const dayNum = daysInPrevMonth - i + 1
-      const prevDate = new Date(year, month - 1, dayNum)
-      const cell = createDayCell(prevDate, dayNum, true)
-      gridBody.appendChild(cell)
-    }
-
-    // 2. Dias do mês atual
-    for (let dayNum = 1; dayNum <= daysInMonth; dayNum++) {
-      const currDate = new Date(year, month, dayNum)
-      const isToday = currDate.getDate() === today.getDate() && 
-                      currDate.getMonth() === today.getMonth() && 
-                      currDate.getFullYear() === today.getFullYear()
-      const cell = createDayCell(currDate, dayNum, false, isToday)
-      gridBody.appendChild(cell)
-    }
-
-    // 3. Dias do próximo mês para completar a última linha
-    const totalCells = 42
-    const remainingCells = totalCells - gridBody.children.length
-    for (let dayNum = 1; dayNum <= remainingCells; dayNum++) {
-      const nextDate = new Date(year, month + 1, dayNum)
-      const cell = createDayCell(nextDate, dayNum, true)
-      gridBody.appendChild(cell)
-    }
-
-    // Atualiza a visualização da listagem de eventos do dia selecionado
-    updateSelectedDayEvents()
-  }
-
-  // Cria elemento HTML de célula de dia
-  function createDayCell(date, dayNum, isOtherMonth, isToday = false) {
-    const cell = document.createElement('div')
-    cell.className = `calendar-day-cell`
-    if (isOtherMonth) cell.classList.add('other-month')
-    if (isToday) cell.classList.add('today')
-
-    // Verifica se este dia é o dia selecionado
-    if (selectedDate && 
-        date.getDate() === selectedDate.getDate() && 
-        date.getMonth() === selectedDate.getMonth() && 
-        date.getFullYear() === selectedDate.getFullYear()) {
-      cell.classList.add('selected')
-    }
-
-    // Número do dia
-    const numEl = document.createElement('div')
-    numEl.className = 'calendar-day-number'
-    numEl.textContent = dayNum
-    cell.appendChild(numEl)
-
-    // Filtrar programações que acontecem neste dia
-    const dayEvents = getEventsForDate(date)
-
-    // Lista de eventos (Desktop)
-    const listEl = document.createElement('div')
-    listEl.className = 'calendar-event-list'
-    
-    // Contêiner de bolinhas (Mobile)
-    const dotsEl = document.createElement('div')
-    dotsEl.className = 'calendar-dots-container'
-
-    dayEvents.forEach(event => {
-      const orgId = event.local_ump_id || event.federation_id
-      const orgColor = getColorForOrg(orgId)
-
-      // Bloco do Evento (Desktop)
-      const evItem = document.createElement('div')
-      evItem.className = `calendar-event-item`
-      evItem.style.backgroundColor = orgColor
-      evItem.style.color = '#ffffff'
-      evItem.title = `${event.title} (${event.organizer_name})`
-      
-      const logoHtml = event.logo_url 
-        ? `<img src="${event.logo_url}" style="width: 12px; height: 12px; border-radius: 50%; object-fit: cover; margin-right: 4px; vertical-align: middle; display: inline-block;" onerror="this.style.display='none'" />` 
-        : ''
-        
-      evItem.innerHTML = `${logoHtml}<span style="overflow:hidden; text-overflow:ellipsis;">${event.title}</span>`
-      
-      evItem.addEventListener('click', (e) => {
-        e.stopPropagation() // Impede disparar o clique do dia
-        openEventDetails(event)
+        legendEl.appendChild(item)
       })
-      listEl.appendChild(evItem)
-
-      // Bolinha (Mobile)
-      const dot = document.createElement('div')
-      dot.className = `calendar-dot`
-      dot.style.backgroundColor = orgColor
-      dotsEl.appendChild(dot)
-    })
-
-    cell.appendChild(listEl)
-    cell.appendChild(dotsEl)
-
-    // Clique na célula (para celulares seleciona o dia, e para todos atualiza lista inferior)
-    cell.addEventListener('click', () => {
-      selectedDate = date
-      
-      // Atualiza destaques nas células
-      document.querySelectorAll('.calendar-day-cell').forEach(c => c.classList.remove('selected'))
-      cell.classList.add('selected')
-
-      updateSelectedDayEvents()
-    })
-
-    return cell
-  }
-
-  // Filtra eventos que ocorrem em uma data
-  function getEventsForDate(date) {
-    return allEvents.filter(event => {
-      const start = new Date(event.start_date)
-      const end = event.end_date ? new Date(event.end_date) : start
-      
-      const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate())
-      const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate())
-      const checkDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-
-      return checkDay >= startDay && checkDay <= endDay
-    })
-  }
-
-  // Atualiza a visualização dos eventos do dia selecionado (para Mobile/aba inferior)
-  function updateSelectedDayEvents() {
-    const titleEl = document.getElementById('day-events-title')
-    const listEl = document.getElementById('day-events-list')
-
-    if (!selectedDate) {
-      listEl.innerHTML = '<div class="empty-box">Selecione um dia no calendário para ver suas programações.</div>'
-      return
     }
 
-    const day = selectedDate.getDate()
-    const month = MONTH_NAMES[selectedDate.getMonth()]
-    const weekday = selectedDate.toLocaleDateString('pt-BR', { weekday: 'long' })
-    titleEl.textContent = `Programações para ${day} de ${month} (${weekday})`
+    // Renderiza Grade do Calendário
+    function renderGridView(year, month) {
+      const gridBody = document.getElementById('calendar-grid-body')
+      gridBody.innerHTML = ''
 
-    const dayEvents = getEventsForDate(selectedDate)
+      const firstDayIndex = new Date(year, month, 1).getDay()
+      const daysInMonth = new Date(year, month + 1, 0).getDate()
+      const daysInPrevMonth = new Date(year, month, 0).getDate()
 
-    if (dayEvents.length === 0) {
-      listEl.innerHTML = `
+      const today = new Date()
+
+      // 1. Dias do mês anterior para alinhar a grade
+      for (let i = firstDayIndex; i > 0; i--) {
+        const dayNum = daysInPrevMonth - i + 1
+        const prevDate = new Date(year, month - 1, dayNum)
+        const cell = createDayCell(prevDate, dayNum, true)
+        gridBody.appendChild(cell)
+      }
+
+      // 2. Dias do mês atual
+      for (let dayNum = 1; dayNum <= daysInMonth; dayNum++) {
+        const currDate = new Date(year, month, dayNum)
+        const isToday = currDate.getDate() === today.getDate() &&
+          currDate.getMonth() === today.getMonth() &&
+          currDate.getFullYear() === today.getFullYear()
+        const cell = createDayCell(currDate, dayNum, false, isToday)
+        gridBody.appendChild(cell)
+      }
+
+      // 3. Dias do próximo mês para completar a última linha
+      const totalCells = 42
+      const remainingCells = totalCells - gridBody.children.length
+      for (let dayNum = 1; dayNum <= remainingCells; dayNum++) {
+        const nextDate = new Date(year, month + 1, dayNum)
+        const cell = createDayCell(nextDate, dayNum, true)
+        gridBody.appendChild(cell)
+      }
+
+      // Atualiza a visualização da listagem de eventos do dia selecionado
+      updateSelectedDayEvents()
+    }
+
+    // Cria elemento HTML de célula de dia
+    function createDayCell(date, dayNum, isOtherMonth, isToday = false) {
+      const cell = document.createElement('div')
+      cell.className = `calendar-day-cell`
+      if (isOtherMonth) cell.classList.add('other-month')
+      if (isToday) cell.classList.add('today')
+
+      // Verifica se este dia é o dia selecionado
+      if (selectedDate &&
+        date.getDate() === selectedDate.getDate() &&
+        date.getMonth() === selectedDate.getMonth() &&
+        date.getFullYear() === selectedDate.getFullYear()) {
+        cell.classList.add('selected')
+      }
+
+      // Número do dia
+      const numEl = document.createElement('div')
+      numEl.className = 'calendar-day-number'
+      numEl.textContent = dayNum
+      cell.appendChild(numEl)
+
+      // Filtrar programações que acontecem neste dia
+      const dayEvents = getEventsForDate(date)
+
+      // Lista de eventos (Desktop)
+      const listEl = document.createElement('div')
+      listEl.className = 'calendar-event-list'
+
+      // Contêiner de bolinhas (Mobile)
+      const dotsEl = document.createElement('div')
+      dotsEl.className = 'calendar-dots-container'
+
+      dayEvents.forEach(event => {
+        const orgId = event.local_ump_id || event.federation_id
+        const orgColor = getColorForOrg(orgId)
+
+        // Bloco do Evento (Desktop)
+        const evItem = document.createElement('div')
+        evItem.className = `calendar-event-item`
+        evItem.style.backgroundColor = orgColor
+        evItem.style.color = '#ffffff'
+        evItem.title = `${event.title} (${event.organizer_name})`
+
+        const logoHtml = event.logo_url
+          ? `<img src="${event.logo_url}" style="width: 12px; height: 12px; border-radius: 50%; object-fit: cover; margin-right: 4px; vertical-align: middle; display: inline-block;" onerror="this.style.display='none'" />`
+          : ''
+
+        evItem.innerHTML = `${logoHtml}<span style="overflow:hidden; text-overflow:ellipsis;">${event.title}</span>`
+
+        evItem.addEventListener('click', (e) => {
+          e.stopPropagation() // Impede disparar o clique do dia
+          openEventDetails(event)
+        })
+        listEl.appendChild(evItem)
+
+        // Bolinha (Mobile)
+        const dot = document.createElement('div')
+        dot.className = `calendar-dot`
+        dot.style.backgroundColor = orgColor
+        dotsEl.appendChild(dot)
+      })
+
+      cell.appendChild(listEl)
+      cell.appendChild(dotsEl)
+
+      // Clique na célula (para celulares seleciona o dia, e para todos atualiza lista inferior)
+      cell.addEventListener('click', () => {
+        selectedDate = date
+
+        // Atualiza destaques nas células
+        document.querySelectorAll('.calendar-day-cell').forEach(c => c.classList.remove('selected'))
+        cell.classList.add('selected')
+
+        updateSelectedDayEvents()
+      })
+
+      return cell
+    }
+
+    // Filtra eventos que ocorrem em uma data
+    function getEventsForDate(date) {
+      return allEvents.filter(event => {
+        const start = new Date(event.start_date)
+        const end = event.end_date ? new Date(event.end_date) : start
+
+        const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate())
+        const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate())
+        const checkDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+
+        return checkDay >= startDay && checkDay <= endDay
+      })
+    }
+
+    // Atualiza a visualização dos eventos do dia selecionado (para Mobile/aba inferior)
+    function updateSelectedDayEvents() {
+      const titleEl = document.getElementById('day-events-title')
+      const listEl = document.getElementById('day-events-list')
+
+      if (!selectedDate) {
+        listEl.innerHTML = '<div class="empty-box">Selecione um dia no calendário para ver suas programações.</div>'
+        return
+      }
+
+      const day = selectedDate.getDate()
+      const month = MONTH_NAMES[selectedDate.getMonth()]
+      const weekday = selectedDate.toLocaleDateString('pt-BR', { weekday: 'long' })
+      titleEl.textContent = `Programações para ${day} de ${month} (${weekday})`
+
+      const dayEvents = getEventsForDate(selectedDate)
+
+      if (dayEvents.length === 0) {
+        listEl.innerHTML = `
         <div class="empty-box">
           <div class="ei">📅</div>
           Nenhuma programação agendada para este dia.
         </div>`
-      return
-    }
+        return
+      }
 
-    listEl.innerHTML = ''
-    dayEvents.forEach(event => {
-      const start = new Date(event.start_date)
-      const timeStr = start.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-      const orgId = event.local_ump_id || event.federation_id
-      const orgColor = getColorForOrg(orgId)
+      listEl.innerHTML = ''
+      dayEvents.forEach(event => {
+        const start = new Date(event.start_date)
+        const timeStr = start.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        const orgId = event.local_ump_id || event.federation_id
+        const orgColor = getColorForOrg(orgId)
 
-      const item = document.createElement('div')
-      item.className = `event-card-item`
-      item.style.borderLeft = `4px solid ${orgColor}`
-      
-      const logoHtml = event.logo_url 
-        ? `<img src="${event.logo_url}" style="width: 14px; height: 14px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 4px; border: 1px solid var(--slate-200);" onerror="this.style.display='none'" />` 
-        : ''
+        const item = document.createElement('div')
+        item.className = `event-card-item`
+        item.style.borderLeft = `4px solid ${orgColor}`
 
-      item.innerHTML = `
+        const logoHtml = event.logo_url
+          ? `<img src="${event.logo_url}" style="width: 14px; height: 14px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 4px; border: 1px solid var(--slate-200);" onerror="this.style.display='none'" />`
+          : ''
+
+        item.innerHTML = `
         <div class="agenda-content">
           <div class="agenda-title">${event.title}</div>
           <div class="agenda-meta">
@@ -900,73 +946,73 @@
           </span>
         </div>
       `
-      item.addEventListener('click', () => openEventDetails(event))
-      listEl.appendChild(item)
-    })
-  }
+        item.addEventListener('click', () => openEventDetails(event))
+        listEl.appendChild(item)
+      })
+    }
 
-  // Renderiza Visualização Agenda (Lista)
-  function renderAgendaView(year, month) {
-    const container = document.getElementById('agenda-container')
-    container.innerHTML = ''
+    // Renderiza Visualização Agenda (Lista)
+    function renderAgendaView(year, month) {
+      const container = document.getElementById('agenda-container')
+      container.innerHTML = ''
 
-    // Filtra eventos ocorrendo no mês atual selecionado
-    const monthEvents = allEvents.filter(event => {
-      const start = new Date(event.start_date)
-      const end = event.end_date ? new Date(event.end_date) : start
-      return (start.getFullYear() === year && start.getMonth() === month) || 
-             (end.getFullYear() === year && end.getMonth() === month)
-    }).sort((a, b) => new Date(a.start_date) - new Date(b.start_date))
+      // Filtra eventos ocorrendo no mês atual selecionado
+      const monthEvents = allEvents.filter(event => {
+        const start = new Date(event.start_date)
+        const end = event.end_date ? new Date(event.end_date) : start
+        return (start.getFullYear() === year && start.getMonth() === month) ||
+          (end.getFullYear() === year && end.getMonth() === month)
+      }).sort((a, b) => new Date(a.start_date) - new Date(b.start_date))
 
-    if (monthEvents.length === 0) {
-      container.innerHTML = `
+      if (monthEvents.length === 0) {
+        container.innerHTML = `
         <div class="empty-box" style="background:#fff;padding:4rem 1rem">
           <div class="ei" style="font-size:2.5rem;margin-bottom:.5rem">📋</div>
           <p>Nenhuma programação encontrada para este mês.</p>
         </div>`
-      return
-    }
+        return
+      }
 
-    const monthName = MONTH_NAMES[month]
-    const section = document.createElement('div')
-    section.className = 'agenda-month-section'
-    section.innerHTML = `
+      const monthName = MONTH_NAMES[month]
+      const section = document.createElement('div')
+      section.className = 'agenda-month-section'
+      section.innerHTML = `
       <h3 style="margin-bottom:1rem;color:var(--slate-800);font-size:1rem;border-bottom:1.5px solid var(--slate-100);padding-bottom:.5rem">
         Programações de ${monthName} de ${year}
       </h3>
       <div class="stack" id="agenda-items-list"></div>
     `
-    container.appendChild(section)
+      container.appendChild(section)
 
-    const listEl = section.querySelector('#agenda-items-list')
+      const listEl = section.querySelector('#agenda-items-list')
 
-    monthEvents.forEach(event => {
-      const start = new Date(event.start_date)
-      const startDay = start.getDate()
-      const startMonthShort = start.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')
-      const startTime = start.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-      const orgId = event.local_ump_id || event.federation_id
-      const orgColor = getColorForOrg(orgId)
+      monthEvents.forEach(event => {
+        const start = new Date(event.start_date)
+        const startDay = start.getDate()
+        const startMonthShort = start.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')
+        const startTime = start.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        const orgId = event.local_ump_id || event.federation_id
+        const orgColor = getColorForOrg(orgId)
 
-      let dateStr = ""
-      if (event.end_date) {
-        const end = new Date(event.end_date)
-        const endTime = end.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-        dateStr = start.toDateString() === end.toDateString()
-          ? `${start.toLocaleDateString('pt-BR')} das ${startTime} às ${endTime}`
-          : `De ${start.toLocaleDateString('pt-BR')} ${startTime} até ${end.toLocaleDateString('pt-BR')} ${endTime}`
-      } else {
-        dateStr = `${start.toLocaleDateString('pt-BR')} às ${startTime}`
-      }
+        let dateStr = ""
+        if (event.end_date) {
+          const end = new Date(event.end_date)
+          const endTime = end.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+          dateStr = start.toDateString() === end.toDateString()
+            ? `${start.toLocaleDateString('pt-BR')} das ${startTime} às ${endTime}`
+            : `De ${start.toLocaleDateString('pt-BR')} ${startTime} até ${end.toLocaleDateString('pt-BR')} ${endTime}`
+        } else {
+          dateStr = `${start.toLocaleDateString('pt-BR')} às ${startTime}`
+        }
 
-      const logoHtml = event.logo_url 
-        ? `<img src="${event.logo_url}" style="width: 14px; height: 14px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 4px; border: 1px solid var(--slate-200);" onerror="this.style.display='none'" />` 
-        : ''
+        const logoHtml = event.logo_url
+          ? `<img src="${event.logo_url}" style="width: 14px; height: 14px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 4px; border: 1px solid var(--slate-200);" onerror="this.style.display='none'" />`
+          : ''
 
-      const item = document.createElement('div')
-      item.className = 'agenda-item'
-      item.style.cursor = 'pointer'
-      item.innerHTML = `
+        const item = document.createElement('div')
+        item.className = 'agenda-item'
+        item.style.cursor = 'pointer'
+        item.innerHTML = `
         <div class="agenda-date-box" style="border-top: 3px solid ${orgColor}">
           <div class="agenda-date-day">${startDay}</div>
           <div class="agenda-date-month">${startMonthShort}</div>
@@ -983,220 +1029,221 @@
           ${event.description ? `<p class="agenda-description">${event.description}</p>` : ''}
         </div>
       `
-      item.addEventListener('click', () => openEventDetails(event))
-      listEl.appendChild(item)
-    })
-  }
-
-  // Detalhes do Evento
-  let activeEventForDetail = null
-  function openEventDetails(event) {
-    activeEventForDetail = event
-    
-    // Título do Evento
-    const titleEl = document.getElementById('detail-title')
-    titleEl.textContent = event.title
-    
-    // Obter cor da organização
-    const orgId = event.local_ump_id || event.federation_id
-    const orgColor = getColorForOrg(orgId)
-
-    // Configurar o banner de destaque da Sociedade Organizadora
-    const bannerEl = document.getElementById('detail-org-banner')
-    bannerEl.style.borderLeftColor = orgColor
-    
-    const logoEl = document.getElementById('detail-org-logo')
-    logoEl.src = event.logo_url || '/assets/img/logo.png'
-    
-    const nameEl = document.getElementById('detail-organizer')
-    nameEl.textContent = event.organizer_name
-
-    // Horários
-    const start = new Date(event.start_date)
-    const startTime = start.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-
-    let dateStr = ""
-    if (event.end_date) {
-      const end = new Date(event.end_date)
-      const endTime = end.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-      dateStr = start.toDateString() === end.toDateString()
-        ? `${start.toLocaleDateString('pt-BR')} das ${startTime} às ${endTime}`
-        : `De ${start.toLocaleDateString('pt-BR')} ${startTime} até ${end.toLocaleDateString('pt-BR')} ${endTime}`
-    } else {
-      dateStr = `${start.toLocaleDateString('pt-BR')} às ${startTime}`
-    }
-    
-    document.getElementById('detail-time').textContent = dateStr
-
-    // Localização
-    if (event.location) {
-      document.getElementById('detail-location-container').style.display = 'flex'
-      document.getElementById('detail-location').textContent = event.location
-    } else {
-      document.getElementById('detail-location-container').style.display = 'none'
+        item.addEventListener('click', () => openEventDetails(event))
+        listEl.appendChild(item)
+      })
     }
 
-    // Descrição
-    document.getElementById('detail-description').textContent = event.description || 'Nenhuma descrição fornecida.'
+    // Detalhes do Evento
+    let activeEventForDetail = null
+    function openEventDetails(event) {
+      activeEventForDetail = event
 
-    // Controle de edição/exclusão do criador
-    const isOwner = isCreatorOfEvent(event)
-    document.getElementById('owner-actions').style.display = (isOwner && canManageEvents()) ? 'flex' : 'none'
+      // Título do Evento
+      const titleEl = document.getElementById('detail-title')
+      titleEl.textContent = event.title
 
-    openModal('modal-event-detail')
-  }
+      // Obter cor da organização
+      const orgId = event.local_ump_id || event.federation_id
+      const orgColor = getColorForOrg(orgId)
 
-  // Verifica se o usuário logado é dono do evento
-  function isCreatorOfEvent(event) {
-    if (!currentUser) return false
-    if (event.local_ump_id && currentUser.organization_type === 'local_ump' && event.local_ump_id === currentUser.organization_id) {
-      return true
-    }
-    if (!event.local_ump_id && currentUser.organization_type === 'federation' && event.federation_id === currentUser.organization_id) {
-      return true
-    }
-    return false
-  }
+      // Configurar o banner de destaque da Sociedade Organizadora
+      const bannerEl = document.getElementById('detail-org-banner')
+      bannerEl.style.borderLeftColor = orgColor
 
-  // Modal helpers
-  window.closeModal = function(id) {
-    document.getElementById(id).classList.remove('open')
-  }
+      const logoEl = document.getElementById('detail-org-logo')
+      logoEl.src = event.logo_url || '/assets/img/logo.png'
 
-  function openModal(id) {
-    document.getElementById(id).classList.add('open')
-  }
+      const nameEl = document.getElementById('detail-organizer')
+      nameEl.textContent = event.organizer_name
 
-  // Formulário - Criar Novo Evento
-  function openCreateModal() {
-    document.getElementById('form-modal-title').textContent = 'Nova Programação'
-    document.getElementById('form-event-id').value = ''
-    document.getElementById('form-title').value = ''
-    document.getElementById('form-description').value = ''
-    document.getElementById('form-location').value = ''
-    document.getElementById('form-end-date').value = ''
-    
-    const now = new Date()
-    now.setMinutes(0, 0, 0)
-    
-    const startStr = formatToDatetimeLocalInput(now)
-    document.getElementById('form-start-date').value = startStr
-    document.getElementById('form-error-alert').classList.add('hidden')
+      // Horários
+      const start = new Date(event.start_date)
+      const startTime = start.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 
-    openModal('modal-event-form')
-  }
+      let dateStr = ""
+      if (event.end_date) {
+        const end = new Date(event.end_date)
+        const endTime = end.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        dateStr = start.toDateString() === end.toDateString()
+          ? `${start.toLocaleDateString('pt-BR')} das ${startTime} às ${endTime}`
+          : `De ${start.toLocaleDateString('pt-BR')} ${startTime} até ${end.toLocaleDateString('pt-BR')} ${endTime}`
+      } else {
+        dateStr = `${start.toLocaleDateString('pt-BR')} às ${startTime}`
+      }
 
-  // Prepara datas no formato YYYY-MM-DDTHH:MM esperado pelo <input type="datetime-local">
-  function formatToDatetimeLocalInput(date) {
-    const tzOffset = date.getTimezoneOffset() * 60000
-    const localISOTime = (new Date(date - tzOffset)).toISOString().slice(0, 16)
-    return localISOTime
-  }
+      document.getElementById('detail-time').textContent = dateStr
 
-  // Submissão do Formulário (Salvar Criado / Atualizar Editado)
-  async function handleFormSubmit(e) {
-    e.preventDefault()
-    
-    const eventId = document.getElementById('form-event-id').value
-    const title = document.getElementById('form-title').value.trim()
-    const description = document.getElementById('form-description').value.trim()
-    const location = document.getElementById('form-location').value.trim()
-    const startDateVal = document.getElementById('form-start-date').value
-    const endDateVal = document.getElementById('form-end-date').value
-    const errorEl = document.getElementById('form-error-alert')
+      // Localização
+      if (event.location) {
+        document.getElementById('detail-location-container').style.display = 'flex'
+        document.getElementById('detail-location').textContent = event.location
+      } else {
+        document.getElementById('detail-location-container').style.display = 'none'
+      }
 
-    errorEl.classList.add('hidden')
+      // Descrição
+      document.getElementById('detail-description').textContent = event.description || 'Nenhuma descrição fornecida.'
 
-    if (!title || !startDateVal) {
-      errorEl.textContent = 'Preencha todos os campos obrigatórios (*)'
-      errorEl.classList.remove('hidden')
-      return
+      // Controle de edição/exclusão do criador
+      const isOwner = isCreatorOfEvent(event)
+      document.getElementById('owner-actions').style.display = (isOwner && canManageEvents()) ? 'flex' : 'none'
+
+      openModal('modal-event-detail')
     }
 
-    const startDate = new Date(startDateVal)
-    let endDate = null
+    // Verifica se o usuário logado é dono do evento
+    function isCreatorOfEvent(event) {
+      if (!currentUser) return false
+      if (event.local_ump_id && currentUser.organization_type === 'local_ump' && event.local_ump_id === currentUser.organization_id) {
+        return true
+      }
+      if (!event.local_ump_id && currentUser.organization_type === 'federation' && event.federation_id === currentUser.organization_id) {
+        return true
+      }
+      return false
+    }
 
-    if (endDateVal) {
-      endDate = new Date(endDateVal)
-      if (endDate < startDate) {
-        errorEl.textContent = 'A data de término não pode ser anterior à data de início'
+    // Modal helpers
+    window.closeModal = function (id) {
+      document.getElementById(id).classList.remove('open')
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.add('open')
+    }
+
+    // Formulário - Criar Novo Evento
+    function openCreateModal() {
+      document.getElementById('form-modal-title').textContent = 'Nova Programação'
+      document.getElementById('form-event-id').value = ''
+      document.getElementById('form-title').value = ''
+      document.getElementById('form-description').value = ''
+      document.getElementById('form-location').value = ''
+      document.getElementById('form-end-date').value = ''
+
+      const now = new Date()
+      now.setMinutes(0, 0, 0)
+
+      const startStr = formatToDatetimeLocalInput(now)
+      document.getElementById('form-start-date').value = startStr
+      document.getElementById('form-error-alert').classList.add('hidden')
+
+      openModal('modal-event-form')
+    }
+
+    // Prepara datas no formato YYYY-MM-DDTHH:MM esperado pelo <input type="datetime-local">
+    function formatToDatetimeLocalInput(date) {
+      const tzOffset = date.getTimezoneOffset() * 60000
+      const localISOTime = (new Date(date - tzOffset)).toISOString().slice(0, 16)
+      return localISOTime
+    }
+
+    // Submissão do Formulário (Salvar Criado / Atualizar Editado)
+    async function handleFormSubmit(e) {
+      e.preventDefault()
+
+      const eventId = document.getElementById('form-event-id').value
+      const title = document.getElementById('form-title').value.trim()
+      const description = document.getElementById('form-description').value.trim()
+      const location = document.getElementById('form-location').value.trim()
+      const startDateVal = document.getElementById('form-start-date').value
+      const endDateVal = document.getElementById('form-end-date').value
+      const errorEl = document.getElementById('form-error-alert')
+
+      errorEl.classList.add('hidden')
+
+      if (!title || !startDateVal) {
+        errorEl.textContent = 'Preencha todos os campos obrigatórios (*)'
         errorEl.classList.remove('hidden')
         return
       }
-    }
 
-    const payload = {
-      title,
-      description: description || null,
-      start_date: startDate.toISOString(),
-      end_date: endDate ? endDate.toISOString() : null,
-      location: location || null
-    }
+      const startDate = new Date(startDateVal)
+      let endDate = null
 
-    try {
-      const submitBtn = document.getElementById('btn-save-event')
-      submitBtn.disabled = true
-
-      if (eventId) {
-        // Editar
-        await api.put(`/api/calendar/${eventId}`, payload)
-      } else {
-        // Criar
-        await api.post('/api/calendar/', payload)
+      if (endDateVal) {
+        endDate = new Date(endDateVal)
+        if (endDate < startDate) {
+          errorEl.textContent = 'A data de término não pode ser anterior à data de início'
+          errorEl.classList.remove('hidden')
+          return
+        }
       }
 
-      closeModal('modal-event-form')
+      const payload = {
+        title,
+        description: description || null,
+        start_date: startDate.toISOString(),
+        end_date: endDate ? endDate.toISOString() : null,
+        location: location || null
+      }
+
+      try {
+        const submitBtn = document.getElementById('btn-save-event')
+        submitBtn.disabled = true
+
+        if (eventId) {
+          // Editar
+          await api.put(`/api/calendar/${eventId}`, payload)
+        } else {
+          // Criar
+          await api.post('/api/calendar/', payload)
+        }
+
+        closeModal('modal-event-form')
+        closeModal('modal-event-detail')
+        await loadEvents()
+      } catch (err) {
+        errorEl.textContent = err.message || 'Erro ao processar requisição.'
+        errorEl.classList.remove('hidden')
+      } finally {
+        document.getElementById('btn-save-event').disabled = false
+      }
+    }
+
+    // Excluir Programação
+    async function handleDeleteEvent() {
+      if (!activeEventForDetail) return
+
+      const confirmDelete = confirm(`Tem certeza que deseja excluir a programação "${activeEventForDetail.title}"?`)
+      if (!confirmDelete) return
+
+      try {
+        await api.delete(`/api/calendar/${activeEventForDetail.id}`)
+        closeModal('modal-event-detail')
+        await loadEvents()
+      } catch (err) {
+        alert(err.message || 'Erro ao excluir a programação.')
+      }
+    }
+
+    // Entrar em modo de Edição (carrega dados do evento ativo no formulário)
+    function handleEditEvent() {
+      if (!activeEventForDetail) return
+
+      document.getElementById('form-modal-title').textContent = 'Editar Programação'
+      document.getElementById('form-event-id').value = activeEventForDetail.id
+      document.getElementById('form-title').value = activeEventForDetail.title
+      document.getElementById('form-description').value = activeEventForDetail.description || ''
+      document.getElementById('form-location').value = activeEventForDetail.location || ''
+
+      const start = new Date(activeEventForDetail.start_date)
+      document.getElementById('form-start-date').value = formatToDatetimeLocalInput(start)
+
+      if (activeEventForDetail.end_date) {
+        const end = new Date(activeEventForDetail.end_date)
+        document.getElementById('form-end-date').value = formatToDatetimeLocalInput(end)
+      } else {
+        document.getElementById('form-end-date').value = ''
+      }
+
+      document.getElementById('form-error-alert').classList.add('hidden')
+
       closeModal('modal-event-detail')
-      await loadEvents()
-    } catch (err) {
-      errorEl.textContent = err.message || 'Erro ao processar requisição.'
-      errorEl.classList.remove('hidden')
-    } finally {
-      document.getElementById('btn-save-event').disabled = false
+      openModal('modal-event-form')
     }
-  }
-
-  // Excluir Programação
-  async function handleDeleteEvent() {
-    if (!activeEventForDetail) return
-    
-    const confirmDelete = confirm(`Tem certeza que deseja excluir a programação "${activeEventForDetail.title}"?`)
-    if (!confirmDelete) return
-
-    try {
-      await api.delete(`/api/calendar/${activeEventForDetail.id}`)
-      closeModal('modal-event-detail')
-      await loadEvents()
-    } catch (err) {
-      alert(err.message || 'Erro ao excluir a programação.')
-    }
-  }
-
-  // Entrar em modo de Edição (carrega dados do evento ativo no formulário)
-  function handleEditEvent() {
-    if (!activeEventForDetail) return
-
-    document.getElementById('form-modal-title').textContent = 'Editar Programação'
-    document.getElementById('form-event-id').value = activeEventForDetail.id
-    document.getElementById('form-title').value = activeEventForDetail.title
-    document.getElementById('form-description').value = activeEventForDetail.description || ''
-    document.getElementById('form-location').value = activeEventForDetail.location || ''
-    
-    const start = new Date(activeEventForDetail.start_date)
-    document.getElementById('form-start-date').value = formatToDatetimeLocalInput(start)
-
-    if (activeEventForDetail.end_date) {
-      const end = new Date(activeEventForDetail.end_date)
-      document.getElementById('form-end-date').value = formatToDatetimeLocalInput(end)
-    } else {
-      document.getElementById('form-end-date').value = ''
-    }
-
-    document.getElementById('form-error-alert').classList.add('hidden')
-
-    closeModal('modal-event-detail')
-    openModal('modal-event-form')
-  }
-</script>
+  </script>
 </body>
+
 </html>
