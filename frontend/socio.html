@@ -502,6 +502,19 @@
     </div>
   </div>
 
+  <!-- Modal de Confirmação Customizado -->
+  <div class="modal-overlay" id="modal-confirm" style="display:none; z-index: 10100;">
+    <div class="modal" style="max-width:320px; text-align:center; padding:1.5rem">
+      <div style="font-size:2.2rem; margin-bottom:.5rem">🔒</div>
+      <h3 style="font-size:1.05rem; font-weight:800; color:var(--slate-850); margin-bottom:.5rem">Confirmar Voto</h3>
+      <p id="confirm-message-text" style="font-size:.78rem; color:var(--slate-500); line-height:1.5; margin-bottom:1.5rem">...</p>
+      <div style="display:flex; gap:.5rem; justify-content:center">
+        <button class="btn btn-secondary btn-sm" onclick="closeConfirm(false)" style="width: auto; padding: .5rem 1rem">Cancelar</button>
+        <button class="btn btn-primary btn-sm" onclick="closeConfirm(true)" style="width: auto; padding: .5rem 1rem; background: var(--brand); color:#fff; border: none; border-radius: var(--radius);">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal Detalhe de Programação -->
   <div class="modal-overlay" id="modal-event-detail" style="display:none">
     <div class="modal">
@@ -833,20 +846,20 @@
         if (!activeElection || !activeElection.has_active_election) {
           alert("Nenhuma eleição ativa no momento.")
         } else if (activeElection.status === 'config') {
-          alert("Eleição em configuração. Aguarde o início pela diretoria.")
+          showToast("Eleição em configuração. Aguarde o início.", "info")
         } else if (activeElection.status === 'results') {
-          alert("Apurando votos... Aguarde a liberação da próxima rodada.")
+          showToast("Apurando votos... Aguarde a liberação.", "warn")
         } else if (activeElection.status === 'voting') {
           if (activeElection.has_voted_current_round) {
-            alert("Você já votou nesta rodada. Aguarde o encerramento do escrutínio.")
+            showToast("Você já votou nesta rodada. Aguarde o encerramento.", "success")
           } else {
-            alert("Nova rodada de votação liberada! Selecione seu candidato.")
+            showToast("Nova rodada de votação liberada! Selecione seu candidato.", "success")
           }
         }
       }
     } catch (err) {
       console.error("Erro ao carregar eleição:", err)
-      if (showFeedback) alert("Erro ao atualizar: " + err.message)
+      if (showFeedback) showToast("Erro ao atualizar: " + err.message, "error")
     }
   }
 
@@ -911,10 +924,16 @@
     if (data.status === 'voting' && data.access_code) {
       if (isVoted) {
         ballotHtml = `
-          <div style="text-align:center;color:#166534;font-weight:600;font-size:.85rem;padding:1.25rem 0;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;margin-top:1rem">
-            <span style="font-size:1.5rem;display:block;margin-bottom:.25rem">✓</span>
-            Seu voto secreto para esta rodada foi registrado com sucesso!
-            <p style="font-size:.7rem;color:#15803d;font-weight:400;margin-top:.25rem;margin-bottom:0">Aguarde o encerramento do escrutínio pela diretoria.</p>
+          <div style="text-align:center;padding:1.5rem 1rem;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;margin-top:1.25rem">
+            <img src="/img/check.png" style="width: 56px; height: 56px; margin: 0 auto .75rem; display: block;" alt="Voto Computado" />
+            <h3 style="font-size: .95rem; color: #166534; font-weight: 700; margin-bottom: .4rem;">Voto Computado!</h3>
+            <p style="font-size: .75rem; color: #15803d; line-height: 1.5; margin-bottom: 1.25rem; max-width:280px; margin-left:auto; margin-right:auto;">
+              Seu voto secreto foi computado. Aguarde o encerramento da votação.
+            </p>
+            <button class="btn" onclick="loadElection(true)" style="width:100%; font-size: .85rem; padding: .65rem; height: auto; font-weight: 700; background: #16a34a; color:#fff; border:none; border-radius: var(--radius); cursor:pointer; display:inline-flex; align-items:center; gap:.4rem; justify-content:center;">
+              <img src="/img/trocar.png" style="width: 14px; height: 14px; filter:brightness(0) invert(1);" />
+              <span>Votar Próximo Cargo / Atualizar</span>
+            </button>
           </div>
         `
       } else {
@@ -988,41 +1007,43 @@
     const select = document.getElementById('portal-ballot-select')
     const val = select.value
     if (!val) {
-      alert('Por favor, selecione um candidato ou marque voto em branco.')
+      showToast('Por favor, selecione um candidato ou marque voto em branco.', 'warn')
       return
     }
 
     const candidateId = val === 'blank' ? null : val
 
-    if (!confirm('Deseja realmente confirmar seu voto secreto? Uma vez enviado, não poderá ser alterado.')) {
-      return
-    }
-
-    const btn = document.getElementById('btn-portal-cast-vote')
-    btn.disabled = true
-    btn.textContent = 'Registrando voto...'
-
-    try {
-      const res = await fetch(`${API}/api/elections/public/vote`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          code: activeElection.access_code,
-          candidate_member_id: candidateId
-        })
-      })
-      if (!res.ok) {
-        const err = await res.json()
-        throw new Error(err.detail || 'Erro ao registrar voto.')
+    showConfirm('Deseja realmente confirmar seu voto secreto? Uma vez enviado, não poderá ser alterado.', async () => {
+      const btn = document.getElementById('btn-portal-cast-vote')
+      if (btn) {
+        btn.disabled = true
+        btn.textContent = 'Registrando voto...'
       }
-      alert('Voto secreto registrado com sucesso!')
-      await loadElection()
-    } catch(err) {
-      alert('Erro: ' + err.message)
-    } finally {
-      btn.disabled = false
-      btn.textContent = 'Confirmar Voto'
-    }
+
+      try {
+        const res = await fetch(`${API}/api/elections/public/vote`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            code: activeElection.access_code,
+            candidate_member_id: candidateId
+          })
+        })
+        if (!res.ok) {
+          const err = await res.json()
+          throw new Error(err.detail || 'Erro ao registrar voto.')
+        }
+        showToast('Voto secreto registrado com sucesso!', 'success')
+        await loadElection()
+      } catch(err) {
+        showToast('Erro: ' + err.message, 'error')
+      } finally {
+        if (btn) {
+          btn.disabled = false
+          btn.textContent = 'Confirmar Voto'
+        }
+      }
+    })
   }
 
   // ── Variáveis e Funções do Calendário ──
