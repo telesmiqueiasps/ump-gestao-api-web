@@ -10,6 +10,8 @@ self.addEventListener('install', (event) => {
         '/img/aci.png',
         '/img/calendario.png',
         '/img/pagar.png',
+        '/img/eleicao.png',
+        '/img/trocar.png',
       ])
     }).then(() => self.skipWaiting())
   )

@@ -310,16 +310,6 @@
       background:#fff;border:1.5px solid #e2e8f0;
       border-radius:var(--radius);padding:.45rem .75rem;
       font-size:.875rem;font-family:inherit;color:var(--slate-700);
-      outline:none;cursor:pointer;
-    }
-    .tab-icon-emoji {
-      font-size: 1.15rem;
-      filter: grayscale(1) opacity(0.6);
-      transition: all .2s ease;
-    }
-    .tab.active .tab-icon-emoji {
-      filter: none !important; opacity: 1 !important;
-      transform: scale(1.15);
     }
   </style>
 </head>
@@ -428,17 +418,17 @@
         <img src="/img/aci.png" alt="" class="tab-icon"/>
         <span>ACI</span>
       </button>
+      <button class="tab" data-tab="pix" onclick="switchTab('pix')">
+        <img src="/img/pagar.png" alt="" class="tab-icon"/>
+        <span>Pagar</span>
+      </button>
       <button class="tab" data-tab="calendar" onclick="switchTab('calendar')">
         <img src="/img/calendario.png" alt="" class="tab-icon"/>
         <span>Calendário</span>
       </button>
       <button class="tab" data-tab="election" onclick="switchTab('election')">
-        <span class="tab-icon-emoji">🗳️</span>
+        <img src="/img/eleicao.png" alt="" class="tab-icon"/>
         <span>Eleições</span>
-      </button>
-      <button class="tab" data-tab="pix" onclick="switchTab('pix')">
-        <img src="/img/pagar.png" alt="" class="tab-icon"/>
-        <span>Pagar</span>
       </button>
     </div>
 
@@ -835,12 +825,28 @@
   // ── Variáveis e Funções das Eleições ──
   let activeElection = null
 
-  async function loadElection() {
+  async function loadElection(showFeedback = false) {
     try {
       activeElection = await fetchAuth('/api/member-portal/election')
       renderElection()
+      if (showFeedback) {
+        if (!activeElection || !activeElection.has_active_election) {
+          alert("Nenhuma eleição ativa no momento.")
+        } else if (activeElection.status === 'config') {
+          alert("Eleição em configuração. Aguarde o início pela diretoria.")
+        } else if (activeElection.status === 'results') {
+          alert("Apurando votos... Aguarde a liberação da próxima rodada.")
+        } else if (activeElection.status === 'voting') {
+          if (activeElection.has_voted_current_round) {
+            alert("Você já votou nesta rodada. Aguarde o encerramento do escrutínio.")
+          } else {
+            alert("Nova rodada de votação liberada! Selecione seu candidato.")
+          }
+        }
+      }
     } catch (err) {
       console.error("Erro ao carregar eleição:", err)
+      if (showFeedback) alert("Erro ao atualizar: " + err.message)
     }
   }
 
@@ -861,7 +867,7 @@
     if (!activeElection || !activeElection.has_active_election) {
       container.innerHTML = `
         <div style="text-align:center;padding:2.5rem 1rem;color:var(--slate-400)">
-          <div style="font-size:2.5rem;margin-bottom:.75rem">🗳️</div>
+          <img src="/img/eleicao.png" style="width:64px;height:64px;margin:0 auto .75rem;display:block;opacity:.4" />
           <h3 style="font-size:.95rem;font-weight:700;color:var(--slate-700);margin-bottom:.25rem">Nenhuma Eleição Ativa</h3>
           <p style="font-size:.78rem;line-height:1.4">Quando a diretoria da sua UMP Local iniciar uma sessão eleitoral, ela aparecerá aqui.</p>
         </div>`
@@ -870,6 +876,36 @@
 
     const data = activeElection
     const isVoted = data.has_voted_current_round
+
+    let headerHtml = ''
+    if (data.status === 'voting' || data.status === 'results') {
+      headerHtml = `
+        <div style="text-align: center; margin-bottom: 1.25rem; background: #f8fafc; border: 1.5px solid #e2e8f0; padding: 1.25rem; border-radius: 12px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.02); position: relative;">
+          <button onclick="loadElection(true)" class="btn btn-secondary btn-sm" style="position: absolute; right: 10px; top: 10px; padding: .25rem .5rem; min-height: auto; width: auto; font-size: .7rem; display: inline-flex; align-items: center; gap: 3px; border-radius: 4px; font-weight: 600;">
+            <img src="/img/trocar.png" style="width: 12px; height: 12px; display: block;" /> Atualizar
+          </button>
+          <h4 style="margin: 0 0 .4rem 0; font-size: .85rem; font-weight: 600; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.5px;">${data.title}</h4>
+          <div style="font-size: 1.5rem; font-weight: 850; color: #1e293b; margin-bottom: .4rem; line-height: 1.2;">
+            ${getRoleLabel(data.current_role)}
+          </div>
+          <span style="display: inline-block; padding: .25rem .75rem; background: var(--brand); color: #fff; border-radius: 20px; font-size: .72rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">
+            ${data.current_round}º Escrutínio
+          </span>
+        </div>
+      `
+    } else {
+      headerHtml = `
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;gap:.5rem">
+          <h3 style="font-size:1.05rem;font-weight:800;color:var(--brand);margin:0">${data.title}</h3>
+          <div style="display:flex;align-items:center;gap:.4rem;flex-shrink:0">
+            <button onclick="loadElection(true)" class="btn btn-secondary btn-sm" style="padding:.25rem .5rem;min-height:auto;width:auto;font-size:.7rem;display:inline-flex;align-items:center;gap:3px;border-radius:4px;font-weight:600">
+              <img src="/img/trocar.png" style="width: 12px; height: 12px; display: block;" /> Atualizar
+            </button>
+            <span class="badge badge-slate" style="font-size:.65rem;padding:3px 8px;border-radius:4px;font-weight:700">Configuração</span>
+          </div>
+        </div>
+      `
+    }
 
     let ballotHtml = ''
     if (data.status === 'voting' && data.access_code) {
@@ -910,13 +946,7 @@
 
     container.innerHTML = `
       <div class="card" style="border: 1.5px solid var(--brand); border-radius: var(--radius-lg); padding: 1.25rem; background: #fff;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-          <h3 style="font-size:1.05rem;font-weight:800;color:var(--brand);margin:0">${data.title}</h3>
-          <div style="display:flex;align-items:center;gap:.4rem">
-            <button onclick="loadElection()" class="btn btn-secondary btn-sm" style="padding:.25rem .5rem;min-height:auto;width:auto;font-size:.7rem;display:inline-flex;align-items:center;gap:3px;border-radius:4px;">🔄 Atualizar</button>
-            <span class="badge ${data.status === 'voting' ? 'badge-blue' : 'badge-slate'}" style="font-size:.65rem;padding:3px 8px;border-radius:4px;font-weight:700">${data.status === 'voting' ? 'Votação Ativa' : data.status === 'results' ? 'Apuração' : 'Configuração'}</span>
-          </div>
-        </div>
+        ${headerHtml}
         
         ${data.status === 'config' ? `
           <div style="background:#f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: .85rem; font-size: .8rem; color:#475569; line-height: 1.4; margin-bottom: 1rem">
@@ -935,7 +965,7 @@
         ${data.status === 'voting' ? `
           <div style="background:#eff6ff; border: 1.5px solid #bfdbfe; border-radius: 8px; padding: .85rem; font-size: .82rem; color:#1e40af; line-height: 1.4; margin-bottom: 1rem">
             <strong>Urna Aberta!</strong><br>
-            Votação em andamento para o cargo de <strong>${getRoleLabel(data.current_role)}</strong> (${data.current_round}º Escrutínio).
+            Votação em andamento. Escolha abaixo seu candidato.
           </div>
         ` : ''}
 
