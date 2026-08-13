@@ -217,6 +217,62 @@ def send_reminders(
     print(f"[CRON] {len(locals_)} local(is) ativa(s) com portal habilitado")
 
     sent = 0
+
+    # ── 1. Notificações de Programações do Calendário (Amanhã) ──
+    try:
+        from app.models.calendar_event import CalendarEvent
+        target_start = now_utc.replace(second=0, microsecond=0) + dt.timedelta(days=1)
+        target_end = target_start + dt.timedelta(minutes=1)
+
+        calendar_events = db.query(CalendarEvent).filter(
+            CalendarEvent.start_date >= target_start,
+            CalendarEvent.start_date < target_end
+        ).all()
+
+        print(f"[CRON] Buscando programações para amanhã entre {target_start.strftime('%Y-%m-%d %H:%M')} e {target_end.strftime('%Y-%m-%d %H:%M')} UTC...")
+        print(f"[CRON] Encontradas {len(calendar_events)} programação(ões)")
+
+        for ev in calendar_events:
+            if ev.local_ump_id:
+                # Evento local: notifica os inscritos desta local UMP
+                event_subs = db.query(PushSubscription).filter(
+                    PushSubscription.local_ump_id == ev.local_ump_id
+                ).all()
+            else:
+                # Evento da federação: notifica todas as locais pertencentes à federação
+                locals_in_fed = db.query(LocalUmp.id).filter(
+                    LocalUmp.federation_id == ev.federation_id
+                ).all()
+                local_ids = [l[0] for l in locals_in_fed]
+                event_subs = db.query(PushSubscription).filter(
+                    PushSubscription.local_ump_id.in_(local_ids)
+                ).all() if local_ids else []
+
+            print(f"[CRON] Programação '{ev.title}': enfileirando para {len(event_subs)} sócio(s)")
+
+            br_time = ev.start_date - dt.timedelta(hours=3)
+            time_str = br_time.strftime("%H:%M")
+
+            for sub in event_subs:
+                message = {
+                    "title": f"📅 Amanhã: {ev.title}",
+                    "body": f"{ev.organizer_name} às {time_str}h. Toque para ver detalhes no calendário.",
+                    "url": f"https://ump-socio.netlify.app/socio.html?org={sub.local_ump_id}&tab=calendar",
+                    "icon": "/assets/img/logo.png",
+                    "badge": "/assets/img/logo.png"
+                }
+                background_tasks.add_task(
+                    send_push_to_subscription,
+                    {"endpoint": sub.endpoint,
+                     "p256dh":   sub.p256dh,
+                     "auth":     sub.auth},
+                    message,
+                )
+                sent += 1
+    except Exception as cron_err:
+        print(f"[CRON] Erro no fluxo de notificações do calendário: {cron_err}")
+
+    # ── 2. Lembrete de Mensalidade ──
     for local in locals_:
         reminder_day    = getattr(local, 'reminder_day', 5) or 5
         reminder_hour   = getattr(local, 'reminder_hour', 9) or 9
