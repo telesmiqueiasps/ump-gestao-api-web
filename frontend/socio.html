@@ -869,11 +869,53 @@
     }
 
     const data = activeElection
+    const isVoted = data.has_voted_current_round
+
+    let ballotHtml = ''
+    if (data.status === 'voting' && data.access_code) {
+      if (isVoted) {
+        ballotHtml = `
+          <div style="text-align:center;color:#166534;font-weight:600;font-size:.85rem;padding:1.25rem 0;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;margin-top:1rem">
+            <span style="font-size:1.5rem;display:block;margin-bottom:.25rem">✓</span>
+            Seu voto secreto para esta rodada foi registrado com sucesso!
+            <p style="font-size:.7rem;color:#15803d;font-weight:400;margin-top:.25rem;margin-bottom:0">Aguarde o encerramento do escrutínio pela diretoria.</p>
+          </div>
+        `
+      } else {
+        const options = (data.candidates || []).map(c => `
+          <option value="${c.id}">${c.full_name}</option>
+        `).join('')
+        
+        ballotHtml = `
+          <div style="margin-top: 1.25rem; border-top: 1.5px dashed var(--slate-200); padding-top: 1.25rem;">
+            <div style="margin-bottom: 1rem;">
+              <label for="portal-ballot-select" style="font-size: .8rem; font-weight: 700; color: var(--slate-800); margin-bottom: .4rem; display: block; text-align: left;">Selecione seu Candidato</label>
+              <select class="year-select" id="portal-ballot-select" style="width:100%; font-size: .85rem; padding: .6rem; height: auto;">
+                <option value="">-- Selecione seu candidato --</option>
+                ${options}
+                <option value="blank">Votar em Branco/Nulo</option>
+              </select>
+            </div>
+            
+            <button class="btn" id="btn-portal-cast-vote" onclick="castMemberVote()" style="width:100%; font-size: .85rem; padding: .7rem; height: auto; font-weight: 700; background: var(--brand); color:#fff; border:none; border-radius: var(--radius); cursor:pointer;">
+              Confirmar Voto
+            </button>
+            <p style="font-size: .68rem; color: var(--slate-400); text-align: center; margin-top: .75rem; line-height: 1.4; max-width:320px; margin-left:auto; margin-right:auto;">
+              🔒 <strong>Voto Secreto e Anônimo:</strong> As informações de voto são guardadas sem qualquer ligação com o seu nome ou código.
+            </p>
+          </div>
+        `
+      }
+    }
+
     container.innerHTML = `
       <div class="card" style="border: 1.5px solid var(--brand); border-radius: var(--radius-lg); padding: 1.25rem; background: #fff;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
           <h3 style="font-size:1.05rem;font-weight:800;color:var(--brand);margin:0">${data.title}</h3>
-          <span class="badge ${data.status === 'voting' ? 'badge-blue' : 'badge-slate'}" style="font-size:.65rem;padding:3px 8px;border-radius:4px;font-weight:700">${data.status === 'voting' ? 'Votação Ativa' : 'Configuração'}</span>
+          <div style="display:flex;align-items:center;gap:.4rem">
+            <button onclick="loadElection()" class="btn btn-secondary btn-sm" style="padding:.25rem .5rem;min-height:auto;width:auto;font-size:.7rem;display:inline-flex;align-items:center;gap:3px;border-radius:4px;">🔄 Atualizar</button>
+            <span class="badge ${data.status === 'voting' ? 'badge-blue' : 'badge-slate'}" style="font-size:.65rem;padding:3px 8px;border-radius:4px;font-weight:700">${data.status === 'voting' ? 'Votação Ativa' : data.status === 'results' ? 'Apuração' : 'Configuração'}</span>
+          </div>
         </div>
         
         ${data.status === 'config' ? `
@@ -903,17 +945,7 @@
             <div style="font-family:monospace;font-size:1.6rem;font-weight:800;color:#e65100;letter-spacing:1px">${data.access_code}</div>
           </div>
           
-          ${data.status === 'voting' ? (
-            data.has_voted_current_round ? `
-              <div style="text-align:center;color:#166534;font-weight:600;font-size:.85rem;padding:.5rem 0">
-                ✓ Seu voto secreto para esta rodada foi registrado!
-              </div>
-            ` : `
-              <button class="btn btn-primary" onclick="openUrna('${data.access_code}')" style="margin-top:.5rem">
-                🗳️ Acessar Urna Secreta
-              </button>
-            `
-          ) : ''}
+          ${ballotHtml}
         ` : `
           <div style="background:#fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: .85rem; font-size: .8rem; color:#991b1b; line-height: 1.4">
             Você não está registrado como votante nesta eleição.
@@ -922,8 +954,45 @@
       </div>`
   }
 
-  window.openUrna = (code) => {
-    window.open(`/votar.html?code=${code}`, '_blank')
+  window.castMemberVote = async () => {
+    const select = document.getElementById('portal-ballot-select')
+    const val = select.value
+    if (!val) {
+      alert('Por favor, selecione um candidato ou marque voto em branco.')
+      return
+    }
+
+    const candidateId = val === 'blank' ? null : val
+
+    if (!confirm('Deseja realmente confirmar seu voto secreto? Uma vez enviado, não poderá ser alterado.')) {
+      return
+    }
+
+    const btn = document.getElementById('btn-portal-cast-vote')
+    btn.disabled = true
+    btn.textContent = 'Registrando voto...'
+
+    try {
+      const res = await fetch(`${API}/api/elections/public/vote`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          code: activeElection.access_code,
+          candidate_member_id: candidateId
+        })
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.detail || 'Erro ao registrar voto.')
+      }
+      alert('Voto secreto registrado com sucesso!')
+      await loadElection()
+    } catch(err) {
+      alert('Erro: ' + err.message)
+    } finally {
+      btn.disabled = false
+      btn.textContent = 'Confirmar Voto'
+    }
   }
 
   // ── Variáveis e Funções do Calendário ──

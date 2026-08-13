@@ -272,6 +272,7 @@ def get_member_election_status(
     db: Session = Depends(get_db),
 ):
     from app.models.election import ElectionSession, ElectionVoter
+    from app.routers.elections import get_eligible_candidates
     member, org_id = auth
     
     # Check if there is an active election for this local UMP
@@ -289,6 +290,14 @@ def get_member_election_status(
         ElectionVoter.member_id == member.id
     ).first()
     
+    candidates_list = []
+    if session.status == 'voting' and voter:
+        candidates = get_eligible_candidates(db, session)
+        candidates_list = [
+            {"id": str(c.id), "full_name": c.full_name}
+            for c in candidates
+        ]
+        
     return {
         "has_active_election": True,
         "session_id": str(session.id),
@@ -299,4 +308,5 @@ def get_member_election_status(
         "access_code": voter.access_code if voter else None,
         "has_voted_current_round": voter.has_voted_current_round if voter else False,
         "can_be_voted": voter.can_be_voted if voter else True,
+        "candidates": candidates_list,
     }
