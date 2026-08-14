@@ -577,7 +577,7 @@
       <input class="input" type="number" step="0.01" min="0.01" id="tx-amount" placeholder="0,00" />
     </div>
     <div class="field" id="tx-receipt-field">
-      <label>Comprovante <span class="text-slate-400" style="font-weight:400">(opcional — PNG, JPG ou PDF · máx. 10MB)</span></label>
+      <label>Comprovante <span class="text-slate-400" style="font-weight:400">(PNG, JPG ou PDF · máx. 10MB)</span></label>
       <input class="input" type="file" id="tx-receipt" accept="image/png,image/jpeg,application/pdf" />
     </div>
     <div id="tx-alert" class="hidden mt-4"></div>
@@ -1211,8 +1211,9 @@
       description:      document.getElementById('tx-desc').value,
       amount:           parseFloat(document.getElementById('tx-amount').value),
     }
-    if (!payload.transaction_date || !payload.description || !payload.amount) {
-      showAlert('tx-alert', 'Preencha todos os campos.', 'error'); return
+    const file = document.getElementById('tx-receipt').files[0]
+    if (!payload.transaction_date || !payload.description || !payload.amount || (!editId && !file)) {
+      showAlert('tx-alert', 'Preencha todos os campos e anexe o comprovante.', 'error'); return
     }
     setLoading(btn, true, 'Salvar')
     try {
@@ -1220,11 +1221,8 @@
         await api.put(`/api/finances/transactions/${editId}`, payload)
       } else {
         const tx = await api.post('/api/finances/transactions', payload)
-        const file = document.getElementById('tx-receipt').files[0]
-        if (file) {
-          const fd = new FormData(); fd.append('file', file)
-          await api.upload(`/api/finances/transactions/${tx.id}/receipt`, fd)
-        }
+        const fd = new FormData(); fd.append('file', file)
+        await api.upload(`/api/finances/transactions/${tx.id}/receipt`, fd)
       }
       closeModal('modal-tx')
       await reloadCurrentMonth()
