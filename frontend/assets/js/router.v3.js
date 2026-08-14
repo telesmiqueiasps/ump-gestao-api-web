@@ -237,6 +237,65 @@ export async function renderShell() {
 
   document.getElementById('btn-logout')?.addEventListener('click', logout)
 
+  // ── Botão de Ajuda ──
+  const btnLogout = document.getElementById('btn-logout')
+  if (btnLogout && !document.getElementById('btn-help')) {
+    const btnHelp = document.createElement('button')
+    btnHelp.id = 'btn-help'
+    btnHelp.title = 'Ajuda'
+    btnHelp.style.cssText = `
+      background: none;
+      border: 1.5px solid var(--slate-200);
+      cursor: pointer;
+      padding: .45rem .6rem;
+      border-radius: var(--radius);
+      transition: background .15s, border-color .15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      min-width: 36px;
+      min-height: 36px;
+      margin-right: 0.5rem;
+    `
+    btnHelp.innerHTML = `<img src="/assets/img/ajuda.png" alt="Ajuda" style="width:20px;height:20px;display:block" />`
+    
+    btnHelp.onmouseover = () => {
+      btnHelp.style.background = 'var(--slate-50)'
+      btnHelp.style.borderColor = 'var(--slate-300)'
+    }
+    btnHelp.onmouseout = () => {
+      btnHelp.style.background = 'none'
+      btnHelp.style.borderColor = 'var(--slate-200)'
+    }
+
+    btnLogout.parentNode.insertBefore(btnHelp, btnLogout)
+    
+    btnHelp.addEventListener('click', () => {
+      openHelpModal()
+    })
+  }
+
+  // Injeta o modal de ajuda se não existir
+  if (!document.getElementById('modal-help-info')) {
+    const helpModalHtml = `
+      <div class="modal-overlay" id="modal-help-info" style="z-index: 10000;">
+        <div class="modal modal-sm" style="max-width: 500px; width: 90%;">
+          <div class="modal-header">
+            <h2 id="modal-help-title">Ajuda</h2>
+            <button class="modal-close" onclick="document.getElementById('modal-help-info').classList.remove('open')">✕</button>
+          </div>
+          <div class="modal-body" id="modal-help-content" style="margin-top: 1rem; max-height: 60vh; overflow-y: auto; line-height: 1.6; color: var(--slate-600); font-size: .9rem;">
+            <!-- Conteúdo dinâmico -->
+          </div>
+          <div class="modal-footer" style="margin-top: 1.5rem;">
+            <button class="btn btn-secondary" style="width: 100%; justify-content: center;" onclick="document.getElementById('modal-help-info').classList.remove('open')">Fechar</button>
+          </div>
+        </div>
+      </div>`
+    document.body.insertAdjacentHTML('beforeend', helpModalHtml)
+  }
+
   // Botão de alterar senha e modal (código existente mantido)
   const sidebarFooter = document.querySelector('.sidebar-footer')
   if (sidebarFooter && !document.querySelector('.sidebar-pw-btn')) {
@@ -641,4 +700,160 @@ export function initMobileMenu() {
   }
   toggleMenuVisibility()
   window.addEventListener('resize', toggleMenuVisibility)
+}
+
+// ── Ajuda Dinâmica das Abas ──
+
+const PAGE_HELP_INFO = {
+  dashboard: {
+    title: 'Ajuda — Dashboard',
+    content: `
+      <p style="margin-bottom: 1rem;">O <strong>Dashboard</strong> é a central de controle e visão geral do sistema. Aqui você encontra as principais informações consolidadas da sua organização.</p>
+      <ul style="padding-left: 1.2rem; margin-bottom: 1rem; list-style-type: disc;">
+        <li style="margin-bottom: 0.5rem;"><strong>Resumos Rápidos:</strong> Indicadores de quantidade de sócios, saldo financeiro atual e avisos importantes.</li>
+        <li style="margin-bottom: 0.5rem;"><strong>Avisos Recentes:</strong> Mural de comunicados oficiais criados pela diretoria.</li>
+        <li style="margin-bottom: 0.5rem;"><strong>Links Úteis:</strong> Acesso rápido para as funcionalidades mais utilizadas no dia a dia.</li>
+      </ul>
+    `
+  },
+  profile: {
+    title: 'Ajuda — Perfil',
+    content: `
+      <p style="margin-bottom: 1rem;">Na aba de <strong>Perfil</strong>, você pode gerenciar suas informações de conta e visualizar o seu cargo oficial no sistema.</p>
+      <ul style="padding-left: 1.2rem; margin-bottom: 1rem; list-style-type: disc;">
+        <li style="margin-bottom: 0.5rem;"><strong>Dados Pessoais:</strong> Edição do seu nome completo, e-mail de contato e telefone celular.</li>
+        <li style="margin-bottom: 0.5rem;"><strong>Foto de Perfil:</strong> Envie ou atualize sua foto de avatar que aparece no cabeçalho.</li>
+        <li style="margin-bottom: 0.5rem;"><strong>Segurança:</strong> Utilize o botão no rodapé da barra lateral se desejar alterar sua senha de acesso.</li>
+      </ul>
+    `
+  },
+  finances: {
+    title: 'Ajuda — Financeiro',
+    content: `
+      <p style="margin-bottom: 1rem;">A aba <strong>Financeiro</strong> realiza a gestão completa do fluxo de caixa e geração de relatórios oficiais da UMP.</p>
+      <ul style="padding-left: 1.2rem; margin-bottom: 1rem; list-style-type: disc;">
+        <li style="margin-bottom: 0.5rem;"><strong>Períodos Anuais:</strong> Antes de começar, é preciso criar o período anual definindo o Saldo Inicial.</li>
+        <li style="margin-bottom: 0.5rem;"><strong>Lançamentos de Caixa:</strong> Registro de receitas, despesas e recolhimento de ACI com opção de anexo de arquivos de comprovantes (imagens ou PDFs).</li>
+        <li style="margin-bottom: 0.5rem;"><strong>Relatórios PDF:</strong> Geração de Relatórios Financeiros Mensais e de Comprovantes com apenas um clique.</li>
+        <li style="margin-bottom: 0.5rem;"><strong>Fechamento de Período:</strong> Opção de encerramento digital para gerar o documento assinado digitalmente de forma irreversível.</li>
+      </ul>
+    `
+  },
+  members: {
+    title: 'Ajuda — Sócios',
+    content: `
+      <p style="margin-bottom: 1rem;">A aba <strong>Sócios</strong> (ou Membros) é o cadastro oficial de todas as pessoas que fazem parte da organização.</p>
+      <ul style="padding-left: 1.2rem; margin-bottom: 1rem; list-style-type: disc;">
+        <li style="margin-bottom: 0.5rem;"><strong>Cadastro Completo:</strong> Registro de novos sócios contendo dados pessoais, data de nascimento e filiação religiosa.</li>
+        <li style="margin-bottom: 0.5rem;"><strong>Status e Funções:</strong> Classifique os sócios como Ativos ou Inativos para cálculo de quorum e estatísticas.</li>
+        <li style="margin-bottom: 0.5rem;"><strong>Exportação:</strong> Exporte a lista completa de membros cadastrados para fins de arquivo ou controle de presença.</li>
+      </ul>
+    `
+  },
+  board: {
+    title: 'Ajuda — Diretoria',
+    content: `
+      <p style="margin-bottom: 1rem;">A aba <strong>Diretoria</strong> gerencia o corpo oficial de oficiais e líderes eleitos para o mandato corrente.</p>
+      <ul style="padding-left: 1.2rem; margin-bottom: 1rem; list-style-type: disc;">
+        <li style="margin-bottom: 0.5rem;"><strong>Cargos Oficiais:</strong> Atribuição de cargos como Presidente, Vice-Presidente, Secretários, Tesoureiro e Conselheiro.</li>
+        <li style="margin-bottom: 0.5rem;"><strong>Gestão de Permissões:</strong> A atribuição de um cargo na diretoria concede automaticamente as permissões de acesso daquele papel no sistema.</li>
+      </ul>
+    `
+  },
+  'local-umps': {
+    title: 'Ajuda — UMPs Locais',
+    content: `
+      <p style="margin-bottom: 1rem;">Exclusiva para órgãos federativos (Federações ou Sinodais). Permite gerenciar as sociedades locais vinculadas.</p>
+      <ul style="padding-left: 1.2rem; margin-bottom: 1rem; list-style-type: disc;">
+        <li style="margin-bottom: 0.5rem;"><strong>Mapeamento das Igrejas:</strong> Cadastro de todas as UMPs Locais pertencentes ao presbitério.</li>
+        <li style="margin-bottom: 0.5rem;"><strong>Acompanhamento:</strong> Visualização rápida de contatos da diretoria local e status do envio de relatórios estatísticos anuais.</li>
+      </ul>
+    `
+  },
+  secretary: {
+    title: 'Ajuda — Secretaria',
+    content: `
+      <p style="margin-bottom: 1rem;">A aba <strong>Secretaria</strong> é o repositório documental oficial da organização.</p>
+      <ul style="padding-left: 1.2rem; margin-bottom: 1rem; list-style-type: disc;">
+        <li style="margin-bottom: 0.5rem;"><strong>Atas de Reuniões:</strong> Registro e upload de atas de reuniões ordinárias, extraordinárias e assembleias.</li>
+        <li style="margin-bottom: 0.5rem;"><strong>Modelos de Documentos:</strong> Acesso rápido a minutas oficiais, ofícios emitidos e recebidos.</li>
+        <li style="margin-bottom: 0.5rem;"><strong>Relatório de Atividades:</strong> Centralização de relatórios mensais ou anuais gerados para envio à Federação.</li>
+      </ul>
+    `
+  },
+  president: {
+    title: 'Ajuda — Presidência',
+    content: `
+      <p style="margin-bottom: 1rem;">A aba <strong>Presidência</strong> centraliza ferramentas de gestão estratégica e planejamento de atividades.</p>
+      <ul style="padding-left: 1.2rem; margin-bottom: 1rem; list-style-type: disc;">
+        <li style="margin-bottom: 0.5rem;"><strong>Metas da Gestão:</strong> Definição e acompanhamento dos objetivos traçados pela diretoria.</li>
+        <li style="margin-bottom: 0.5rem;"><strong>Relatórios Executivos:</strong> Visualização e exportação de dados analíticos prontos para apresentação em reuniões de Conselho de Igreja ou Presbitério.</li>
+      </ul>
+    `
+  },
+  statistics: {
+    title: 'Ajuda — Estatísticas',
+    content: `
+      <p style="margin-bottom: 1rem;">A aba de <strong>Estatísticas</strong> gera gráficos dinâmicos e análises detalhadas com base nas informações inseridas no sistema.</p>
+      <ul style="padding-left: 1.2rem; margin-bottom: 1rem; list-style-type: disc;">
+        <li style="margin-bottom: 0.5rem;"><strong>Demografia:</strong> Gráficos de faixa etária, gênero e tempo de participação dos sócios.</li>
+        <li style="margin-bottom: 0.5rem;"><strong>Saúde da Sociedade:</strong> Histórico de crescimento da membresia ativa ao longo dos anos.</li>
+        <li style="margin-bottom: 0.5rem;"><strong>Relatório Estatístico Nacional:</strong> Consolidação de dados para facilitar o preenchimento de relatórios exigidos por instâncias superiores.</li>
+      </ul>
+    `
+  },
+  notices: {
+    title: 'Ajuda — Avisos',
+    content: `
+      <p style="margin-bottom: 1rem;">Na aba de <strong>Avisos</strong>, a diretoria pode divulgar informativos, convites e lembretes para visualização de todos os usuários cadastrados.</p>
+      <ul style="padding-left: 1.2rem; margin-bottom: 1rem; list-style-type: disc;">
+        <li style="margin-bottom: 0.5rem;"><strong>Criar Comunicado:</strong> Defina título, conteúdo em texto e data de expiração do aviso.</li>
+        <li style="margin-bottom: 0.5rem;"><strong>Notificação de Destaque:</strong> Avisos ativos aparecem no painel principal (Dashboard) para todos os membros logados.</li>
+      </ul>
+    `
+  },
+  calendar: {
+    title: 'Ajuda — Calendário',
+    content: `
+      <p style="margin-bottom: 1rem;">A aba <strong>Calendário</strong> reúne o cronograma completo de programações e eventos planejados.</p>
+      <ul style="padding-left: 1.2rem; margin-bottom: 1rem; list-style-type: disc;">
+        <li style="margin-bottom: 0.5rem;"><strong>Agenda Oficial:</strong> Cadastro de cultos jovens, reuniões de diretoria, congressos, acampamentos e ações sociais.</li>
+        <li style="margin-bottom: 0.5rem;"><strong>Detalhamento de Eventos:</strong> Cada evento cadastrado pode conter descrição, local, horário e link para inscrição externa.</li>
+      </ul>
+    `
+  },
+  eleicoes: {
+    title: 'Ajuda — Eleições',
+    content: `
+      <p style="margin-bottom: 1rem;">A aba de <strong>Eleições</strong> fornece um sistema digital seguro para votações em assembleias oficiais.</p>
+      <ul style="padding-left: 1.2rem; margin-bottom: 1rem; list-style-type: disc;">
+        <li style="margin-bottom: 0.5rem;"><strong>Criação de Pleitos:</strong> Configuração do cargo em disputa e cadastramento de candidatos/chapas.</li>
+        <li style="margin-bottom: 0.5rem;"><strong>Voto Auditável e Secreto:</strong> Emissão de chaves únicas de votação e garantia de sigilo dos dados.</li>
+        <li style="margin-bottom: 0.5rem;"><strong>Apuração em Tempo Real:</strong> Contagem automática de votos brancos, nulos e nominais com gráfico imediato após o encerramento da urna.</li>
+      </ul>
+    `
+  },
+  admin: {
+    title: 'Ajuda — Admin',
+    content: `
+      <p style="margin-bottom: 1rem;">A aba de <strong>Administração</strong> é restrita a administradores gerais do sistema para manutenção técnica.</p>
+      <ul style="padding-left: 1.2rem; margin-bottom: 1rem; list-style-type: disc;">
+        <li style="margin-bottom: 0.5rem;"><strong>Gerenciamento de Contas:</strong> Criação de usuários, redefinição de senhas e atribuição inicial de acessos.</li>
+        <li style="margin-bottom: 0.5rem;"><strong>Configurações Gerais:</strong> Edição do nome da organização e parâmetros de segurança da API.</li>
+      </ul>
+    `
+  }
+};
+
+function openHelpModal() {
+  const path = window.location.pathname;
+  const pageName = path.split('/').pop().replace('.html', '') || 'dashboard';
+  const info = PAGE_HELP_INFO[pageName] || {
+    title: 'Ajuda',
+    content: '<p>Nesta página você pode visualizar e gerenciar as funções específicas da aba correspondente.</p>'
+  };
+  
+  document.getElementById('modal-help-title').textContent = info.title;
+  document.getElementById('modal-help-content').innerHTML = info.content;
+  document.getElementById('modal-help-info').classList.add('open');
 }
