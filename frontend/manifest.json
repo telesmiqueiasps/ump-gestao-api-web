@@ -1,7 +1,7 @@
 {
-  "name": "Gestão UMP POPB",
-  "short_name": "UMP POPB",
-  "description": "Plataforma de Gestão da União de Mocidade Presbiteriana - Presbitério Oeste da Paraíba",
+  "name": "SIGES FPOPB",
+  "short_name": "SIGES FPOPB",
+  "description": "Plataforma de Gestão das Sociedades Internas - FPOPB",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
