@@ -8,7 +8,7 @@
 /* ── Sidebar ──────────────────────────────────────────── */
 .sidebar {
   width: var(--sidebar-w);
-  background: linear-gradient(180deg, #0d1640 0%, #1a2a6c 100%);
+  background: #1a2a6c;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -69,8 +69,8 @@
   text-decoration: none;
 }
 .nav-item:hover { background: rgba(255,255,255,.1); color: #fff; }
-.nav-item.active { background: var(--brand-orange); color: #fff; }
-.nav-item.active:hover { background: #d4570a; }
+.nav-item.active { background: #2563eb; color: #fff; }
+.nav-item.active:hover { background: #1d4ed8; }
 
 .nav-item .nav-icon { width: 18px; height: 18px; object-fit: contain; flex-shrink: 0; opacity: .65; }
 .nav-item:hover .nav-icon, .nav-item.active .nav-icon { opacity: 1; }
