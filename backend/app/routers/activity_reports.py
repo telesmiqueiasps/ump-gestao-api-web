@@ -16,7 +16,7 @@ from app.models.board import BoardMember
 from app.models.activity_secretary import ActivitySecretary
 from app.models.user import User
 from app.core.dependencies import get_current_user
-from app.services.storage import upload_file, delete_folder, _get_client, get_presigned_url
+from app.services.storage import upload_file, delete_folder, delete_file, _get_client, get_presigned_url
 from app.core.config import get_settings
 
 router = APIRouter()
@@ -40,6 +40,18 @@ ROLE_ORDER = [
 
 
 def _activity_out(a: Activity) -> dict:
+    photos_out = []
+    for p in a.photos:
+        try:
+            signed_url = get_presigned_url(p.photo_key, expires_in=3600)
+        except Exception:
+            signed_url = p.photo_url
+        photos_out.append({
+            "id":            str(p.id),
+            "photo_url":     signed_url,
+            "photo_key":     p.photo_key,
+            "display_order": p.display_order,
+        })
     return {
         "id":              str(a.id),
         "organization_id": str(a.organization_id),
@@ -48,15 +60,7 @@ def _activity_out(a: Activity) -> dict:
         "description":     a.description,
         "start_date":      a.start_date.strftime('%Y-%m-%d') if a.start_date else None,
         "end_date":        a.end_date.strftime('%Y-%m-%d') if a.end_date else None,
-        "photos": [
-            {
-                "id":            str(p.id),
-                "photo_url":     p.photo_url,
-                "photo_key":     p.photo_key,
-                "display_order": p.display_order,
-            }
-            for p in a.photos
-        ],
+        "photos":          photos_out,
     }
 
 
@@ -449,8 +453,7 @@ def delete_activity_photo(
         raise HTTPException(status_code=404, detail="Foto não encontrada")
 
     try:
-        folder = '/'.join(photo.photo_key.split('/')[:-1]) + '/'
-        delete_folder(folder)
+        delete_file(photo.photo_key)
     except Exception:
         pass
 
