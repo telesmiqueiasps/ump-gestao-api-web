@@ -718,7 +718,7 @@ const PAGE_HELP_INFO = {
   finances: {
     title: 'Tutorial — Financeiro',
     content: 'Confira o passo a passo para gerenciar o caixa, cadastrar lançamentos, anexar comprovantes e gerar relatórios financeiros em PDF.',
-    videoUrl: 'https://youtu.be/yprd5wWWOmE/embed/placeholder_finances'
+    videoUrl: 'https://www.youtube.com/embed/yprd5wWWOmE'
   },
   members: {
     title: 'Tutorial — Sócios',
@@ -772,6 +772,38 @@ const PAGE_HELP_INFO = {
   }
 };
 
+function getYouTubeEmbedUrl(url) {
+  if (!url) return '';
+  if (url.includes('/embed/') && !url.includes('youtu.be')) return url;
+  
+  let videoId = '';
+  try {
+    if (url.includes('youtu.be/')) {
+      const parts = url.split('youtu.be/');
+      if (parts[1]) videoId = parts[1].split(/[?#]/)[0].split('/')[0];
+    } else if (url.includes('youtube.com/watch')) {
+      const parts = url.split('?');
+      if (parts[1]) {
+        const urlParams = new URLSearchParams(parts[1]);
+        videoId = urlParams.get('v');
+      }
+    } else if (url.includes('youtube.com/v/')) {
+      const parts = url.split('/v/');
+      if (parts[1]) videoId = parts[1].split(/[?#]/)[0];
+    } else if (url.includes('youtube.com/embed/')) {
+      const parts = url.split('/embed/');
+      if (parts[1]) videoId = parts[1].split(/[?#]/)[0];
+    }
+  } catch (e) {
+    console.error('Error parsing YouTube URL:', e);
+  }
+  
+  if (videoId) {
+    return `https://www.youtube.com/embed/${videoId}`;
+  }
+  return url;
+}
+
 function openHelpModal() {
   const path = window.location.pathname;
   const pageName = path.split('/').pop().replace('.html', '') || 'dashboard';
@@ -789,9 +821,10 @@ function openHelpModal() {
   }
 
   if (info.videoUrl) {
+    const embedUrl = getYouTubeEmbedUrl(info.videoUrl);
     bodyContentHtml += `
       <div class="video-container" style="position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; border-radius: 8px; overflow: hidden; box-shadow: var(--shadow-sm);">
-        <iframe src="${info.videoUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"></iframe>
+        <iframe src="${embedUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"></iframe>
       </div>
     `;
   } else {
