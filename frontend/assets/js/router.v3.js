@@ -2,14 +2,14 @@ import { getUser, isFederation, isLocalUmp, logout } from './auth.js'
 import { getSocietyLabel } from './utils.js'
 
 const ROLE_LABELS = {
-  presidente:              'Presidente',
-  vice_presidente:         'Vice-Presidente',
-  '1_secretario':          '1º Secretário',
-  '2_secretario':          '2º Secretário',
-  tesoureiro:              'Tesoureiro',
-  secretario_executivo:    'Secretário Executivo',
+  presidente: 'Presidente',
+  vice_presidente: 'Vice-Presidente',
+  '1_secretario': '1º Secretário',
+  '2_secretario': '2º Secretário',
+  tesoureiro: 'Tesoureiro',
+  secretario_executivo: 'Secretário Executivo',
   secretario_presbiterial: 'Secretário Presbiterial',
-  conselheiro:             'Conselheiro',
+  conselheiro: 'Conselheiro',
 }
 
 function getOrgLabel(orgType, societyType) {
@@ -31,40 +31,40 @@ const NAV_ITEMS = [
   {
     page: 'finances', label: 'Financeiro', icon: '/assets/img/financeiro.png',
     path: '/pages/finances.html',
-    roles: ['presidente','vice_presidente','tesoureiro','conselheiro','secretario_presbiterial']
+    roles: ['presidente', 'vice_presidente', 'tesoureiro', 'conselheiro', 'secretario_presbiterial']
   },
   {
     page: 'members', label: getSocietyLabel('membros'), icon: '/assets/img/socios.png',
     path: '/pages/members.html',
-    roles: ['presidente','vice_presidente','tesoureiro','conselheiro','secretario_presbiterial']
+    roles: ['presidente', 'vice_presidente', 'tesoureiro', 'conselheiro', 'secretario_presbiterial']
   },
   {
     page: 'board', label: 'Diretoria', icon: '/assets/img/diretoria.png',
     path: '/pages/board.html',
-    roles: ['presidente','vice_presidente','conselheiro','secretario_presbiterial']
+    roles: ['presidente', 'vice_presidente', 'conselheiro', 'secretario_presbiterial']
   },
   {
     page: 'local-umps', label: 'UMPs Locais', icon: '/assets/img/umps_locais.png',
     path: '/pages/local-umps.html',
     fedOnly: true,
-    roles: ['presidente','vice_presidente','conselheiro','secretario_presbiterial']
+    roles: ['presidente', 'vice_presidente', 'conselheiro', 'secretario_presbiterial']
   },
   {
     page: 'secretary', label: 'Secretaria', icon: '/assets/img/secretaria.png',
     path: '/pages/secretary.html',
-    roles: ['presidente','vice_presidente','1_secretario','2_secretario','secretario_executivo','conselheiro','secretario_presbiterial']
+    roles: ['presidente', 'vice_presidente', '1_secretario', '2_secretario', 'secretario_executivo', 'conselheiro', 'secretario_presbiterial']
   },
   {
     page: 'president', label: 'Presidência', icon: '/assets/img/presidente.png',
     path: '/pages/president.html',
-    roles: ['presidente','vice_presidente','conselheiro','secretario_presbiterial']
+    roles: ['presidente', 'vice_presidente', 'conselheiro', 'secretario_presbiterial']
   },
   {
     page: 'statistics', label: 'Estatísticas', icon: '/assets/img/estatistica.png',
     path: '/pages/statistics.html',
     uphOnly: true,
-    roles: ['presidente','vice_presidente','tesoureiro','1_secretario','2_secretario',
-            'secretario_executivo','secretario_presbiterial','conselheiro'],
+    roles: ['presidente', 'vice_presidente', 'tesoureiro', '1_secretario', '2_secretario',
+      'secretario_executivo', 'secretario_presbiterial', 'conselheiro'],
   },
   {
     page: 'notices', label: 'Avisos', icon: '/assets/img/aviso.png',
@@ -81,14 +81,14 @@ const NAV_ITEMS = [
     label: 'Eleições',
     icon: '/assets/img/eleicao.png',
     path: '/pages/eleicoes.html',
-    roles: ['presidente','vice_presidente','tesoureiro',
-            '1_secretario','2_secretario','secretario_executivo',
-            'secretario_presbiterial','conselheiro'],
+    roles: ['presidente', 'vice_presidente', 'tesoureiro',
+      '1_secretario', '2_secretario', 'secretario_executivo',
+      'secretario_presbiterial', 'conselheiro'],
   },
 ]
 
 // Expõe navigate globalmente para os onclick do HTML
-window.navigate = function(page) {
+window.navigate = function (page) {
   const item = NAV_ITEMS.find(n => n.page === page)
   if (item) window.location.href = item.path
 }
@@ -116,9 +116,9 @@ function buildNavHTML(user, societyType) {
 
   return NAV_ITEMS
     .filter(item => {
-      if (item.fedOnly   && !isFederation()) return false
-      if (item.localOnly && !isLocalUmp())   return false
-      if (item.uphOnly   && societyType !== 'UPH') return false
+      if (item.fedOnly && !isFederation()) return false
+      if (item.localOnly && !isLocalUmp()) return false
+      if (item.uphOnly && societyType !== 'UPH') return false
       if (item.roles === null) return true
       return item.roles.some(r => userRoles.includes(r))
     })
@@ -128,7 +128,7 @@ function buildNavHTML(user, societyType) {
       }
       let label = item.label
       if (item.page === 'local-umps') label = `${societyType}s Locais`
-      if (item.page === 'members')    label = memberLabel
+      if (item.page === 'members') label = memberLabel
       if (item.page === 'notices') {
         return `
           <button class="nav-item" data-page="${item.page}" onclick="navigate('${item.page}')">
@@ -160,9 +160,9 @@ function buildNavHTML(user, societyType) {
 }
 
 // ── Cache de perfil (5 min) ────────────────────────────────────────────────
-const _PROFILE_KEY  = 'cached_profile'
+const _PROFILE_KEY = 'cached_profile'
 const _PROFILE_TIME = 'cached_profile_time'
-const _PROFILE_TTL  = 5 * 60 * 1000
+const _PROFILE_TTL = 5 * 60 * 1000
 
 async function _getProfile(api, endpoint) {
   const cached = localStorage.getItem(_PROFILE_KEY)
@@ -176,9 +176,9 @@ async function _getProfile(api, endpoint) {
 }
 
 // ── Cache de logo (1 hora) ─────────────────────────────────────────────────
-const _LOGO_KEY  = 'cached_logo_url'
+const _LOGO_KEY = 'cached_logo_url'
 const _LOGO_TIME = 'cached_logo_time'
-const _LOGO_TTL  = 60 * 60 * 1000
+const _LOGO_TTL = 60 * 60 * 1000
 
 async function _getLogoUrl(api, orgType) {
   const cached = localStorage.getItem(_LOGO_KEY)
@@ -222,7 +222,7 @@ export async function renderShell() {
     localStorage.setItem('society_type', societyType)
     // Atualiza o título da página
     document.title = document.title.replace(/UMP|UPH|SAF|UPA/g, societyType)
-  } catch {}
+  } catch { }
 
   // Agora renderiza a sidebar com o societyType correto
   document.getElementById('sidebar-nav').innerHTML = buildNavHTML(user, societyType)
@@ -259,7 +259,7 @@ export async function renderShell() {
       margin-right: 0.5rem;
     `
     btnHelp.innerHTML = `<img src="/assets/img/ajuda.png" alt="Ajuda" style="width:20px;height:20px;display:block" />`
-    
+
     btnHelp.onmouseover = () => {
       btnHelp.style.background = 'var(--slate-50)'
       btnHelp.style.borderColor = 'var(--slate-300)'
@@ -270,7 +270,7 @@ export async function renderShell() {
     }
 
     btnLogout.parentNode.insertBefore(btnHelp, btnLogout)
-    
+
     btnHelp.addEventListener('click', () => {
       openHelpModal()
     })
@@ -339,10 +339,10 @@ export async function renderShell() {
     document.body.insertAdjacentHTML('beforeend', modalHtml)
 
     document.getElementById('sidebar-btn-save-pw').addEventListener('click', async () => {
-      const current   = document.getElementById('sidebar-pw-current').value
-      const newPw     = document.getElementById('sidebar-pw-new').value
+      const current = document.getElementById('sidebar-pw-current').value
+      const newPw = document.getElementById('sidebar-pw-new').value
       const confirmPw = document.getElementById('sidebar-pw-confirm').value
-      const alertEl   = document.getElementById('sidebar-pw-alert')
+      const alertEl = document.getElementById('sidebar-pw-alert')
       const successEl = document.getElementById('sidebar-pw-success')
 
       alertEl.classList.add('hidden')
@@ -382,7 +382,7 @@ export async function renderShell() {
           document.getElementById('modal-sidebar-pw').classList.remove('open')
           successEl.classList.add('hidden')
         }, 2500)
-      } catch(err) {
+      } catch (err) {
         alertEl.innerHTML = `<div class="alert alert-error">${err.message || 'Erro ao alterar senha.'}</div>`
         alertEl.classList.remove('hidden')
       } finally {
@@ -421,7 +421,7 @@ export async function renderShell() {
         else headerRight.appendChild(switchBtn)
       }
     }
-  } catch {}
+  } catch { }
 
   checkNoticesBadge()
   import('./api.js').then(({ api: _a }) =>
@@ -429,7 +429,7 @@ export async function renderShell() {
       if (!url) return
       const logoEl = document.querySelector('.sidebar-brand-logo')
       if (logoEl) logoEl.src = url
-    }).catch(() => {})
+    }).catch(() => { })
   )
   initMobileMenu()
   return societyType
@@ -445,13 +445,13 @@ async function checkNoticesBadge() {
       try {
         const notices = await api.get('/api/notices/received')
         count += notices.length
-      } catch {}
+      } catch { }
 
       try {
         const birthdays = await api.get('/api/members/birthdays')
         const todayBirthdays = birthdays.filter(b => b.is_today)
         count += todayBirthdays.length
-      } catch {}
+      } catch { }
     }
 
     if (user?.organization_type === 'federation') {
@@ -459,7 +459,7 @@ async function checkNoticesBadge() {
         const anniversaries = await api.get('/api/local-umps/anniversaries')
         const todayAnniversaries = anniversaries.filter(a => a.is_today)
         count += todayAnniversaries.length
-      } catch {}
+      } catch { }
     }
 
     const badge = document.getElementById('notices-badge')
@@ -467,10 +467,10 @@ async function checkNoticesBadge() {
       badge.textContent = count > 9 ? '9+' : count
       badge.style.display = 'flex'
     }
-  } catch {}
+  } catch { }
 }
 
-window.openPasswordModal = function() {
+window.openPasswordModal = function () {
   document.getElementById('sidebar-pw-alert')?.classList.add('hidden')
   document.getElementById('sidebar-pw-success')?.classList.add('hidden')
   document.getElementById('sidebar-pw-current').value = ''
@@ -490,10 +490,10 @@ let _currentPage = ''
 const CACHE_BUST = '?v=7'
 
 const ICON_IMAGES = {
-  dashboard:  '/assets/img/dashboard_mobile.png' + CACHE_BUST,
-  finances:   '/assets/img/financeiro_mobile.png' + CACHE_BUST,
-  board:      '/assets/img/diretoria_mobile.png' + CACHE_BUST,
-  notices:    '/assets/img/aviso_mobile.png' + CACHE_BUST,
+  dashboard: '/assets/img/dashboard_mobile.png' + CACHE_BUST,
+  finances: '/assets/img/financeiro_mobile.png' + CACHE_BUST,
+  board: '/assets/img/diretoria_mobile.png' + CACHE_BUST,
+  notices: '/assets/img/aviso_mobile.png' + CACHE_BUST,
 }
 
 export function renderBottomNav(currentPage, societyType) {
@@ -508,16 +508,16 @@ export function renderBottomNav(currentPage, societyType) {
   const bottomMemberLabel = MEMBER_LABELS[bottomSocietyType] || 'Sócios'
 
   const BOTTOM_ITEMS = [
-    { page: 'dashboard', label: 'Início',          icon: '⊞', roles: null },
-    { page: 'finances',  label: 'Financeiro',       icon: '◈', roles: ['presidente','vice_presidente','tesoureiro','conselheiro','secretario_presbiterial'] },
-    { page: 'members',   label: bottomMemberLabel,  icon: '◉', localOnly: true, roles: ['presidente','vice_presidente','tesoureiro','conselheiro','secretario_presbiterial'] },
-    { page: 'board',     label: 'Diretoria',        icon: '❖', roles: ['presidente','vice_presidente','conselheiro','secretario_presbiterial'] },
-    { page: 'notices',   label: 'Avisos',           icon: '📢', roles: null },
+    { page: 'dashboard', label: 'Início', icon: '⊞', roles: null },
+    { page: 'finances', label: 'Financeiro', icon: '◈', roles: ['presidente', 'vice_presidente', 'tesoureiro', 'conselheiro', 'secretario_presbiterial'] },
+    { page: 'members', label: bottomMemberLabel, icon: '◉', localOnly: true, roles: ['presidente', 'vice_presidente', 'tesoureiro', 'conselheiro', 'secretario_presbiterial'] },
+    { page: 'board', label: 'Diretoria', icon: '❖', roles: ['presidente', 'vice_presidente', 'conselheiro', 'secretario_presbiterial'] },
+    { page: 'notices', label: 'Avisos', icon: '📢', roles: null },
   ]
 
   const visibleItems = BOTTOM_ITEMS.filter(item => {
-    if (item.fedOnly   && !isFederation()) return false
-    if (item.localOnly && !isLocalUmp())   return false
+    if (item.fedOnly && !isFederation()) return false
+    if (item.localOnly && !isLocalUmp()) return false
     if (item.roles === null) return true
     return item.roles.some(r => userRoles.includes(r))
   })
@@ -533,18 +533,18 @@ export function renderBottomNav(currentPage, societyType) {
   bottomNav.innerHTML = `
     <div class="bottom-nav-items">
       ${visibleItems.map(item => {
-        const hasImg = ICON_IMAGES[item.page]
-        const iconHtml = hasImg
-          ? `<img src="${ICON_IMAGES[item.page]}" style="width:24px;height:24px;object-fit:contain;opacity:${item.page === currentPage ? '1' : '0.5'}" />`
-          : `<span class="nav-icon" style="font-size:1.3rem">${item.icon}</span>`
-        return `
+    const hasImg = ICON_IMAGES[item.page]
+    const iconHtml = hasImg
+      ? `<img src="${ICON_IMAGES[item.page]}" style="width:24px;height:24px;object-fit:contain;opacity:${item.page === currentPage ? '1' : '0.5'}" />`
+      : `<span class="nav-icon" style="font-size:1.3rem">${item.icon}</span>`
+    return `
           <button class="bottom-nav-item ${item.page === currentPage ? 'active' : ''}"
             onclick="navigate('${item.page}')">
             ${iconHtml}
             <span class="label">${item.label}</span>
           </button>
         `
-      }).join('')}
+  }).join('')}
     </div>
   `
 }
@@ -561,7 +561,7 @@ function _formatRoleLabel(role) {
   return map[role] || role
 }
 
-window.showOrgSwitchModal = function(orgs) {
+window.showOrgSwitchModal = function (orgs) {
   document.getElementById('modal-switch-org')?.remove()
 
   const currentUserId = getUser()?.id
@@ -583,9 +583,9 @@ window.showOrgSwitchModal = function(orgs) {
       </div>
       <div style="display:flex;flex-direction:column;gap:.5rem">
         ${orgs.map(org => {
-          const isCurrent = org.is_current || org.user_id === currentUserId
-          const orgUserId = org.user_id
-          return `
+    const isCurrent = org.is_current || org.user_id === currentUserId
+    const orgUserId = org.user_id
+    return `
             <button
               style="display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;
                 background:${isCurrent ? '#f0f9ff' : '#fff'};
@@ -608,10 +608,10 @@ window.showOrgSwitchModal = function(orgs) {
                 </div>
               </div>
               ${isCurrent
-                ? '<span style="font-size:.7rem;color:#1a2a6c;font-weight:600">atual</span>'
-                : '<span style="color:var(--slate-300)">›</span>'}
+        ? '<span style="font-size:.7rem;color:#1a2a6c;font-weight:600">atual</span>'
+        : '<span style="color:var(--slate-300)">›</span>'}
             </button>`
-        }).join('')}
+  }).join('')}
       </div>
     </div>`
 
@@ -619,7 +619,7 @@ window.showOrgSwitchModal = function(orgs) {
   modal.addEventListener('click', e => { if (e.target === modal) modal.remove() })
 }
 
-window.switchToOrg = window._switchToOrg = async function(userId) {
+window.switchToOrg = window._switchToOrg = async function (userId) {
   try {
     const response = await fetch(
       'https://umpgestaopopb-825585682536.us-west1.run.app/api/auth/login/select-org',
@@ -640,14 +640,14 @@ window.switchToOrg = window._switchToOrg = async function(userId) {
     }
 
     // Salva novos dados da org selecionada
-    localStorage.setItem('access_token',  data.access_token)
+    localStorage.setItem('access_token', data.access_token)
     localStorage.setItem('refresh_token', data.refresh_token)
     localStorage.setItem('user', JSON.stringify({
-      id:                data.user_id,
-      full_name:         data.full_name,
-      organization_id:   data.organization_id,
+      id: data.user_id,
+      full_name: data.full_name,
+      organization_id: data.organization_id,
       organization_type: data.organization_type,
-      roles:             data.roles,
+      roles: data.roles,
     }))
     localStorage.setItem('society_type', data.society_type || 'UMP')
 
@@ -717,8 +717,8 @@ const PAGE_HELP_INFO = {
   },
   finances: {
     title: 'Tutorial — Financeiro',
-    content: 'Confira o passo a passo para gerenciar o caixa da sua UMP, cadastrar lançamentos, anexar comprovantes de despesas e gerar relatórios financeiros em PDF.',
-    videoUrl: 'https://www.youtube.com/embed/placeholder_finances'
+    content: 'Confira o passo a passo para gerenciar o caixa, cadastrar lançamentos, anexar comprovantes e gerar relatórios financeiros em PDF.',
+    videoUrl: 'https://youtu.be/yprd5wWWOmE/embed/placeholder_finances'
   },
   members: {
     title: 'Tutorial — Sócios',
@@ -780,14 +780,14 @@ function openHelpModal() {
     content: 'Assista ao vídeo tutorial abaixo para aprender a utilizar as funcionalidades desta aba.',
     videoUrl: ''
   };
-  
+
   document.getElementById('modal-help-title').textContent = info.title;
-  
+
   let bodyContentHtml = '';
   if (info.content) {
     bodyContentHtml += `<p style="margin-bottom: 1.25rem; font-weight: 500; font-size: .92rem; color: var(--slate-700);">${info.content}</p>`;
   }
-  
+
   if (info.videoUrl) {
     bodyContentHtml += `
       <div class="video-container" style="position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; border-radius: 8px; overflow: hidden; box-shadow: var(--shadow-sm);">
@@ -801,7 +801,7 @@ function openHelpModal() {
       </div>
     `;
   }
-  
+
   document.getElementById('modal-help-content').innerHTML = bodyContentHtml;
   document.getElementById('modal-help-info').classList.add('open');
 }
