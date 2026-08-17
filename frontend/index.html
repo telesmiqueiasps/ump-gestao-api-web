@@ -7,7 +7,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>UMP POPB — Acesso</title>
+  <title>SIGES FPOPB</title>
   <link rel="icon" type="image/png" href="/assets/img/logo.png" />
   <link rel="apple-touch-icon" href="/assets/img/192-maskable.png" />
   <link rel="manifest" href="/manifest.json" />
@@ -40,7 +40,7 @@
 
     body {
       min-height: 100vh;
-      background: linear-gradient(145deg, #060d24 0%, #1a2a6c 45%, #0d1640 100%);
+      background: linear-gradient(135deg, #f8fafc 0%, #f0fdf4 50%, #e8f5e9 100%);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -55,9 +55,8 @@
       position: fixed;
       inset: 0;
       background:
-        radial-gradient(circle at 20% 20%, rgba(232,99,10,.12) 0%, transparent 50%),
-        radial-gradient(circle at 80% 80%, rgba(26,42,108,.4) 0%, transparent 50%),
-        radial-gradient(circle at 60% 10%, rgba(255,255,255,.03) 0%, transparent 40%);
+        radial-gradient(circle at 10% 20%, rgba(22,163,74,.06) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(21,128,61,.08) 0%, transparent 50%);
       pointer-events: none;
     }
 
@@ -77,34 +76,16 @@
     }
 
     .login-logo {
-      width: 90px;
-      height: 90px;
+      width: 100px;
+      height: 100px;
       object-fit: contain;
-      filter: drop-shadow(0 4px 20px rgba(232,99,10,.4));
+      filter: drop-shadow(0 8px 24px rgba(22,163,74,.2));
       animation: floatLogo 3s ease-in-out infinite;
     }
 
     @keyframes floatLogo {
       0%, 100% { transform: translateY(0); }
       50%       { transform: translateY(-6px); }
-    }
-
-    .login-brand {
-      margin-top: .75rem;
-      text-align: center;
-    }
-
-    .login-brand h1 {
-      font-size: 1.35rem;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: .5px;
-    }
-
-    .login-brand p {
-      font-size: .78rem;
-      color: rgba(255,255,255,.5);
-      margin-top: .2rem;
     }
 
     /* Card */
@@ -165,16 +146,16 @@
     }
 
     .input-wrap input:focus {
-      border-color: #1a2a6c;
+      border-color: #16a34a;
       background: #fff;
-      box-shadow: 0 0 0 3px rgba(26,42,108,.12);
+      box-shadow: 0 0 0 3px rgba(22,163,74,.12);
     }
 
     /* Botão */
     .btn-login {
       width: 100%;
       padding: .8rem;
-      background: linear-gradient(135deg, #1a2a6c, #2a3f9f);
+      background: linear-gradient(135deg, #16a34a, #15803d);
       color: #fff;
       border: none;
       border-radius: 10px;
@@ -268,12 +249,12 @@
 
     .login-footer p {
       font-size: .7rem;
-      color: rgba(255,255,255,.3);
+      color: var(--gray600);
       line-height: 1.6;
     }
 
     .login-footer strong {
-      color: rgba(255,255,255,.5);
+      color: var(--gray800);
       font-weight: 500;
     }
 
@@ -312,7 +293,7 @@
 
     .btn-pwa-install {
       padding: .35rem .75rem;
-      background: #1a2a6c;
+      background: #16a34a;
       color: #fff;
       border: none;
       border-radius: 6px;
@@ -347,12 +328,8 @@
 <div class="login-wrapper">
 
   <!-- Logo e marca -->
-  <div class="login-logo-wrap">
-    <img src="/assets/img/logo.png" class="login-logo" alt="Logo UMP POPB" />
-    <div class="login-brand">
-      <h1>GESTÃO FPOPB</h1>
-      <p>Plataforma de Gestão</p>
-    </div>
+  <div class="login-logo-wrap" style="margin-bottom: 2rem;">
+    <img src="/assets/img/logo.png" class="login-logo" alt="Logo SIGES FPOPB" />
   </div>
 
   <!-- Card de login -->
@@ -391,7 +368,7 @@
 
   <!-- Rodapé -->
   <div class="login-footer">
-    <p>© <span id="year"></span> GESTÃO FPOPB — Plataforma de Gestão</p>
+    <p>© <span id="year"></span> SIGES FPOPB</p>
     <p>Desenvolvido por <strong>Miquéias Teles</strong></p>
   </div>
 
