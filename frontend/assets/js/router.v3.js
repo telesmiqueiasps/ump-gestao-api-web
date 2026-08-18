@@ -718,7 +718,7 @@ const PAGE_HELP_INFO = {
   finances: {
     title: 'Tutorial — Financeiro',
     content: 'Confira o passo a passo para gerenciar o caixa, cadastrar lançamentos, anexar comprovantes e gerar relatórios financeiros em PDF.',
-    videoUrl: 'https://www.youtube.com/embed/yprd5wWWOmE'
+    videoUrl: 'https://www.youtube.com/embed/_1C4j1-v6fs'
   },
   members: {
     title: 'Tutorial — Sócios',
@@ -775,7 +775,7 @@ const PAGE_HELP_INFO = {
 function getYouTubeEmbedUrl(url) {
   if (!url) return '';
   if (url.includes('/embed/') && !url.includes('youtu.be')) return url;
-  
+
   let videoId = '';
   try {
     if (url.includes('youtu.be/')) {
@@ -797,7 +797,7 @@ function getYouTubeEmbedUrl(url) {
   } catch (e) {
     console.error('Error parsing YouTube URL:', e);
   }
-  
+
   if (videoId) {
     return `https://www.youtube.com/embed/${videoId}`;
   }
