@@ -712,18 +712,18 @@ const PAGE_HELP_INFO = {
   },
   profile: {
     title: 'Tutorial — Perfil',
-    content: 'Saiba como atualizar suas informações de contato, trocar sua foto de perfil e redefinir sua senha de acesso.',
-    videoUrl: 'https://www.youtube.com/embed/placeholder_profile'
+    content: 'Saiba como atualizar suas informações.',
+    videoUrl: 'https://www.youtube.com/embed/D-R8nPa93AE'
   },
   finances: {
     title: 'Tutorial — Financeiro',
     content: 'Confira o passo a passo para gerenciar o caixa, cadastrar lançamentos, anexar comprovantes e gerar relatórios financeiros em PDF.',
-    videoUrl: 'https://www.youtube.com/embed/_1C4j1-v6fs'
+    videoUrl: 'https://www.youtube.com/embed/T-51cTofqSw'
   },
   members: {
     title: 'Tutorial — Sócios',
-    content: 'Veja como gerenciar o cadastro de membros ativos e inativos da sua UMP ou delegados da sua Federação.',
-    videoUrl: 'https://www.youtube.com/embed/placeholder_members'
+    content: 'Veja como cadastrar e gerenciar sócios da sua local.',
+    videoUrl: 'https://www.youtube.com/embed/flZcjjfz0UQ'
   },
   board: {
     title: 'Tutorial — Diretoria',
