@@ -63,8 +63,8 @@
       position: fixed;
       inset: 0;
       background:
-        radial-gradient(circle at 10% 20%, rgba(37,99,235,.06) 0%, transparent 40%),
-        radial-gradient(circle at 90% 80%, rgba(26,42,108,.08) 0%, transparent 50%);
+        radial-gradient(circle at 10% 20%, rgba(37, 99, 235, .06) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(26, 42, 108, .08) 0%, transparent 50%);
       pointer-events: none;
     }
 
@@ -86,13 +86,20 @@
       width: 80px;
       height: 80px;
       object-fit: contain;
-      filter: drop-shadow(0 8px 24px rgba(26,42,108,.18));
+      filter: drop-shadow(0 8px 24px rgba(26, 42, 108, .18));
       animation: floatLogo 3s ease-in-out infinite;
     }
 
     @keyframes floatLogo {
-      0%, 100% { transform: translateY(0); }
-      50%       { transform: translateY(-6px); }
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-6px);
+      }
     }
 
     .vote-brand {
@@ -269,7 +276,7 @@
       <img class="vote-logo" src="/assets/img/logo.png" alt="Logo UMP" />
       <div class="vote-brand">
         <h1>Módulo de Eleição - SIGES FPOPB</h1>
-        <p id="society-subtitle">Plataforma de Gestão UMP</p>
+        <p id="society-subtitle">Plataforma de Gestão</p>
       </div>
     </div>
 
