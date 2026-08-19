@@ -276,7 +276,7 @@
       <img class="vote-logo" src="/assets/img/logo.png" alt="Logo UMP" />
       <div class="vote-brand">
         <h1>Módulo de Eleição - SIGES FPOPB</h1>
-        <p> Plataforma de Gestão</p>
+        <p id="society-subtitle"> Plataforma de Gestão</p>
       </div>
     </div>
 
@@ -379,7 +379,10 @@
 
     // Set local UMP/UPH/etc label if available
     const societyType = localStorage.getItem('society_type') || 'UMP'
-    document.getElementById('society-subtitle').textContent = `Plataforma de Gestão ${societyType}`
+    const subtitleEl = document.getElementById('society-subtitle')
+    if (subtitleEl) {
+      subtitleEl.textContent = `Plataforma de Gestão ${societyType}`
+    }
 
     // Alert helpers
     function showAlert(id, message, type = 'error') {
