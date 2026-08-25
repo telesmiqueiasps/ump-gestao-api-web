@@ -371,12 +371,11 @@ def delete_activity(
     if not act:
         raise HTTPException(status_code=404, detail="Atividade não encontrada")
 
-    for photo in act.photos:
-        try:
-            folder = '/'.join(photo.photo_key.split('/')[:-1]) + '/'
-            delete_folder(folder)
-        except Exception:
-            pass
+    try:
+        folder = f"activities/{current_user.organization_id}/{activity_id}/"
+        delete_folder(folder)
+    except Exception:
+        pass
 
     db.delete(act)
     db.commit()
@@ -540,12 +539,11 @@ def generate_and_publish_report_task(organization_id, org_type, year: int, repor
 
         # Limpa fotos originais do B2/R2 após publicação
         for act in activities:
-            for photo in act.photos:
-                try:
-                    folder = '/'.join(photo.photo_key.split('/')[:-1]) + '/'
-                    delete_folder(folder)
-                except Exception:
-                    pass
+            try:
+                folder = f"activities/{organization_id}/{act.id}/"
+                delete_folder(folder)
+            except Exception:
+                pass
             db.query(ActivityPhoto).filter(
                 ActivityPhoto.activity_id == act.id
             ).delete(synchronize_session=False)
