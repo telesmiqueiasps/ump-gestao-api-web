@@ -15,8 +15,18 @@ from app.core.dependencies import get_current_user, require_local_or_federation,
 router = APIRouter()
 
 
+VALID_CUNHOS = [
+    "Social",
+    "Evangelístico/Missional",
+    "Espiritual",
+    "Recreativo",
+    "Oração/Vigília"
+]
+
+
 class CalendarEventCreate(BaseModel):
     title: str
+    cunho: Optional[str] = None
     description: Optional[str] = None
     start_date: datetime.datetime
     end_date: Optional[datetime.datetime] = None
@@ -25,6 +35,7 @@ class CalendarEventCreate(BaseModel):
 
 class CalendarEventUpdate(BaseModel):
     title: Optional[str] = None
+    cunho: Optional[str] = None
     description: Optional[str] = None
     start_date: Optional[datetime.datetime] = None
     end_date: Optional[datetime.datetime] = None
@@ -40,19 +51,20 @@ def _to_out(event: CalendarEvent) -> dict:
     if event.local_ump_id:
         organizer_name = event.local_ump.name if event.local_ump else "UMP Local"
         organizer_type = "local_ump"
-        theme_color = event.local_ump.theme_color or "#16a34a"
-        logo_url = event.local_ump.logo_url
+        theme_color = (event.local_ump.theme_color if event.local_ump else None) or "#16a34a"
+        logo_url = event.local_ump.logo_url if event.local_ump else None
     else:
         organizer_name = event.federation.name if event.federation else "Federação"
         organizer_type = "federation"
-        theme_color = event.federation.theme_color or "#1a2a6c"
-        logo_url = event.federation.logo_url
+        theme_color = (event.federation.theme_color if event.federation else None) or "#1a2a6c"
+        logo_url = event.federation.logo_url if event.federation else None
 
     return {
         "id": str(event.id),
         "federation_id": str(event.federation_id),
         "local_ump_id": str(event.local_ump_id) if event.local_ump_id else None,
         "title": event.title,
+        "cunho": event.cunho,
         "description": event.description,
         "start_date": event.start_date.isoformat() if event.start_date else None,
         "end_date": event.end_date.isoformat() if event.end_date else None,
@@ -103,6 +115,9 @@ def create_calendar_event(
     if payload.end_date and payload.end_date < payload.start_date:
         raise HTTPException(status_code=400, detail="A data de término não pode ser anterior à data de início")
 
+    if payload.cunho and payload.cunho not in VALID_CUNHOS:
+        raise HTTPException(status_code=400, detail=f"Cunho inválido. Opções permitidas: {', '.join(VALID_CUNHOS)}")
+
     # Resolve federation and local context
     if current_user.organization_type == OrgType.federation:
         federation_id = current_user.organization_id
@@ -118,6 +133,7 @@ def create_calendar_event(
         federation_id=federation_id,
         local_ump_id=local_ump_id,
         title=payload.title,
+        cunho=payload.cunho or None,
         description=payload.description,
         start_date=payload.start_date,
         end_date=payload.end_date,
@@ -156,8 +172,13 @@ def update_calendar_event(
         if event.local_ump_id != current_user.organization_id:
             raise HTTPException(status_code=403, detail="Você não tem permissão para editar eventos desta organização")
 
+    if payload.cunho is not None and payload.cunho != "" and payload.cunho not in VALID_CUNHOS:
+        raise HTTPException(status_code=400, detail=f"Cunho inválido. Opções permitidas: {', '.join(VALID_CUNHOS)}")
+
     # Update fields
-    update_data = payload.model_dump(exclude_none=True)
+    update_data = payload.model_dump(exclude_unset=True)
+    if "cunho" in update_data and update_data["cunho"] == "":
+        update_data["cunho"] = None
     
     # Check updated dates validity
     new_start = update_data.get("start_date", event.start_date)

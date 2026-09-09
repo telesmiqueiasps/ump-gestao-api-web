@@ -412,6 +412,14 @@
             <h2 class="month-title" id="month-title">—</h2>
           </div>
           <div class="toolbar-right">
+            <select class="input input-sm" id="filter-cunho" style="width: auto; font-size: .8rem; padding: .35rem .6rem; cursor: pointer; border-radius: var(--radius);">
+              <option value="">Todos os Cunhos</option>
+              <option value="Social">🤝 Social</option>
+              <option value="Evangelístico/Missional">📢 Evangelístico/Missional</option>
+              <option value="Espiritual">📖 Espiritual</option>
+              <option value="Recreativo">⚽ Recreativo</option>
+              <option value="Oração/Vigília">🙏 Oração/Vigília</option>
+            </select>
             <button class="btn btn-secondary btn-sm active" id="btn-view-grid">📅 Grade</button>
             <button class="btn btn-secondary btn-sm" id="btn-view-agenda">📋 Agenda</button>
           </div>
@@ -482,6 +490,14 @@
       </div>
 
       <div style="display:flex;flex-direction:column;gap:.75rem">
+        <div style="display:flex;align-items:center;gap:.5rem" id="detail-cunho-container">
+          <span style="font-size:1.1rem">🏷️</span>
+          <div>
+            <p class="text-xs text-slate-400">Cunho</p>
+            <div id="detail-cunho-badge" style="margin-top:2px">—</div>
+          </div>
+        </div>
+
         <div style="display:flex;align-items:center;gap:.5rem">
           <span style="font-size:1.1rem">⏰</span>
           <div>
@@ -531,6 +547,18 @@
             maxlength="200" />
         </div>
 
+        <div class="field">
+          <label>Cunho da Programação *</label>
+          <select class="input" id="form-cunho" required style="cursor: pointer;">
+            <option value="" disabled selected>Selecione o cunho...</option>
+            <option value="Social">🤝 Social</option>
+            <option value="Evangelístico/Missional">📢 Evangelístico/Missional</option>
+            <option value="Espiritual">📖 Espiritual</option>
+            <option value="Recreativo">⚽ Recreativo</option>
+            <option value="Oração/Vigília">🙏 Oração/Vigília</option>
+          </select>
+        </div>
+
         <div class="grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
           <div class="field">
             <label>Início *</label>
@@ -576,6 +604,61 @@
     let viewMode = 'grid' // 'grid' ou 'agenda'
     let currentUser = null
     let societyType = 'UMP'
+    let cunhoFilter = ''
+
+    // Configurações e Cores para os Cunhos de Programação
+    const CUNHO_CONFIG = {
+      'Social': {
+        icon: '🤝',
+        label: 'Social',
+        bg: '#ecfdf5',
+        color: '#065f46',
+        border: '#a7f3d0'
+      },
+      'Evangelístico/Missional': {
+        icon: '📢',
+        label: 'Evangelístico/Missional',
+        bg: '#eff6ff',
+        color: '#1e40af',
+        border: '#bfdbfe'
+      },
+      'Espiritual': {
+        icon: '📖',
+        label: 'Espiritual',
+        bg: '#f5f3ff',
+        color: '#5b21b6',
+        border: '#ddd6fe'
+      },
+      'Recreativo': {
+        icon: '⚽',
+        label: 'Recreativo',
+        bg: '#fefce8',
+        color: '#854d0e',
+        border: '#fef08a'
+      },
+      'Oração/Vigília': {
+        icon: '🙏',
+        label: 'Oração/Vigília',
+        bg: '#fdf2f8',
+        color: '#9d174d',
+        border: '#fbcfe8'
+      }
+    }
+
+    function getCunhoBadgeHtml(cunho, size = 'normal') {
+      if (!cunho || !CUNHO_CONFIG[cunho]) return ''
+      const conf = CUNHO_CONFIG[cunho]
+      const fontSize = size === 'sm' ? '0.7rem' : '0.76rem'
+      const padding = size === 'sm' ? '1px 7px' : '3px 9px'
+      return `<span class="badge-cunho" style="display:inline-flex;align-items:center;gap:4px;background:${conf.bg};color:${conf.color};border:1px solid ${conf.border};padding:${padding};border-radius:99px;font-size:${fontSize};font-weight:600;white-space:nowrap;line-height:1.4;">
+        <span>${conf.icon}</span> <span>${conf.label}</span>
+      </span>`
+    }
+
+    function getFilteredEvents() {
+      if (!cunhoFilter) return allEvents
+      return allEvents.filter(ev => ev.cunho === cunhoFilter)
+    }
 
     // Paleta de Cores Premium (Cores bem distintas e com excelente contraste para texto branco)
     const PRESET_COLORS = [
@@ -646,6 +729,10 @@
       document.getElementById('btn-today').addEventListener('click', goToday)
       document.getElementById('btn-view-grid').addEventListener('click', () => switchView('grid'))
       document.getElementById('btn-view-agenda').addEventListener('click', () => switchView('agenda'))
+      document.getElementById('filter-cunho')?.addEventListener('change', (e) => {
+        cunhoFilter = e.target.value
+        render()
+      })
       document.getElementById('btn-add-event').addEventListener('click', () => openCreateModal())
       document.getElementById('event-form').addEventListener('submit', handleFormSubmit)
       document.getElementById('btn-delete-event').addEventListener('click', handleDeleteEvent)
@@ -727,7 +814,7 @@
       legendEl.innerHTML = ''
 
       const uniqueOrgs = {}
-      allEvents.forEach(event => {
+      getFilteredEvents().forEach(event => {
         const orgId = event.local_ump_id || event.federation_id
         if (!uniqueOrgs[orgId]) {
           uniqueOrgs[orgId] = {
@@ -742,7 +829,7 @@
       if (orgsList.length === 0) {
         legendEl.innerHTML = `
         <div style="font-style: italic; opacity: 0.6; display: flex; align-items: center; gap: 0.5rem; width: 100%;">
-          <span>📅 Nenhuma programação cadastrada neste período.</span>
+          <span>📅 Nenhuma programação encontrada para os filtros selecionados.</span>
         </div>`
         return
       }
@@ -841,13 +928,16 @@
         evItem.className = `calendar-event-item`
         evItem.style.backgroundColor = orgColor
         evItem.style.color = '#ffffff'
-        evItem.title = `${event.title} (${event.organizer_name})`
+        const cunhoDesc = event.cunho ? ` [${event.cunho}]` : ''
+        evItem.title = `${event.title}${cunhoDesc} (${event.organizer_name})`
+
+        const cunhoIcon = (event.cunho && CUNHO_CONFIG[event.cunho]) ? `${CUNHO_CONFIG[event.cunho].icon} ` : ''
 
         const logoHtml = event.logo_url
           ? `<img src="${event.logo_url}" style="width: 12px; height: 12px; border-radius: 50%; object-fit: cover; margin-right: 4px; vertical-align: middle; display: inline-block;" onerror="this.style.display='none'" />`
           : ''
 
-        evItem.innerHTML = `${logoHtml}<span style="overflow:hidden; text-overflow:ellipsis;">${event.title}</span>`
+        evItem.innerHTML = `${logoHtml}<span style="overflow:hidden; text-overflow:ellipsis;">${cunhoIcon}${event.title}</span>`
 
         evItem.addEventListener('click', (e) => {
           e.stopPropagation() // Impede disparar o clique do dia
@@ -881,7 +971,7 @@
 
     // Filtra eventos que ocorrem em uma data
     function getEventsForDate(date) {
-      return allEvents.filter(event => {
+      return getFilteredEvents().filter(event => {
         const start = new Date(event.start_date)
         const end = event.end_date ? new Date(event.end_date) : start
 
@@ -936,7 +1026,10 @@
 
         item.innerHTML = `
         <div class="agenda-content">
-          <div class="agenda-title">${event.title}</div>
+          <div class="agenda-title" style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+            <span>${event.title}</span>
+            ${getCunhoBadgeHtml(event.cunho, 'sm')}
+          </div>
           <div class="agenda-meta">
             <span>⏰ ${timeStr}</span>
             ${event.location ? `<span>📍 ${event.location}</span>` : ''}
@@ -957,7 +1050,7 @@
       container.innerHTML = ''
 
       // Filtra eventos ocorrendo no mês atual selecionado
-      const monthEvents = allEvents.filter(event => {
+      const monthEvents = getFilteredEvents().filter(event => {
         const start = new Date(event.start_date)
         const end = event.end_date ? new Date(event.end_date) : start
         return (start.getFullYear() === year && start.getMonth() === month) ||
@@ -1018,7 +1111,10 @@
           <div class="agenda-date-month">${startMonthShort}</div>
         </div>
         <div class="agenda-content">
-          <div class="agenda-title">${event.title}</div>
+          <div class="agenda-title" style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+            <span>${event.title}</span>
+            ${getCunhoBadgeHtml(event.cunho, 'sm')}
+          </div>
           <div class="agenda-meta">
             <span>⏰ ${dateStr}</span>
             ${event.location ? `<span>📍 ${event.location}</span>` : ''}
@@ -1060,6 +1156,16 @@
       // Horários
       const start = new Date(event.start_date)
       const startTime = start.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+
+      // Cunho
+      const cunhoCont = document.getElementById('detail-cunho-container')
+      const cunhoBadgeEl = document.getElementById('detail-cunho-badge')
+      if (event.cunho) {
+        cunhoBadgeEl.innerHTML = getCunhoBadgeHtml(event.cunho)
+        cunhoCont.style.display = 'flex'
+      } else {
+        cunhoCont.style.display = 'none'
+      }
 
       let dateStr = ""
       if (event.end_date) {
@@ -1118,6 +1224,7 @@
       document.getElementById('form-modal-title').textContent = 'Nova Programação'
       document.getElementById('form-event-id').value = ''
       document.getElementById('form-title').value = ''
+      document.getElementById('form-cunho').value = ''
       document.getElementById('form-description').value = ''
       document.getElementById('form-location').value = ''
       document.getElementById('form-end-date').value = ''
@@ -1145,6 +1252,7 @@
 
       const eventId = document.getElementById('form-event-id').value
       const title = document.getElementById('form-title').value.trim()
+      const cunho = document.getElementById('form-cunho').value
       const description = document.getElementById('form-description').value.trim()
       const location = document.getElementById('form-location').value.trim()
       const startDateVal = document.getElementById('form-start-date').value
@@ -1153,7 +1261,7 @@
 
       errorEl.classList.add('hidden')
 
-      if (!title || !startDateVal) {
+      if (!title || !startDateVal || !cunho) {
         errorEl.textContent = 'Preencha todos os campos obrigatórios (*)'
         errorEl.classList.remove('hidden')
         return
@@ -1173,6 +1281,7 @@
 
       const payload = {
         title,
+        cunho,
         description: description || null,
         start_date: startDate.toISOString(),
         end_date: endDate ? endDate.toISOString() : null,
@@ -1225,6 +1334,7 @@
       document.getElementById('form-modal-title').textContent = 'Editar Programação'
       document.getElementById('form-event-id').value = activeEventForDetail.id
       document.getElementById('form-title').value = activeEventForDetail.title
+      document.getElementById('form-cunho').value = activeEventForDetail.cunho || ''
       document.getElementById('form-description').value = activeEventForDetail.description || ''
       document.getElementById('form-location').value = activeEventForDetail.location || ''
 

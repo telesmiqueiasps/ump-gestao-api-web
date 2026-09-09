@@ -35,6 +35,7 @@ try:
         conn.execute(text("ALTER TABLE local_umps ADD COLUMN IF NOT EXISTS estado VARCHAR(2);"))
         conn.execute(text("ALTER TABLE local_umps ADD COLUMN IF NOT EXISTS latitude FLOAT;"))
         conn.execute(text("ALTER TABLE local_umps ADD COLUMN IF NOT EXISTS longitude FLOAT;"))
+        conn.execute(text("ALTER TABLE calendar_events ADD COLUMN IF NOT EXISTS cunho VARCHAR(50);"))
 except Exception as e:
     import logging
     logging.getLogger("uvicorn").error(f"Error creating database tables or migrating columns: {e}")

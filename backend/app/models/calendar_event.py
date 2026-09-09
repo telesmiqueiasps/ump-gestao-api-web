@@ -13,6 +13,7 @@ class CalendarEvent(Base):
     local_ump_id = Column(UUID(as_uuid=True), ForeignKey("local_umps.id"), nullable=True)  # Null if it is a federation event
     
     title = Column(String(200), nullable=False)
+    cunho = Column(String(50), nullable=True)
     description = Column(Text, nullable=True)
     start_date = Column(DateTime(timezone=True), nullable=False)
     end_date = Column(DateTime(timezone=True), nullable=True)

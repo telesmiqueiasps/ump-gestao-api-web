@@ -533,6 +533,14 @@
       </div>
 
       <div style="display:flex;flex-direction:column;gap:.65rem">
+        <div style="display:flex;align-items:center;gap:.4rem" id="detail-cunho-container">
+          <span style="font-size:1rem">🏷️</span>
+          <div>
+            <p style="font-size:.68rem;color:#94a3b8;margin:0">Cunho</p>
+            <div id="detail-cunho-badge" style="margin-top:2px">—</div>
+          </div>
+        </div>
+
         <div style="display:flex;align-items:center;gap:.4rem">
           <span style="font-size:1rem">⏰</span>
           <div>
@@ -565,6 +573,24 @@
 <script>
   const API = 'https://umpgestaopopb-825585682536.us-west1.run.app'
   const MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+
+  const CUNHO_CONFIG = {
+    'Social': { icon: '🤝', label: 'Social', bg: '#ecfdf5', color: '#065f46', border: '#a7f3d0' },
+    'Evangelístico/Missional': { icon: '📢', label: 'Evangelístico/Missional', bg: '#eff6ff', color: '#1e40af', border: '#bfdbfe' },
+    'Espiritual': { icon: '📖', label: 'Espiritual', bg: '#f5f3ff', color: '#5b21b6', border: '#ddd6fe' },
+    'Recreativo': { icon: '⚽', label: 'Recreativo', bg: '#fefce8', color: '#854d0e', border: '#fef08a' },
+    'Oração/Vigília': { icon: '🙏', label: 'Oração/Vigília', bg: '#fdf2f8', color: '#9d174d', border: '#fbcfe8' }
+  }
+
+  function getCunhoBadgeHtml(cunho, size = 'normal') {
+    if (!cunho || !CUNHO_CONFIG[cunho]) return ''
+    const conf = CUNHO_CONFIG[cunho]
+    const fontSize = size === 'sm' ? '0.68rem' : '0.74rem'
+    const padding = size === 'sm' ? '1px 6px' : '2px 8px'
+    return `<span style="display:inline-flex;align-items:center;gap:3px;background:${conf.bg};color:${conf.color};border:1px solid ${conf.border};padding:${padding};border-radius:99px;font-size:${fontSize};font-weight:600;white-space:nowrap;line-height:1.4">
+      <span>${conf.icon}</span> <span>${conf.label}</span>
+    </span>`
+  }
 
   let orgId      = null
   let token      = null
@@ -1323,11 +1349,15 @@
     listEl.innerHTML = dayEvents.map(ev => {
       const color = getColorForOrg(ev.local_ump_id || ev.federation_id)
       const stTime = new Date(ev.start_date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      const cunhoBadge = getCunhoBadgeHtml(ev.cunho, 'sm')
       return `
         <div class="event-card-item" onclick="openEventDetail('${ev.id}')">
           <span style="width:4px;height:32px;background:${color};border-radius:2px;flex-shrink:0"></span>
           <div style="flex:1">
-            <h4 style="font-size:.82rem;font-weight:600;margin:0">${ev.title}</h4>
+            <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap">
+              <h4 style="font-size:.82rem;font-weight:600;margin:0">${ev.title}</h4>
+              ${cunhoBadge}
+            </div>
             <p style="font-size:.68rem;color:var(--slate-500);margin:0;margin-top:2px">⏰ ${stTime} · ${ev.organizer_name}</p>
           </div>
         </div>`
@@ -1353,6 +1383,7 @@
       const evDate = new Date(ev.start_date)
       const day = evDate.getDate()
       const timeStr = evDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      const cunhoBadge = getCunhoBadgeHtml(ev.cunho, 'sm')
       return `
         <div class="event-card-item" onclick="openEventDetail('${ev.id}')">
           <div class="agenda-date-box" style="border-left: 3.5px solid ${color}">
@@ -1360,7 +1391,10 @@
             <span class="agenda-date-month">${MONTHS[evDate.getMonth()]}</span>
           </div>
           <div class="agenda-content">
-            <h4 class="agenda-title">${ev.title}</h4>
+            <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap">
+              <h4 class="agenda-title" style="margin:0">${ev.title}</h4>
+              ${cunhoBadge}
+            </div>
             <div class="agenda-meta">
               <span>⏰ ${timeStr}</span>
               <span>🏢 ${ev.organizer_name}</span>
@@ -1381,6 +1415,16 @@
     document.getElementById('detail-organizer').textContent = ev.organizer_name
     document.getElementById('detail-org-banner').style.borderLeftColor = color
     document.getElementById('detail-org-logo').src = ev.logo_url || '/assets/img/logo.png'
+
+    // Cunho
+    const cunhoCont = document.getElementById('detail-cunho-container')
+    const cunhoBadgeEl = document.getElementById('detail-cunho-badge')
+    if (ev.cunho) {
+      cunhoBadgeEl.innerHTML = getCunhoBadgeHtml(ev.cunho)
+      cunhoCont.style.display = 'flex'
+    } else {
+      cunhoCont.style.display = 'none'
+    }
 
     const start = new Date(ev.start_date)
     const optionsDate = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }
