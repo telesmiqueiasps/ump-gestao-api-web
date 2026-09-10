@@ -9,12 +9,13 @@ from sqlalchemy.exc import IntegrityError
 
 from app.db.session import get_db
 from app.models.user import User
-from app.models.enums import OrgType, BoardRole, MemberType
+from app.models.enums import OrgType, BoardRole, MemberType, TransactionType
 from app.models.federation import Federation
 from app.models.local_ump import LocalUmp
 from app.models.member import Member
 from app.models.calendar_event import CalendarEvent
 from app.models.member_fees import MemberAciContribution
+from app.models.finance import FinancialPeriod, FinancialTransaction
 from app.models.ump_statistic import (
     UmpStatisticCollector,
     UmpStatisticResponse,
@@ -114,7 +115,7 @@ def _get_or_create_collector_with_sync(local_ump_id: UUID, year: int, db: Sessio
         collector = UmpStatisticCollector(
             local_ump_id=local_ump_id,
             fiscal_year=year,
-            title=f"Censo Estatístico {year} — {ump_name}",
+            title=f"Dados Estatísticos {year} — {ump_name}",
             created_by=user_id
         )
         try:
@@ -325,39 +326,44 @@ def get_ump_statistics_metrics(
             else:
                 responses = []
 
-            # ACI consolidada
-            member_counts_by_local = dict(db.query(
-                Member.local_ump_id, func.count(Member.id)
-            ).filter(
-                Member.local_ump_id.in_(all_local_ids),
-                Member.is_active == True
-            ).group_by(Member.local_ump_id).all())
-
-            total_aci_to_collect = 0.0
-            for l in all_locals:
-                val = float(l.aci_year_value or 0)
-                count = member_counts_by_local.get(l.id, 0)
-                total_aci_to_collect += round(val * count, 2)
-            total_aci_to_collect = round(total_aci_to_collect, 2)
-
-            total_aci_collected = float(db.query(
-                func.coalesce(func.sum(MemberAciContribution.amount), 0)
-            ).filter(
-                MemberAciContribution.local_ump_id.in_(all_local_ids),
-                MemberAciContribution.fiscal_year == target_year
-            ).scalar() or 0)
         else:
             active_members_count = 0
             coop_members_count = 0
             responses = []
-            total_aci_to_collect = 0.0
-            total_aci_collected = 0.0
 
+        # Programações por Cunho: apenas as da própria federação (sem local_ump_id)
         calendar_events = db.query(CalendarEvent).filter(
             CalendarEvent.federation_id == current_user.organization_id,
+            CalendarEvent.local_ump_id.is_(None),
             extract("year", CalendarEvent.start_date) == target_year
         ).all()
 
+        # ACI a repassar na Federação: total de ACI recebida no ano pela federação dividido por 2
+        period = db.query(FinancialPeriod).filter(
+            FinancialPeriod.organization_id == current_user.organization_id,
+            FinancialPeriod.fiscal_year == target_year
+        ).first()
+
+        if period:
+            total_aci_recebida = float(db.query(
+                func.coalesce(func.sum(FinancialTransaction.amount), 0)
+            ).filter(
+                FinancialTransaction.period_id == period.id,
+                FinancialTransaction.transaction_type == TransactionType.aci_recebida
+            ).scalar() or 0)
+
+            total_aci_enviada = float(db.query(
+                func.coalesce(func.sum(FinancialTransaction.amount), 0)
+            ).filter(
+                FinancialTransaction.period_id == period.id,
+                FinancialTransaction.transaction_type == TransactionType.aci_enviada
+            ).scalar() or 0)
+        else:
+            total_aci_recebida = 0.0
+            total_aci_enviada = 0.0
+
+        total_aci_to_collect = round(total_aci_recebida / 2, 2)
+        total_aci_collected = total_aci_enviada
         aci_year_val = 0.0
 
     else:
@@ -559,6 +565,7 @@ def get_ump_statistics_metrics(
         },
         "aci_metrics": {
             "aci_year_value": aci_year_val,
+            "total_received": total_aci_recebida if (is_federation and not local_ump_id) else 0,
             "total_to_collect": total_aci_to_collect,
             "total_collected": total_aci_collected,
             "remaining": aci_remaining,
@@ -659,7 +666,7 @@ def submit_public_survey(token: str, payload: SurveyAnswerPayload, db: Session =
     if payload.marital_status and payload.marital_status not in VALID_MARITAL_STATUS:
         raise HTTPException(status_code=400, detail=f"Estado civil inválido. Opções: {', '.join(VALID_MARITAL_STATUS)}")
 
-    # Atualiza as respostas do censo
+    # Atualiza as respostas de dados estatísticos
     response.birth_date = payload.birth_date
     response.gender = payload.gender
     response.education_level = payload.education_level

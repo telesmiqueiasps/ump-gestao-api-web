@@ -429,7 +429,7 @@
         <div class="page-header">
           <div class="page-header-info">
             <h1 id="page-title">Estatísticas UMP</h1>
-            <p id="page-subtitle">Censo demográfico e quantitativo anual dos sócios da mocidade</p>
+            <p id="page-subtitle">Levantamento e dados estatísticos anuais dos sócios da mocidade</p>
           </div>
           <div class="page-header-actions">
             <!-- Seletor de UMP Local (para usuários de federação) -->
@@ -631,7 +631,7 @@
               <div>
                 <h3 style="font-size: 1rem; font-weight: 700; color: var(--slate-800); margin: 0;" id="collector-society-title">Coletor de Dados</h3>
                 <p style="font-size: .8rem; color: var(--slate-500); margin-top: .2rem; margin-bottom: 0;">
-                  Envie o link individual para cada sócio responder seu questionário do Censo. O progresso é computado em tempo real.
+                  Envie o link individual para cada sócio responder o formulário de dados estatísticos. O progresso é computado em tempo real.
                 </p>
               </div>
               <div class="collector-banner-actions">
@@ -849,7 +849,7 @@
         const titleEl = document.getElementById('page-title')
         if (titleEl) titleEl.textContent = 'Estatísticas UMP — Federação'
         const subEl = document.getElementById('page-subtitle')
-        if (subEl) subEl.textContent = 'Censo demográfico e quantitativo anual consolidado das UMPs Locais'
+        if (subEl) subEl.textContent = 'Dados estatísticos anuais consolidados das UMPs Locais'
       }
 
       // Configura seletor de ano
@@ -868,8 +868,8 @@
           const subEl = document.getElementById('page-subtitle')
           if (subEl) {
             subEl.textContent = selectedLocalId
-              ? 'Censo demográfico e quantitativo anual da UMP Local selecionada'
-              : 'Censo demográfico e quantitativo anual consolidado das UMPs Locais'
+              ? 'Dados estatísticos anuais da UMP Local selecionada'
+              : 'Dados estatísticos anuais consolidados das UMPs Locais'
           }
         }
         loadAllData()
@@ -994,12 +994,15 @@
       const aci = data.aci_metrics || {}
       document.getElementById('stat-aci-total').textContent = formatCurrency(aci.total_to_collect || 0)
       if (data.is_federation && data.is_consolidated) {
-        document.getElementById('stat-aci-sub').textContent = `${data.federation_metrics?.active_locals || 0} UMPs ativas · ${data.total_registered || 0} sócios`
+        const received = aci.total_received ?? (aci.total_to_collect * 2)
+        document.getElementById('stat-aci-sub').textContent = `50% de ${formatCurrency(received)} (ACI recebida)`
+        document.getElementById('stat-aci-bar').style.width = `${Math.min(100, aci.progress_percent || 0)}%`
+        document.getElementById('stat-aci-bar').title = `Repassado à Sinodal: ${formatCurrency(aci.total_collected || 0)} (${aci.progress_percent || 0}%)`
       } else {
         document.getElementById('stat-aci-sub').textContent = `${data.total_registered || 0} sócios × ${formatCurrency(aci.aci_year_value || 0)}`
+        document.getElementById('stat-aci-bar').style.width = `${Math.min(100, aci.progress_percent || 0)}%`
+        document.getElementById('stat-aci-bar').title = `Arrecadado: ${formatCurrency(aci.total_collected || 0)} (${aci.progress_percent || 0}%)`
       }
-      document.getElementById('stat-aci-bar').style.width = `${Math.min(100, aci.progress_percent || 0)}%`
-      document.getElementById('stat-aci-bar').title = `Arrecadado: ${formatCurrency(aci.total_collected || 0)} (${aci.progress_percent || 0}%)`
 
       const totalResp = data.total_responded || 1
 
@@ -1137,7 +1140,7 @@
     window.renderCollectorList = function() {
       const container = document.getElementById('collector-voters-list')
       if (!collectorData || !collectorData.voters || collectorData.voters.length === 0) {
-        container.innerHTML = '<div style="background:#fff; border:1.5px solid var(--slate-200); border-radius:var(--radius); padding:2.5rem 1rem; text-align:center; color:var(--slate-400); font-size:.875rem;">Nenhum sócio encontrado no censo deste ano. Clique em "Sincronizar Sócios" acima.</div>'
+        container.innerHTML = '<div style="background:#fff; border:1.5px solid var(--slate-200); border-radius:var(--radius); padding:2.5rem 1rem; text-align:center; color:var(--slate-400); font-size:.875rem;">Nenhum sócio encontrado no levantamento estatístico deste ano. Clique em "Sincronizar Sócios" acima.</div>'
         return
       }
 
@@ -1249,7 +1252,7 @@
 
     window.sendWhatsapp = function(name, phone, link) {
       const society = collectorData ? collectorData.local_ump_name : 'nossa UMP'
-      const msg = `Olá, ${name}! 👋\n\nPor favor, preencha o formulário do Censo Estatístico ${selectedYear} da ${society}.\nLeva menos de 1 minuto e é fundamental para as nossas atividades:\n\n👉 ${link}\n\nDeus abençoe!`
+      const msg = `Olá, ${name}! 👋\n\nPor favor, preencha o formulário de dados estatísticos de ${selectedYear} da ${society}.\nLeva menos de 1 minuto e é fundamental para as nossas atividades:\n\n👉 ${link}\n\nDeus abençoe!`
       
       let cleanPhone = (phone || '').replace(/\D/g, '')
       if (cleanPhone && cleanPhone.length >= 10 && !cleanPhone.startsWith('55')) {
@@ -1265,7 +1268,7 @@
 
     window.openWhatsappTemplateModal = function() {
       const society = collectorData ? collectorData.local_ump_name : 'nossa UMP'
-      const template = `Olá, [Nome do Sócio]! 👋\n\nPor favor, preencha o formulário do Censo Estatístico ${selectedYear} da ${society}.\nLeva menos de 1 minuto e é fundamental para o planejamento das nossas atividades:\n\n👉 [Link Individual do Sócio]\n\nDeus abençoe!`
+      const template = `Olá, [Nome do Sócio]! 👋\n\nPor favor, preencha o formulário de dados estatísticos de ${selectedYear} da ${society}.\nLeva menos de 1 minuto e é fundamental para o planejamento das nossas atividades:\n\n👉 [Link Individual do Sócio]\n\nDeus abençoe!`
       document.getElementById('whatsapp-template-text').value = template
       openModal('modal-whatsapp-template')
     }
