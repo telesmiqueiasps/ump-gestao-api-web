@@ -4,7 +4,7 @@ from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, extract
 from sqlalchemy.exc import IntegrityError
 
 from app.db.session import get_db
@@ -12,6 +12,8 @@ from app.models.user import User
 from app.models.enums import OrgType, BoardRole, MemberType
 from app.models.local_ump import LocalUmp
 from app.models.member import Member
+from app.models.calendar_event import CalendarEvent
+from app.models.member_fees import MemberAciContribution
 from app.models.ump_statistic import (
     UmpStatisticCollector,
     UmpStatisticResponse,
@@ -283,17 +285,29 @@ def get_ump_statistics_metrics(
         UmpStatisticResponse.collector_id == collector.id
     ).all()
 
-    total_registered = len(responses)
+    # 0. Contagem de sócios ativos e cooperadores
+    active_members_count = db.query(Member).filter(
+        Member.local_ump_id == resolved_local_id,
+        Member.is_active == True,
+        Member.member_type == MemberType.ativo
+    ).count()
+
+    coop_members_count = db.query(Member).filter(
+        Member.local_ump_id == resolved_local_id,
+        Member.is_active == True,
+        Member.member_type == MemberType.cooperador
+    ).count()
+
+    total_registered = active_members_count + coop_members_count
     responded_list = [r for r in responses if r.has_responded]
     total_responded = len(responded_list)
 
-    # 1. Faixas Etárias
+    # 1. Faixas Etárias (Menores de 19, 19-23, 24-29, 30-35; faixa 36+ removida)
     age_groups = {
-        "15_18": 0,
+        "menores_19": 0,
         "19_23": 0,
         "24_29": 0,
         "30_35": 0,
-        "36_plus": 0,
         "not_informed": 0
     }
     ages_list = []
@@ -303,16 +317,14 @@ def get_ump_statistics_metrics(
             age_groups["not_informed"] += 1
         else:
             ages_list.append(age)
-            if age <= 18:
-                age_groups["15_18"] += 1
+            if age < 19:
+                age_groups["menores_19"] += 1
             elif 19 <= age <= 23:
                 age_groups["19_23"] += 1
             elif 24 <= age <= 29:
                 age_groups["24_29"] += 1
             elif 30 <= age <= 35:
                 age_groups["30_35"] += 1
-            else:
-                age_groups["36_plus"] += 1
 
     average_age = round(sum(ages_list) / len(ages_list), 1) if ages_list else 0
 
@@ -383,13 +395,46 @@ def get_ump_statistics_metrics(
         else:
             disabilities_general["nao_informado"] += 1
 
+    # 7. Programações da UMP por Cunho (módulo de calendário)
+    VALID_CUNHOS = [
+        "Social",
+        "Evangelístico/Missional",
+        "Espiritual",
+        "Recreativo",
+        "Oração/Vigília"
+    ]
+    calendar_events = db.query(CalendarEvent).filter(
+        CalendarEvent.local_ump_id == resolved_local_id,
+        extract("year", CalendarEvent.start_date) == target_year
+    ).all()
+
+    events_by_cunho = {c: 0 for c in VALID_CUNHOS}
+    for ev in calendar_events:
+        if ev.cunho in events_by_cunho:
+            events_by_cunho[ev.cunho] += 1
+
+    # 8. ACI a ser repassada
     local_obj = db.query(LocalUmp).filter(LocalUmp.id == resolved_local_id).first()
+    aci_year_val = float(local_obj.aci_year_value or 0) if local_obj else 0.0
+    total_aci_to_collect = round(aci_year_val * total_registered, 2)
+
+    total_aci_collected = float(db.query(
+        func.coalesce(func.sum(MemberAciContribution.amount), 0)
+    ).filter(
+        MemberAciContribution.local_ump_id == resolved_local_id,
+        MemberAciContribution.fiscal_year == target_year
+    ).scalar() or 0)
+
+    aci_remaining = max(0.0, round(total_aci_to_collect - total_aci_collected, 2))
+    aci_progress = round((total_aci_collected / total_aci_to_collect * 100), 1) if total_aci_to_collect > 0 else 0.0
 
     return {
         "fiscal_year": target_year,
         "local_ump_id": str(resolved_local_id),
         "local_ump_name": local_obj.name if local_obj else "UMP Local",
         "total_registered": total_registered,
+        "total_active": active_members_count,
+        "total_cooperating": coop_members_count,
         "total_responded": total_responded,
         "response_rate_percent": round((total_responded / total_registered) * 100, 1) if total_registered > 0 else 0,
         "age_metrics": {
@@ -404,6 +449,18 @@ def get_ump_statistics_metrics(
             "general": disabilities_general,
             "breakdown": disabilities_breakdown,
             "other_descriptions": other_descriptions
+        },
+        "events_metrics": {
+            "total_events": len(calendar_events),
+            "by_cunho": events_by_cunho
+        },
+        "aci_metrics": {
+            "aci_year_value": aci_year_val,
+            "total_to_collect": total_aci_to_collect,
+            "total_collected": total_aci_collected,
+            "remaining": aci_remaining,
+            "progress_percent": aci_progress,
+            "is_complete": total_aci_collected >= total_aci_to_collect and total_aci_to_collect > 0
         }
     }
 

@@ -475,7 +475,10 @@
               <div style="flex:1; min-width:0">
                 <div class="stat-label">Total de Sócios</div>
                 <div class="stat-value" id="stat-total-registered">0</div>
-                <div class="stat-sub">Ativos e cooperadores</div>
+                <div class="stat-sub" id="stat-members-sub">
+                  <span style="font-weight: 600; color: var(--blue-700);"><span id="stat-total-active">0</span> Ativos</span> · 
+                  <span style="font-weight: 600; color: var(--slate-600);"><span id="stat-total-coop">0</span> Coop.</span>
+                </div>
               </div>
             </div>
 
@@ -507,6 +510,18 @@
                 <div class="stat-sub">Mocidade local</div>
               </div>
             </div>
+
+            <div class="stat-card">
+              <div class="stat-icon" style="background: #eff6ff; color: #1e40af">🏛️</div>
+              <div style="flex:1; min-width:0">
+                <div class="stat-label">Total ACI a Repassar</div>
+                <div class="stat-value" id="stat-aci-total" style="color: #1a2a6c; font-size: 1.25rem;">R$ 0,00</div>
+                <div class="stat-sub" id="stat-aci-sub" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">0 sócios × R$ 0,00</div>
+                <div class="stat-bar-bg" style="margin-top: .4rem; height: 6px;">
+                  <div class="stat-bar-fill" id="stat-aci-bar" style="width: 0%; background: var(--green-600, #16a34a)"></div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Grid com Categorias Analíticas -->
@@ -518,6 +533,17 @@
                 <h3 style="font-size: .95rem; font-weight: 700; color: var(--slate-800); margin: 0;">🎂 Faixas Etárias</h3>
               </div>
               <div id="stat-age-list">
+                <!-- Renderizado via JS -->
+              </div>
+            </div>
+
+            <!-- Programações por Cunho -->
+            <div class="card">
+              <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="font-size: .95rem; font-weight: 700; color: var(--slate-800); margin: 0;">📅 Programações por Cunho</h3>
+                <span class="badge" id="stat-events-total-badge" style="background: var(--blue-50); color: var(--blue-700); font-weight: 600; font-size: .75rem; padding: 2px 8px; border-radius: 99px;">0 programações</span>
+              </div>
+              <div id="stat-events-cunho-list">
                 <!-- Renderizado via JS -->
               </div>
             </div>
@@ -771,6 +797,7 @@
     import { requireAuth, getUser } from '../assets/js/auth.js?v=9'
     import { renderShell, canAccessPage, renderBottomNav } from '../assets/js/router.v3.js?v=9'
     import { api } from '../assets/js/api.js?v=9'
+    import { formatCurrency } from '../assets/js/utils.js?v=9'
 
     let currentUser = null
     let selectedYear = new Date().getFullYear()
@@ -882,51 +909,85 @@
 
     // ── RENDERIZAÇÃO: ESTATÍSTICAS GERAIS ──
     function renderGeneralMetrics(data) {
-      document.getElementById('stat-total-registered').textContent = data.total_registered
-      document.getElementById('stat-total-responded').textContent = data.total_responded
-      document.getElementById('stat-responded-sub').textContent = `${data.total_registered - data.total_responded} pendentes`
+      document.getElementById('stat-total-registered').textContent = data.total_registered || 0
+      document.getElementById('stat-total-active').textContent = data.total_active ?? 0
+      document.getElementById('stat-total-coop').textContent = data.total_cooperating ?? 0
+
+      document.getElementById('stat-total-responded').textContent = data.total_responded || 0
+      document.getElementById('stat-responded-sub').textContent = `${(data.total_registered || 0) - (data.total_responded || 0)} pendentes`
       document.getElementById('stat-response-rate').textContent = `${data.response_rate_percent}%`
       document.getElementById('stat-response-bar').style.width = `${data.response_rate_percent}%`
-      document.getElementById('stat-average-age').textContent = data.age_metrics.average_age > 0 
+      document.getElementById('stat-average-age').textContent = (data.age_metrics && data.age_metrics.average_age > 0)
         ? `${data.age_metrics.average_age} anos` 
         : '—'
 
+      // Card: Total ACI a Repassar
+      const aci = data.aci_metrics || {}
+      document.getElementById('stat-aci-total').textContent = formatCurrency(aci.total_to_collect || 0)
+      document.getElementById('stat-aci-sub').textContent = `${data.total_registered || 0} sócios × ${formatCurrency(aci.aci_year_value || 0)}`
+      document.getElementById('stat-aci-bar').style.width = `${Math.min(100, aci.progress_percent || 0)}%`
+      document.getElementById('stat-aci-bar').title = `Arrecadado: ${formatCurrency(aci.total_collected || 0)} (${aci.progress_percent || 0}%)`
+
       const totalResp = data.total_responded || 1
 
-      // 1. Faixas Etárias
+      // 1. Faixas Etárias (Menores de 19, 19-23, 24-29, 30-35; faixa 36+ removida)
       const ageLabels = {
-        '15_18': '15 a 18 anos',
+        'menores_19': 'Menores de 19 anos',
         '19_23': '19 a 23 anos',
         '24_29': '24 a 29 anos',
         '30_35': '30 a 35 anos',
-        '36_plus': '36 anos ou mais',
         'not_informed': 'Não informado'
       }
-      document.getElementById('stat-age-list').innerHTML = Object.entries(data.age_metrics.groups).map(([k, val]) => {
-        const pct = Math.round((val / totalResp) * 100)
-        return renderStatBarRow(ageLabels[k] || k, val, pct, '#2563eb')
+      document.getElementById('stat-age-list').innerHTML = Object.entries(data.age_metrics.groups || {})
+        .filter(([k]) => k !== '36_plus')
+        .map(([k, val]) => {
+          const pct = Math.round((val / totalResp) * 100)
+          return renderStatBarRow(ageLabels[k] || k, val, pct, '#2563eb')
+        }).join('')
+
+      // 2. Programações por Cunho (módulo de calendário)
+      const cunhoConfig = {
+        'Social':                  { label: 'Social', icon: '🤝', color: '#10b981' },
+        'Evangelístico/Missional': { label: 'Evangelístico/Missional', icon: '📢', color: '#2563eb' },
+        'Espiritual':              { label: 'Espiritual', icon: '📖', color: '#7c3aed' },
+        'Recreativo':              { label: 'Recreativo', icon: '⚽', color: '#d97706' },
+        'Oração/Vigília':          { label: 'Oração/Vigília', icon: '🙏', color: '#db2777' }
+      }
+      const evMetrics = data.events_metrics || { total_events: 0, by_cunho: {} }
+      const totalEvents = evMetrics.total_events || 0
+      const evBadge = document.getElementById('stat-events-total-badge')
+      if (evBadge) {
+        evBadge.textContent = `${totalEvents} ${totalEvents === 1 ? 'programação' : 'programações'}`
+      }
+      const evBase = totalEvents > 0 ? totalEvents : 1
+      const byCunho = evMetrics.by_cunho || {}
+      document.getElementById('stat-events-cunho-list').innerHTML = Object.keys(cunhoConfig).map(cunhoKey => {
+        const cfg = cunhoConfig[cunhoKey]
+        const val = byCunho[cunhoKey] || 0
+        const pct = totalEvents > 0 ? Math.round((val / evBase) * 100) : 0
+        return renderStatBarRow(`${cfg.icon} ${cfg.label}`, val, pct, cfg.color)
       }).join('')
 
-      // 2. Sexo
+      // 3. Sexo
       document.getElementById('stat-gender-list').innerHTML = Object.entries(data.gender_metrics).map(([k, val]) => {
         const pct = Math.round((val / totalResp) * 100)
         const color = k === 'Masculino' ? '#2563eb' : (k === 'Feminino' ? '#db2777' : '#94a3b8')
         return renderStatBarRow(k, val, pct, color)
       }).join('')
 
-      // 3. Escolaridade
+      // 4. Escolaridade
       document.getElementById('stat-education-list').innerHTML = Object.entries(data.education_metrics).map(([k, val]) => {
         const pct = Math.round((val / totalResp) * 100)
         return renderStatBarRow(k, val, pct, '#7c3aed')
       }).join('')
 
-      // 4. Estado Civil
+      // 5. Estado Civil
       document.getElementById('stat-marital-list').innerHTML = Object.entries(data.marital_status_metrics).map(([k, val]) => {
         const pct = Math.round((val / totalResp) * 100)
         return renderStatBarRow(k, val, pct, '#d97706')
       }).join('')
 
-      // 5. Filhos
+      // 6. Filhos
       const childrenLabels = {
         'com_filhos': 'Possui filhos',
         'sem_filhos': 'Não possui filhos',
@@ -938,7 +999,7 @@
         return renderStatBarRow(childrenLabels[k] || k, val, pct, color)
       }).join('')
 
-      // 6. Deficiências
+      // 7. Deficiências
       const disLabels = {
         'surdo': 'Surdo',
         'deficiente_auditivo': 'Deficiente auditivo',
