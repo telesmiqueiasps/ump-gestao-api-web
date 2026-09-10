@@ -67,6 +67,13 @@ const NAV_ITEMS = [
       'secretario_executivo', 'secretario_presbiterial', 'conselheiro'],
   },
   {
+    page: 'ump-statistics', label: 'Estatísticas', icon: '/assets/img/estatistica.png',
+    path: '/pages/ump-statistics.html',
+    umpOnly: true,
+    roles: ['presidente', 'vice_presidente', 'tesoureiro', '1_secretario', '2_secretario',
+      'secretario_executivo', 'secretario_presbiterial', 'conselheiro'],
+  },
+  {
     page: 'notices', label: 'Avisos', icon: '/assets/img/aviso.png',
     path: '/pages/notices.html',
     roles: null
@@ -98,7 +105,9 @@ export function canAccessPage(page) {
   if (!item) return false
   if (item.fedOnly && !isFederation()) return false
   if (item.localOnly && !isLocalUmp()) return false
-  if (item.uphOnly && (localStorage.getItem('society_type') || 'UMP') !== 'UPH') return false
+  const currentSociety = localStorage.getItem('society_type') || 'UMP'
+  if (item.uphOnly && currentSociety !== 'UPH') return false
+  if (item.umpOnly && currentSociety !== 'UMP') return false
   if (item.roles === null) return true
   const userRoles = getUser()?.roles ?? []
   return item.roles.some(r => userRoles.includes(r))
@@ -119,6 +128,7 @@ function buildNavHTML(user, societyType) {
       if (item.fedOnly && !isFederation()) return false
       if (item.localOnly && !isLocalUmp()) return false
       if (item.uphOnly && societyType !== 'UPH') return false
+      if (item.umpOnly && societyType !== 'UMP') return false
       if (item.roles === null) return true
       return item.roles.some(r => userRoles.includes(r))
     })
