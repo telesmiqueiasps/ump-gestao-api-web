@@ -429,7 +429,7 @@
         <div class="page-header">
           <div class="page-header-info">
             <h1 id="page-title">Estatísticas UMP</h1>
-            <p>Censo demográfico e quantitativo anual dos sócios da mocidade</p>
+            <p id="page-subtitle">Censo demográfico e quantitativo anual dos sócios da mocidade</p>
           </div>
           <div class="page-header-actions">
             <!-- Seletor de UMP Local (para usuários de federação) -->
@@ -470,6 +470,25 @@
         <section id="sec-general">
           <!-- Cards de Resumo Executivo -->
           <div class="stats-summary-grid">
+            <!-- Cards Exclusivos para Federação: Locais Ativas e Inativas -->
+            <div class="stat-card" id="card-fed-active-locals" style="display:none">
+              <div class="stat-icon green">🏛️</div>
+              <div style="flex:1; min-width:0">
+                <div class="stat-label">Locais Ativas</div>
+                <div class="stat-value" id="stat-fed-active-locals" style="color: var(--green-600, #16a34a)">0</div>
+                <div class="stat-sub">UMPs em atividade</div>
+              </div>
+            </div>
+
+            <div class="stat-card" id="card-fed-inactive-locals" style="display:none">
+              <div class="stat-icon" style="background:#fee2e2; color:#dc2626">🏛️</div>
+              <div style="flex:1; min-width:0">
+                <div class="stat-label">Locais Inativas</div>
+                <div class="stat-value" id="stat-fed-inactive-locals" style="color: var(--red-600, #dc2626)">0</div>
+                <div class="stat-sub">UMPs desativadas</div>
+              </div>
+            </div>
+
             <div class="stat-card">
               <div class="stat-icon blue">👥</div>
               <div style="flex:1; min-width:0">
@@ -794,7 +813,7 @@
   </div>
 
   <script type="module">
-    import { requireAuth, getUser } from '../assets/js/auth.js?v=9'
+    import { requireAuth, getUser, isFederation } from '../assets/js/auth.js?v=9'
     import { renderShell, canAccessPage, renderBottomNav } from '../assets/js/router.v3.js?v=9'
     import { api } from '../assets/js/api.js?v=9'
     import { formatCurrency } from '../assets/js/utils.js?v=9'
@@ -820,6 +839,19 @@
       document.querySelector('[data-page="ump-statistics"]')?.classList.add('active')
       currentUser = getUser()
 
+      // Tratamento para perfil de Federação
+      if (isFederation()) {
+        const subtabsContainer = document.querySelector('.subtabs-container')
+        if (subtabsContainer) subtabsContainer.style.setProperty('display', 'none', 'important')
+        document.getElementById('sec-collector')?.classList.add('hidden')
+        document.getElementById('sec-general')?.classList.remove('hidden')
+        
+        const titleEl = document.getElementById('page-title')
+        if (titleEl) titleEl.textContent = 'Estatísticas UMP — Federação'
+        const subEl = document.getElementById('page-subtitle')
+        if (subEl) subEl.textContent = 'Censo demográfico e quantitativo anual consolidado das UMPs Locais'
+      }
+
       // Configura seletor de ano
       const yearSelect = document.getElementById('select-year')
       yearSelect.value = String(selectedYear)
@@ -831,7 +863,15 @@
       // Seletor de UMP Local (para Federação)
       const localSelect = document.getElementById('select-local-ump')
       localSelect.addEventListener('change', (e) => {
-        selectedLocalId = e.target.value
+        selectedLocalId = e.target.value || null
+        if (isFederation()) {
+          const subEl = document.getElementById('page-subtitle')
+          if (subEl) {
+            subEl.textContent = selectedLocalId
+              ? 'Censo demográfico e quantitativo anual da UMP Local selecionada'
+              : 'Censo demográfico e quantitativo anual consolidado das UMPs Locais'
+          }
+        }
         loadAllData()
       })
 
@@ -852,7 +892,9 @@
     async function loadAllData() {
       clearAlert()
       try {
-        await loadCollectorData()
+        if (!isFederation()) {
+          await loadCollectorData()
+        }
         await loadMetricsData()
       } catch (err) {
         showAlert('Erro ao carregar dados: ' + (err.message || err))
@@ -904,11 +946,38 @@
       if (selectedLocalId) url += `&local_ump_id=${selectedLocalId}`
 
       metricsData = await api.get(url)
+
+      // Se for federação, popula o seletor de UMP local com a opção de Consolidado no início
+      if (metricsData.is_federation && metricsData.available_locals && metricsData.available_locals.length > 0) {
+        const localSelect = document.getElementById('select-local-ump')
+        localSelect.style.display = 'inline-block'
+        if (localSelect.children.length === 0) {
+          let optionsHtml = `<option value="">📊 Todas as UMPs Locais (Consolidado)</option>`
+          optionsHtml += metricsData.available_locals.map(l =>
+            `<option value="${l.id}" ${l.id === selectedLocalId ? 'selected' : ''}>🏛️ ${l.name}${l.is_active ? '' : ' (Inativa)'}</option>`
+          ).join('')
+          localSelect.innerHTML = optionsHtml
+        }
+      }
+
       renderGeneralMetrics(metricsData)
     }
 
     // ── RENDERIZAÇÃO: ESTATÍSTICAS GERAIS ──
     function renderGeneralMetrics(data) {
+      // Cards específicos para Federação (Locais Ativas e Inativas)
+      const cardActive = document.getElementById('card-fed-active-locals')
+      const cardInactive = document.getElementById('card-fed-inactive-locals')
+      if (data.is_federation && data.federation_metrics) {
+        if (cardActive) cardActive.style.display = 'flex'
+        if (cardInactive) cardInactive.style.display = 'flex'
+        document.getElementById('stat-fed-active-locals').textContent = data.federation_metrics.active_locals ?? 0
+        document.getElementById('stat-fed-inactive-locals').textContent = data.federation_metrics.inactive_locals ?? 0
+      } else {
+        if (cardActive) cardActive.style.display = 'none'
+        if (cardInactive) cardInactive.style.display = 'none'
+      }
+
       document.getElementById('stat-total-registered').textContent = data.total_registered || 0
       document.getElementById('stat-total-active').textContent = data.total_active ?? 0
       document.getElementById('stat-total-coop').textContent = data.total_cooperating ?? 0
@@ -924,7 +993,11 @@
       // Card: Total ACI a Repassar
       const aci = data.aci_metrics || {}
       document.getElementById('stat-aci-total').textContent = formatCurrency(aci.total_to_collect || 0)
-      document.getElementById('stat-aci-sub').textContent = `${data.total_registered || 0} sócios × ${formatCurrency(aci.aci_year_value || 0)}`
+      if (data.is_federation && data.is_consolidated) {
+        document.getElementById('stat-aci-sub').textContent = `${data.federation_metrics?.active_locals || 0} UMPs ativas · ${data.total_registered || 0} sócios`
+      } else {
+        document.getElementById('stat-aci-sub').textContent = `${data.total_registered || 0} sócios × ${formatCurrency(aci.aci_year_value || 0)}`
+      }
       document.getElementById('stat-aci-bar').style.width = `${Math.min(100, aci.progress_percent || 0)}%`
       document.getElementById('stat-aci-bar').title = `Arrecadado: ${formatCurrency(aci.total_collected || 0)} (${aci.progress_percent || 0}%)`
 
@@ -1123,6 +1196,7 @@
 
     // ── SUB-ABAS ALTERNAÇÃO ──
     window.switchSubTab = function(tab) {
+      if (isFederation()) return // Federação acessa exclusivamente Estatísticas Gerais
       currentSubTab = tab
       document.getElementById('btn-subtab-general').classList.toggle('active', tab === 'general')
       document.getElementById('btn-subtab-collector').classList.toggle('active', tab === 'collector')

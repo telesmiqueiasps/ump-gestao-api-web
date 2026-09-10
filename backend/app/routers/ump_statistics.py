@@ -10,6 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from app.db.session import get_db
 from app.models.user import User
 from app.models.enums import OrgType, BoardRole, MemberType
+from app.models.federation import Federation
 from app.models.local_ump import LocalUmp
 from app.models.member import Member
 from app.models.calendar_event import CalendarEvent
@@ -69,12 +70,17 @@ VALID_DISABILITIES = [
 
 # ── HELPERS ──
 
-def _resolve_local_ump_id(current_user: User, db: Session, requested_local_id: Optional[UUID] = None) -> UUID:
+def _resolve_local_ump_id(
+    current_user: User, 
+    db: Session, 
+    requested_local_id: Optional[UUID] = None,
+    fallback_first: bool = True
+) -> Optional[UUID]:
     """Identifica a UMP Local a ser consultada com base no usuário autenticado."""
     if current_user.organization_type == OrgType.local_ump:
         return current_user.organization_id
     
-    # Federação: pode especificar o local_ump_id ou usa a primeira UMP local pertencente a ela
+    # Federação: pode especificar o local_ump_id
     if requested_local_id:
         local = db.query(LocalUmp).filter(
             LocalUmp.id == requested_local_id,
@@ -84,13 +90,16 @@ def _resolve_local_ump_id(current_user: User, db: Session, requested_local_id: O
             raise HTTPException(status_code=404, detail="UMP Local não encontrada nesta Federação")
         return local.id
     
-    first_local = db.query(LocalUmp).filter(
-        LocalUmp.federation_id == current_user.organization_id
-    ).order_by(LocalUmp.name.asc()).first()
-    
-    if not first_local:
-        raise HTTPException(status_code=404, detail="Nenhuma UMP Local cadastrada nesta Federação")
-    return first_local.id
+    if fallback_first:
+        first_local = db.query(LocalUmp).filter(
+            LocalUmp.federation_id == current_user.organization_id
+        ).order_by(LocalUmp.name.asc()).first()
+        
+        if not first_local:
+            raise HTTPException(status_code=404, detail="Nenhuma UMP Local cadastrada nesta Federação")
+        return first_local.id
+
+    return None
 
 
 def _get_or_create_collector_with_sync(local_ump_id: UUID, year: int, db: Session, user_id: Optional[UUID] = None) -> UmpStatisticCollector:
@@ -271,32 +280,131 @@ def get_ump_statistics_metrics(
 ):
     """Retorna os quantitativos e percentuais consolidados para o painel de estatísticas."""
     target_year = year or datetime.date.today().year
-    resolved_local_id = _resolve_local_ump_id(current_user, db, local_ump_id)
+    is_federation = (current_user.organization_type == OrgType.federation)
 
-    collector = db.query(UmpStatisticCollector).filter(
-        UmpStatisticCollector.local_ump_id == resolved_local_id,
-        UmpStatisticCollector.fiscal_year == target_year
-    ).first()
+    all_locals = []
+    if is_federation:
+        all_locals = db.query(LocalUmp).filter(
+            LocalUmp.federation_id == current_user.organization_id,
+            LocalUmp.id != current_user.organization_id
+        ).order_by(LocalUmp.name.asc()).all()
 
-    if not collector:
-        collector = _get_or_create_collector_with_sync(resolved_local_id, target_year, db, current_user.id)
+    total_locals = len(all_locals)
+    active_locals_count = sum(1 for l in all_locals if l.is_active is True or l.is_active is None)
+    inactive_locals_count = sum(1 for l in all_locals if l.is_active is False)
+    all_local_ids = [l.id for l in all_locals]
 
-    responses = db.query(UmpStatisticResponse).filter(
-        UmpStatisticResponse.collector_id == collector.id
-    ).all()
+    # Decide se é visualização consolidada da federação ou de uma UMP Local específica
+    if is_federation and not local_ump_id:
+        is_consolidated = True
+        resolved_local_id = None
+        local_name = "Todas as UMPs Locais (Consolidado)"
 
-    # 0. Contagem de sócios ativos e cooperadores
-    active_members_count = db.query(Member).filter(
-        Member.local_ump_id == resolved_local_id,
-        Member.is_active == True,
-        Member.member_type == MemberType.ativo
-    ).count()
+        if all_local_ids:
+            active_members_count = db.query(Member).filter(
+                Member.local_ump_id.in_(all_local_ids),
+                Member.is_active == True,
+                Member.member_type == MemberType.ativo
+            ).count()
 
-    coop_members_count = db.query(Member).filter(
-        Member.local_ump_id == resolved_local_id,
-        Member.is_active == True,
-        Member.member_type == MemberType.cooperador
-    ).count()
+            coop_members_count = db.query(Member).filter(
+                Member.local_ump_id.in_(all_local_ids),
+                Member.is_active == True,
+                Member.member_type == MemberType.cooperador
+            ).count()
+
+            collectors = db.query(UmpStatisticCollector).filter(
+                UmpStatisticCollector.local_ump_id.in_(all_local_ids),
+                UmpStatisticCollector.fiscal_year == target_year
+            ).all()
+            collector_ids = [c.id for c in collectors]
+            if collector_ids:
+                responses = db.query(UmpStatisticResponse).filter(
+                    UmpStatisticResponse.collector_id.in_(collector_ids)
+                ).all()
+            else:
+                responses = []
+
+            # ACI consolidada
+            member_counts_by_local = dict(db.query(
+                Member.local_ump_id, func.count(Member.id)
+            ).filter(
+                Member.local_ump_id.in_(all_local_ids),
+                Member.is_active == True
+            ).group_by(Member.local_ump_id).all())
+
+            total_aci_to_collect = 0.0
+            for l in all_locals:
+                val = float(l.aci_year_value or 0)
+                count = member_counts_by_local.get(l.id, 0)
+                total_aci_to_collect += round(val * count, 2)
+            total_aci_to_collect = round(total_aci_to_collect, 2)
+
+            total_aci_collected = float(db.query(
+                func.coalesce(func.sum(MemberAciContribution.amount), 0)
+            ).filter(
+                MemberAciContribution.local_ump_id.in_(all_local_ids),
+                MemberAciContribution.fiscal_year == target_year
+            ).scalar() or 0)
+        else:
+            active_members_count = 0
+            coop_members_count = 0
+            responses = []
+            total_aci_to_collect = 0.0
+            total_aci_collected = 0.0
+
+        calendar_events = db.query(CalendarEvent).filter(
+            CalendarEvent.federation_id == current_user.organization_id,
+            extract("year", CalendarEvent.start_date) == target_year
+        ).all()
+
+        aci_year_val = 0.0
+
+    else:
+        is_consolidated = False
+        resolved_local_id = _resolve_local_ump_id(current_user, db, local_ump_id, fallback_first=True)
+        local_obj = db.query(LocalUmp).filter(LocalUmp.id == resolved_local_id).first()
+        local_name = local_obj.name if local_obj else "UMP Local"
+
+        collector = db.query(UmpStatisticCollector).filter(
+            UmpStatisticCollector.local_ump_id == resolved_local_id,
+            UmpStatisticCollector.fiscal_year == target_year
+        ).first()
+
+        if not collector:
+            collector = _get_or_create_collector_with_sync(resolved_local_id, target_year, db, current_user.id)
+
+        responses = db.query(UmpStatisticResponse).filter(
+            UmpStatisticResponse.collector_id == collector.id
+        ).all()
+
+        active_members_count = db.query(Member).filter(
+            Member.local_ump_id == resolved_local_id,
+            Member.is_active == True,
+            Member.member_type == MemberType.ativo
+        ).count()
+
+        coop_members_count = db.query(Member).filter(
+            Member.local_ump_id == resolved_local_id,
+            Member.is_active == True,
+            Member.member_type == MemberType.cooperador
+        ).count()
+
+        calendar_events = db.query(CalendarEvent).filter(
+            CalendarEvent.local_ump_id == resolved_local_id,
+            extract("year", CalendarEvent.start_date) == target_year
+        ).all()
+
+        aci_year_val = float(local_obj.aci_year_value or 0) if local_obj else 0.0
+        total_registered_local = active_members_count + coop_members_count
+        total_aci_to_collect = round(aci_year_val * total_registered_local, 2)
+
+        total_aci_collected = float(db.query(
+            func.coalesce(func.sum(MemberAciContribution.amount), 0)
+        ).filter(
+            MemberAciContribution.local_ump_id == resolved_local_id,
+            MemberAciContribution.fiscal_year == target_year
+        ).scalar() or 0)
 
     total_registered = active_members_count + coop_members_count
     responded_list = [r for r in responses if r.has_responded]
@@ -403,40 +511,35 @@ def get_ump_statistics_metrics(
         "Recreativo",
         "Oração/Vigília"
     ]
-    calendar_events = db.query(CalendarEvent).filter(
-        CalendarEvent.local_ump_id == resolved_local_id,
-        extract("year", CalendarEvent.start_date) == target_year
-    ).all()
-
     events_by_cunho = {c: 0 for c in VALID_CUNHOS}
     for ev in calendar_events:
         if ev.cunho in events_by_cunho:
             events_by_cunho[ev.cunho] += 1
 
     # 8. ACI a ser repassada
-    local_obj = db.query(LocalUmp).filter(LocalUmp.id == resolved_local_id).first()
-    aci_year_val = float(local_obj.aci_year_value or 0) if local_obj else 0.0
-    total_aci_to_collect = round(aci_year_val * total_registered, 2)
-
-    total_aci_collected = float(db.query(
-        func.coalesce(func.sum(MemberAciContribution.amount), 0)
-    ).filter(
-        MemberAciContribution.local_ump_id == resolved_local_id,
-        MemberAciContribution.fiscal_year == target_year
-    ).scalar() or 0)
-
     aci_remaining = max(0.0, round(total_aci_to_collect - total_aci_collected, 2))
     aci_progress = round((total_aci_collected / total_aci_to_collect * 100), 1) if total_aci_to_collect > 0 else 0.0
 
     return {
         "fiscal_year": target_year,
-        "local_ump_id": str(resolved_local_id),
-        "local_ump_name": local_obj.name if local_obj else "UMP Local",
+        "is_federation": is_federation,
+        "is_consolidated": is_consolidated,
+        "local_ump_id": str(resolved_local_id) if resolved_local_id else None,
+        "local_ump_name": local_name,
         "total_registered": total_registered,
         "total_active": active_members_count,
         "total_cooperating": coop_members_count,
         "total_responded": total_responded,
         "response_rate_percent": round((total_responded / total_registered) * 100, 1) if total_registered > 0 else 0,
+        "federation_metrics": {
+            "total_locals": total_locals,
+            "active_locals": active_locals_count,
+            "inactive_locals": inactive_locals_count
+        } if is_federation else None,
+        "available_locals": [
+            {"id": str(l.id), "name": l.name, "is_active": (l.is_active is True or l.is_active is None)}
+            for l in all_locals
+        ] if is_federation else [],
         "age_metrics": {
             "groups": age_groups,
             "average_age": average_age
