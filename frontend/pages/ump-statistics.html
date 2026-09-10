@@ -14,115 +14,75 @@
 
   <style>
     /* ── Sub-abas de Navegação Interna ── */
-    .subtabs-container {
+    .tabs-nav {
       display: flex;
-      gap: 0.5rem;
+      gap: .75rem;
       border-bottom: 2px solid var(--slate-200);
-      margin-bottom: 1.5rem;
-      flex-wrap: wrap;
+      padding-bottom: .25rem;
+      margin-bottom: 1.25rem;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
-    .subtab-btn {
-      padding: 0.75rem 1.25rem;
-      font-weight: 600;
-      font-size: 0.9rem;
-      color: var(--slate-500);
+    .tab-btn {
       background: none;
       border: none;
-      border-bottom: 3px solid transparent;
-      margin-bottom: -2px;
+      padding: .5rem .75rem;
       cursor: pointer;
+      font-weight: 600;
+      font-family: inherit;
+      font-size: .85rem;
+      color: var(--slate-500);
+      border-bottom: 3px solid transparent;
+      transition: all .2s;
+      white-space: nowrap;
+      flex-shrink: 0;
       display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
-      transition: all 0.2s ease;
+      gap: .4rem;
     }
 
-    .subtab-btn:hover {
+    .tab-btn:hover {
       color: var(--slate-800);
     }
 
-    .subtab-btn.active {
-      color: var(--brand-blue, #1a2a6c);
-      border-bottom-color: var(--brand-blue, #1a2a6c);
+    .tab-btn.active {
+      color: var(--blue-600) !important;
+      border-bottom-color: var(--blue-600) !important;
       font-weight: 700;
     }
 
-    /* ── Barra de Progresso e Métricas ── */
-    .progress-bar-wrap {
-      background: var(--slate-100);
-      border-radius: 99px;
-      height: 10px;
-      overflow: hidden;
-      margin-top: 0.5rem;
-      position: relative;
-    }
-
-    .progress-bar-fill {
-      background: linear-gradient(90deg, #10b981, #059669);
-      height: 100%;
-      border-radius: 99px;
-      transition: width 0.4s ease;
-    }
-
-    /* ── Cards de Estatísticas ── */
+    /* ── Cards de Estatísticas Grid ── */
     .stats-summary-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
       gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .stat-card-box {
-      background: #ffffff;
-      border: 1.5px solid var(--slate-200);
-      border-radius: var(--radius-lg);
-      padding: 1.25rem;
-      box-shadow: var(--shadow-sm);
-      position: relative;
-    }
-
-    .stat-card-title {
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: var(--slate-500);
-      text-transform: uppercase;
-      letter-spacing: 0.4px;
-    }
-
-    .stat-card-val {
-      font-size: 1.75rem;
-      font-weight: 800;
-      color: var(--slate-850);
-      margin-top: 0.35rem;
-    }
-
-    .stat-card-sub {
-      font-size: 0.78rem;
-      color: var(--slate-400);
-      margin-top: 0.2rem;
+      margin-bottom: 1.25rem;
     }
 
     /* ── Barras de Quantitativo ── */
     .stat-item-row {
-      display: flex;
-      flex-direction: column;
-      gap: 0.3rem;
-      margin-bottom: 0.85rem;
+      margin-bottom: .75rem;
+    }
+
+    .stat-item-row:last-child {
+      margin-bottom: 0;
     }
 
     .stat-item-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.84rem;
+      font-size: .84rem;
       font-weight: 600;
       color: var(--slate-700);
+      margin-bottom: .3rem;
     }
 
     .stat-item-pct {
-      color: var(--slate-500);
-      font-size: 0.78rem;
+      color: var(--slate-400);
+      font-size: .78rem;
+      font-weight: 500;
     }
 
     .stat-bar-bg {
@@ -135,93 +95,262 @@
     .stat-bar-fill {
       height: 100%;
       border-radius: 99px;
-      background: #3b82f6;
       transition: width 0.35s ease;
     }
 
-    /* ── Grid do Coletor de Dados ── */
+    .stat-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+      gap: 1.25rem;
+    }
+
+    /* ── Lista e Cards do Coletor de Dados ── */
+    .collector-banner-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .collector-banner-actions {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+    }
+
     .voter-card {
-      background: #ffffff;
+      background: #fff;
       border: 1.5px solid var(--slate-200);
-      border-radius: var(--radius-lg);
-      padding: 1rem 1.25rem;
+      border-radius: var(--radius);
+      padding: .85rem 1rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 1rem;
-      box-shadow: var(--shadow-sm);
-      transition: all 0.2s ease;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      margin-bottom: .6rem;
     }
 
     .voter-card:hover {
       border-color: var(--slate-300);
-      box-shadow: var(--shadow-md);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .04);
+    }
+
+    .voter-info {
+      min-width: 0;
+      flex: 1;
     }
 
     .voter-name {
-      font-size: 0.95rem;
+      font-size: .92rem;
       font-weight: 700;
       color: var(--slate-800);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .voter-meta {
-      font-size: 0.78rem;
-      color: var(--slate-500);
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      margin-top: 0.25rem;
+      gap: .5rem;
+      margin-top: .3rem;
       flex-wrap: wrap;
+      font-size: .75rem;
+      color: var(--slate-500);
     }
 
     .voter-actions {
       display: flex;
-      gap: 0.4rem;
+      gap: .4rem;
       align-items: center;
-      flex-wrap: wrap;
+      flex-shrink: 0;
     }
 
     .badge-voted {
-      background: #ecfdf5;
-      color: #065f46;
-      border: 1px solid #a7f3d0;
+      background: var(--green-100);
+      color: var(--green-700);
+      font-weight: 600;
+      font-size: .7rem;
       padding: 2px 8px;
       border-radius: 99px;
-      font-size: 0.72rem;
-      font-weight: 700;
       display: inline-flex;
       align-items: center;
       gap: 3px;
     }
 
     .badge-pending {
-      background: #fffbeb;
-      color: #92400e;
-      border: 1px solid #fde68a;
+      background: var(--amber-50);
+      color: var(--amber-700);
+      border: 1px solid var(--amber-200);
+      font-weight: 600;
+      font-size: .7rem;
       padding: 2px 8px;
       border-radius: 99px;
-      font-size: 0.72rem;
-      font-weight: 700;
       display: inline-flex;
       align-items: center;
       gap: 3px;
     }
 
-    /* ── Seção de Impressão ── */
+    .btn-whatsapp {
+      color: #059669 !important;
+      border-color: #a7f3d0 !important;
+      background: #f0fdf4 !important;
+    }
+
+    .btn-whatsapp:hover {
+      background: #dcfce7 !important;
+      border-color: #6ee7b7 !important;
+    }
+
+    .filter-pill {
+      border-radius: 99px !important;
+      font-size: .8rem !important;
+      padding: .35rem .75rem !important;
+    }
+
+    .filter-pill.active {
+      background: var(--blue-50) !important;
+      border-color: var(--blue-400) !important;
+      color: var(--blue-700) !important;
+      font-weight: 700 !important;
+    }
+
+    /* ── Responsividade Mobile ── */
+    @media (max-width: 768px) {
+      .page-content {
+        padding: 1rem !important;
+        gap: 1rem !important;
+      }
+
+      .page-header {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: .75rem;
+      }
+
+      .page-header-actions {
+        width: 100%;
+        display: flex;
+        gap: .5rem;
+        flex-wrap: wrap;
+      }
+
+      .page-header-actions select,
+      .page-header-actions button {
+        flex: 1;
+        min-width: 100px;
+      }
+
+      .collector-banner-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: .75rem;
+      }
+
+      .collector-banner-actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: .4rem;
+      }
+
+      .collector-banner-actions button {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .voter-card {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: .75rem;
+      }
+
+      .voter-name {
+        white-space: normal;
+      }
+
+      .voter-actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: .4rem;
+      }
+
+      .voter-actions .btn-action {
+        width: 100%;
+        justify-content: center;
+        padding: .4rem .2rem;
+        font-size: .75rem;
+      }
+    }
+
+    @media (max-width: 540px) {
+      .stats-summary-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: .6rem;
+      }
+
+      .stat-card {
+        padding: .85rem;
+        gap: .65rem;
+      }
+
+      .stat-card .stat-icon {
+        width: 38px;
+        height: 38px;
+        font-size: 1.05rem;
+      }
+
+      .stat-card .stat-value {
+        font-size: 1.15rem;
+      }
+
+      .collector-banner-actions {
+        grid-template-columns: 1fr;
+      }
+
+      .voter-actions {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .voter-actions .btn-action:last-child {
+        grid-column: span 2;
+      }
+    }
+
+    @media (max-width: 380px) {
+      .stats-summary-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ── Impressão ── */
     @media print {
       body * {
         visibility: hidden;
       }
-      #print-report-area, #print-report-area * {
+
+      #print-report-area,
+      #print-report-area * {
         visibility: visible;
       }
+
       #print-report-area {
         position: absolute;
         left: 0;
         top: 0;
         width: 100%;
+        padding: 0;
       }
-      .sidebar, .top-header, .page-header-actions, .subtabs-container {
+
+      .sidebar,
+      .header,
+      .page-header-actions,
+      .tabs-nav,
+      #btn-print-report,
+      .collector-banner-actions {
         display: none !important;
       }
     }
@@ -230,9 +359,10 @@
 
 <body>
   <div class="app-shell">
+    <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-brand">
-        <img src="/assets/img/logo.png" class="sidebar-brand-logo" alt="Logo" />
+        <img src="/assets/img/logo.png" class="sidebar-brand-logo" alt="Logo UMP" onerror="this.style.display='none'" />
         <div class="sidebar-brand-text">
           <h1>SIGES FPOPB</h1>
           <p>Plataforma de Gestão</p>
@@ -242,13 +372,13 @@
       <div class="sidebar-footer">v1.0.0</div>
     </aside>
 
-    <div class="main-wrapper">
-      <header class="top-header">
+    <!-- Main Area -->
+    <div class="main-area">
+      <header class="header">
         <div class="header-left">
-          <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menu">☰</button>
-          <div class="header-org-badge" id="org-badge">
-            <span class="org-dot"></span>
-            <span id="org-name">Carregando...</span>
+          <button class="btn-menu" id="btn-menu">☰</button>
+          <div class="header-org">
+            <span class="header-org-name" id="header-org-name"></span>
           </div>
         </div>
         <div class="header-right">
@@ -268,13 +398,13 @@
             <h1 id="page-title">Estatísticas UMP</h1>
             <p>Censo demográfico e quantitativo anual dos sócios da mocidade</p>
           </div>
-          <div class="page-header-actions" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+          <div class="page-header-actions">
             <!-- Seletor de UMP Local (para usuários de federação) -->
-            <select class="input" id="select-local-ump" style="display:none; width: auto; font-size: 0.85rem; padding: 0.45rem 0.75rem;">
+            <select class="select" id="select-local-ump" style="display:none; width: auto; min-width: 170px;">
             </select>
 
             <!-- Seletor de Ano -->
-            <select class="input" id="select-year" style="width: auto; min-width: 110px; font-weight: 700; font-size: 0.9rem; padding: 0.45rem 0.75rem;">
+            <select class="select" id="select-year" style="width: auto; min-width: 95px; font-weight: 700;">
               <option value="2026" selected>2026</option>
               <option value="2025">2025</option>
               <option value="2024">2024</option>
@@ -286,16 +416,16 @@
           </div>
         </div>
 
-        <div id="page-alert" class="alert alert-error hidden"></div>
+        <div id="page-alert" class="hidden"></div>
 
         <!-- Sub-abas: Estatísticas Gerais vs Coletor de Dados -->
-        <div class="subtabs-container">
-          <button class="subtab-btn active" id="btn-subtab-general" onclick="switchSubTab('general')">
+        <div class="tabs-nav">
+          <button class="tab-btn active" id="btn-subtab-general" onclick="switchSubTab('general')">
             📊 Estatísticas Gerais
           </button>
-          <button class="subtab-btn" id="btn-subtab-collector" onclick="switchSubTab('collector')">
+          <button class="tab-btn" id="btn-subtab-collector" onclick="switchSubTab('collector')">
             📋 Coletor de Dados
-            <span class="badge" id="subtab-pending-badge" style="display:none; background: #fef3c7; color: #b45309; font-size: 0.7rem; padding: 1px 6px;">0 pendentes</span>
+            <span class="badge badge-amber" id="subtab-pending-badge" style="display:none;">0 pendentes</span>
           </button>
         </div>
 
@@ -305,37 +435,52 @@
         <section id="sec-general">
           <!-- Cards de Resumo Executivo -->
           <div class="stats-summary-grid">
-            <div class="stat-card-box">
-              <div class="stat-card-title">Total de Sócios</div>
-              <div class="stat-card-val" id="stat-total-registered">0</div>
-              <div class="stat-card-sub">Ativos e cooperadores</div>
-            </div>
-            <div class="stat-card-box">
-              <div class="stat-card-title">Recenseados</div>
-              <div class="stat-card-val" id="stat-total-responded" style="color: #059669;">0</div>
-              <div class="stat-card-sub" id="stat-responded-sub">Formulários computados</div>
-            </div>
-            <div class="stat-card-box">
-              <div class="stat-card-title">Taxa de Resposta</div>
-              <div class="stat-card-val" id="stat-response-rate">0%</div>
-              <div class="progress-bar-wrap">
-                <div class="progress-bar-fill" id="stat-response-bar" style="width: 0%;"></div>
+            <div class="stat-card">
+              <div class="stat-icon blue">👥</div>
+              <div style="flex:1; min-width:0">
+                <div class="stat-label">Total de Sócios</div>
+                <div class="stat-value" id="stat-total-registered">0</div>
+                <div class="stat-sub">Ativos e cooperadores</div>
               </div>
             </div>
-            <div class="stat-card-box">
-              <div class="stat-card-title">Média de Idade</div>
-              <div class="stat-card-val" id="stat-average-age" style="color: var(--brand-blue, #1a2a6c);">0 anos</div>
-              <div class="stat-card-sub">Calculada pelos dados informados</div>
+
+            <div class="stat-card">
+              <div class="stat-icon green">✓</div>
+              <div style="flex:1; min-width:0">
+                <div class="stat-label">Recenseados</div>
+                <div class="stat-value" id="stat-total-responded" style="color: var(--green-600, #16a34a)">0</div>
+                <div class="stat-sub" id="stat-responded-sub">Formulários computados</div>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon slate">📈</div>
+              <div style="flex:1; min-width:0">
+                <div class="stat-label">Taxa de Resposta</div>
+                <div class="stat-value" id="stat-response-rate">0%</div>
+                <div class="stat-bar-bg" style="margin-top: .4rem;">
+                  <div class="stat-bar-fill" id="stat-response-bar" style="width: 0%; background: var(--green-600, #16a34a)"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon" style="background: var(--blue-50); color: #1a2a6c">🎂</div>
+              <div style="flex:1; min-width:0">
+                <div class="stat-label">Média de Idade</div>
+                <div class="stat-value" id="stat-average-age" style="color: #1a2a6c">—</div>
+                <div class="stat-sub">Mocidade local</div>
+              </div>
             </div>
           </div>
 
           <!-- Grid com Categorias Analíticas -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem;">
+          <div class="stat-cards-grid">
             
             <!-- Faixas Etárias -->
             <div class="card">
-              <div class="card-header" style="border-bottom: 1.5px solid var(--slate-100); padding-bottom: 0.6rem; margin-bottom: 1rem;">
-                <h3 class="font-bold text-base">🎂 Faixas Etárias</h3>
+              <div class="card-header">
+                <h3 style="font-size: .95rem; font-weight: 700; color: var(--slate-800); margin: 0;">🎂 Faixas Etárias</h3>
               </div>
               <div id="stat-age-list">
                 <!-- Renderizado via JS -->
@@ -344,8 +489,8 @@
 
             <!-- Sexo -->
             <div class="card">
-              <div class="card-header" style="border-bottom: 1.5px solid var(--slate-100); padding-bottom: 0.6rem; margin-bottom: 1rem;">
-                <h3 class="font-bold text-base">⚧ Distribuição por Sexo</h3>
+              <div class="card-header">
+                <h3 style="font-size: .95rem; font-weight: 700; color: var(--slate-800); margin: 0;">⚧ Distribuição por Sexo</h3>
               </div>
               <div id="stat-gender-list">
                 <!-- Renderizado via JS -->
@@ -354,8 +499,8 @@
 
             <!-- Escolaridade -->
             <div class="card">
-              <div class="card-header" style="border-bottom: 1.5px solid var(--slate-100); padding-bottom: 0.6rem; margin-bottom: 1rem;">
-                <h3 class="font-bold text-base">🎓 Grau de Escolaridade</h3>
+              <div class="card-header">
+                <h3 style="font-size: .95rem; font-weight: 700; color: var(--slate-800); margin: 0;">🎓 Grau de Escolaridade</h3>
               </div>
               <div id="stat-education-list">
                 <!-- Renderizado via JS -->
@@ -364,8 +509,8 @@
 
             <!-- Estado Civil -->
             <div class="card">
-              <div class="card-header" style="border-bottom: 1.5px solid var(--slate-100); padding-bottom: 0.6rem; margin-bottom: 1rem;">
-                <h3 class="font-bold text-base">💍 Estado Civil</h3>
+              <div class="card-header">
+                <h3 style="font-size: .95rem; font-weight: 700; color: var(--slate-800); margin: 0;">💍 Estado Civil</h3>
               </div>
               <div id="stat-marital-list">
                 <!-- Renderizado via JS -->
@@ -374,8 +519,8 @@
 
             <!-- Filhos -->
             <div class="card">
-              <div class="card-header" style="border-bottom: 1.5px solid var(--slate-100); padding-bottom: 0.6rem; margin-bottom: 1rem;">
-                <h3 class="font-bold text-base">👶 Possui Filhos</h3>
+              <div class="card-header">
+                <h3 style="font-size: .95rem; font-weight: 700; color: var(--slate-800); margin: 0;">👶 Possui Filhos</h3>
               </div>
               <div id="stat-children-list">
                 <!-- Renderizado via JS -->
@@ -384,8 +529,8 @@
 
             <!-- Deficiências e Acessibilidade -->
             <div class="card">
-              <div class="card-header" style="border-bottom: 1.5px solid var(--slate-100); padding-bottom: 0.6rem; margin-bottom: 1rem;">
-                <h3 class="font-bold text-base">♿ Acessibilidade e Deficiências</h3>
+              <div class="card-header">
+                <h3 style="font-size: .95rem; font-weight: 700; color: var(--slate-800); margin: 0;">♿ Acessibilidade e Deficiências</h3>
               </div>
               <div id="stat-disabilities-list">
                 <!-- Renderizado via JS -->
@@ -401,15 +546,15 @@
         <!-- ══════════════════════════════════════════════════════════ -->
         <section id="sec-collector" class="hidden">
           <!-- Banner de Status do Coletor -->
-          <div class="card" style="margin-bottom: 1.25rem; background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%); border-left: 5px solid var(--brand-blue, #1a2a6c);">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+          <div class="card" style="margin-bottom: 1.25rem; background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%); border-left: 4px solid var(--blue-600);">
+            <div class="collector-banner-header">
               <div>
-                <h3 class="font-bold text-base" id="collector-society-title">Coletor de Dados</h3>
-                <p class="text-xs text-slate-500 mt-1">
+                <h3 style="font-size: 1rem; font-weight: 700; color: var(--slate-800); margin: 0;" id="collector-society-title">Coletor de Dados</h3>
+                <p style="font-size: .8rem; color: var(--slate-500); margin-top: .2rem; margin-bottom: 0;">
                   Envie o link individual para cada sócio responder seu questionário do Censo. O progresso é computado em tempo real.
                 </p>
               </div>
-              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <div class="collector-banner-actions">
                 <button class="btn btn-secondary btn-sm" id="btn-sync-members" onclick="syncMembers()">
                   🔄 Sincronizar Sócios
                 </button>
@@ -423,54 +568,55 @@
             </div>
 
             <div style="margin-top: 1rem;">
-              <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 600; color: var(--slate-700);">
+              <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 600; color: var(--slate-700); margin-bottom: .35rem;">
                 <span>Progresso da Coleta</span>
                 <span id="collector-progress-text">0 de 0 respondidos (0%)</span>
               </div>
-              <div class="progress-bar-wrap">
-                <div class="progress-bar-fill" id="collector-progress-bar" style="width: 0%;"></div>
+              <div class="stat-bar-bg" style="height: 10px;">
+                <div class="stat-bar-fill" id="collector-progress-bar" style="width: 0%; background: linear-gradient(90deg, #10b981, #059669);"></div>
               </div>
             </div>
           </div>
 
           <!-- Barra de Filtros e Busca -->
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem;">
-            <div class="tabs-nav" style="margin: 0;">
-              <button class="tab-btn active" id="tab-voters-all" onclick="filterVoters('all')">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .75rem; margin-bottom: 1rem;">
+            <div style="display: flex; gap: .4rem; flex-wrap: wrap;">
+              <button class="btn btn-secondary btn-sm filter-pill active" id="tab-voters-all" onclick="filterVoters('all')">
                 Todos (<span id="count-collector-all">0</span>)
               </button>
-              <button class="tab-btn" id="tab-voters-voted" onclick="filterVoters('voted')">
-                Já Responderam (<span id="count-collector-voted">0</span>)
+              <button class="btn btn-secondary btn-sm filter-pill" id="tab-voters-voted" onclick="filterVoters('voted')">
+                ✓ Já Responderam (<span id="count-collector-voted">0</span>)
               </button>
-              <button class="tab-btn" id="tab-voters-pending" onclick="filterVoters('pending')">
-                Faltam Responder (<span id="count-collector-pending">0</span>)
+              <button class="btn btn-secondary btn-sm filter-pill" id="tab-voters-pending" onclick="filterVoters('pending')">
+                ⏳ Faltam Responder (<span id="count-collector-pending">0</span>)
               </button>
             </div>
 
-            <div style="flex: 1; max-width: 280px; min-width: 200px;">
-              <input type="text" class="input" id="search-voter" placeholder="Buscar sócio por nome..." oninput="renderCollectorList()" style="padding: 0.45rem 0.75rem; font-size: 0.85rem;" />
+            <div style="flex: 1; min-width: 200px; max-width: 320px;">
+              <input type="text" class="input" id="search-voter" placeholder="🔍 Buscar sócio por nome..." oninput="renderCollectorList()" style="padding: .4rem .75rem; font-size: .85rem;" />
             </div>
           </div>
 
           <!-- Lista / Grid de Sócios -->
-          <div class="stack" id="collector-voters-list">
+          <div id="collector-voters-list">
             <!-- Renderizado via JS -->
           </div>
         </section>
 
       </main>
     </div>
-    <div class="sidebar-overlay" id="sidebar-overlay"></div>
   </div>
+
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
   <!-- ── MODAL: VISUALIZAR RESPOSTAS DO SÓCIO ── -->
   <div class="modal-overlay" id="modal-view-answers">
-    <div class="modal" style="max-width: 500px;">
+    <div class="modal modal-sm">
       <div class="modal-header">
-        <h3 id="modal-view-name">Respostas do Sócio</h3>
+        <h2 id="modal-view-name">Respostas do Sócio</h2>
         <button class="modal-close" onclick="closeModal('modal-view-answers')">✕</button>
       </div>
-      <div id="modal-view-content" style="padding: 1rem 0; font-size: 0.88rem; display: flex; flex-direction: column; gap: 0.65rem;">
+      <div id="modal-view-content" style="padding: .5rem 0; font-size: .88rem; display: flex; flex-direction: column; gap: .65rem;">
         <!-- Injetado via JS -->
       </div>
       <div class="modal-footer">
@@ -483,20 +629,20 @@
   <div class="modal-overlay" id="modal-manual-entry">
     <div class="modal" style="max-width: 520px;">
       <div class="modal-header">
-        <h3 id="modal-manual-name">Lançar Respostas</h3>
+        <h2 id="modal-manual-name">Lançar Respostas</h2>
         <button class="modal-close" onclick="closeModal('modal-manual-entry')">✕</button>
       </div>
-      <form id="form-manual-entry" style="display: flex; flex-direction: column; gap: 0.85rem; padding: 1rem 0;">
+      <form id="form-manual-entry" style="display: flex; flex-direction: column; gap: .85rem;">
         <input type="hidden" id="manual-response-id" />
 
         <div class="field">
-          <label class="text-xs font-bold text-slate-600">Data de Nascimento *</label>
+          <label>Data de Nascimento *</label>
           <input type="date" class="input" id="manual-birth-date" required />
         </div>
 
         <div class="field">
-          <label class="text-xs font-bold text-slate-600">Sexo *</label>
-          <select class="input" id="manual-gender" required>
+          <label>Sexo *</label>
+          <select class="select" id="manual-gender" required>
             <option value="" disabled selected>Selecione...</option>
             <option value="Masculino">Masculino</option>
             <option value="Feminino">Feminino</option>
@@ -504,8 +650,8 @@
         </div>
 
         <div class="field">
-          <label class="text-xs font-bold text-slate-600">Escolaridade *</label>
-          <select class="input" id="manual-education" required>
+          <label>Escolaridade *</label>
+          <select class="select" id="manual-education" required>
             <option value="" disabled selected>Selecione...</option>
             <option value="Ensino Fundamental">Ensino Fundamental</option>
             <option value="Ensino Médio">Ensino Médio</option>
@@ -516,8 +662,8 @@
         </div>
 
         <div class="field">
-          <label class="text-xs font-bold text-slate-600">Estado Civil *</label>
-          <select class="input" id="manual-marital" required>
+          <label>Estado Civil *</label>
+          <select class="select" id="manual-marital" required>
             <option value="" disabled selected>Selecione...</option>
             <option value="Solteiro(a)">Solteiro(a)</option>
             <option value="Casado(a)">Casado(a)</option>
@@ -527,38 +673,40 @@
         </div>
 
         <div class="field">
-          <label class="text-xs font-bold text-slate-600">Possui Filhos? *</label>
-          <select class="input" id="manual-children" required>
-            <option value="false">Não</option>
+          <label>Possui Filhos? *</label>
+          <select class="select" id="manual-children" required>
+            <option value="" disabled selected>Selecione...</option>
             <option value="true">Sim</option>
+            <option value="false">Não</option>
           </select>
         </div>
 
         <div class="field">
-          <label class="text-xs font-bold text-slate-600">Possui Deficiência? *</label>
-          <select class="input" id="manual-disabilities" onchange="toggleManualDisabilities(this.value === 'true')">
+          <label>Possui Alguma Deficiência? *</label>
+          <select class="select" id="manual-disabilities" onchange="toggleManualDisabilities(this.value === 'true')" required>
+            <option value="" disabled selected>Selecione...</option>
             <option value="false">Não</option>
             <option value="true">Sim</option>
           </select>
         </div>
 
-        <div id="manual-disabilities-box" class="hidden" style="background: var(--slate-50); padding: 0.75rem; border-radius: var(--radius); border: 1px dashed var(--slate-300);">
-          <p class="text-xs font-bold text-slate-700 mb-2">Selecione as opções que se aplicam:</p>
-          <label style="display:flex;gap:0.4rem;align-items:center;font-size:0.8rem;margin-bottom:4px"><input type="checkbox" name="manual_dis" value="surdo" /> Surdo</label>
-          <label style="display:flex;gap:0.4rem;align-items:center;font-size:0.8rem;margin-bottom:4px"><input type="checkbox" name="manual_dis" value="deficiente_auditivo" /> Deficiente auditivo</label>
-          <label style="display:flex;gap:0.4rem;align-items:center;font-size:0.8rem;margin-bottom:4px"><input type="checkbox" name="manual_dis" value="cego" /> Cego</label>
-          <label style="display:flex;gap:0.4rem;align-items:center;font-size:0.8rem;margin-bottom:4px"><input type="checkbox" name="manual_dis" value="baixa_visao" /> Baixa visão</label>
-          <label style="display:flex;gap:0.4rem;align-items:center;font-size:0.8rem;margin-bottom:4px"><input type="checkbox" name="manual_dis" value="deficiencia_fisica_membro_inferior" /> Deficiência motora membro inferior</label>
-          <label style="display:flex;gap:0.4rem;align-items:center;font-size:0.8rem;margin-bottom:4px"><input type="checkbox" name="manual_dis" value="deficiencia_fisica_membro_superior" /> Deficiência motora membro superior</label>
-          <label style="display:flex;gap:0.4rem;align-items:center;font-size:0.8rem;margin-bottom:4px"><input type="checkbox" name="manual_dis" value="transtorno_neurologico" /> Transtorno neurológico</label>
-          <label style="display:flex;gap:0.4rem;align-items:center;font-size:0.8rem;margin-bottom:4px"><input type="checkbox" name="manual_dis" value="deficiencia_intelectual" /> Deficiência intelectual</label>
-          <label style="display:flex;gap:0.4rem;align-items:center;font-size:0.8rem;margin-bottom:4px"><input type="checkbox" name="manual_dis" value="outros" id="chk-manual-outros" onchange="document.getElementById('manual-other-text').classList.toggle('hidden', !this.checked)" /> Outros</label>
-          <input type="text" id="manual-other-text" class="input hidden mt-1" placeholder="Descreva a deficiência..." />
+        <div id="manual-disabilities-box" class="hidden" style="background: var(--slate-50); border: 1.5px dashed var(--slate-300); border-radius: var(--radius); padding: .75rem; display: flex; flex-direction: column; gap: .4rem;">
+          <label style="font-size: .75rem; font-weight: 700; color: var(--slate-700);">Selecione as opções:</label>
+          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;cursor:pointer"><input type="checkbox" name="manual_dis" value="surdo" /> Surdo</label>
+          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;cursor:pointer"><input type="checkbox" name="manual_dis" value="deficiente_auditivo" /> Deficiente auditivo</label>
+          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;cursor:pointer"><input type="checkbox" name="manual_dis" value="cego" /> Cego</label>
+          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;cursor:pointer"><input type="checkbox" name="manual_dis" value="baixa_visao" /> Baixa visão</label>
+          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;cursor:pointer"><input type="checkbox" name="manual_dis" value="deficiencia_fisica_membro_inferior" /> Deficiência física membro inferior</label>
+          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;cursor:pointer"><input type="checkbox" name="manual_dis" value="deficiencia_fisica_membro_superior" /> Deficiência física membro superior</label>
+          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;cursor:pointer"><input type="checkbox" name="manual_dis" value="transtorno_neurologico" /> Transtorno neurológico</label>
+          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;cursor:pointer"><input type="checkbox" name="manual_dis" value="deficiencia_intelectual" /> Deficiência intelectual</label>
+          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;cursor:pointer"><input type="checkbox" name="manual_dis" value="outros" onchange="document.getElementById('manual-other-text').classList.toggle('hidden', !this.checked)" /> Outros</label>
+          <input type="text" class="input hidden" id="manual-other-text" placeholder="Especifique qual condição..." style="margin-top: .3rem;" />
         </div>
 
-        <div class="modal-footer" style="margin-top: 0.5rem;">
-          <button class="btn btn-secondary btn-sm" type="button" onclick="closeModal('modal-manual-entry')">Cancelar</button>
-          <button class="btn btn-primary btn-sm" type="submit">Salvar Respostas</button>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-manual-entry')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar Respostas</button>
         </div>
       </form>
     </div>
@@ -566,37 +714,38 @@
 
   <!-- ── MODAL: MODELO DE MENSAGEM WHATSAPP ── -->
   <div class="modal-overlay" id="modal-whatsapp-template">
-    <div class="modal" style="max-width: 500px;">
+    <div class="modal modal-sm">
       <div class="modal-header">
-        <h3>Modelo de Mensagem WhatsApp</h3>
+        <h2>Modelo de Mensagem WhatsApp</h2>
         <button class="modal-close" onclick="closeModal('modal-whatsapp-template')">✕</button>
       </div>
-      <div style="padding: 1rem 0;">
-        <p class="text-xs text-slate-500 mb-2">Você pode usar este modelo ao enviar o link para cada sócio:</p>
-        <textarea id="whatsapp-template-text" class="input" rows="6" readonly style="font-size: 0.85rem; line-height: 1.5;"></textarea>
+      <div style="padding: .5rem 0;">
+        <p style="font-size: .82rem; color: var(--slate-500); margin-bottom: .75rem;">
+          Você pode copiar este texto modelo para disparar no grupo da sociedade ou individualmente:
+        </p>
+        <textarea id="whatsapp-template-text" class="input" rows="7" style="font-size: .84rem; line-height: 1.4; resize: none;"></textarea>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-secondary btn-sm" onclick="closeModal('modal-whatsapp-template')">Fechar</button>
-        <button class="btn btn-primary btn-sm" onclick="copyWhatsappTemplate()">Copiar Mensagem</button>
+        <button class="btn btn-secondary" onclick="closeModal('modal-whatsapp-template')">Fechar</button>
+        <button class="btn btn-primary" onclick="copyWhatsappTemplate()">📋 Copiar Texto</button>
       </div>
     </div>
   </div>
 
   <script type="module">
-    import { requireAuth, getUser, isFederation } from '../assets/js/auth.js?v=9'
-    import { renderShell, canAccessPage } from '../assets/js/router.v3.js?v=9'
+    import { requireAuth, getUser } from '../assets/js/auth.js?v=9'
+    import { renderShell, canAccessPage, renderBottomNav } from '../assets/js/router.v3.js?v=9'
     import { api } from '../assets/js/api.js?v=9'
 
-    // Estado da Página
-    let currentSubTab = 'general'
-    let currentVoterFilter = 'all'
+    let currentUser = null
     let selectedYear = new Date().getFullYear()
     let selectedLocalId = null
+    let currentSubTab = 'general'
+    let currentVoterFilter = 'all'
     let collectorData = null
     let metricsData = null
-    let currentUser = null
 
-    // Inicialização
+    // ── INICIALIZAÇÃO ──
     ;(async () => {
       if (!requireAuth()) return
       if (!canAccessPage('ump-statistics')) {
@@ -605,6 +754,8 @@
       }
 
       await renderShell()
+      renderBottomNav('ump-statistics')
+      document.querySelector('[data-page="ump-statistics"]')?.classList.add('active')
       currentUser = getUser()
 
       // Configura seletor de ano
@@ -622,10 +773,17 @@
         loadAllData()
       })
 
+      // Fechar modal no overlay
+      document.querySelectorAll('.modal-overlay').forEach(modal => {
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) closeModal(modal.id)
+        })
+      })
+
       // Submissão do preenchimento manual
       document.getElementById('form-manual-entry').addEventListener('submit', handleManualSubmit)
 
-      // Carrega dados iniciais
+      // Carrega dados iniciais sequencialmente
       await loadAllData()
     })()
 
@@ -698,7 +856,7 @@
         ? `${data.age_metrics.average_age} anos` 
         : '—'
 
-      const totalResp = data.total_responded || 1 // evita divisão por zero
+      const totalResp = data.total_responded || 1
 
       // 1. Faixas Etárias
       const ageLabels = {
@@ -711,7 +869,7 @@
       }
       document.getElementById('stat-age-list').innerHTML = Object.entries(data.age_metrics.groups).map(([k, val]) => {
         const pct = Math.round((val / totalResp) * 100)
-        return renderStatBarRow(ageLabels[k] || k, val, pct, '#3b82f6')
+        return renderStatBarRow(ageLabels[k] || k, val, pct, '#2563eb')
       }).join('')
 
       // 2. Sexo
@@ -724,13 +882,13 @@
       // 3. Escolaridade
       document.getElementById('stat-education-list').innerHTML = Object.entries(data.education_metrics).map(([k, val]) => {
         const pct = Math.round((val / totalResp) * 100)
-        return renderStatBarRow(k, val, pct, '#8b5cf6')
+        return renderStatBarRow(k, val, pct, '#7c3aed')
       }).join('')
 
       // 4. Estado Civil
       document.getElementById('stat-marital-list').innerHTML = Object.entries(data.marital_status_metrics).map(([k, val]) => {
         const pct = Math.round((val / totalResp) * 100)
-        return renderStatBarRow(k, val, pct, '#f59e0b')
+        return renderStatBarRow(k, val, pct, '#d97706')
       }).join('')
 
       // 5. Filhos
@@ -741,7 +899,7 @@
       }
       document.getElementById('stat-children-list').innerHTML = Object.entries(data.children_metrics).map(([k, val]) => {
         const pct = Math.round((val / totalResp) * 100)
-        const color = k === 'com_filhos' ? '#10b981' : '#64748b'
+        const color = k === 'com_filhos' ? '#16a34a' : '#64748b'
         return renderStatBarRow(childrenLabels[k] || k, val, pct, color)
       }).join('')
 
@@ -759,14 +917,14 @@
       }
 
       let disHtml = `
-        <div style="display:flex;gap:0.75rem;margin-bottom:1rem">
-          <div style="flex:1;background:var(--slate-50);border:1px solid var(--slate-200);border-radius:var(--radius);padding:.75rem;text-align:center">
-            <span style="font-size:.7rem;font-weight:700;color:var(--slate-500);text-transform:uppercase">Com Deficiência</span>
-            <div style="font-size:1.2rem;font-weight:800;color:#ef4444;margin-top:2px">${data.disabilities_metrics.general.com_deficiencia}</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:.6rem; margin-bottom:1rem">
+          <div style="background:var(--slate-50); border:1px solid var(--slate-200); border-radius:var(--radius); padding:.65rem .75rem; text-align:center">
+            <span style="font-size:.68rem; font-weight:700; color:var(--slate-500); text-transform:uppercase; letter-spacing:.4px">Com Deficiência</span>
+            <div style="font-size:1.25rem; font-weight:800; color:var(--red-600, #dc2626); margin-top:2px">${data.disabilities_metrics.general.com_deficiencia}</div>
           </div>
-          <div style="flex:1;background:var(--slate-50);border:1px solid var(--slate-200);border-radius:var(--radius);padding:.75rem;text-align:center">
-            <span style="font-size:.7rem;font-weight:700;color:var(--slate-500);text-transform:uppercase">Sem Deficiência</span>
-            <div style="font-size:1.2rem;font-weight:800;color:#10b981;margin-top:2px">${data.disabilities_metrics.general.sem_deficiencia}</div>
+          <div style="background:var(--slate-50); border:1px solid var(--slate-200); border-radius:var(--radius); padding:.65rem .75rem; text-align:center">
+            <span style="font-size:.68rem; font-weight:700; color:var(--slate-500); text-transform:uppercase; letter-spacing:.4px">Sem Deficiência</span>
+            <div style="font-size:1.25rem; font-weight:800; color:var(--green-600, #16a34a); margin-top:2px">${data.disabilities_metrics.general.sem_deficiencia}</div>
           </div>
         </div>
       `
@@ -780,10 +938,10 @@
 
       if (data.disabilities_metrics.other_descriptions && data.disabilities_metrics.other_descriptions.length > 0) {
         disHtml += `
-          <div style="margin-top:0.85rem;padding-top:0.75rem;border-top:1px dashed var(--slate-200)">
-            <p style="font-size:0.75rem;font-weight:700;color:var(--slate-500);text-transform:uppercase;margin-bottom:0.4rem">Outras condições reportadas:</p>
-            <div style="display:flex;flex-wrap:wrap;gap:4px">
-              ${data.disabilities_metrics.other_descriptions.map(d => `<span class="badge" style="background:#f1f5f9;color:var(--slate-700);border:1px solid var(--slate-200)">${d}</span>`).join('')}
+          <div style="margin-top:.85rem; padding-top:.75rem; border-top:1px dashed var(--slate-200)">
+            <p style="font-size:.72rem; font-weight:700; color:var(--slate-500); text-transform:uppercase; margin-bottom:.4rem">Outras condições reportadas:</p>
+            <div style="display:flex; flex-wrap:wrap; gap:5px">
+              ${data.disabilities_metrics.other_descriptions.map(d => `<span class="badge" style="background:#f1f5f9; color:var(--slate-700); border:1px solid var(--slate-200);">${d}</span>`).join('')}
             </div>
           </div>
         `
@@ -810,7 +968,7 @@
     window.renderCollectorList = function() {
       const container = document.getElementById('collector-voters-list')
       if (!collectorData || !collectorData.voters || collectorData.voters.length === 0) {
-        container.innerHTML = '<div class="empty-box" style="background:#fff;padding:3rem 1rem">Nenhum sócio encontrado no censo deste ano. Clique em "Sincronizar Sócios" acima.</div>'
+        container.innerHTML = '<div style="background:#fff; border:1.5px solid var(--slate-200); border-radius:var(--radius); padding:2.5rem 1rem; text-align:center; color:var(--slate-400); font-size:.875rem;">Nenhum sócio encontrado no censo deste ano. Clique em "Sincronizar Sócios" acima.</div>'
         return
       }
 
@@ -828,7 +986,7 @@
       }
 
       if (filtered.length === 0) {
-        container.innerHTML = '<div class="empty-box" style="background:#fff;padding:2.5rem 1rem">Nenhum sócio encontrado para os filtros selecionados.</div>'
+        container.innerHTML = '<div style="background:#fff; border:1.5px solid var(--slate-200); border-radius:var(--radius); padding:2.5rem 1rem; text-align:center; color:var(--slate-400); font-size:.875rem;">Nenhum sócio encontrado para os filtros selecionados.</div>'
         return
       }
 
@@ -838,28 +996,28 @@
           ? `<span class="badge-voted">✓ Respondido</span>`
           : `<span class="badge-pending">⏳ Pendente</span>`
 
-        const typeLabel = v.member_type === 'cooperador' ? 'Sócio Cooperador' : 'Sócio Ativo'
+        const typeLabel = v.member_type === 'cooperador' ? 'Cooperador' : 'Ativo'
         const phoneFormatted = v.phone ? ` · 📞 ${v.phone}` : ''
 
         return `
           <div class="voter-card">
-            <div>
+            <div class="voter-info">
               <div class="voter-name">${v.full_name}</div>
               <div class="voter-meta">
                 ${statusBadge}
-                <span>🏷️ ${typeLabel}${phoneFormatted}</span>
+                <span>🏷️ Sócio ${typeLabel}${phoneFormatted}</span>
               </div>
             </div>
             <div class="voter-actions">
-              <button class="btn btn-secondary btn-sm" onclick="copyIndividualLink('${link}')" title="Copiar link para o sócio">
+              <button class="btn btn-secondary btn-sm btn-action" onclick="copyIndividualLink('${link}')" title="Copiar link para o sócio">
                 🔗 Copiar Link
               </button>
-              <button class="btn btn-secondary btn-sm" onclick="sendWhatsapp('${v.full_name.replace(/'/g, "\\'")}', '${v.phone || ''}', '${link}')" style="color:#059669" title="Enviar via WhatsApp">
+              <button class="btn btn-secondary btn-sm btn-action btn-whatsapp" onclick="sendWhatsapp('${v.full_name.replace(/'/g, "\\'")}', '${v.phone || ''}', '${link}')" title="Enviar via WhatsApp">
                 💬 WhatsApp
               </button>
               ${v.has_responded
-                ? `<button class="btn btn-secondary btn-sm" onclick="viewVoterAnswers('${v.response_id}')">👁️ Ver Respostas</button>`
-                : `<button class="btn btn-secondary btn-sm" onclick="openManualEntryModal('${v.response_id}', '${v.full_name.replace(/'/g, "\\'")}')">✍️ Preencher</button>`
+                ? `<button class="btn btn-secondary btn-sm btn-action" onclick="viewVoterAnswers('${v.response_id}')">👁️ Respostas</button>`
+                : `<button class="btn btn-primary btn-sm btn-action" onclick="openManualEntryModal('${v.response_id}', '${v.full_name.replace(/'/g, "\\'")}')">✍️ Preencher</button>`
               }
             </div>
           </div>
@@ -976,26 +1134,34 @@
         disText = items.join(', ') || 'Sim (não especificado)'
       }
 
+      const birthFormatted = ans.birth_date ? ans.birth_date.split('-').reverse().join('/') : 'Não informada'
+
       document.getElementById('modal-view-content').innerHTML = `
-        <div style="border-bottom:1px solid var(--slate-100);padding-bottom:0.5rem">
-          <strong style="color:var(--slate-600)">Data de Nascimento:</strong> ${ans.birth_date || 'Não informada'}
+        <div style="border-bottom:1px solid var(--slate-100); padding-bottom:.5rem;">
+          <span style="color:var(--slate-500); font-size:.8rem; display:block">Data de Nascimento:</span>
+          <strong style="color:var(--slate-800)">${birthFormatted}</strong>
         </div>
-        <div style="border-bottom:1px solid var(--slate-100);padding-bottom:0.5rem">
-          <strong style="color:var(--slate-600)">Sexo:</strong> ${ans.gender || 'Não informado'}
+        <div style="border-bottom:1px solid var(--slate-100); padding-bottom:.5rem;">
+          <span style="color:var(--slate-500); font-size:.8rem; display:block">Sexo:</span>
+          <strong style="color:var(--slate-800)">${ans.gender || 'Não informado'}</strong>
         </div>
-        <div style="border-bottom:1px solid var(--slate-100);padding-bottom:0.5rem">
-          <strong style="color:var(--slate-600)">Escolaridade:</strong> ${ans.education_level || 'Não informada'}
+        <div style="border-bottom:1px solid var(--slate-100); padding-bottom:.5rem;">
+          <span style="color:var(--slate-500); font-size:.8rem; display:block">Escolaridade:</span>
+          <strong style="color:var(--slate-800)">${ans.education_level || 'Não informada'}</strong>
         </div>
-        <div style="border-bottom:1px solid var(--slate-100);padding-bottom:0.5rem">
-          <strong style="color:var(--slate-600)">Estado Civil:</strong> ${ans.marital_status || 'Não informado'}
+        <div style="border-bottom:1px solid var(--slate-100); padding-bottom:.5rem;">
+          <span style="color:var(--slate-500); font-size:.8rem; display:block">Estado Civil:</span>
+          <strong style="color:var(--slate-800)">${ans.marital_status || 'Não informado'}</strong>
         </div>
-        <div style="border-bottom:1px solid var(--slate-100);padding-bottom:0.5rem">
-          <strong style="color:var(--slate-600)">Possui Filhos:</strong> ${ans.has_children === true ? 'Sim' : 'Não'}
+        <div style="border-bottom:1px solid var(--slate-100); padding-bottom:.5rem;">
+          <span style="color:var(--slate-500); font-size:.8rem; display:block">Possui Filhos:</span>
+          <strong style="color:var(--slate-800)">${ans.has_children === true ? 'Sim' : 'Não'}</strong>
         </div>
         <div>
-          <strong style="color:var(--slate-600)">Deficiências:</strong> ${disText}
+          <span style="color:var(--slate-500); font-size:.8rem; display:block">Deficiências e Acessibilidade:</span>
+          <strong style="color:var(--slate-800)">${disText}</strong>
         </div>
-        ${v.responded_at ? `<p class="text-xs text-slate-400 mt-2">Respondido em: ${new Date(v.responded_at).toLocaleString('pt-BR')}</p>` : ''}
+        ${v.responded_at ? `<p style="font-size:.72rem; color:var(--slate-400); margin-top:.5rem;">Computado em: ${new Date(v.responded_at).toLocaleString('pt-BR')}</p>` : ''}
       `
       openModal('modal-view-answers')
     }
@@ -1088,6 +1254,7 @@
     function showAlert(msg) {
       const el = document.getElementById('page-alert')
       el.textContent = msg
+      el.className = 'alert alert-error'
       el.classList.remove('hidden')
     }
 
