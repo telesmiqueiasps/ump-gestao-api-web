@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 
 from app.db.session import get_db
 from app.models.user import User
@@ -105,9 +106,22 @@ def _get_or_create_collector_with_sync(local_ump_id: UUID, year: int, db: Sessio
             title=f"Censo Estatístico {year} — {ump_name}",
             created_by=user_id
         )
-        db.add(collector)
-        db.commit()
-        db.refresh(collector)
+        try:
+            db.add(collector)
+            db.commit()
+            db.refresh(collector)
+        except IntegrityError:
+            db.rollback()
+            collector = db.query(UmpStatisticCollector).filter(
+                UmpStatisticCollector.local_ump_id == local_ump_id,
+                UmpStatisticCollector.fiscal_year == year
+            ).first()
+
+    if not collector:
+        collector = db.query(UmpStatisticCollector).filter(
+            UmpStatisticCollector.local_ump_id == local_ump_id,
+            UmpStatisticCollector.fiscal_year == year
+        ).first()
 
     # Sincroniza membros ativos e cooperadores
     members = db.query(Member).filter(
@@ -137,8 +151,11 @@ def _get_or_create_collector_with_sync(local_ump_id: UUID, year: int, db: Sessio
             new_responses.append(resp)
 
     if new_responses:
-        db.add_all(new_responses)
-        db.commit()
+        try:
+            db.add_all(new_responses)
+            db.commit()
+        except IntegrityError:
+            db.rollback()
 
     return collector
 

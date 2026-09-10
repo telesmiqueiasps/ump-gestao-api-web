@@ -632,7 +632,8 @@
     async function loadAllData() {
       clearAlert()
       try {
-        await Promise.all([loadCollectorData(), loadMetricsData()])
+        await loadCollectorData()
+        await loadMetricsData()
       } catch (err) {
         showAlert('Erro ao carregar dados: ' + (err.message || err))
       }
