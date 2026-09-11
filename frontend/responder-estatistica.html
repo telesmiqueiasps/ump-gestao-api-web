@@ -12,7 +12,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
   <style>
-    *, *::before, *::after {
+    *,
+    *::before,
+    *::after {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
@@ -36,7 +38,7 @@
       --green-700: #15803d;
       --radius: 12px;
       --radius-lg: 18px;
-      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
       --shadow-md: 0 10px 25px -5px rgba(26, 42, 108, 0.12);
     }
 
@@ -150,7 +152,8 @@
       margin-bottom: 0.3rem;
     }
 
-    .form-input, .form-select {
+    .form-input,
+    .form-select {
       width: 100%;
       padding: 0.75rem 0.9rem;
       font-size: 0.92rem;
@@ -163,7 +166,8 @@
       font-family: inherit;
     }
 
-    .form-input:focus, .form-select:focus {
+    .form-input:focus,
+    .form-select:focus {
       border-color: var(--brand);
       box-shadow: 0 0 0 3px rgba(26, 42, 108, 0.1);
     }
@@ -231,7 +235,7 @@
     }
 
     .checkbox-label:hover {
-      background: rgba(0,0,0,0.03);
+      background: rgba(0, 0, 0, 0.03);
     }
 
     .checkbox-label input[type="checkbox"] {
@@ -320,8 +324,15 @@
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-4px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(-4px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
   </style>
 </head>
@@ -329,7 +340,8 @@
 <body>
   <div class="container">
     <div class="header-branding">
-      <img src="/assets/img/logo.png" class="header-logo" alt="Logo UMP" onerror="this.src='/assets/img/logo_icone.png'" />
+      <img src="/assets/img/logo.png" class="header-logo" alt="Logo UMP"
+        onerror="this.src='/assets/img/logo_icone.png'" />
       <h1 class="header-title" id="census-title">Dados Estatísticos UMP</h1>
       <p class="header-subtitle" id="census-subtitle">Formulário Anual de Coleta de Dados</p>
     </div>
@@ -347,7 +359,8 @@
       <div id="error-state" class="state-box hidden">
         <div class="state-icon">❌</div>
         <h3 class="state-title">Link Inválido ou Expirado</h3>
-        <p class="state-desc" id="error-message">Este link de formulário não foi encontrado. Por favor, solicite um novo link à diretoria da sua UMP Local.</p>
+        <p class="state-desc" id="error-message">Este link de formulário não foi encontrado. Por favor, solicite um novo
+          link à diretoria da sua UMP Local.</p>
       </div>
 
       <!-- Estado de Sucesso / Já Respondido -->
@@ -355,9 +368,11 @@
         <div class="state-icon">🎉</div>
         <h3 class="state-title">Formulário Enviado com Sucesso!</h3>
         <p class="state-desc" style="margin-bottom: 1.5rem;">
-          Muito obrigado por participar! Seus dados foram computados e serão essenciais para o planejamento das atividades da nossa UMP.
+          Muito obrigado por participar! Seus dados foram computados e serão essenciais para o planejamento da nossa
+          UMP.
         </p>
-        <button class="btn-submit" type="button" onclick="allowEditForm()" id="btn-re-edit" style="width: auto; margin: 0 auto; padding: 0.6rem 1.25rem; font-size: 0.85rem; background: var(--slate-100); color: var(--slate-700); border: 1.5px solid var(--slate-200); box-shadow: none;">
+        <button class="btn-submit" type="button" onclick="allowEditForm()" id="btn-re-edit"
+          style="width: auto; margin: 0 auto; padding: 0.6rem 1.25rem; font-size: 0.85rem; background: var(--slate-100); color: var(--slate-700); border: 1.5px solid var(--slate-200); box-shadow: none;">
           ✏️ Alterar Minhas Respostas
         </button>
       </div>
@@ -367,7 +382,8 @@
         <div class="welcome-box">
           <div class="welcome-name" id="member-welcome-name">Olá, Sócio(a)! 👋</div>
           <div class="welcome-desc">
-            Suas respostas são confidenciais e destinadas exclusivamente às estatísticas da <strong id="society-welcome-name">sua UMP Local</strong>.
+            Suas respostas são confidenciais e destinadas exclusivamente às estatísticas da <strong
+              id="society-welcome-name">sua UMP Local</strong>.
           </div>
         </div>
 
@@ -375,17 +391,18 @@
 
         <!-- 1. Data de Nascimento -->
         <div class="field-group">
-          <label class="field-label" for="birth_date">🎂 Data de Nascimento *</label>
+          <label class="field-label" for="birth_date">Data de Nascimento *</label>
           <p class="field-sublabel">Utilizada para o levantamento de faixas etárias da mocidade</p>
           <input type="date" id="birth_date" class="form-input" required />
         </div>
 
         <!-- 2. Sexo -->
         <div class="field-group">
-          <label class="field-label">⚧ Sexo *</label>
+          <label class="field-label">Sexo *</label>
           <input type="hidden" id="gender" required />
           <div class="pill-grid-2">
-            <div class="pill-btn" data-field="gender" data-value="Masculino" onclick="selectPill('gender', 'Masculino')">
+            <div class="pill-btn" data-field="gender" data-value="Masculino"
+              onclick="selectPill('gender', 'Masculino')">
               <span>👨</span> Masculino
             </div>
             <div class="pill-btn" data-field="gender" data-value="Feminino" onclick="selectPill('gender', 'Feminino')">
@@ -396,7 +413,7 @@
 
         <!-- 3. Escolaridade -->
         <div class="field-group">
-          <label class="field-label" for="education_level">🎓 Escolaridade *</label>
+          <label class="field-label" for="education_level">Escolaridade *</label>
           <select id="education_level" class="form-select" required>
             <option value="" disabled selected>Selecione seu grau de escolaridade...</option>
             <option value="Ensino Fundamental">Ensino Fundamental</option>
@@ -409,7 +426,7 @@
 
         <!-- 4. Estado Civil -->
         <div class="field-group">
-          <label class="field-label" for="marital_status">💍 Estado Civil *</label>
+          <label class="field-label" for="marital_status">Estado Civil *</label>
           <select id="marital_status" class="form-select" required>
             <option value="" disabled selected>Selecione seu estado civil...</option>
             <option value="Solteiro(a)">Solteiro(a)</option>
@@ -421,13 +438,15 @@
 
         <!-- 5. Possui Filhos -->
         <div class="field-group">
-          <label class="field-label">👶 Possui Filhos? *</label>
+          <label class="field-label">Possui Filhos? *</label>
           <input type="hidden" id="has_children" required />
           <div class="pill-grid-2">
-            <div class="pill-btn" data-field="has_children" data-value="true" onclick="selectPill('has_children', 'true')">
+            <div class="pill-btn" data-field="has_children" data-value="true"
+              onclick="selectPill('has_children', 'true')">
               <span>✅</span> Sim
             </div>
-            <div class="pill-btn" data-field="has_children" data-value="false" onclick="selectPill('has_children', 'false')">
+            <div class="pill-btn" data-field="has_children" data-value="false"
+              onclick="selectPill('has_children', 'false')">
               <span>❌</span> Não
             </div>
           </div>
@@ -435,13 +454,15 @@
 
         <!-- 6. Deficiências -->
         <div class="field-group">
-          <label class="field-label">♿ Possui Alguma Deficiência? *</label>
+          <label class="field-label">Possui Alguma Deficiência? *</label>
           <input type="hidden" id="has_disabilities" required />
           <div class="pill-grid-2">
-            <div class="pill-btn" data-field="has_disabilities" data-value="true" onclick="toggleDisabilitySection(true)">
+            <div class="pill-btn" data-field="has_disabilities" data-value="true"
+              onclick="toggleDisabilitySection(true)">
               <span>✅</span> Sim
             </div>
-            <div class="pill-btn" data-field="has_disabilities" data-value="false" onclick="toggleDisabilitySection(false)">
+            <div class="pill-btn" data-field="has_disabilities" data-value="false"
+              onclick="toggleDisabilitySection(false)">
               <span>❌</span> Não
             </div>
           </div>
@@ -451,7 +472,7 @@
             <p style="font-size: 0.78rem; font-weight: 700; color: var(--slate-700); margin-bottom: 0.25rem;">
               Selecione todas as opções que se aplicam:
             </p>
-            
+
             <label class="checkbox-label">
               <input type="checkbox" name="disability_item" value="surdo" />
               <span>Surdo</span>
@@ -485,12 +506,14 @@
               <span>Deficiência intelectual</span>
             </label>
             <label class="checkbox-label">
-              <input type="checkbox" name="disability_item" value="outros" id="chk-outros" onchange="toggleOtherDisabilityInput(this.checked)" />
+              <input type="checkbox" name="disability_item" value="outros" id="chk-outros"
+                onchange="toggleOtherDisabilityInput(this.checked)" />
               <span>Outros</span>
             </label>
 
             <div id="other-disability-wrap" class="hidden" style="margin-top: 0.4rem;">
-              <input type="text" id="other_disability" class="form-input" placeholder="Descreva qual deficiência ou condição..." maxlength="200" />
+              <input type="text" id="other_disability" class="form-input"
+                placeholder="Descreva qual deficiência ou condição..." maxlength="200" />
             </div>
           </div>
         </div>
@@ -593,14 +616,14 @@
       }
     }
 
-    window.selectPill = function(fieldName, value) {
+    window.selectPill = function (fieldName, value) {
       document.getElementById(fieldName).value = value
       document.querySelectorAll(`.pill-btn[data-field="${fieldName}"]`).forEach(btn => {
         btn.classList.toggle('active', btn.getAttribute('data-value') === value)
       })
     }
 
-    window.toggleDisabilitySection = function(hasDisability) {
+    window.toggleDisabilitySection = function (hasDisability) {
       selectPill('has_disabilities', String(hasDisability))
       const opts = document.getElementById('disabilities-options')
       if (hasDisability) {
@@ -614,7 +637,7 @@
       }
     }
 
-    window.toggleOtherDisabilityInput = function(show) {
+    window.toggleOtherDisabilityInput = function (show) {
       const wrap = document.getElementById('other-disability-wrap')
       wrap.classList.toggle('hidden', !show)
       if (show) {
@@ -622,7 +645,7 @@
       }
     }
 
-    window.allowEditForm = function() {
+    window.allowEditForm = function () {
       document.getElementById('success-state').classList.add('hidden')
       document.getElementById('census-form').classList.remove('hidden')
     }
