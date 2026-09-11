@@ -236,9 +236,28 @@ export async function renderShell() {
 
   // Agora renderiza a sidebar com o societyType correto
   document.getElementById('sidebar-nav').innerHTML = buildNavHTML(user, societyType)
-  document.getElementById('header-name').textContent = user.full_name
-  document.getElementById('header-role').textContent =
-    `${getOrgLabel(user.organization_type, societyType)}${roleLabel ? ' · ' + roleLabel : ''}`
+
+  // Formata o nome para cabeçalho (Primeiro e Último nome se tiver 3+ partes)
+  const formatHeaderName = (fullName) => {
+    if (!fullName) return ''
+    const parts = fullName.trim().split(/\s+/).filter(Boolean)
+    if (parts.length <= 2) return fullName
+    return `${parts[0]} ${parts[parts.length - 1]}`
+  }
+
+  const headerNameEl = document.getElementById('header-name')
+  if (headerNameEl) {
+    headerNameEl.textContent = formatHeaderName(user.full_name)
+    headerNameEl.title = user.full_name || ''
+  }
+
+  const roleText = `${getOrgLabel(user.organization_type, societyType)}${roleLabel ? ' · ' + roleLabel : ''}`
+  const headerRoleEl = document.getElementById('header-role')
+  if (headerRoleEl) {
+    headerRoleEl.textContent = roleText
+    headerRoleEl.title = roleText
+  }
+
   document.getElementById('header-avatar').textContent =
     user.full_name?.charAt(0).toUpperCase() || '?'
 

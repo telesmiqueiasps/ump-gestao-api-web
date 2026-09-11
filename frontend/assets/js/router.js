@@ -106,10 +106,27 @@ export function renderShell() {
       </button>
     `).join('')
 
-  document.getElementById('sidebar-nav').innerHTML = navHTML
-  document.getElementById('header-name').textContent = user.full_name
-  document.getElementById('header-role').textContent =
-    `${ORG_LABELS[user.organization_type] || ''}${roleLabel ? ' · ' + roleLabel : ''}`
+  // Formata o nome para cabeçalho (Primeiro e Último nome se tiver 3+ partes)
+  const formatHeaderName = (fullName) => {
+    if (!fullName) return ''
+    const parts = fullName.trim().split(/\s+/).filter(Boolean)
+    if (parts.length <= 2) return fullName
+    return `${parts[0]} ${parts[parts.length - 1]}`
+  }
+
+  const headerNameEl = document.getElementById('header-name')
+  if (headerNameEl) {
+    headerNameEl.textContent = formatHeaderName(user.full_name)
+    headerNameEl.title = user.full_name || ''
+  }
+
+  const roleText = `${ORG_LABELS[user.organization_type] || ''}${roleLabel ? ' · ' + roleLabel : ''}`
+  const headerRoleEl = document.getElementById('header-role')
+  if (headerRoleEl) {
+    headerRoleEl.textContent = roleText
+    headerRoleEl.title = roleText
+  }
+
   document.getElementById('header-avatar').textContent =
     user.full_name?.charAt(0).toUpperCase() || '?'
 

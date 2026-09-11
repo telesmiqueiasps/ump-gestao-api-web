@@ -143,13 +143,16 @@
   align-items: center;
   gap: .75rem;
   min-width: 0;
+  flex-shrink: 0;
+  z-index: 10;
 }
 
 .header-right {
   display: flex;
   align-items: center;
   gap: .75rem;
-  flex-shrink: 0;
+  min-width: 0;
+  flex-shrink: 1;
 }
 
 .header-org {
@@ -172,6 +175,7 @@
 .header-user {
   text-align: right;
   min-width: 0;
+  overflow: hidden;
 }
 
 .header-user-name {
@@ -181,12 +185,16 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 220px;
 }
 
 .header-user-role {
   font-size: .72rem;
   color: var(--slate-500);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
 }
 
 .header-avatar {
@@ -242,6 +250,8 @@
   min-height: 36px;
   transition: background var(--transition);
   flex-shrink: 0;
+  position: relative;
+  z-index: 10;
 }
 .btn-menu:hover { background: var(--slate-100); }
 
@@ -579,11 +589,46 @@
 
   .main-area { width: 100%; }
 
-  .header { padding: 0 1rem; }
+  .header {
+    padding: 0 .75rem;
+    gap: .5rem;
+  }
+
+  .header-left {
+    flex-shrink: 0;
+    z-index: 10;
+  }
+
+  .header-right {
+    gap: .4rem;
+    min-width: 0;
+    flex-shrink: 1;
+  }
 
   .btn-menu { display: flex; }
 
   .header-org-name { display: none; }
+
+  .header-user {
+    min-width: 0;
+    max-width: 130px;
+  }
+
+  .header-user-name {
+    font-size: .78rem;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .header-user-role {
+    font-size: .65rem;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
   .page-content { padding: 1rem; gap: 1rem; }
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
@@ -596,7 +641,31 @@
 }
 
 @media (max-width: 480px) {
+  .header-user { max-width: 95px; }
   .board-grid { grid-template-columns: 1fr; }
   .summary-grid { grid-template-columns: 1fr 1fr; }
   .pwa-banner { bottom: 0; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+}
+
+@media (max-width: 380px) {
+  .header {
+    padding: 0 .5rem;
+    gap: .35rem;
+  }
+  .header-right {
+    gap: .3rem;
+  }
+  .header-user {
+    max-width: 75px;
+  }
+  .header-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: .8rem;
+  }
+  .btn-logout {
+    min-width: 32px;
+    min-height: 32px;
+    padding: .35rem .45rem;
+  }
 }
