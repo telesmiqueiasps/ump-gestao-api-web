@@ -443,7 +443,8 @@
               <option value="2024">2024</option>
             </select>
 
-            <button class="btn btn-secondary btn-sm" id="btn-print-report" onclick="window.print()" title="Imprimir Relatório">
+            <button class="btn btn-secondary btn-sm" id="btn-print-report" onclick="window.print()"
+              title="Imprimir Relatório">
               🖨️ Imprimir
             </button>
           </div>
@@ -459,7 +460,8 @@
             </button>
             <button class="segmented-btn" id="btn-subtab-collector" onclick="switchSubTab('collector')">
               📋 Coletor de Dados
-              <span class="badge badge-amber" id="subtab-pending-badge" style="display:none; margin-left:.35rem;">0 pendentes</span>
+              <span class="badge badge-amber" id="subtab-pending-badge" style="display:none; margin-left:.35rem;">0
+                pendentes</span>
             </button>
           </div>
         </div>
@@ -495,8 +497,10 @@
                 <div class="stat-label">Total de Sócios</div>
                 <div class="stat-value" id="stat-total-registered">0</div>
                 <div class="stat-sub" id="stat-members-sub">
-                  <span style="font-weight: 600; color: var(--blue-700);"><span id="stat-total-active">0</span> Ativos</span> · 
-                  <span style="font-weight: 600; color: var(--slate-600);"><span id="stat-total-coop">0</span> Coop.</span>
+                  <span style="font-weight: 600; color: var(--blue-700);"><span id="stat-total-active">0</span>
+                    Ativos</span> ·
+                  <span style="font-weight: 600; color: var(--slate-600);"><span id="stat-total-coop">0</span>
+                    Coop.</span>
                 </div>
               </div>
             </div>
@@ -516,7 +520,8 @@
                 <div class="stat-label">Taxa de Resposta</div>
                 <div class="stat-value" id="stat-response-rate">0%</div>
                 <div class="stat-bar-bg" style="margin-top: .4rem;">
-                  <div class="stat-bar-fill" id="stat-response-bar" style="width: 0%; background: var(--green-600, #16a34a)"></div>
+                  <div class="stat-bar-fill" id="stat-response-bar"
+                    style="width: 0%; background: var(--green-600, #16a34a)"></div>
                 </div>
               </div>
             </div>
@@ -535,9 +540,11 @@
               <div style="flex:1; min-width:0">
                 <div class="stat-label">Total ACI a Repassar</div>
                 <div class="stat-value" id="stat-aci-total" style="color: #1a2a6c; font-size: 1.25rem;">R$ 0,00</div>
-                <div class="stat-sub" id="stat-aci-sub" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">0 sócios × R$ 0,00</div>
+                <div class="stat-sub" id="stat-aci-sub"
+                  style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">0 sócios × R$ 0,00</div>
                 <div class="stat-bar-bg" style="margin-top: .4rem; height: 6px;">
-                  <div class="stat-bar-fill" id="stat-aci-bar" style="width: 0%; background: var(--green-600, #16a34a)"></div>
+                  <div class="stat-bar-fill" id="stat-aci-bar" style="width: 0%; background: var(--green-600, #16a34a)">
+                  </div>
                 </div>
               </div>
             </div>
@@ -545,11 +552,11 @@
 
           <!-- Grid com Categorias Analíticas -->
           <div class="stat-cards-grid">
-            
+
             <!-- Faixas Etárias -->
             <div class="card">
               <div class="card-header">
-                <h3 style="font-size: .95rem; font-weight: 700; color: var(--slate-800); margin: 0;">🎂 Faixas Etárias</h3>
+                <h3 style="font-size: .95rem; font-weight: 700; color: var(--slate-800); margin: 0;">Faixas Etárias</h3>
               </div>
               <div id="stat-age-list">
                 <!-- Renderizado via JS -->
@@ -559,8 +566,11 @@
             <!-- Programações por Cunho -->
             <div class="card">
               <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
-                <h3 style="font-size: .95rem; font-weight: 700; color: var(--slate-800); margin: 0;">📅 Programações por Cunho</h3>
-                <span class="badge" id="stat-events-total-badge" style="background: var(--blue-50); color: var(--blue-700); font-weight: 600; font-size: .75rem; padding: 2px 8px; border-radius: 99px;">0 programações</span>
+                <h3 style="font-size: .95rem; font-weight: 700; color: var(--slate-800); margin: 0;">Programações por
+                  Cunho</h3>
+                <span class="badge" id="stat-events-total-badge"
+                  style="background: var(--blue-50); color: var(--blue-700); font-weight: 600; font-size: .75rem; padding: 2px 8px; border-radius: 99px;">0
+                  programações</span>
               </div>
               <div id="stat-events-cunho-list">
                 <!-- Renderizado via JS -->
@@ -570,7 +580,8 @@
             <!-- Sexo -->
             <div class="card">
               <div class="card-header">
-                <h3 style="font-size: .95rem; font-weight: 700; color: var(--slate-800); margin: 0;">⚧ Distribuição por Sexo</h3>
+                <h3 style="font-size: .95rem; font-weight: 700; color: var(--slate-800); margin: 0;">Distribuição por
+                  Sexo</h3>
               </div>
               <div id="stat-gender-list">
                 <!-- Renderizado via JS -->
@@ -580,7 +591,8 @@
             <!-- Escolaridade -->
             <div class="card">
               <div class="card-header">
-                <h3 style="font-size: .95rem; font-weight: 700; color: var(--slate-800); margin: 0;">🎓 Grau de Escolaridade</h3>
+                <h3 style="font-size: .95rem; font-weight: 700; color: var(--slate-800); margin: 0;">Grau de
+                  Escolaridade</h3>
               </div>
               <div id="stat-education-list">
                 <!-- Renderizado via JS -->
@@ -590,7 +602,7 @@
             <!-- Estado Civil -->
             <div class="card">
               <div class="card-header">
-                <h3 style="font-size: .95rem; font-weight: 700; color: var(--slate-800); margin: 0;">💍 Estado Civil</h3>
+                <h3 style="font-size: .95rem; font-weight: 700; color: var(--slate-800); margin: 0;">Estado Civil</h3>
               </div>
               <div id="stat-marital-list">
                 <!-- Renderizado via JS -->
@@ -600,7 +612,7 @@
             <!-- Filhos -->
             <div class="card">
               <div class="card-header">
-                <h3 style="font-size: .95rem; font-weight: 700; color: var(--slate-800); margin: 0;">👶 Possui Filhos</h3>
+                <h3 style="font-size: .95rem; font-weight: 700; color: var(--slate-800); margin: 0;">Possui Filhos</h3>
               </div>
               <div id="stat-children-list">
                 <!-- Renderizado via JS -->
@@ -610,7 +622,8 @@
             <!-- Deficiências e Acessibilidade -->
             <div class="card">
               <div class="card-header">
-                <h3 style="font-size: .95rem; font-weight: 700; color: var(--slate-800); margin: 0;">♿ Acessibilidade e Deficiências</h3>
+                <h3 style="font-size: .95rem; font-weight: 700; color: var(--slate-800); margin: 0;">Acessibilidade e
+                  Deficiências</h3>
               </div>
               <div id="stat-disabilities-list">
                 <!-- Renderizado via JS -->
@@ -626,12 +639,15 @@
         <!-- ══════════════════════════════════════════════════════════ -->
         <section id="sec-collector" class="hidden">
           <!-- Banner de Status do Coletor -->
-          <div class="card" style="margin-bottom: 1.25rem; background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%); border-left: 4px solid var(--blue-600);">
+          <div class="card"
+            style="margin-bottom: 1.25rem; background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%); border-left: 4px solid var(--blue-600);">
             <div class="collector-banner-header">
               <div>
-                <h3 style="font-size: 1rem; font-weight: 700; color: var(--slate-800); margin: 0;" id="collector-society-title">Coletor de Dados</h3>
+                <h3 style="font-size: 1rem; font-weight: 700; color: var(--slate-800); margin: 0;"
+                  id="collector-society-title">Coletor de Dados</h3>
                 <p style="font-size: .8rem; color: var(--slate-500); margin-top: .2rem; margin-bottom: 0;">
-                  Envie o link individual para cada sócio responder o formulário de dados estatísticos. O progresso é computado em tempo real.
+                  Envie o link individual para cada sócio responder o formulário de dados estatísticos. O progresso é
+                  computado em tempo real.
                 </p>
               </div>
               <div class="collector-banner-actions">
@@ -641,39 +657,47 @@
                 <button class="btn btn-secondary btn-sm" id="btn-copy-all-links" onclick="copyAllLinks()">
                   📋 Copiar Todos os Links
                 </button>
-                <button class="btn btn-secondary btn-sm" id="btn-whatsapp-template" onclick="openWhatsappTemplateModal()">
+                <button class="btn btn-secondary btn-sm" id="btn-whatsapp-template"
+                  onclick="openWhatsappTemplateModal()">
                   💬 Modelo WhatsApp
                 </button>
               </div>
             </div>
 
             <div style="margin-top: 1rem;">
-              <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 600; color: var(--slate-700); margin-bottom: .35rem;">
+              <div
+                style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 600; color: var(--slate-700); margin-bottom: .35rem;">
                 <span>Progresso da Coleta</span>
                 <span id="collector-progress-text">0 de 0 respondidos (0%)</span>
               </div>
               <div class="stat-bar-bg" style="height: 10px;">
-                <div class="stat-bar-fill" id="collector-progress-bar" style="width: 0%; background: linear-gradient(90deg, #10b981, #059669);"></div>
+                <div class="stat-bar-fill" id="collector-progress-bar"
+                  style="width: 0%; background: linear-gradient(90deg, #10b981, #059669);"></div>
               </div>
             </div>
           </div>
 
           <!-- Barra de Filtros e Busca -->
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .75rem; margin-bottom: 1rem;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .75rem; margin-bottom: 1rem;">
             <div style="display: flex; gap: .4rem; flex-wrap: wrap;">
-              <button class="btn btn-secondary btn-sm filter-pill active" id="tab-voters-all" onclick="filterVoters('all')">
+              <button class="btn btn-secondary btn-sm filter-pill active" id="tab-voters-all"
+                onclick="filterVoters('all')">
                 Todos (<span id="count-collector-all">0</span>)
               </button>
-              <button class="btn btn-secondary btn-sm filter-pill" id="tab-voters-voted" onclick="filterVoters('voted')">
+              <button class="btn btn-secondary btn-sm filter-pill" id="tab-voters-voted"
+                onclick="filterVoters('voted')">
                 ✓ Já Responderam (<span id="count-collector-voted">0</span>)
               </button>
-              <button class="btn btn-secondary btn-sm filter-pill" id="tab-voters-pending" onclick="filterVoters('pending')">
+              <button class="btn btn-secondary btn-sm filter-pill" id="tab-voters-pending"
+                onclick="filterVoters('pending')">
                 ⏳ Faltam Responder (<span id="count-collector-pending">0</span>)
               </button>
             </div>
 
             <div style="flex: 1; min-width: 200px; max-width: 320px;">
-              <input type="text" class="input" id="search-voter" placeholder="🔍 Buscar sócio por nome..." oninput="renderCollectorList()" style="padding: .4rem .75rem; font-size: .85rem;" />
+              <input type="text" class="input" id="search-voter" placeholder="🔍 Buscar sócio por nome..."
+                oninput="renderCollectorList()" style="padding: .4rem .75rem; font-size: .85rem;" />
             </div>
           </div>
 
@@ -696,7 +720,8 @@
         <h2 id="modal-view-name">Respostas do Sócio</h2>
         <button class="modal-close" onclick="closeModal('modal-view-answers')">✕</button>
       </div>
-      <div id="modal-view-content" style="padding: .5rem 0; font-size: .88rem; display: flex; flex-direction: column; gap: .65rem;">
+      <div id="modal-view-content"
+        style="padding: .5rem 0; font-size: .88rem; display: flex; flex-direction: column; gap: .65rem;">
         <!-- Injetado via JS -->
       </div>
       <div class="modal-footer">
@@ -763,25 +788,41 @@
 
         <div class="field">
           <label>Possui Alguma Deficiência? *</label>
-          <select class="select" id="manual-disabilities" onchange="toggleManualDisabilities(this.value === 'true')" required>
+          <select class="select" id="manual-disabilities" onchange="toggleManualDisabilities(this.value === 'true')"
+            required>
             <option value="" disabled selected>Selecione...</option>
             <option value="false">Não</option>
             <option value="true">Sim</option>
           </select>
         </div>
 
-        <div id="manual-disabilities-box" class="hidden" style="background: var(--slate-50); border: 1.5px dashed var(--slate-300); border-radius: var(--radius); padding: .75rem; display: flex; flex-direction: column; gap: .4rem;">
+        <div id="manual-disabilities-box" class="hidden"
+          style="background: var(--slate-50); border: 1.5px dashed var(--slate-300); border-radius: var(--radius); padding: .75rem; display: flex; flex-direction: column; gap: .4rem;">
           <label style="font-size: .75rem; font-weight: 700; color: var(--slate-700);">Selecione as opções:</label>
-          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;cursor:pointer"><input type="checkbox" name="manual_dis" value="surdo" /> Surdo</label>
-          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;cursor:pointer"><input type="checkbox" name="manual_dis" value="deficiente_auditivo" /> Deficiente auditivo</label>
-          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;cursor:pointer"><input type="checkbox" name="manual_dis" value="cego" /> Cego</label>
-          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;cursor:pointer"><input type="checkbox" name="manual_dis" value="baixa_visao" /> Baixa visão</label>
-          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;cursor:pointer"><input type="checkbox" name="manual_dis" value="deficiencia_fisica_membro_inferior" /> Deficiência física membro inferior</label>
-          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;cursor:pointer"><input type="checkbox" name="manual_dis" value="deficiencia_fisica_membro_superior" /> Deficiência física membro superior</label>
-          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;cursor:pointer"><input type="checkbox" name="manual_dis" value="transtorno_neurologico" /> Transtorno neurológico</label>
-          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;cursor:pointer"><input type="checkbox" name="manual_dis" value="deficiencia_intelectual" /> Deficiência intelectual</label>
-          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;cursor:pointer"><input type="checkbox" name="manual_dis" value="outros" onchange="document.getElementById('manual-other-text').classList.toggle('hidden', !this.checked)" /> Outros</label>
-          <input type="text" class="input hidden" id="manual-other-text" placeholder="Especifique qual condição..." style="margin-top: .3rem;" />
+          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;cursor:pointer"><input
+              type="checkbox" name="manual_dis" value="surdo" /> Surdo</label>
+          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;cursor:pointer"><input
+              type="checkbox" name="manual_dis" value="deficiente_auditivo" /> Deficiente auditivo</label>
+          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;cursor:pointer"><input
+              type="checkbox" name="manual_dis" value="cego" /> Cego</label>
+          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;cursor:pointer"><input
+              type="checkbox" name="manual_dis" value="baixa_visao" /> Baixa visão</label>
+          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;cursor:pointer"><input
+              type="checkbox" name="manual_dis" value="deficiencia_fisica_membro_inferior" /> Deficiência física membro
+            inferior</label>
+          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;cursor:pointer"><input
+              type="checkbox" name="manual_dis" value="deficiencia_fisica_membro_superior" /> Deficiência física membro
+            superior</label>
+          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;cursor:pointer"><input
+              type="checkbox" name="manual_dis" value="transtorno_neurologico" /> Transtorno neurológico</label>
+          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;cursor:pointer"><input
+              type="checkbox" name="manual_dis" value="deficiencia_intelectual" /> Deficiência intelectual</label>
+          <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;cursor:pointer"><input
+              type="checkbox" name="manual_dis" value="outros"
+              onchange="document.getElementById('manual-other-text').classList.toggle('hidden', !this.checked)" />
+            Outros</label>
+          <input type="text" class="input hidden" id="manual-other-text" placeholder="Especifique qual condição..."
+            style="margin-top: .3rem;" />
         </div>
 
         <div class="modal-footer">
@@ -803,7 +844,8 @@
         <p style="font-size: .82rem; color: var(--slate-500); margin-bottom: .75rem;">
           Você pode copiar este texto modelo para disparar no grupo da sociedade ou individualmente:
         </p>
-        <textarea id="whatsapp-template-text" class="input" rows="7" style="font-size: .84rem; line-height: 1.4; resize: none;"></textarea>
+        <textarea id="whatsapp-template-text" class="input" rows="7"
+          style="font-size: .84rem; line-height: 1.4; resize: none;"></textarea>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeModal('modal-whatsapp-template')">Fechar</button>
@@ -826,68 +868,68 @@
     let collectorData = null
     let metricsData = null
 
-    // ── INICIALIZAÇÃO ──
-    ;(async () => {
-      if (!requireAuth()) return
-      if (!canAccessPage('ump-statistics')) {
-        window.location.href = '/pages/dashboard.html'
-        return
-      }
-
-      await renderShell()
-      renderBottomNav('ump-statistics')
-      document.querySelector('[data-page="ump-statistics"]')?.classList.add('active')
-      currentUser = getUser()
-
-      // Tratamento para perfil de Federação
-      if (isFederation()) {
-        const subtabsContainer = document.querySelector('.subtabs-container')
-        if (subtabsContainer) subtabsContainer.style.setProperty('display', 'none', 'important')
-        document.getElementById('sec-collector')?.classList.add('hidden')
-        document.getElementById('sec-general')?.classList.remove('hidden')
-        
-        const titleEl = document.getElementById('page-title')
-        if (titleEl) titleEl.textContent = 'Estatísticas UMP — Federação'
-        const subEl = document.getElementById('page-subtitle')
-        if (subEl) subEl.textContent = 'Dados estatísticos anuais consolidados das UMPs Locais'
-      }
-
-      // Configura seletor de ano
-      const yearSelect = document.getElementById('select-year')
-      yearSelect.value = String(selectedYear)
-      yearSelect.addEventListener('change', (e) => {
-        selectedYear = parseInt(e.target.value)
-        loadAllData()
-      })
-
-      // Seletor de UMP Local (para Federação)
-      const localSelect = document.getElementById('select-local-ump')
-      localSelect.addEventListener('change', (e) => {
-        selectedLocalId = e.target.value || null
-        if (isFederation()) {
-          const subEl = document.getElementById('page-subtitle')
-          if (subEl) {
-            subEl.textContent = selectedLocalId
-              ? 'Dados estatísticos anuais da UMP Local selecionada'
-              : 'Dados estatísticos anuais consolidados das UMPs Locais'
-          }
+      // ── INICIALIZAÇÃO ──
+      ; (async () => {
+        if (!requireAuth()) return
+        if (!canAccessPage('ump-statistics')) {
+          window.location.href = '/pages/dashboard.html'
+          return
         }
-        loadAllData()
-      })
 
-      // Fechar modal no overlay
-      document.querySelectorAll('.modal-overlay').forEach(modal => {
-        modal.addEventListener('click', (e) => {
-          if (e.target === modal) closeModal(modal.id)
+        await renderShell()
+        renderBottomNav('ump-statistics')
+        document.querySelector('[data-page="ump-statistics"]')?.classList.add('active')
+        currentUser = getUser()
+
+        // Tratamento para perfil de Federação
+        if (isFederation()) {
+          const subtabsContainer = document.querySelector('.subtabs-container')
+          if (subtabsContainer) subtabsContainer.style.setProperty('display', 'none', 'important')
+          document.getElementById('sec-collector')?.classList.add('hidden')
+          document.getElementById('sec-general')?.classList.remove('hidden')
+
+          const titleEl = document.getElementById('page-title')
+          if (titleEl) titleEl.textContent = 'Estatísticas UMP — Federação'
+          const subEl = document.getElementById('page-subtitle')
+          if (subEl) subEl.textContent = 'Dados estatísticos anuais consolidados das UMPs Locais'
+        }
+
+        // Configura seletor de ano
+        const yearSelect = document.getElementById('select-year')
+        yearSelect.value = String(selectedYear)
+        yearSelect.addEventListener('change', (e) => {
+          selectedYear = parseInt(e.target.value)
+          loadAllData()
         })
-      })
 
-      // Submissão do preenchimento manual
-      document.getElementById('form-manual-entry').addEventListener('submit', handleManualSubmit)
+        // Seletor de UMP Local (para Federação)
+        const localSelect = document.getElementById('select-local-ump')
+        localSelect.addEventListener('change', (e) => {
+          selectedLocalId = e.target.value || null
+          if (isFederation()) {
+            const subEl = document.getElementById('page-subtitle')
+            if (subEl) {
+              subEl.textContent = selectedLocalId
+                ? 'Dados estatísticos anuais da UMP Local selecionada'
+                : 'Dados estatísticos anuais consolidados das UMPs Locais'
+            }
+          }
+          loadAllData()
+        })
 
-      // Carrega dados iniciais sequencialmente
-      await loadAllData()
-    })()
+        // Fechar modal no overlay
+        document.querySelectorAll('.modal-overlay').forEach(modal => {
+          modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal(modal.id)
+          })
+        })
+
+        // Submissão do preenchimento manual
+        document.getElementById('form-manual-entry').addEventListener('submit', handleManualSubmit)
+
+        // Carrega dados iniciais sequencialmente
+        await loadAllData()
+      })()
 
     async function loadAllData() {
       clearAlert()
@@ -920,7 +962,7 @@
       }
 
       document.getElementById('collector-society-title').textContent = `Coletor de Dados — ${collectorData.local_ump_name}`
-      document.getElementById('collector-progress-text').textContent = 
+      document.getElementById('collector-progress-text').textContent =
         `${collectorData.responded_count} de ${collectorData.total_members} respondidos (${collectorData.percent_complete}%)`
       document.getElementById('collector-progress-bar').style.width = `${collectorData.percent_complete}%`
 
@@ -987,7 +1029,7 @@
       document.getElementById('stat-response-rate').textContent = `${data.response_rate_percent}%`
       document.getElementById('stat-response-bar').style.width = `${data.response_rate_percent}%`
       document.getElementById('stat-average-age').textContent = (data.age_metrics && data.age_metrics.average_age > 0)
-        ? `${data.age_metrics.average_age} anos` 
+        ? `${data.age_metrics.average_age} anos`
         : '—'
 
       // Card: Total ACI a Repassar
@@ -1023,11 +1065,11 @@
 
       // 2. Programações por Cunho (módulo de calendário)
       const cunhoConfig = {
-        'Social':                  { label: 'Social', icon: '🤝', color: '#10b981' },
-        'Evangelístico/Missional': { label: 'Evangelístico/Missional', icon: '📢', color: '#2563eb' },
-        'Espiritual':              { label: 'Espiritual', icon: '📖', color: '#7c3aed' },
-        'Recreativo':              { label: 'Recreativo', icon: '⚽', color: '#d97706' },
-        'Oração/Vigília':          { label: 'Oração/Vigília', icon: '🙏', color: '#db2777' }
+        'Social': { label: 'Social', color: '#10b981' },
+        'Evangelístico/Missional': { label: 'Evangelístico/Missional', color: '#2563eb' },
+        'Espiritual': { label: 'Espiritual', color: '#7c3aed' },
+        'Recreativo': { label: 'Recreativo', color: '#d97706' },
+        'Oração/Vigília': { label: 'Oração/Vigília', color: '#db2777' }
       }
       const evMetrics = data.events_metrics || { total_events: 0, by_cunho: {} }
       const totalEvents = evMetrics.total_events || 0
@@ -1102,8 +1144,8 @@
       `
 
       disHtml += Object.entries(data.disabilities_metrics.breakdown).map(([k, val]) => {
-        const pct = data.disabilities_metrics.general.com_deficiencia > 0 
-          ? Math.round((val / data.disabilities_metrics.general.com_deficiencia) * 100) 
+        const pct = data.disabilities_metrics.general.com_deficiencia > 0
+          ? Math.round((val / data.disabilities_metrics.general.com_deficiencia) * 100)
           : 0
         return renderStatBarRow(disLabels[k] || k, val, pct, '#ef4444')
       }).join('')
@@ -1137,7 +1179,7 @@
     }
 
     // ── RENDERIZAÇÃO: COLETOR DE DADOS (LISTA DE SÓCIOS) ──
-    window.renderCollectorList = function() {
+    window.renderCollectorList = function () {
       const container = document.getElementById('collector-voters-list')
       if (!collectorData || !collectorData.voters || collectorData.voters.length === 0) {
         container.innerHTML = '<div style="background:#fff; border:1.5px solid var(--slate-200); border-radius:var(--radius); padding:2.5rem 1rem; text-align:center; color:var(--slate-400); font-size:.875rem;">Nenhum sócio encontrado no levantamento estatístico deste ano. Clique em "Sincronizar Sócios" acima.</div>'
@@ -1177,7 +1219,7 @@
               <div class="voter-name">${v.full_name}</div>
               <div class="voter-meta">
                 ${statusBadge}
-                <span>🏷️ Sócio ${typeLabel}${phoneFormatted}</span>
+                <span>Sócio ${typeLabel}${phoneFormatted}</span>
               </div>
             </div>
             <div class="voter-actions">
@@ -1188,9 +1230,9 @@
                 💬 WhatsApp
               </button>
               ${v.has_responded
-                ? `<button class="btn btn-secondary btn-sm btn-action" onclick="viewVoterAnswers('${v.response_id}')">👁️ Respostas</button>`
-                : `<button class="btn btn-primary btn-sm btn-action" onclick="openManualEntryModal('${v.response_id}', '${v.full_name.replace(/'/g, "\\'")}')">✍️ Preencher</button>`
-              }
+            ? `<button class="btn btn-secondary btn-sm btn-action" onclick="viewVoterAnswers('${v.response_id}')">👁️ Respostas</button>`
+            : `<button class="btn btn-primary btn-sm btn-action" onclick="openManualEntryModal('${v.response_id}', '${v.full_name.replace(/'/g, "\\'")}')">✍️ Preencher</button>`
+          }
             </div>
           </div>
         `
@@ -1198,7 +1240,7 @@
     }
 
     // ── SUB-ABAS ALTERNAÇÃO ──
-    window.switchSubTab = function(tab) {
+    window.switchSubTab = function (tab) {
       if (isFederation()) return // Federação acessa exclusivamente Estatísticas Gerais
       currentSubTab = tab
       document.getElementById('btn-subtab-general').classList.toggle('active', tab === 'general')
@@ -1207,7 +1249,7 @@
       document.getElementById('sec-collector').classList.toggle('hidden', tab !== 'collector')
     }
 
-    window.filterVoters = function(filter) {
+    window.filterVoters = function (filter) {
       currentVoterFilter = filter
       document.getElementById('tab-voters-all').classList.toggle('active', filter === 'all')
       document.getElementById('tab-voters-voted').classList.toggle('active', filter === 'voted')
@@ -1216,7 +1258,7 @@
     }
 
     // ── AÇÕES DE COLETOR ──
-    window.syncMembers = async function() {
+    window.syncMembers = async function () {
       clearAlert()
       const btn = document.getElementById('btn-sync-members')
       btn.disabled = true
@@ -1236,44 +1278,44 @@
       }
     }
 
-    window.copyIndividualLink = function(link) {
+    window.copyIndividualLink = function (link) {
       navigator.clipboard.writeText(link)
       alert('Link individual copiado para a área de transferência!')
     }
 
-    window.copyAllLinks = function() {
+    window.copyAllLinks = function () {
       if (!collectorData || !collectorData.voters) return
-      const text = collectorData.voters.map(v => 
+      const text = collectorData.voters.map(v =>
         `${v.full_name} (${v.has_responded ? 'Respondido' : 'Pendente'}):\n${window.location.origin}/responder-estatistica.html?token=${v.access_token}`
       ).join('\n\n')
       navigator.clipboard.writeText(text)
       alert('Todos os links foram copiados para a área de transferência!')
     }
 
-    window.sendWhatsapp = function(name, phone, link) {
+    window.sendWhatsapp = function (name, phone, link) {
       const society = collectorData ? collectorData.local_ump_name : 'nossa UMP'
       const msg = `Olá, ${name}! 👋\n\nPor favor, preencha o formulário de dados estatísticos de ${selectedYear} da ${society}.\nLeva menos de 1 minuto e é fundamental para as nossas atividades:\n\n👉 ${link}\n\nDeus abençoe!`
-      
+
       let cleanPhone = (phone || '').replace(/\D/g, '')
       if (cleanPhone && cleanPhone.length >= 10 && !cleanPhone.startsWith('55')) {
         cleanPhone = '55' + cleanPhone
       }
 
-      const waUrl = cleanPhone 
+      const waUrl = cleanPhone
         ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`
         : `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`
 
       window.open(waUrl, '_blank')
     }
 
-    window.openWhatsappTemplateModal = function() {
+    window.openWhatsappTemplateModal = function () {
       const society = collectorData ? collectorData.local_ump_name : 'nossa UMP'
       const template = `Olá, [Nome do Sócio]! 👋\n\nPor favor, preencha o formulário de dados estatísticos de ${selectedYear} da ${society}.\nLeva menos de 1 minuto e é fundamental para o planejamento das nossas atividades:\n\n👉 [Link Individual do Sócio]\n\nDeus abençoe!`
       document.getElementById('whatsapp-template-text').value = template
       openModal('modal-whatsapp-template')
     }
 
-    window.copyWhatsappTemplate = function() {
+    window.copyWhatsappTemplate = function () {
       const text = document.getElementById('whatsapp-template-text').value
       navigator.clipboard.writeText(text)
       alert('Modelo de mensagem copiado!')
@@ -1281,7 +1323,7 @@
     }
 
     // ── MODAL DE VISUALIZAÇÃO DE RESPOSTAS ──
-    window.viewVoterAnswers = function(responseId) {
+    window.viewVoterAnswers = function (responseId) {
       const v = collectorData.voters.find(item => item.response_id === responseId)
       if (!v || !v.answers) return
 
@@ -1340,7 +1382,7 @@
     }
 
     // ── MODAL DE PREENCHIMENTO MANUAL ──
-    window.openManualEntryModal = function(responseId, fullName) {
+    window.openManualEntryModal = function (responseId, fullName) {
       document.getElementById('modal-manual-name').textContent = `Lançar Respostas — ${fullName}`
       document.getElementById('manual-response-id').value = responseId
       document.getElementById('form-manual-entry').reset()
@@ -1371,7 +1413,7 @@
       openModal('modal-manual-entry')
     }
 
-    window.toggleManualDisabilities = function(show) {
+    window.toggleManualDisabilities = function (show) {
       document.getElementById('manual-disabilities-box').classList.toggle('hidden', !show)
     }
 
@@ -1417,10 +1459,10 @@
     }
 
     // Modal Helpers
-    window.openModal = function(id) {
+    window.openModal = function (id) {
       document.getElementById(id).classList.add('open')
     }
-    window.closeModal = function(id) {
+    window.closeModal = function (id) {
       document.getElementById(id).classList.remove('open')
     }
 
