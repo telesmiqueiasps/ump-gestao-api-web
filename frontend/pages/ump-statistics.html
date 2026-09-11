@@ -361,33 +361,139 @@
       }
     }
 
-    /* ── Impressão ── */
+    /* ── Estilos de Impressão (Relatório Estatístico Oficial) ── */
+    #print-area {
+      display: none;
+    }
+
     @media print {
-      body * {
-        visibility: hidden;
+      @page {
+        size: A4 portrait;
+        margin: 16mm 14mm;
       }
 
-      #print-report-area,
-      #print-report-area * {
-        visibility: visible;
+      html,
+      body {
+        background: #fff !important;
+        color: #1e293b !important;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
       }
 
-      #print-report-area {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        padding: 0;
-      }
-
+      /* Oculta tudo que pertence ao app shell (layout, modais, sidebar, header, etc.) */
+      .app-shell,
       .sidebar,
       .header,
-      .page-header-actions,
-      .subtabs-container,
-      #btn-print-report,
-      #btn-portal-nacional,
-      .collector-banner-actions {
+      .page-header,
+      .modal-overlay,
+      .bottom-nav {
         display: none !important;
+      }
+
+      /* Exibe exclusivamente o relatório formatado */
+      #print-area {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+        background: #fff !important;
+      }
+
+      .print-report-container {
+        width: 100%;
+        max-width: 740px;
+        margin: 0 auto;
+      }
+
+      .print-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .print-logo {
+        height: 65px;
+        width: auto;
+        object-fit: contain;
+        margin-bottom: 0.65rem;
+      }
+
+      .print-title {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0 0 0.25rem 0;
+        letter-spacing: -0.2px;
+      }
+
+      .print-subtitle {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #475569;
+        margin: 0;
+      }
+
+      .print-card {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 1.15rem 1.4rem;
+        margin-bottom: 1.25rem;
+        background: #ffffff;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      .print-card-title {
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: 1rem;
+      }
+
+      .print-card-body {
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+      }
+
+      .print-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .print-row-label {
+        font-size: 0.88rem;
+        color: #64748b;
+        font-weight: 400;
+      }
+
+      .print-row-badge {
+        border: 1px solid #64748b;
+        border-radius: 6px;
+        padding: 2px 10px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #1e293b;
+        min-width: 32px;
+        text-align: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1.3;
+      }
+
+      .print-page-break {
+        page-break-before: always;
+        break-before: page;
+        margin-top: 1.5rem;
       }
     }
   </style>
@@ -428,7 +534,7 @@
         </div>
       </header>
 
-      <main class="page-content" id="print-report-area">
+      <main class="page-content">
         <div class="page-header">
           <div class="page-header-info">
             <h1 id="page-title">Estatísticas UMP</h1>
@@ -451,7 +557,7 @@
               Portal Nacional
             </a>
 
-            <button class="btn btn-secondary btn-sm" id="btn-print-report" onclick="window.print()"
+            <button class="btn btn-secondary btn-sm" id="btn-print-report" onclick="printStatisticsReport()"
               title="Imprimir Relatório">
               🖨️ Imprimir
             </button>
@@ -1171,6 +1277,7 @@
       }
 
       document.getElementById('stat-disabilities-list').innerHTML = disHtml
+      generatePrintReport()
     }
 
     function renderStatBarRow(label, count, pct, color) {
@@ -1485,7 +1592,123 @@
     function clearAlert() {
       document.getElementById('page-alert').classList.add('hidden')
     }
+
+    // ── GERAÇÃO DO RELATÓRIO DE IMPRESSÃO (MODELO OFICIAL) ──
+    function generatePrintReport() {
+      const data = metricsData || {}
+      const printArea = document.getElementById('print-area')
+      if (!printArea) return
+
+      const orgName = (data.local_ump_name && data.local_ump_name !== 'Todas as UMPs Locais (Consolidado)')
+        ? data.local_ump_name
+        : (document.getElementById('header-org-name')?.textContent || data.local_ump_name || 'UMP')
+
+      const ageGroups = data.age_metrics?.groups || {}
+      const gender = data.gender_metrics || {}
+      const edu = data.education_metrics || {}
+      const marital = data.marital_status_metrics || {}
+      const children = data.children_metrics || {}
+      const disBreakdown = data.disabilities_metrics?.breakdown || {}
+      const evByCunho = data.events_metrics?.by_cunho || {}
+
+      const renderPrintRow = (label, val) => `
+        <div class="print-row">
+          <span class="print-row-label">${label}</span>
+          <span class="print-row-badge">${val ?? 0}</span>
+        </div>
+      `
+
+      printArea.innerHTML = `
+        <div class="print-report-container">
+          <!-- Cabeçalho -->
+          <div class="print-header">
+            <img src="/assets/img/ump_logo.png" class="print-logo" alt="Logo UMP" onerror="this.src='/assets/img/logo.png'" />
+            <h1 class="print-title">Relatório Estatístico</h1>
+            <div class="print-subtitle">${orgName}</div>
+          </div>
+
+          <!-- 1. Perfil dos Sócios -->
+          <div class="print-card">
+            <div class="print-card-title">Perfil dos Sócios</div>
+            <div class="print-card-body">
+              ${renderPrintRow('Ativos', data.total_active ?? 0)}
+              ${renderPrintRow('Cooperadores', data.total_cooperating ?? 0)}
+              ${renderPrintRow('Menores de 19 anos', ageGroups.menores_19 ?? 0)}
+              ${renderPrintRow('Entre 19-23 anos', ageGroups['19_23'] ?? 0)}
+              ${renderPrintRow('Entre 24-29 anos', ageGroups['24_29'] ?? 0)}
+              ${renderPrintRow('Entre 30-35 anos', ageGroups['30_35'] ?? 0)}
+              ${renderPrintRow('Homens', gender.Masculino ?? 0)}
+              ${renderPrintRow('Mulheres', gender.Feminino ?? 0)}
+            </div>
+          </div>
+
+          <!-- 2. Escolaridade dos Sócios -->
+          <div class="print-card">
+            <div class="print-card-title">Escolaridade dos Sócios</div>
+            <div class="print-card-body">
+              ${renderPrintRow('Ensino Fundamental', edu['Ensino Fundamental'] ?? 0)}
+              ${renderPrintRow('Ensino Médio', edu['Ensino Médio'] ?? 0)}
+              ${renderPrintRow('Ensino Técnico', edu['Ensino Técnico'] ?? 0)}
+              ${renderPrintRow('Ensino Superior', edu['Ensino Superior'] ?? 0)}
+              ${renderPrintRow('Pós-Graduação', edu['Pós-Graduação'] ?? 0)}
+            </div>
+          </div>
+
+          <!-- 3. Estado Civil dos Sócios -->
+          <div class="print-card">
+            <div class="print-card-title">Estado Civil dos Sócios</div>
+            <div class="print-card-body">
+              ${renderPrintRow('Solteiros', marital['Solteiro(a)'] ?? marital['Solteiros'] ?? 0)}
+              ${renderPrintRow('Casados', marital['Casado(a)'] ?? marital['Casados'] ?? 0)}
+              ${renderPrintRow('Divorciados', marital['Divorciado(a)'] ?? marital['Divorciados'] ?? 0)}
+              ${renderPrintRow('Viúvos', marital['Viúvo(a)'] ?? marital['Viúvos'] ?? 0)}
+              ${renderPrintRow('Com filhos', children.com_filhos ?? 0)}
+            </div>
+          </div>
+
+          <!-- 4. Deficiência dos Sócios -->
+          <div class="print-card">
+            <div class="print-card-title">Deficiência dos Sócios</div>
+            <div class="print-card-body">
+              ${renderPrintRow('Surdos', disBreakdown.surdo ?? 0)}
+              ${renderPrintRow('Deficiência Auditiva', disBreakdown.deficiente_auditivo ?? 0)}
+              ${renderPrintRow('Cegos', disBreakdown.cego ?? 0)}
+              ${renderPrintRow('Baixa Visão', disBreakdown.baixa_visao ?? 0)}
+              ${renderPrintRow('Deficiência Física/Motora em membros inferiores', disBreakdown.deficiencia_fisica_membro_inferior ?? 0)}
+              ${renderPrintRow('Com deficiência Física/Motora em membros superiores', disBreakdown.deficiencia_fisica_membro_superior ?? 0)}
+              ${renderPrintRow('Algum transtorno neurológico', disBreakdown.transtorno_neurologico ?? 0)}
+              ${renderPrintRow('Deficiência intelectual', disBreakdown.deficiencia_intelectual ?? 0)}
+            </div>
+          </div>
+
+          <!-- 5. Programações Realizadas (Página 2) -->
+          <div class="print-card print-page-break">
+            <div class="print-card-title">Programações Realizadas</div>
+            <div class="print-card-body">
+              ${renderPrintRow('Social', evByCunho['Social'] ?? 0)}
+              ${renderPrintRow('Evangelístico/Missional', evByCunho['Evangelístico/Missional'] ?? 0)}
+              ${renderPrintRow('Espiritual', evByCunho['Espiritual'] ?? 0)}
+              ${renderPrintRow('Recreativo', evByCunho['Recreativo'] ?? 0)}
+              ${renderPrintRow('Oração e Vigílias', (evByCunho['Oração/Vigília'] ?? evByCunho['Oração e Vigílias'] ?? 0))}
+            </div>
+          </div>
+        </div>
+      `
+    }
+
+    window.printStatisticsReport = async function () {
+      if (!metricsData) {
+        await loadMetricsData()
+      }
+      generatePrintReport()
+      window.print()
+    }
+
+    window.addEventListener('beforeprint', generatePrintReport)
   </script>
+
+  <!-- Área de Impressão do Relatório Estatístico -->
+  <div id="print-area"></div>
 </body>
 
 </html>
