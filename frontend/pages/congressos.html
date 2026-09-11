@@ -3,41 +3,68 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Congressos — Plataforma de Gestão</title>
-  <link rel="icon" href="/assets/img/logo_icone.png" type="image/png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1a2a6c" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="UMP POPB" />
+  <meta name="application-name" content="UMP POPB" />
+  <title>Congressos — Gestão UMP</title>
+  <link rel="icon" type="image/png" href="/assets/img/logo_icone.png" />
+  <link rel="manifest" href="/manifest.json" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/main.css?v=10" />
+  <link rel="stylesheet" href="../assets/css/components.css?v=10" />
   <link rel="stylesheet" href="../assets/css/layout.v2.css?v=10" />
-  <link rel="stylesheet" href="../assets/css/components.css" />
 
   <style>
     /* ── Estilos Específicos: Congressos & Comissões ── */
+    .page-header-actions {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      flex-wrap: wrap;
+    }
+
+    .breadcrumb-text {
+      font-size: .8rem;
+      color: var(--slate-500);
+      font-weight: 500;
+      margin-bottom: .25rem;
+    }
+
     .congress-header-banner {
-      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      background: linear-gradient(135deg, #1a2a6c 0%, #0f172a 100%);
       color: #fff;
       border-radius: var(--radius-lg);
-      padding: 1.5rem;
+      padding: 1.5rem 1.75rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
-      gap: 1rem;
-      box-shadow: 0 4px 20px -5px rgba(15, 23, 42, 0.25);
-      margin-bottom: 1.25rem;
+      gap: 1.25rem;
+      box-shadow: 0 10px 25px -5px rgba(26, 42, 108, 0.25);
+      margin-bottom: 1.5rem;
+      position: relative;
+      overflow: hidden;
     }
 
     .congress-banner-info h2 {
-      font-size: 1.35rem;
+      font-size: 1.4rem;
       font-weight: 700;
       color: #fff;
-      margin-bottom: .25rem;
+      margin-bottom: .3rem;
+      letter-spacing: -.01em;
     }
 
     .congress-banner-info p {
-      font-size: .85rem;
-      color: #94a3b8;
+      font-size: .88rem;
+      color: #cbd5e1;
+      max-width: 600px;
+      line-height: 1.45;
     }
 
     .congress-banner-badges {
@@ -45,7 +72,7 @@
       align-items: center;
       gap: .5rem;
       flex-wrap: wrap;
-      margin-top: .5rem;
+      margin-top: .6rem;
     }
 
     .congress-grid {
@@ -58,42 +85,43 @@
       background: #fff;
       border: 1.5px solid var(--slate-200);
       border-radius: var(--radius-lg);
-      padding: 1.25rem;
+      padding: 1.35rem;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      gap: 1rem;
-      transition: transform .15s, box-shadow .15s, border-color .15s;
+      gap: 1.15rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,.04);
+      transition: all .2s ease;
     }
 
     .congress-card:hover {
       transform: translateY(-2px);
-      box-shadow: var(--shadow-md);
-      border-color: var(--blue-300);
+      box-shadow: 0 10px 20px -5px rgba(0,0,0,.08);
+      border-color: var(--blue-400);
     }
 
     .commission-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
       gap: 1.25rem;
-    }
-
-    @media (max-width: 640px) {
-      .commission-grid, .congress-grid {
-        grid-template-columns: 1fr;
-      }
     }
 
     .commission-card {
       background: #fff;
       border: 1.5px solid var(--slate-200);
       border-radius: var(--radius-lg);
-      padding: 1.25rem;
+      padding: 1.35rem;
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: 1.15rem;
       box-shadow: 0 1px 3px rgba(0,0,0,.04);
+      transition: all .2s ease;
       position: relative;
+    }
+
+    .commission-card:hover {
+      box-shadow: 0 8px 16px -4px rgba(0, 0, 0, .06);
+      border-color: var(--slate-300);
     }
 
     .commission-card-header {
@@ -102,7 +130,7 @@
       justify-content: space-between;
       gap: .75rem;
       border-bottom: 1px solid var(--slate-100);
-      padding-bottom: .75rem;
+      padding-bottom: .85rem;
     }
 
     .commission-title {
@@ -116,11 +144,11 @@
       display: inline-flex;
       align-items: center;
       gap: .4rem;
-      background: #eff6ff;
-      color: #1d4ed8;
-      border: 1px solid #bfdbfe;
+      background: var(--blue-50);
+      color: var(--blue-700);
+      border: 1px solid var(--blue-100);
       border-radius: 99px;
-      padding: .25rem .65rem;
+      padding: .25rem .7rem;
       font-size: .8rem;
       font-weight: 600;
     }
@@ -129,11 +157,11 @@
       display: inline-flex;
       align-items: center;
       gap: .3rem;
-      background: #f8fafc;
-      color: #475569;
-      border: 1px solid #e2e8f0;
+      background: var(--slate-50);
+      color: var(--slate-700);
+      border: 1px solid var(--slate-200);
       border-radius: 6px;
-      padding: .2rem .5rem;
+      padding: .2rem .55rem;
       font-size: .78rem;
       font-weight: 500;
     }
@@ -142,25 +170,26 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
+      background: var(--slate-50);
+      border: 1px solid var(--slate-200);
       border-radius: 6px;
       padding: .4rem .65rem;
       font-size: .8rem;
       gap: .5rem;
+      transition: background .15s;
     }
 
     .doc-item-row:hover {
-      background: #f1f5f9;
+      background: var(--slate-100);
     }
 
     .btn-public-link {
-      background: #f0fdf4;
-      color: #15803d;
-      border: 1.5px solid #bbf7d0;
+      background: var(--green-100);
+      color: var(--green-700);
+      border: 1.5px solid transparent;
       font-weight: 600;
       font-size: .8rem;
-      padding: .4rem .75rem;
+      padding: .45rem .85rem;
       border-radius: var(--radius);
       display: inline-flex;
       align-items: center;
@@ -170,8 +199,43 @@
     }
 
     .btn-public-link:hover {
-      background: #dcfce7;
-      border-color: #86efac;
+      background: #bbf7d0;
+    }
+
+    /* Empty state */
+    .empty-state-box {
+      grid-column: 1 / -1;
+      background: #fff;
+      border: 1.5px dashed var(--slate-300);
+      border-radius: var(--radius-lg);
+      padding: 3.5rem 1.5rem;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,.03);
+    }
+
+    .empty-state-box .ei {
+      font-size: 3rem;
+      margin-bottom: .75rem;
+      line-height: 1;
+    }
+
+    .empty-state-box h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--slate-800);
+      margin-bottom: .35rem;
+    }
+
+    .empty-state-box p {
+      font-size: .875rem;
+      color: var(--slate-500);
+      max-width: 460px;
+      margin: 0 auto 1.25rem;
+      line-height: 1.5;
     }
 
     /* Modal styles */
@@ -185,6 +249,7 @@
       z-index: 200;
       padding: 1rem;
       backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
     }
 
     .modal-overlay.open {
@@ -193,14 +258,14 @@
 
     .modal-box {
       background: #fff;
-      border-radius: var(--radius-lg);
+      border-radius: var(--radius-xl);
       width: 100%;
-      max-width: 650px;
+      max-width: 580px;
       max-height: 90vh;
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, .2);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .2);
     }
 
     .modal-box-header {
@@ -222,7 +287,7 @@
     .modal-box-footer {
       padding: 1rem 1.5rem;
       border-top: 1px solid var(--slate-100);
-      background: #f8fafc;
+      background: var(--slate-50);
       display: flex;
       align-items: center;
       justify-content: flex-end;
@@ -242,12 +307,12 @@
 
     .select-doc-card:hover {
       border-color: var(--blue-400);
-      background: #f8fafc;
+      background: var(--slate-50);
     }
 
     .select-doc-card.selected {
       border-color: var(--blue-600);
-      background: #eff6ff;
+      background: var(--blue-50);
     }
 
     .toast-copy {
@@ -271,6 +336,49 @@
     .toast-copy.show {
       opacity: 1;
       transform: translateY(0);
+    }
+
+    @media (max-width: 768px) {
+      .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: .75rem;
+      }
+
+      .page-header-actions {
+        width: 100%;
+      }
+
+      .page-header-actions button {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .congress-grid,
+      .commission-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .congress-header-banner {
+        padding: 1.25rem;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .congress-header-banner > div:last-child {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .congress-header-banner > div:last-child button {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .modal-box {
+        max-height: 95vh;
+      }
     }
   </style>
 </head>
@@ -314,15 +422,15 @@
         <!-- Breadcrumbs & Título -->
         <div class="page-header">
           <div class="page-header-info">
-            <div id="breadcrumb-area" style="font-size: .8rem; color: var(--slate-500); margin-bottom: .25rem;">
+            <div id="breadcrumb-area" class="breadcrumb-text">
               <span>Congressos</span>
             </div>
             <h1 id="page-title">Congressos da Federação</h1>
             <p id="page-subtitle">Gestão de congressos, comissões de trabalho e elaboração de pareceres</p>
           </div>
           <div class="page-header-actions" id="page-actions-area">
-            <button class="btn btn-primary btn-sm" id="btn-new-congress" onclick="openNewCongressModal()">
-              + Novo Congresso
+            <button class="btn btn-primary" id="btn-new-congress" onclick="openNewCongressModal()">
+              <span>+ Novo Congresso</span>
             </button>
           </div>
         </div>
@@ -345,14 +453,14 @@
               <div class="congress-banner-badges">
                 <span class="badge badge-blue" id="detail-congress-year">2026</span>
                 <span class="badge badge-green" id="detail-congress-status">Aberto</span>
-                <span class="badge" style="background: rgba(255,255,255,.15); color: #fff;" id="detail-congress-comm-count">4 Comissões</span>
+                <span class="badge" style="background: rgba(255,255,255,.18); color: #fff; font-weight:600;" id="detail-congress-comm-count">4 Comissões</span>
               </div>
             </div>
-            <div style="display:flex; gap:.5rem; align-items:center; flex-wrap:wrap">
-              <button class="btn btn-secondary btn-sm" onclick="showCongressListView()">
+            <div style="display:flex; gap:.6rem; align-items:center; flex-wrap:wrap">
+              <button class="btn btn-secondary btn-sm" style="background:rgba(255,255,255,.15); color:#fff; border-color:rgba(255,255,255,.25);" onclick="showCongressListView()">
                 ← Voltar aos Congressos
               </button>
-              <button class="btn btn-primary btn-sm" onclick="openNewCommissionModal()">
+              <button class="btn btn-primary btn-sm" style="background:#fff; color:var(--brand-blue, #1a2a6c); border-color:#fff; font-weight:700;" onclick="openNewCommissionModal()">
                 + Nova Comissão
               </button>
             </div>
@@ -368,14 +476,16 @@
         </div>
       </main>
     </div>
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
   </div>
+  <div class="bottom-nav" id="bottom-nav"></div>
 
   <!-- ── MODAL: NOVO / EDITAR CONGRESSO ── -->
   <div class="modal-overlay" id="modal-congress">
     <div class="modal-box">
       <div class="modal-box-header">
         <h3 id="modal-congress-title" style="font-weight:700; font-size:1.1rem; color:var(--slate-800)">Novo Congresso</h3>
-        <button class="btn-ghost" onclick="closeModal('modal-congress')">✕</button>
+        <button type="button" class="modal-close" onclick="closeModal('modal-congress')">✕</button>
       </div>
       <form id="form-congress" onsubmit="handleSaveCongress(event)">
         <div class="modal-box-body">
@@ -405,7 +515,7 @@
     <div class="modal-box">
       <div class="modal-box-header">
         <h3 id="modal-commission-title" style="font-weight:700; font-size:1.1rem; color:var(--slate-800)">Nova Comissão</h3>
-        <button class="btn-ghost" onclick="closeModal('modal-commission')">✕</button>
+        <button type="button" class="modal-close" onclick="closeModal('modal-commission')">✕</button>
       </div>
       <form id="form-commission" onsubmit="handleSaveCommission(event)">
         <input type="hidden" id="comm-edit-id" value="" />
@@ -435,7 +545,7 @@
           <h3 style="font-weight:700; font-size:1.1rem; color:var(--slate-800)">Composição da Comissão</h3>
           <p id="modal-members-comm-name" style="font-size:.8rem; color:var(--slate-500)"></p>
         </div>
-        <button class="btn-ghost" onclick="closeModal('modal-members')">✕</button>
+        <button type="button" class="modal-close" onclick="closeModal('modal-members')">✕</button>
       </div>
       <div class="modal-box-body">
         <div class="field">
@@ -470,7 +580,7 @@
           <h3 style="font-weight:700; font-size:1.1rem; color:var(--slate-800)">Disponibilizar Documentos</h3>
           <p id="modal-docs-comm-name" style="font-size:.8rem; color:var(--slate-500)"></p>
         </div>
-        <button class="btn-ghost" onclick="closeModal('modal-documents')">✕</button>
+        <button type="button" class="modal-close" onclick="closeModal('modal-documents')">✕</button>
       </div>
       <div class="modal-box-body">
         <div style="display:flex; gap:.5rem; align-items:center;">
@@ -571,10 +681,13 @@
       const container = document.getElementById('congress-cards-container')
       if (!congressesList || congressesList.length === 0) {
         container.innerHTML = `
-          <div style="grid-column: 1/-1; background:#fff; border:1.5px dashed var(--slate-300); border-radius:var(--radius-lg); padding:3rem 1rem; text-align:center; color:var(--slate-400);">
-            <div style="font-size:2.5rem; margin-bottom:.5rem;">🏛️</div>
-            <h3 style="font-weight:700; color:var(--slate-700); margin-bottom:.25rem;">Nenhum congresso cadastrado</h3>
-            <p style="font-size:.875rem;">Clique no botão "+ Novo Congresso" acima para criar o congresso da sua federação.</p>
+          <div class="empty-state-box">
+            <div class="ei">🏛️</div>
+            <h3>Nenhum congresso cadastrado</h3>
+            <p>Cadastre o congresso anual da sua federação para gerenciar comissões temáticas, delegados relatores e emissão de pareceres.</p>
+            <button class="btn btn-primary" onclick="openNewCongressModal()">
+              <span>+ Novo Congresso</span>
+            </button>
           </div>
         `
         return
@@ -583,28 +696,28 @@
       container.innerHTML = congressesList.map(c => `
         <div class="congress-card">
           <div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.6rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.75rem;">
               <span class="badge badge-blue" style="font-size:.8rem; font-weight:700;">Ano ${c.fiscal_year}</span>
               <span class="badge ${c.status === 'aberto' ? 'badge-green' : 'badge-amber'}">${c.status === 'aberto' ? 'Aberto' : 'Encerrado'}</span>
             </div>
-            <h3 style="font-size:1.15rem; font-weight:700; color:var(--slate-800); margin-bottom:.35rem; line-height:1.3;">
+            <h3 style="font-size:1.15rem; font-weight:700; color:var(--slate-800); margin-bottom:.4rem; line-height:1.35;">
               ${c.title}
             </h3>
-            <p style="font-size:.82rem; color:var(--slate-500); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+            <p style="font-size:.84rem; color:var(--slate-500); line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
               ${c.description || 'Sem descrição informada.'}
             </p>
           </div>
 
-          <div style="border-top:1px solid var(--slate-100); padding-top:.75rem;">
-            <div style="display:flex; justify-content:space-between; font-size:.78rem; color:var(--slate-600); margin-bottom:.85rem;">
+          <div style="border-top:1px solid var(--slate-100); padding-top:.9rem;">
+            <div style="display:flex; justify-content:space-between; font-size:.8rem; color:var(--slate-600); margin-bottom:.85rem;">
               <span><strong>${c.commissions_count || 0}</strong> comissões</span>
-              <span><strong>${c.total_documents_count || 0}</strong> documentos vinculados</span>
+              <span><strong>${c.total_documents_count || 0}</strong> documentos</span>
             </div>
             <div style="display:flex; gap:.5rem;">
-              <button class="btn btn-primary btn-sm" style="flex:1" onclick="openCongressDetail('${c.id}')">
-                Gerenciar Congresso ➔
+              <button class="btn btn-primary btn-sm" style="flex:1; justify-content:center;" onclick="openCongressDetail('${c.id}')">
+                Gerenciar Comissões ➔
               </button>
-              <button class="btn btn-secondary btn-sm btn-icon" onclick="deleteCongress('${c.id}', '${c.title.replace(/'/g, "\\'")}')" title="Excluir">
+              <button class="btn btn-secondary btn-sm btn-icon" onclick="deleteCongress('${c.id}', '${c.title.replace(/'/g, "\\'")}')" title="Excluir Congresso">
                 🗑️
               </button>
             </div>
@@ -619,17 +732,21 @@
         activeCongress = await api.get(`/api/congresses/${id}`)
         document.getElementById('view-congress-list').style.display = 'none'
         document.getElementById('view-congress-detail').style.display = 'block'
-        document.getElementById('btn-new-congress').style.display = 'none'
+        document.getElementById('page-actions-area').style.display = 'none'
 
         document.getElementById('breadcrumb-area').innerHTML = `
-          <a href="javascript:void(0)" onclick="showCongressListView()" style="color:var(--blue-600); text-decoration:none;">Congressos</a>
+          <a href="javascript:void(0)" onclick="showCongressListView()" style="color:var(--blue-600); text-decoration:none; font-weight:600;">Congressos</a>
           <span> / ${activeCongress.title}</span>
         `
+
+        document.getElementById('page-title').textContent = activeCongress.title
+        document.getElementById('page-subtitle').textContent = activeCongress.description || `Comissões de trabalho e relatórios do Congresso ${activeCongress.fiscal_year}`
 
         document.getElementById('detail-congress-title').textContent = activeCongress.title
         document.getElementById('detail-congress-desc').textContent = activeCongress.description || 'Gestão de comissões temáticas deste congresso.'
         document.getElementById('detail-congress-year').textContent = `Ano ${activeCongress.fiscal_year}`
         document.getElementById('detail-congress-status').textContent = activeCongress.status === 'aberto' ? 'Aberto' : 'Encerrado'
+        document.getElementById('detail-congress-status').className = `badge ${activeCongress.status === 'aberto' ? 'badge-green' : 'badge-amber'}`
         document.getElementById('detail-congress-comm-count').textContent = `${(activeCongress.commissions || []).length} Comissões`
 
         renderCommissions()
@@ -642,8 +759,10 @@
       activeCongress = null
       document.getElementById('view-congress-detail').style.display = 'none'
       document.getElementById('view-congress-list').style.display = 'block'
-      document.getElementById('btn-new-congress').style.display = 'inline-flex'
+      document.getElementById('page-actions-area').style.display = 'flex'
       document.getElementById('breadcrumb-area').innerHTML = '<span>Congressos</span>'
+      document.getElementById('page-title').textContent = 'Congressos da Federação'
+      document.getElementById('page-subtitle').textContent = 'Gestão de congressos, comissões de trabalho e elaboração de pareceres'
       loadCongresses()
     }
 
@@ -654,9 +773,11 @@
 
       if (comms.length === 0) {
         container.innerHTML = `
-          <div style="grid-column:1/-1; background:#fff; border:1.5px dashed var(--slate-300); border-radius:var(--radius-lg); padding:2.5rem 1rem; text-align:center; color:var(--slate-400);">
-            <p style="font-weight:600; color:var(--slate-700);">Nenhuma comissão cadastrada neste congresso.</p>
-            <button class="btn btn-primary btn-sm" style="margin-top:.75rem" onclick="openNewCommissionModal()">+ Adicionar Comissão</button>
+          <div class="empty-state-box" style="padding: 2.5rem 1rem;">
+            <div class="ei" style="font-size:2.5rem">📋</div>
+            <h3>Nenhuma comissão cadastrada neste congresso</h3>
+            <p>Adicione as comissões temáticas de trabalho responsáveis por analisar relatórios e redigir pareceres.</p>
+            <button class="btn btn-primary btn-sm" onclick="openNewCommissionModal()">+ Adicionar Comissão</button>
           </div>
         `
         return
