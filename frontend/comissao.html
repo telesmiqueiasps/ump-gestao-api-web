@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Comissão de Trabalho — Congresso</title>
+  <link rel="icon" href="/assets/img/logo_icone.png" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --brand: #1e293b;
+      --brand-accent: #2563eb;
+      --slate-50: #f8fafc;
+      --slate-100: #f1f5f9;
+      --slate-200: #e2e8f0;
+      --slate-300: #cbd5e1;
+      --slate-400: #94a3b8;
+      --slate-500: #64748b;
+      --slate-600: #475569;
+      --slate-700: #334155;
+      --slate-800: #1e293b;
+      --slate-900: #0f172a;
+      --radius: 8px;
+      --radius-lg: 12px;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: #f1f5f9;
+      color: var(--slate-800);
+      line-height: 1.5;
+      padding: 1.5rem 1rem 3rem;
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ── */
+    .header-card {
+      background: #fff;
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      text-align: center;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .logo-img {
+      height: 60px;
+      width: auto;
+      object-fit: contain;
+      margin-bottom: .85rem;
+    }
+
+    .fed-title {
+      font-size: .85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--slate-500);
+      margin-bottom: .25rem;
+    }
+
+    .congress-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--slate-900);
+      margin-bottom: .4rem;
+    }
+
+    .commission-badge-title {
+      display: inline-block;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1.5px solid #bfdbfe;
+      padding: .4rem 1.1rem;
+      border-radius: 99px;
+      font-size: 1rem;
+      font-weight: 700;
+      margin-top: .35rem;
+    }
+
+    /* ── Cards de Conteúdo ── */
+    .content-card {
+      background: #fff;
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    }
+
+    .card-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: .5rem;
+      margin-bottom: 1.15rem;
+      border-bottom: 1px solid var(--slate-100);
+      padding-bottom: .75rem;
+    }
+
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--slate-800);
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    /* ── Seção: Membros ── */
+    .members-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: .75rem;
+    }
+
+    .relator-highlight {
+      background: #f8fafc;
+      border: 1.5px solid #bfdbfe;
+      border-radius: var(--radius);
+      padding: .75rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+    }
+
+    .relator-icon {
+      font-size: 1.5rem;
+    }
+
+    .relator-label {
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: #1d4ed8;
+    }
+
+    .relator-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--slate-900);
+    }
+
+    .other-members-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem;
+      margin-top: .25rem;
+    }
+
+    .member-pill {
+      background: var(--slate-50);
+      border: 1px solid var(--slate-200);
+      border-radius: 6px;
+      padding: .35rem .75rem;
+      font-size: .85rem;
+      font-weight: 500;
+      color: var(--slate-700);
+    }
+
+    /* ── Seção: Documentos ── */
+    .docs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: .85rem;
+    }
+
+    .doc-card {
+      background: #f8fafc;
+      border: 1.5px solid var(--slate-200);
+      border-radius: var(--radius);
+      padding: .85rem 1rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: .75rem;
+      transition: all .15s;
+    }
+
+    .doc-card:hover {
+      border-color: var(--brand-accent);
+      background: #eff6ff;
+    }
+
+    .doc-title {
+      font-weight: 600;
+      font-size: .875rem;
+      color: var(--slate-800);
+      line-height: 1.35;
+    }
+
+    .doc-origin {
+      font-size: .75rem;
+      color: var(--slate-500);
+      display: flex;
+      align-items: center;
+      gap: .35rem;
+      margin-top: .25rem;
+    }
+
+    .btn-view-doc {
+      background: #fff;
+      border: 1.5px solid var(--slate-300);
+      color: var(--slate-700);
+      font-size: .8rem;
+      font-weight: 600;
+      padding: .4rem .75rem;
+      border-radius: 6px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .35rem;
+      transition: all .15s;
+    }
+
+    .btn-view-doc:hover {
+      background: var(--brand-accent);
+      color: #fff;
+      border-color: var(--brand-accent);
+    }
+
+    /* ── Editor de Parecer ── */
+    .editor-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      background: var(--slate-100);
+      border: 1px solid var(--slate-200);
+      border-bottom: none;
+      border-radius: var(--radius) var(--radius) 0 0;
+      padding: .4rem .5rem;
+      align-items: center;
+    }
+
+    .tool-btn {
+      background: #fff;
+      border: 1px solid var(--slate-300);
+      border-radius: 4px;
+      padding: 4px 9px;
+      font-size: .82rem;
+      font-weight: 600;
+      color: var(--slate-700);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      height: 28px;
+      transition: all .12s;
+    }
+
+    .tool-btn:hover {
+      background: #e2e8f0;
+      color: var(--slate-900);
+    }
+
+    .editor-content {
+      min-height: 280px;
+      border: 1px solid var(--slate-200);
+      border-radius: 0 0 var(--radius) var(--radius);
+      padding: 1rem 1.25rem;
+      background: #fff;
+      font-size: .95rem;
+      line-height: 1.7;
+      color: var(--slate-800);
+      outline: none;
+      transition: border-color .15s;
+    }
+
+    .editor-content:focus {
+      border-color: var(--brand-accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .editor-content[placeholder]:empty:before {
+      content: attr(placeholder);
+      color: var(--slate-400);
+      font-style: italic;
+    }
+
+    .editor-content h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin: 1rem 0 .5rem;
+      color: var(--slate-900);
+    }
+
+    .editor-content h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: .85rem 0 .4rem;
+      color: var(--slate-800);
+    }
+
+    .editor-content ul, .editor-content ol {
+      margin-left: 1.5rem;
+      margin-bottom: .75rem;
+    }
+
+    .editor-content p {
+      margin-bottom: .75rem;
+    }
+
+    .editor-content blockquote {
+      border-left: 3px solid var(--brand-accent);
+      padding-left: .85rem;
+      color: var(--slate-600);
+      margin: .75rem 0;
+      font-style: italic;
+    }
+
+    /* Status do Auto-Save */
+    .save-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      font-size: .8rem;
+      font-weight: 500;
+      color: var(--slate-500);
+    }
+
+    .status-saving {
+      color: #d97706;
+      animation: pulse 1.2s infinite;
+    }
+
+    .status-saved {
+      color: #16a34a;
+    }
+
+    .status-error {
+      color: #dc2626;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .4; }
+    }
+
+    /* Ações inferiores */
+    .bottom-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: .75rem;
+      margin-top: 1rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .55rem 1.1rem;
+      font-size: .875rem;
+      font-weight: 600;
+      border-radius: var(--radius);
+      border: 1.5px solid transparent;
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .btn-primary {
+      background: var(--brand-accent);
+      color: #fff;
+    }
+    .btn-primary:hover { background: #1d4ed8; }
+
+    .btn-secondary {
+      background: #fff;
+      color: var(--slate-700);
+      border-color: var(--slate-300);
+    }
+    .btn-secondary:hover { background: var(--slate-50); }
+
+    /* Estado de Erro / Loading */
+    .state-box {
+      background: #fff;
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      padding: 3.5rem 1.5rem;
+      text-align: center;
+      max-width: 500px;
+      margin: 4rem auto 0;
+    }
+
+    /* ── Impressão do Parecer ── */
+    @media print {
+      body {
+        background: #fff !important;
+        padding: 0 !important;
+      }
+
+      .header-card,
+      .content-card:not(#card-opinion),
+      .editor-toolbar,
+      .bottom-actions,
+      .save-status-badge {
+        display: none !important;
+      }
+
+      #card-opinion {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+
+      .editor-content {
+        border: none !important;
+        padding: 0 !important;
+        font-size: 11pt !important;
+        line-height: 1.6 !important;
+      }
+
+      .print-timbre {
+        display: block !important;
+        text-align: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #000;
+      }
+
+      .print-signatures {
+        display: block !important;
+        margin-top: 4rem;
+        page-break-inside: avoid;
+      }
+
+      .sig-line {
+        display: inline-block;
+        width: 250px;
+        border-top: 1px solid #000;
+        margin: 2rem 1.5rem 0;
+        text-align: center;
+        font-size: 9pt;
+        padding-top: .35rem;
+      }
+    }
+
+    .print-timbre, .print-signatures {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container" id="main-container">
+    <!-- Estado de Loading Inicial -->
+    <div id="loading-state" class="state-box">
+      <div style="font-size: 2rem; margin-bottom: .5rem;">⏳</div>
+      <p style="font-weight: 600; color: var(--slate-600)">Carregando informações da comissão...</p>
+    </div>
+
+    <!-- Estado de Erro -->
+    <div id="error-state" class="state-box" style="display:none">
+      <div style="font-size: 2.5rem; margin-bottom: .5rem;">❌</div>
+      <h3 style="font-weight: 700; color: var(--slate-800); margin-bottom: .25rem;">Acesso Não Encontrado</h3>
+      <p style="font-size: .875rem; color: var(--slate-500); margin-bottom: 1rem;" id="error-msg">
+        O link da comissão informado é inválido ou expirou.
+      </p>
+    </div>
+
+    <!-- Conteúdo da Comissão -->
+    <div id="commission-content" style="display:none">
+      <!-- Cabeçalho Institucional -->
+      <header class="header-card">
+        <img src="/assets/img/ump_logo.png" onerror="this.src='/assets/img/logo.png'" class="logo-img" alt="Logo UMP" />
+        <div class="fed-title" id="fed-name-label">Federação de Mocidades Presbiterianas</div>
+        <h1 class="congress-title" id="congress-title-label">XXXII Congresso Ordinário</h1>
+        <div class="commission-badge-title" id="commission-title-label">Comissão de Planos e Metas</div>
+      </header>
+
+      <!-- Timbre para impressão -->
+      <div class="print-timbre">
+        <h2 id="print-fed-name" style="font-size:12pt; text-transform:uppercase;">Federação de Mocidades Presbiterianas</h2>
+        <h1 id="print-congress-title" style="font-size:14pt; font-weight:bold; margin:.2rem 0;">XXXII Congresso Ordinário</h1>
+        <h3 id="print-comm-title" style="font-size:12pt; font-weight:bold; margin-top:.3rem;">Relatório e Parecer da Comissão</h3>
+      </div>
+
+      <!-- 1. Composição da Comissão -->
+      <section class="content-card">
+        <div class="card-title-row">
+          <div class="card-title">👥 Composição da Comissão</div>
+        </div>
+
+        <div class="members-wrap">
+          <div class="relator-highlight">
+            <div class="relator-icon">👑</div>
+            <div>
+              <div class="relator-label">Relator da Comissão</div>
+              <div class="relator-name" id="relator-name-label">Não definido</div>
+            </div>
+          </div>
+
+          <div>
+            <span style="font-size:.78rem; font-weight:700; color:var(--slate-500); text-transform:uppercase;">Membros Integrantes</span>
+            <div class="other-members-list" id="members-list-container">
+              <!-- Renderizado via JS -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. Documentos para Análise -->
+      <section class="content-card">
+        <div class="card-title-row">
+          <div class="card-title">📁 Documentos para Análise</div>
+          <span style="font-size:.8rem; color:var(--slate-500)" id="docs-count-label">0 documentos</span>
+        </div>
+
+        <div class="docs-grid" id="docs-grid-container">
+          <!-- Renderizado via JS -->
+        </div>
+      </section>
+
+      <!-- 3. Confecção do Parecer da Comissão (com Auto-Save) -->
+      <section class="content-card" id="card-opinion">
+        <div class="card-title-row">
+          <div class="card-title">✍️ Parecer da Comissão</div>
+          <div class="save-status-badge" id="save-status">
+            <span>✓ Salvo</span>
+          </div>
+        </div>
+
+        <p style="font-size:.82rem; color:var(--slate-500); margin-bottom:.75rem;">
+          Utilize o espaço abaixo para redigir o relatório e parecer da comissão. O texto é formatado e salvo automaticamente em tempo real.
+        </p>
+
+        <!-- Barra de Ferramentas de Formatação -->
+        <div class="editor-toolbar">
+          <button type="button" class="tool-btn" onclick="formatDoc('formatBlock', '<h2>')" title="Título">H2</button>
+          <button type="button" class="tool-btn" onclick="formatDoc('formatBlock', '<h3>')" title="Subtítulo">H3</button>
+          <button type="button" class="tool-btn" onclick="formatDoc('formatBlock', '<p>')" title="Parágrafo">P</button>
+          <span style="width:1px; height:18px; background:var(--slate-300); margin:0 3px;"></span>
+          <button type="button" class="tool-btn" onclick="formatDoc('bold')" title="Negrito"><b>B</b></button>
+          <button type="button" class="tool-btn" onclick="formatDoc('italic')" title="Itálico"><i>I</i></button>
+          <button type="button" class="tool-btn" onclick="formatDoc('underline')" title="Sublinhado"><u>U</u></button>
+          <span style="width:1px; height:18px; background:var(--slate-300); margin:0 3px;"></span>
+          <button type="button" class="tool-btn" onclick="formatDoc('insertUnorderedList')" title="Tópicos / Marcadores">• Lista</button>
+          <button type="button" class="tool-btn" onclick="formatDoc('insertOrderedList')" title="Numeração">1. Lista</button>
+          <button type="button" class="tool-btn" onclick="formatDoc('formatBlock', '<blockquote>')" title="Citação">“ Citação</button>
+          <span style="width:1px; height:18px; background:var(--slate-300); margin:0 3px;"></span>
+          <button type="button" class="tool-btn" onclick="formatDoc('removeFormat')" title="Limpar Formatação">✕ Limpar</button>
+        </div>
+
+        <!-- Área de Escrita -->
+        <div id="editor" class="editor-content" contenteditable="true" placeholder="Redija aqui o parecer da comissão (considerações, deliberações e recomendações ao plenário)..."></div>
+
+        <!-- Botões de Ação -->
+        <div class="bottom-actions">
+          <div style="font-size:.78rem; color:var(--slate-400)" id="last-saved-time">
+            Última alteração: nunca
+          </div>
+          <div style="display:flex; gap:.5rem;">
+            <button type="button" class="btn btn-secondary" onclick="copyOpinionText()">
+              📋 Copiar Texto
+            </button>
+            <button type="button" class="btn btn-primary" onclick="printOpinionReport()">
+              🖨️ Imprimir Parecer
+            </button>
+          </div>
+        </div>
+
+        <!-- Assinaturas para Impressão -->
+        <div class="print-signatures" id="print-signatures-area">
+          <!-- Renderizado via JS -->
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = ''
+    let token = new URLSearchParams(window.location.search).get('token')
+    let commissionData = null
+    let autoSaveTimeout = null
+    let isSaving = false
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (!token) {
+        showError('Nenhum código de acesso informado na URL.')
+        return
+      }
+      loadCommissionData()
+    })
+
+    async function loadCommissionData() {
+      try {
+        const res = await fetch(`/api/congresses/public/commission/${token}`)
+        if (!res.ok) {
+          const err = await res.json()
+          throw new Error(err.detail || 'Link inválido')
+        }
+
+        commissionData = await res.json()
+        renderCommission(commissionData)
+      } catch (err) {
+        showError(err.message)
+      }
+    }
+
+    function renderCommission(data) {
+      document.getElementById('loading-state').style.display = 'none'
+      document.getElementById('commission-content').style.display = 'block'
+
+      const comm = data.commission
+      const congress = data.congress
+
+      // Títulos
+      document.getElementById('fed-name-label').textContent = data.federation_name || 'Federação'
+      document.getElementById('congress-title-label').textContent = `${congress.title || 'Congresso'} (${congress.fiscal_year || ''})`
+      document.getElementById('commission-title-label').textContent = comm.name
+      document.title = `${comm.name} — ${congress.title}`
+
+      // Timbre de Impressão
+      document.getElementById('print-fed-name').textContent = data.federation_name || 'Federação'
+      document.getElementById('print-congress-title').textContent = `${congress.title || 'Congresso'} (${congress.fiscal_year || ''})`
+      document.getElementById('print-comm-title').textContent = `Parecer da ${comm.name}`
+
+      // Relator
+      document.getElementById('relator-name-label').textContent = comm.relator_name || 'Não definido'
+
+      // Outros Membros
+      const otherMembers = (comm.members || []).filter(m => !m.is_relator)
+      const membersContainer = document.getElementById('members-list-container')
+      if (otherMembers.length === 0) {
+        membersContainer.innerHTML = '<span style="font-size:.8rem; color:var(--slate-400); font-style:italic">Nenhum outro membro integrante.</span>'
+      } else {
+        membersContainer.innerHTML = otherMembers.map(m => `<span class="member-pill">${m.delegate_name}</span>`).join('')
+      }
+
+      // Documentos
+      const docs = comm.documents || []
+      document.getElementById('docs-count-label').textContent = `${docs.length} ${docs.length === 1 ? 'documento' : 'documentos'}`
+      const docsGrid = document.getElementById('docs-grid-container')
+
+      if (docs.length === 0) {
+        docsGrid.innerHTML = '<div style="grid-column:1/-1; color:var(--slate-400); font-size:.85rem; font-style:italic; padding:.5rem 0;">Nenhum documento disponibilizado para esta comissão até o momento.</div>'
+      } else {
+        docsGrid.innerHTML = docs.map(d => `
+          <div class="doc-card">
+            <div>
+              <div class="doc-title">${d.title}</div>
+              <div class="doc-origin">
+                <span style="text-transform:uppercase; font-size:.65rem; background:#e2e8f0; padding:1px 5px; border-radius:3px; font-weight:700;">${d.category}</span>
+                <span>${d.origin_name || ''}</span>
+              </div>
+            </div>
+            <a href="${d.document_url}" target="_blank" class="btn-view-doc">
+              📄 Abrir Documento ↗
+            </a>
+          </div>
+        `).join('')
+      }
+
+      // Parecer
+      const editor = document.getElementById('editor')
+      editor.innerHTML = comm.opinion_report || ''
+
+      if (comm.opinion_updated_at) {
+        const d = new Date(comm.opinion_updated_at)
+        document.getElementById('last-saved-time').textContent = `Última alteração salva em ${d.toLocaleDateString('pt-BR')} às ${d.toLocaleTimeString('pt-BR')}`
+      }
+
+      // Configura Assinaturas para Impressão
+      renderPrintSignatures(comm)
+
+      // Listener de Auto-Save
+      editor.addEventListener('input', triggerAutoSave)
+    }
+
+    function renderPrintSignatures(comm) {
+      const sigContainer = document.getElementById('print-signatures-area')
+      let html = '<div style="text-align:center; margin-top:3rem;">'
+      
+      if (comm.relator_name) {
+        html += `
+          <div class="sig-line">
+            <strong>${comm.relator_name}</strong><br/>
+            <span>Relator(a) da Comissão</span>
+          </div>
+        `
+      }
+
+      const otherMembers = (comm.members || []).filter(m => !m.is_relator)
+      otherMembers.forEach(m => {
+        html += `
+          <div class="sig-line">
+            <strong>${m.delegate_name}</strong><br/>
+            <span>Membro da Comissão</span>
+          </div>
+        `
+      })
+
+      html += '</div>'
+      sigContainer.innerHTML = html
+    }
+
+    // ── LÓGICA DE FORMATAÇÃO DO EDITOR ──
+    window.formatDoc = function (cmd, val = null) {
+      document.execCommand(cmd, false, val)
+      document.getElementById('editor').focus()
+      triggerAutoSave()
+    }
+
+    // ── LÓGICA DE AUTO-SAVE COM DEBOUNCE ──
+    function triggerAutoSave() {
+      const statusEl = document.getElementById('save-status')
+      statusEl.className = 'save-status-badge status-saving'
+      statusEl.innerHTML = '<span>● Salvando alterações...</span>'
+
+      clearTimeout(autoSaveTimeout)
+      autoSaveTimeout = setTimeout(saveOpinion, 900) // Salva após 900ms sem digitação
+    }
+
+    async function saveOpinion() {
+      const editor = document.getElementById('editor')
+      const content = editor.innerHTML
+      const statusEl = document.getElementById('save-status')
+
+      isSaving = true
+      try {
+        const res = await fetch(`/api/congresses/public/commission/${token}/opinion`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ opinion_report: content })
+        })
+
+        if (!res.ok) throw new Error('Erro ao salvar')
+
+        const data = await res.json()
+        statusEl.className = 'save-status-badge status-saved'
+        statusEl.innerHTML = `<span>✓ Salvo automaticamente às ${data.saved_at || new Date().toLocaleTimeString('pt-BR')}</span>`
+        document.getElementById('last-saved-time').textContent = `Última alteração salva hoje às ${data.saved_at || new Date().toLocaleTimeString('pt-BR')}`
+      } catch (err) {
+        statusEl.className = 'save-status-badge status-error'
+        statusEl.innerHTML = '<span>❌ Erro ao salvar</span>'
+      } finally {
+        isSaving = false
+      }
+    }
+
+    window.copyOpinionText = function () {
+      const text = document.getElementById('editor').innerText
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Texto do parecer copiado!')
+      }).catch(() => {
+        alert('Não foi possível copiar automaticamente.')
+      })
+    }
+
+    window.printOpinionReport = function () {
+      window.print()
+    }
+
+    function showError(msg) {
+      document.getElementById('loading-state').style.display = 'none'
+      document.getElementById('error-state').style.display = 'block'
+      document.getElementById('error-msg').textContent = msg
+    }
+  </script>
+</body>
+
+</html>

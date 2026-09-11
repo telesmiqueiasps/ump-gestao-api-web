@@ -64,6 +64,12 @@ const NAV_ITEMS = [
     path: '/pages/notices.html',
     roles: null
   },
+  {
+    page: 'congressos', label: 'Congressos', icon: '🏛️',
+    path: '/pages/congressos.html',
+    fedOnly: true,
+    roles: ['presidente','vice_presidente','1_secretario','2_secretario','secretario_executivo','conselheiro','secretario_presbiterial']
+  },
 ]
 
 // Expõe navigate globalmente para os onclick do HTML

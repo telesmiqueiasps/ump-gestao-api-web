@@ -92,6 +92,16 @@ const NAV_ITEMS = [
       '1_secretario', '2_secretario', 'secretario_executivo',
       'secretario_presbiterial', 'conselheiro'],
   },
+  {
+    page: 'congressos',
+    label: 'Congressos',
+    icon: '🏛️',
+    path: '/pages/congressos.html',
+    fedOnly: true,
+    roles: ['presidente', 'vice_presidente', 'tesoureiro',
+      '1_secretario', '2_secretario', 'secretario_executivo',
+      'secretario_presbiterial', 'conselheiro'],
+  },
 ]
 
 // Expõe navigate globalmente para os onclick do HTML

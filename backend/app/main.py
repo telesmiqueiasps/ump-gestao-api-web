@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 from app.core.config import get_settings
-from app.routers import auth, federations, local_umps, users, finances, members, board, member_fees, notices, signatures, meetings, activity_reports, uph_statistics, admin, member_portal, push_notifications, elections, calendar, ump_statistics
+from app.routers import auth, federations, local_umps, users, finances, members, board, member_fees, notices, signatures, meetings, activity_reports, uph_statistics, admin, member_portal, push_notifications, elections, calendar, ump_statistics, congresses
 from app.db.session import engine, Base
 import app.models # Ensure all models are loaded
 
@@ -103,6 +103,7 @@ app.include_router(push_notifications.router, prefix="/api/push",          tags=
 app.include_router(elections.router,          prefix="/api/elections",     tags=["Eleições"])
 app.include_router(calendar.router,           prefix="/api/calendar",      tags=["Calendário"])
 app.include_router(ump_statistics.router,     prefix="/api/ump-statistics", tags=["Estatística UMP"])
+app.include_router(congresses.router,         prefix="/api/congresses",    tags=["Congressos"])
 
 
 

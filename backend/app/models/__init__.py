@@ -14,3 +14,4 @@ from app.models.uph_statistic import UphStatistic
 from app.models.election import ElectionSession, ElectionVoter, ElectionVote
 from app.models.calendar_event import CalendarEvent
 from app.models.ump_statistic import UmpStatisticCollector, UmpStatisticResponse
+from app.models.congress import Congress, CongressCommission, CongressCommissionMember, CongressCommissionDocument

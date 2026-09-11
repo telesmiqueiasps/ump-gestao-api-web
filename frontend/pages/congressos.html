@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Congressos — Plataforma de Gestão</title>
+  <link rel="icon" href="/assets/img/logo_icone.png" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/layout.v2.css?v=10" />
+  <link rel="stylesheet" href="../assets/css/components.css" />
+
+  <style>
+    /* ── Estilos Específicos: Congressos & Comissões ── */
+    .congress-header-banner {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      color: #fff;
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      box-shadow: 0 4px 20px -5px rgba(15, 23, 42, 0.25);
+      margin-bottom: 1.25rem;
+    }
+
+    .congress-banner-info h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: .25rem;
+    }
+
+    .congress-banner-info p {
+      font-size: .85rem;
+      color: #94a3b8;
+    }
+
+    .congress-banner-badges {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin-top: .5rem;
+    }
+
+    .congress-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .congress-card {
+      background: #fff;
+      border: 1.5px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 1rem;
+      transition: transform .15s, box-shadow .15s, border-color .15s;
+    }
+
+    .congress-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--blue-300);
+    }
+
+    .commission-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+      gap: 1.25rem;
+    }
+
+    @media (max-width: 640px) {
+      .commission-grid, .congress-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .commission-card {
+      background: #fff;
+      border: 1.5px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,.04);
+      position: relative;
+    }
+
+    .commission-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: .75rem;
+      border-bottom: 1px solid var(--slate-100);
+      padding-bottom: .75rem;
+    }
+
+    .commission-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--slate-800);
+      line-height: 1.3;
+    }
+
+    .relator-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+      border-radius: 99px;
+      padding: .25rem .65rem;
+      font-size: .8rem;
+      font-weight: 600;
+    }
+
+    .member-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .3rem;
+      background: #f8fafc;
+      color: #475569;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: .2rem .5rem;
+      font-size: .78rem;
+      font-weight: 500;
+    }
+
+    .doc-item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: .4rem .65rem;
+      font-size: .8rem;
+      gap: .5rem;
+    }
+
+    .doc-item-row:hover {
+      background: #f1f5f9;
+    }
+
+    .btn-public-link {
+      background: #f0fdf4;
+      color: #15803d;
+      border: 1.5px solid #bbf7d0;
+      font-weight: 600;
+      font-size: .8rem;
+      padding: .4rem .75rem;
+      border-radius: var(--radius);
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .btn-public-link:hover {
+      background: #dcfce7;
+      border-color: #86efac;
+    }
+
+    /* Modal styles */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      padding: 1rem;
+      backdrop-filter: blur(2px);
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal-box {
+      background: #fff;
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 650px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, .2);
+    }
+
+    .modal-box-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--slate-100);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-box-body {
+      padding: 1.25rem 1.5rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .modal-box-footer {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--slate-100);
+      background: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: .75rem;
+    }
+
+    .select-doc-card {
+      border: 1.5px solid var(--slate-200);
+      border-radius: 8px;
+      padding: .65rem .85rem;
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .select-doc-card:hover {
+      border-color: var(--blue-400);
+      background: #f8fafc;
+    }
+
+    .select-doc-card.selected {
+      border-color: var(--blue-600);
+      background: #eff6ff;
+    }
+
+    .toast-copy {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: #1e293b;
+      color: #fff;
+      padding: .65rem 1.2rem;
+      border-radius: 8px;
+      font-size: .85rem;
+      font-weight: 500;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,.2);
+      z-index: 9999;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all .2s ease;
+      pointer-events: none;
+    }
+
+    .toast-copy.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-shell">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <img src="/assets/img/logo.png" class="sidebar-brand-logo" alt="Logo UMP" onerror="this.style.display='none'" />
+        <div class="sidebar-brand-text">
+          <h1>SIGES FPOPB</h1>
+          <p>Plataforma de Gestão</p>
+        </div>
+      </div>
+      <nav class="sidebar-nav" id="sidebar-nav"></nav>
+      <div class="sidebar-footer">v1.0.0</div>
+    </aside>
+
+    <!-- Main Area -->
+    <div class="main-area">
+      <header class="header">
+        <div class="header-left">
+          <button class="btn-menu" id="btn-menu">☰</button>
+          <div class="header-org">
+            <span class="header-org-name" id="header-org-name"></span>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="header-user">
+            <div class="header-user-name" id="header-name"></div>
+            <div class="header-user-role" id="header-role"></div>
+          </div>
+          <div class="header-avatar" id="header-avatar"></div>
+          <button class="btn-logout" id="btn-logout" title="Sair"><img src="/assets/img/sair.png" alt="Sair"
+              style="width:20px;height:20px;display:block" /></button>
+        </div>
+      </header>
+
+      <main class="page-content">
+        <!-- Breadcrumbs & Título -->
+        <div class="page-header">
+          <div class="page-header-info">
+            <div id="breadcrumb-area" style="font-size: .8rem; color: var(--slate-500); margin-bottom: .25rem;">
+              <span>Congressos</span>
+            </div>
+            <h1 id="page-title">Congressos da Federação</h1>
+            <p id="page-subtitle">Gestão de congressos, comissões de trabalho e elaboração de pareceres</p>
+          </div>
+          <div class="page-header-actions" id="page-actions-area">
+            <button class="btn btn-primary btn-sm" id="btn-new-congress" onclick="openNewCongressModal()">
+              + Novo Congresso
+            </button>
+          </div>
+        </div>
+
+        <div id="page-alert" class="hidden"></div>
+
+        <!-- ── VISÃO 1: LISTA DE CONGRESSOS ── -->
+        <div id="view-congress-list">
+          <div id="congress-cards-container" class="congress-grid">
+            <!-- Renderizado dinamicamente via JS -->
+          </div>
+        </div>
+
+        <!-- ── VISÃO 2: DETALHES DO CONGRESSO & COMISSÕES ── -->
+        <div id="view-congress-detail" style="display:none">
+          <div class="congress-header-banner">
+            <div class="congress-banner-info">
+              <h2 id="detail-congress-title">Nome do Congresso</h2>
+              <p id="detail-congress-desc">Descrição do congresso</p>
+              <div class="congress-banner-badges">
+                <span class="badge badge-blue" id="detail-congress-year">2026</span>
+                <span class="badge badge-green" id="detail-congress-status">Aberto</span>
+                <span class="badge" style="background: rgba(255,255,255,.15); color: #fff;" id="detail-congress-comm-count">4 Comissões</span>
+              </div>
+            </div>
+            <div style="display:flex; gap:.5rem; align-items:center; flex-wrap:wrap">
+              <button class="btn btn-secondary btn-sm" onclick="showCongressListView()">
+                ← Voltar aos Congressos
+              </button>
+              <button class="btn btn-primary btn-sm" onclick="openNewCommissionModal()">
+                + Nova Comissão
+              </button>
+            </div>
+          </div>
+
+          <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--slate-800); margin-bottom: 1rem;">
+            Comissões de Trabalho
+          </h3>
+
+          <div id="commissions-container" class="commission-grid">
+            <!-- Renderizado via JS -->
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- ── MODAL: NOVO / EDITAR CONGRESSO ── -->
+  <div class="modal-overlay" id="modal-congress">
+    <div class="modal-box">
+      <div class="modal-box-header">
+        <h3 id="modal-congress-title" style="font-weight:700; font-size:1.1rem; color:var(--slate-800)">Novo Congresso</h3>
+        <button class="btn-ghost" onclick="closeModal('modal-congress')">✕</button>
+      </div>
+      <form id="form-congress" onsubmit="handleSaveCongress(event)">
+        <div class="modal-box-body">
+          <div class="field">
+            <label>Título do Congresso *</label>
+            <input type="text" id="c-title" class="input" placeholder="Ex: XXXII Congresso Ordinário da FPOPB" required />
+          </div>
+          <div class="field">
+            <label>Ano do Congresso *</label>
+            <input type="number" id="c-year" class="input" required min="2020" max="2050" />
+          </div>
+          <div class="field">
+            <label>Descrição (Opcional)</label>
+            <textarea id="c-desc" class="input" rows="3" placeholder="Informações gerais, local, tema do congresso..."></textarea>
+          </div>
+        </div>
+        <div class="modal-box-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-congress')">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-congress">Criar Congresso</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── MODAL: NOVA / EDITAR COMISSÃO ── -->
+  <div class="modal-overlay" id="modal-commission">
+    <div class="modal-box">
+      <div class="modal-box-header">
+        <h3 id="modal-commission-title" style="font-weight:700; font-size:1.1rem; color:var(--slate-800)">Nova Comissão</h3>
+        <button class="btn-ghost" onclick="closeModal('modal-commission')">✕</button>
+      </div>
+      <form id="form-commission" onsubmit="handleSaveCommission(event)">
+        <input type="hidden" id="comm-edit-id" value="" />
+        <div class="modal-box-body">
+          <div class="field">
+            <label>Nome da Comissão *</label>
+            <input type="text" id="comm-name" class="input" placeholder="Ex: Comissão de Planos e Metas" required />
+          </div>
+          <div class="field">
+            <label>Descrição da Comissão (Opcional)</label>
+            <textarea id="comm-desc" class="input" rows="3" placeholder="Finalidade ou orientações para a comissão..."></textarea>
+          </div>
+        </div>
+        <div class="modal-box-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-commission')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar Comissão</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── MODAL: DEFINIR MEMBROS & RELATOR ── -->
+  <div class="modal-overlay" id="modal-members">
+    <div class="modal-box">
+      <div class="modal-box-header">
+        <div>
+          <h3 style="font-weight:700; font-size:1.1rem; color:var(--slate-800)">Composição da Comissão</h3>
+          <p id="modal-members-comm-name" style="font-size:.8rem; color:var(--slate-500)"></p>
+        </div>
+        <button class="btn-ghost" onclick="closeModal('modal-members')">✕</button>
+      </div>
+      <div class="modal-box-body">
+        <div class="field">
+          <label>Relator da Comissão (Delegado Responsável) *</label>
+          <select id="select-relator" class="select" required>
+            <option value="">Selecione o relator entre os delegados...</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Outros Membros da Comissão (Delegados)</label>
+          <p style="font-size:.75rem; color:var(--slate-500); margin-bottom:.5rem;">
+            Marque os delegados que farão parte desta comissão junto ao relator:
+          </p>
+          <div id="delegates-checkbox-list" style="max-height: 220px; overflow-y:auto; display:flex; flex-direction:column; gap:.4rem; border:1px solid var(--slate-200); padding:.5rem; border-radius:var(--radius);">
+            <!-- Renderizado via JS -->
+          </div>
+        </div>
+      </div>
+      <div class="modal-box-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-members')">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="saveCommissionMembers()">Salvar Composição</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODAL: DISPONIBILIZAR DOCUMENTOS DO SISTEMA ── -->
+  <div class="modal-overlay" id="modal-documents">
+    <div class="modal-box" style="max-width: 720px;">
+      <div class="modal-box-header">
+        <div>
+          <h3 style="font-weight:700; font-size:1.1rem; color:var(--slate-800)">Disponibilizar Documentos</h3>
+          <p id="modal-docs-comm-name" style="font-size:.8rem; color:var(--slate-500)"></p>
+        </div>
+        <button class="btn-ghost" onclick="closeModal('modal-documents')">✕</button>
+      </div>
+      <div class="modal-box-body">
+        <div style="display:flex; gap:.5rem; align-items:center;">
+          <input type="text" id="search-docs-input" class="input" placeholder="🔍 Filtrar por UMP Local ou título..." oninput="filterAvailableDocs()" />
+          <select id="filter-docs-category" class="select" style="width: auto;" onchange="filterAvailableDocs()">
+            <option value="">Todas as Categorias</option>
+            <option value="financeiro">Financeiro</option>
+            <option value="comprovantes">Comprovantes</option>
+            <option value="atividades">Atividades</option>
+            <option value="estatistica">Estatísticas</option>
+          </select>
+        </div>
+
+        <p style="font-size:.78rem; font-weight:600; color:var(--slate-600); margin-top:.25rem;">
+          Selecione os relatórios gerados no sistema para liberar acesso a esta comissão:
+        </p>
+
+        <div id="available-docs-list" style="max-height: 280px; overflow-y:auto; display:flex; flex-direction:column; gap:.5rem;">
+          <!-- Renderizado via JS -->
+        </div>
+
+        <hr style="border:none; border-top:1px dashed var(--slate-200); margin:.5rem 0;" />
+
+        <!-- Upload Avulso -->
+        <div>
+          <h4 style="font-size:.85rem; font-weight:700; color:var(--slate-700); margin-bottom:.35rem;">
+            Ou envie um documento avulso (PDF)
+          </h4>
+          <div style="display:flex; gap:.5rem; align-items:center; flex-wrap:wrap">
+            <input type="text" id="upload-doc-title" class="input" placeholder="Título do arquivo (Ex: Proposta de Emenda)" style="flex:1" />
+            <input type="file" id="upload-doc-file" accept=".pdf,.doc,.docx,.png,.jpg" class="input" style="flex:1" />
+            <button type="button" class="btn btn-secondary btn-sm" onclick="handleUploadDocument()">📤 Enviar Arquivo</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-box-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-documents')">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="saveSelectedDocuments()">Vincular Selecionados</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast para cópia de link -->
+  <div id="toast-copy" class="toast-copy">✓ Link público copiado para a área de transferência!</div>
+
+  <script type="module">
+    import { api } from '../assets/js/api.js'
+    import { getUser, requireAuth, isFederation } from '../assets/js/auth.js'
+    import { renderShell, canAccessPage, renderBottomNav } from '../assets/js/router.v3.js?v=10'
+
+    let currentUser = null
+    let congressesList = []
+    let activeCongress = null
+    let activeCommission = null
+    let allDelegates = []
+    let availableDocs = []
+
+    // ── INICIALIZAÇÃO ──
+    ;(async () => {
+      if (!requireAuth()) return
+      if (!canAccessPage('congressos')) {
+        window.location.href = '/pages/dashboard.html'
+        return
+      }
+
+      await renderShell()
+      renderBottomNav('congressos')
+      document.querySelector('[data-page="congressos"]')?.classList.add('active')
+      currentUser = getUser()
+
+      // Carrega delegados da federação em background para os selects
+      loadDelegates()
+
+      // Carrega lista inicial de congressos
+      await loadCongresses()
+    })()
+
+    // ── CARREGAMENTO DE DADOS ──
+    async function loadCongresses() {
+      try {
+        congressesList = await api.get('/api/congresses')
+        renderCongressList()
+      } catch (err) {
+        showAlert('Erro ao carregar congressos: ' + (err.message || err))
+      }
+    }
+
+    async function loadDelegates() {
+      try {
+        allDelegates = await api.get('/api/members?active_only=true')
+      } catch (err) {
+        console.error('Erro ao buscar delegados:', err)
+      }
+    }
+
+    // ── RENDERIZAÇÃO DA LISTA DE CONGRESSOS ──
+    function renderCongressList() {
+      const container = document.getElementById('congress-cards-container')
+      if (!congressesList || congressesList.length === 0) {
+        container.innerHTML = `
+          <div style="grid-column: 1/-1; background:#fff; border:1.5px dashed var(--slate-300); border-radius:var(--radius-lg); padding:3rem 1rem; text-align:center; color:var(--slate-400);">
+            <div style="font-size:2.5rem; margin-bottom:.5rem;">🏛️</div>
+            <h3 style="font-weight:700; color:var(--slate-700); margin-bottom:.25rem;">Nenhum congresso cadastrado</h3>
+            <p style="font-size:.875rem;">Clique no botão "+ Novo Congresso" acima para criar o congresso da sua federação.</p>
+          </div>
+        `
+        return
+      }
+
+      container.innerHTML = congressesList.map(c => `
+        <div class="congress-card">
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.6rem;">
+              <span class="badge badge-blue" style="font-size:.8rem; font-weight:700;">Ano ${c.fiscal_year}</span>
+              <span class="badge ${c.status === 'aberto' ? 'badge-green' : 'badge-amber'}">${c.status === 'aberto' ? 'Aberto' : 'Encerrado'}</span>
+            </div>
+            <h3 style="font-size:1.15rem; font-weight:700; color:var(--slate-800); margin-bottom:.35rem; line-height:1.3;">
+              ${c.title}
+            </h3>
+            <p style="font-size:.82rem; color:var(--slate-500); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+              ${c.description || 'Sem descrição informada.'}
+            </p>
+          </div>
+
+          <div style="border-top:1px solid var(--slate-100); padding-top:.75rem;">
+            <div style="display:flex; justify-content:space-between; font-size:.78rem; color:var(--slate-600); margin-bottom:.85rem;">
+              <span><strong>${c.commissions_count || 0}</strong> comissões</span>
+              <span><strong>${c.total_documents_count || 0}</strong> documentos vinculados</span>
+            </div>
+            <div style="display:flex; gap:.5rem;">
+              <button class="btn btn-primary btn-sm" style="flex:1" onclick="openCongressDetail('${c.id}')">
+                Gerenciar Congresso ➔
+              </button>
+              <button class="btn btn-secondary btn-sm btn-icon" onclick="deleteCongress('${c.id}', '${c.title.replace(/'/g, "\\'")}')" title="Excluir">
+                🗑️
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('')
+    }
+
+    // ── VISÃO DETALHADA DO CONGRESSO ──
+    window.openCongressDetail = async function (id) {
+      try {
+        activeCongress = await api.get(`/api/congresses/${id}`)
+        document.getElementById('view-congress-list').style.display = 'none'
+        document.getElementById('view-congress-detail').style.display = 'block'
+        document.getElementById('btn-new-congress').style.display = 'none'
+
+        document.getElementById('breadcrumb-area').innerHTML = `
+          <a href="javascript:void(0)" onclick="showCongressListView()" style="color:var(--blue-600); text-decoration:none;">Congressos</a>
+          <span> / ${activeCongress.title}</span>
+        `
+
+        document.getElementById('detail-congress-title').textContent = activeCongress.title
+        document.getElementById('detail-congress-desc').textContent = activeCongress.description || 'Gestão de comissões temáticas deste congresso.'
+        document.getElementById('detail-congress-year').textContent = `Ano ${activeCongress.fiscal_year}`
+        document.getElementById('detail-congress-status').textContent = activeCongress.status === 'aberto' ? 'Aberto' : 'Encerrado'
+        document.getElementById('detail-congress-comm-count').textContent = `${(activeCongress.commissions || []).length} Comissões`
+
+        renderCommissions()
+      } catch (err) {
+        showAlert('Erro ao abrir congresso: ' + (err.message || err))
+      }
+    }
+
+    window.showCongressListView = function () {
+      activeCongress = null
+      document.getElementById('view-congress-detail').style.display = 'none'
+      document.getElementById('view-congress-list').style.display = 'block'
+      document.getElementById('btn-new-congress').style.display = 'inline-flex'
+      document.getElementById('breadcrumb-area').innerHTML = '<span>Congressos</span>'
+      loadCongresses()
+    }
+
+    // ── RENDERIZAÇÃO DAS COMISSÕES ──
+    function renderCommissions() {
+      const container = document.getElementById('commissions-container')
+      const comms = activeCongress.commissions || []
+
+      if (comms.length === 0) {
+        container.innerHTML = `
+          <div style="grid-column:1/-1; background:#fff; border:1.5px dashed var(--slate-300); border-radius:var(--radius-lg); padding:2.5rem 1rem; text-align:center; color:var(--slate-400);">
+            <p style="font-weight:600; color:var(--slate-700);">Nenhuma comissão cadastrada neste congresso.</p>
+            <button class="btn btn-primary btn-sm" style="margin-top:.75rem" onclick="openNewCommissionModal()">+ Adicionar Comissão</button>
+          </div>
+        `
+        return
+      }
+
+      container.innerHTML = comms.map(comm => {
+        const publicUrl = `${window.location.origin}/comissao.html?token=${comm.access_token}`
+        const relatorText = comm.relator_name || 'Não definido'
+        const otherMembers = (comm.members || []).filter(m => !m.is_relator)
+        const docs = comm.documents || []
+
+        return `
+          <div class="commission-card">
+            <div class="commission-card-header">
+              <div>
+                <h4 class="commission-title">${comm.name}</h4>
+                <p style="font-size:.78rem; color:var(--slate-500); margin-top:.2rem;">${comm.description || ''}</p>
+              </div>
+              <button class="btn-ghost" style="padding:.2rem .4rem; color:var(--slate-400)" onclick="deleteCommission('${comm.id}', '${comm.name.replace(/'/g, "\\'")}')" title="Excluir Comissão">
+                🗑️
+              </button>
+            </div>
+
+            <!-- Relator & Membros -->
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.4rem;">
+                <span style="font-size:.75rem; font-weight:700; color:var(--slate-500); text-transform:uppercase;">Composição</span>
+                <button class="btn-ghost" style="font-size:.75rem; color:var(--blue-600); font-weight:600; padding:0;" onclick="openMembersModal('${comm.id}')">
+                  👥 Definir Membros
+                </button>
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:.35rem;">
+                <div>
+                  <span class="relator-badge">
+                    <span>👑 Relator:</span> <strong>${relatorText}</strong>
+                  </span>
+                </div>
+                <div style="display:flex; flex-wrap:wrap; gap:.3rem; margin-top:.2rem;">
+                  ${otherMembers.length > 0 
+                    ? otherMembers.map(m => `<span class="member-chip">${m.delegate_name}</span>`).join('')
+                    : '<span style="font-size:.75rem; color:var(--slate-400); font-style:italic">Nenhum outro membro selecionado</span>'
+                  }
+                </div>
+              </div>
+            </div>
+
+            <!-- Documentos Vinculados -->
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.4rem;">
+                <span style="font-size:.75rem; font-weight:700; color:var(--slate-500); text-transform:uppercase;">
+                  Documentos para Análise (${docs.length})
+                </span>
+                <button class="btn-ghost" style="font-size:.75rem; color:var(--blue-600); font-weight:600; padding:0;" onclick="openDocumentsModal('${comm.id}')">
+                  + Anexar Docs
+                </button>
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:.35rem; max-height:140px; overflow-y:auto;">
+                ${docs.length > 0
+                  ? docs.map(d => `
+                    <div class="doc-item-row">
+                      <span style="display:inline-flex; align-items:center; gap:.35rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        📄 <a href="${d.document_url}" target="_blank" style="color:var(--slate-700); text-decoration:none; font-weight:500;">${d.title}</a>
+                      </span>
+                      <button class="btn-ghost" style="padding:0 .25rem; color:var(--red-400); font-size:.8rem;" onclick="removeCommissionDoc('${comm.id}', '${d.id}')" title="Desvincular">✕</button>
+                    </div>
+                  `).join('')
+                  : '<div style="font-size:.75rem; color:var(--slate-400); font-style:italic; padding:.4rem 0;">Nenhum documento anexado a esta comissão ainda.</div>'
+                }
+              </div>
+            </div>
+
+            <!-- Status do Parecer -->
+            <div style="background:#f8fafc; border:1px solid var(--slate-100); border-radius:var(--radius); padding:.6rem .8rem; display:flex; align-items:center; justify-content:space-between;">
+              <span style="font-size:.8rem; color:var(--slate-600)">
+                Parecer: ${comm.has_opinion ? '<strong style="color:var(--green-600)">✓ Redigido</strong>' : '<span style="color:var(--slate-400)">⏳ Aguardando confecção</span>'}
+              </span>
+              <a href="${publicUrl}" target="_blank" class="btn-ghost" style="font-size:.78rem; font-weight:600; color:var(--blue-600); text-decoration:none;">
+                Visualizar ↗
+              </a>
+            </div>
+
+            <!-- Link Público & WhatsApp -->
+            <div style="display:flex; gap:.5rem; align-items:center; margin-top:auto; padding-top:.5rem; border-top:1px solid var(--slate-100);">
+              <button class="btn-public-link" style="flex:1; justify-content:center;" onclick="copyPublicLink('${publicUrl}')">
+                🔗 Copiar Link Público
+              </button>
+              <button class="btn btn-secondary btn-sm" onclick="shareWhatsApp('${comm.name.replace(/'/g, "\\'")}', '${publicUrl}')" title="Compartilhar via WhatsApp">
+                💬
+              </button>
+            </div>
+          </div>
+        `
+      }).join('')
+    }
+
+    // ── MODAL CONGRESSO (CRIAR) ──
+    window.openNewCongressModal = function () {
+      document.getElementById('c-title').value = ''
+      document.getElementById('c-year').value = new Date().getFullYear()
+      document.getElementById('c-desc').value = ''
+      openModal('modal-congress')
+    }
+
+    window.handleSaveCongress = async function (e) {
+      e.preventDefault()
+      const title = document.getElementById('c-title').value.trim()
+      const fiscal_year = parseInt(document.getElementById('c-year').value)
+      const description = document.getElementById('c-desc').value.trim()
+
+      try {
+        const created = await api.post('/api/congresses', { title, fiscal_year, description })
+        closeModal('modal-congress')
+        await loadCongresses()
+        openCongressDetail(created.id)
+      } catch (err) {
+        alert('Erro ao criar congresso: ' + (err.message || err))
+      }
+    }
+
+    window.deleteCongress = async function (id, title) {
+      if (!confirm(`Tem certeza que deseja excluir o congresso "${title}" e todas as suas comissões?`)) return
+      try {
+        await api.delete(`/api/congresses/${id}`)
+        await loadCongresses()
+      } catch (err) {
+        alert('Erro ao excluir congresso: ' + (err.message || err))
+      }
+    }
+
+    // ── MODAL COMISSÃO (CRIAR) ──
+    window.openNewCommissionModal = function () {
+      document.getElementById('comm-name').value = ''
+      document.getElementById('comm-desc').value = ''
+      openModal('modal-commission')
+    }
+
+    window.handleSaveCommission = async function (e) {
+      e.preventDefault()
+      if (!activeCongress) return
+      const name = document.getElementById('comm-name').value.trim()
+      const description = document.getElementById('comm-desc').value.trim()
+
+      try {
+        await api.post(`/api/congresses/${activeCongress.id}/commissions`, { name, description })
+        closeModal('modal-commission')
+        await refreshActiveCongress()
+      } catch (err) {
+        alert('Erro ao adicionar comissão: ' + (err.message || err))
+      }
+    }
+
+    window.deleteCommission = async function (commId, name) {
+      if (!confirm(`Excluir a comissão "${name}"?`)) return
+      try {
+        await api.delete(`/api/congresses/commissions/${commId}`)
+        await refreshActiveCongress()
+      } catch (err) {
+        alert('Erro ao excluir comissão: ' + (err.message || err))
+      }
+    }
+
+    async function refreshActiveCongress() {
+      if (!activeCongress) return
+      activeCongress = await api.get(`/api/congresses/${activeCongress.id}`)
+      renderCommissions()
+    }
+
+    // ── GESTÃO DE MEMBROS E RELATOR ──
+    window.openMembersModal = function (commId) {
+      activeCommission = (activeCongress.commissions || []).find(c => c.id === commId)
+      if (!activeCommission) return
+
+      document.getElementById('modal-members-comm-name').textContent = activeCommission.name
+
+      // Popula o select do relator
+      const relatorSelect = document.getElementById('select-relator')
+      relatorSelect.innerHTML = '<option value="">Selecione o relator entre os delegados...</option>' +
+        allDelegates.map(d => `<option value="${d.id}" ${d.id === activeCommission.relator_id ? 'selected' : ''}>${d.full_name}</option>`).join('')
+
+      // Popula checkboxes dos demais membros
+      const existingMemberIds = new Set((activeCommission.members || []).map(m => m.delegate_id))
+      const listContainer = document.getElementById('delegates-checkbox-list')
+
+      if (allDelegates.length === 0) {
+        listContainer.innerHTML = '<p style="color:var(--slate-400); font-size:.8rem;">Nenhum delegado encontrado na aba Delegados.</p>'
+      } else {
+        listContainer.innerHTML = allDelegates.map(d => `
+          <label style="display:flex; align-items:center; gap:.5rem; font-size:.85rem; cursor:pointer; padding:.25rem;">
+            <input type="checkbox" name="comm_delegate" value="${d.id}" data-name="${d.full_name.replace(/"/g, '&quot;')}" ${existingMemberIds.has(d.id) ? 'checked' : ''} />
+            <span>${d.full_name}</span>
+          </label>
+        `).join('')
+      }
+
+      openModal('modal-members')
+    }
+
+    window.saveCommissionMembers = async function () {
+      if (!activeCommission) return
+      const relatorSelect = document.getElementById('select-relator')
+      const relatorId = relatorSelect.value || null
+      const relatorName = relatorId ? relatorSelect.options[relatorSelect.selectedIndex].text : null
+
+      const checkedBoxes = Array.from(document.querySelectorAll('input[name="comm_delegate"]:checked'))
+      const members = checkedBoxes.map(chk => ({
+        delegate_id: chk.value,
+        delegate_name: chk.getAttribute('data-name'),
+        is_relator: chk.value === relatorId
+      }))
+
+      // Se o relator não estiver entre os marcados, inclui-o na lista de membros também
+      if (relatorId && !members.some(m => m.delegate_id === relatorId)) {
+        members.unshift({
+          delegate_id: relatorId,
+          delegate_name: relatorName,
+          is_relator: true
+        })
+      }
+
+      try {
+        await api.put(`/api/congresses/commissions/${activeCommission.id}/members`, {
+          relator_id: relatorId,
+          relator_name: relatorName,
+          members
+        })
+        closeModal('modal-members')
+        await refreshActiveCongress()
+      } catch (err) {
+        alert('Erro ao salvar membros da comissão: ' + (err.message || err))
+      }
+    }
+
+    // ── GESTÃO DE DOCUMENTOS ──
+    window.openDocumentsModal = async function (commId) {
+      activeCommission = (activeCongress.commissions || []).find(c => c.id === commId)
+      if (!activeCommission) return
+
+      document.getElementById('modal-docs-comm-name').textContent = activeCommission.name
+      document.getElementById('search-docs-input').value = ''
+      document.getElementById('upload-doc-title').value = ''
+      document.getElementById('upload-doc-file').value = ''
+
+      try {
+        availableDocs = await api.get(`/api/congresses/available-documents/list?year=${activeCongress.fiscal_year}`)
+        filterAvailableDocs()
+        openModal('modal-documents')
+      } catch (err) {
+        alert('Erro ao carregar documentos do sistema: ' + (err.message || err))
+      }
+    }
+
+    window.filterAvailableDocs = function () {
+      const query = (document.getElementById('search-docs-input').value || '').toLowerCase().trim()
+      const cat = document.getElementById('filter-docs-category').value
+      const container = document.getElementById('available-docs-list')
+
+      const currentDocUrls = new Set((activeCommission.documents || []).map(d => d.document_url))
+
+      let filtered = availableDocs
+      if (cat) filtered = filtered.filter(d => d.category === cat)
+      if (query) {
+        filtered = filtered.filter(d =>
+          d.title.toLowerCase().includes(query) ||
+          (d.origin_name && d.origin_name.toLowerCase().includes(query))
+        )
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<p style="color:var(--slate-400); font-size:.82rem; text-align:center; padding:1.5rem 0;">Nenhum documento correspondente encontrado.</p>'
+        return
+      }
+
+      container.innerHTML = filtered.map(d => {
+        const isAlreadyAttached = currentDocUrls.has(d.document_url)
+        return `
+          <label class="select-doc-card ${isAlreadyAttached ? 'selected' : ''}">
+            <input type="checkbox" name="avail_doc" value="${d.id}" ${isAlreadyAttached ? 'checked disabled' : ''}
+              data-title="${d.title.replace(/"/g, '&quot;')}"
+              data-cat="${d.category}"
+              data-origin="${(d.origin_name || '').replace(/"/g, '&quot;')}"
+              data-url="${d.document_url}"
+            />
+            <div style="flex:1; min-width:0;">
+              <div style="font-weight:600; font-size:.85rem; color:var(--slate-800); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                ${d.title}
+              </div>
+              <div style="font-size:.72rem; color:var(--slate-500); display:flex; gap:.4rem; align-items:center;">
+                <span class="badge" style="background:#e2e8f0; font-size:.65rem;">${d.category}</span>
+                <span>${d.origin_name || ''}</span>
+              </div>
+            </div>
+            ${isAlreadyAttached ? '<span style="font-size:.75rem; color:var(--green-600); font-weight:600;">✓ Já vinculado</span>' : ''}
+          </label>
+        `
+      }).join('')
+    }
+
+    window.saveSelectedDocuments = async function () {
+      if (!activeCommission) return
+      const checked = Array.from(document.querySelectorAll('input[name="avail_doc"]:checked:not(:disabled)'))
+      if (checked.length === 0) {
+        closeModal('modal-documents')
+        return
+      }
+
+      const payload = checked.map(chk => ({
+        title: chk.getAttribute('data-title'),
+        category: chk.getAttribute('data-cat') || 'avulso',
+        origin_name: chk.getAttribute('data-origin'),
+        document_url: chk.getAttribute('data-url')
+      }))
+
+      try {
+        await api.post(`/api/congresses/commissions/${activeCommission.id}/documents`, payload)
+        closeModal('modal-documents')
+        await refreshActiveCongress()
+      } catch (err) {
+        alert('Erro ao vincular documentos: ' + (err.message || err))
+      }
+    }
+
+    window.handleUploadDocument = async function () {
+      if (!activeCommission) return
+      const titleInput = document.getElementById('upload-doc-title')
+      const fileInput = document.getElementById('upload-doc-file')
+
+      const title = titleInput.value.trim()
+      const file = fileInput.files[0]
+
+      if (!title) { alert('Informe o título do documento.'); return }
+      if (!file) { alert('Selecione um arquivo.'); return }
+
+      const formData = new FormData()
+      formData.append('title', title)
+      formData.append('category', 'avulso')
+      formData.append('origin_name', 'Federação')
+      formData.append('file', file)
+
+      try {
+        await api.postFormData(`/api/congresses/commissions/${activeCommission.id}/documents/upload`, formData)
+        titleInput.value = ''
+        fileInput.value = ''
+        closeModal('modal-documents')
+        await refreshActiveCongress()
+      } catch (err) {
+        alert('Erro no envio do arquivo: ' + (err.message || err))
+      }
+    }
+
+    window.removeCommissionDoc = async function (commId, docId) {
+      if (!confirm('Desvincular este documento da comissão?')) return
+      try {
+        await api.delete(`/api/congresses/commissions/${commId}/documents/${docId}`)
+        await refreshActiveCongress()
+      } catch (err) {
+        alert('Erro ao remover documento: ' + (err.message || err))
+      }
+    }
+
+    // ── LINK PÚBLICO & COMPARTILHAMENTO ──
+    window.copyPublicLink = function (url) {
+      navigator.clipboard.writeText(url).then(() => {
+        showToast('Link público copiado!')
+      }).catch(() => {
+        prompt('Copie o link abaixo:', url)
+      })
+    }
+
+    window.shareWhatsApp = function (commName, url) {
+      const msg = encodeURIComponent(
+        `Olá, delegado(a)! Você foi designado para a *${commName}* no Congresso da nossa Federação.\n\nAcesse o portal da comissão para consultar os documentos anexados e redigir o parecer:\n${url}`
+      )
+      window.open(`https://api.whatsapp.com/send?text=${msg}`, '_blank')
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast-copy')
+      toast.textContent = msg
+      toast.classList.add('show')
+      setTimeout(() => toast.classList.remove('show'), 2500)
+    }
+
+    // Modal Helpers
+    window.openModal = function (id) {
+      document.getElementById(id).classList.add('open')
+    }
+    window.closeModal = function (id) {
+      document.getElementById(id).classList.remove('open')
+    }
+
+    function showAlert(msg) {
+      const el = document.getElementById('page-alert')
+      el.textContent = msg
+      el.className = 'alert alert-error'
+      el.classList.remove('hidden')
+    }
+  </script>
+</body>
+
+</html>
