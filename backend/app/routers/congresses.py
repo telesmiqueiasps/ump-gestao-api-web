@@ -138,6 +138,7 @@ def _serialize_congress(c: Congress, include_commissions: bool = True) -> dict:
 
 # ── ROTAS AUTENTICADAS (FEDERAÇÃO) ──
 
+@router.get("", include_in_schema=False)
 @router.get("/")
 def list_congresses(
     current_user: User = Depends(require_federation),
@@ -150,6 +151,7 @@ def list_congresses(
     return [_serialize_congress(c, include_commissions=True) for c in congresses]
 
 
+@router.post("", status_code=status.HTTP_201_CREATED, include_in_schema=False)
 @router.post("/", status_code=status.HTTP_201_CREATED)
 def create_congress(
     payload: CongressCreate,

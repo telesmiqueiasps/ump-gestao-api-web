@@ -551,7 +551,7 @@
     // ── CARREGAMENTO DE DADOS ──
     async function loadCongresses() {
       try {
-        congressesList = await api.get('/api/congresses')
+        congressesList = await api.get('/api/congresses/')
         renderCongressList()
       } catch (err) {
         showAlert('Erro ao carregar congressos: ' + (err.message || err))
@@ -560,7 +560,7 @@
 
     async function loadDelegates() {
       try {
-        allDelegates = await api.get('/api/members?active_only=true')
+        allDelegates = await api.get('/api/members/?active_only=true')
       } catch (err) {
         console.error('Erro ao buscar delegados:', err)
       }
@@ -769,7 +769,7 @@
       const description = document.getElementById('c-desc').value.trim()
 
       try {
-        const created = await api.post('/api/congresses', { title, fiscal_year, description })
+        const created = await api.post('/api/congresses/', { title, fiscal_year, description })
         closeModal('modal-congress')
         await loadCongresses()
         openCongressDetail(created.id)
@@ -998,7 +998,7 @@
       formData.append('file', file)
 
       try {
-        await api.postFormData(`/api/congresses/commissions/${activeCommission.id}/documents/upload`, formData)
+        await api.upload(`/api/congresses/commissions/${activeCommission.id}/documents/upload`, formData)
         titleInput.value = ''
         fileInput.value = ''
         closeModal('modal-documents')

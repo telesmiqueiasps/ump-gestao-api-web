@@ -592,7 +592,9 @@
   </div>
 
   <script>
-    const API_BASE = ''
+    const API_BASE = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
+      ? ''
+      : 'https://umpgestaopopb-825585682536.us-west1.run.app'
     let token = new URLSearchParams(window.location.search).get('token')
     let commissionData = null
     let autoSaveTimeout = null
@@ -608,7 +610,7 @@
 
     async function loadCommissionData() {
       try {
-        const res = await fetch(`/api/congresses/public/commission/${token}`)
+        const res = await fetch(`${API_BASE}/api/congresses/public/commission/${token}`)
         if (!res.ok) {
           const err = await res.json()
           throw new Error(err.detail || 'Link inválido')
@@ -742,7 +744,7 @@
 
       isSaving = true
       try {
-        const res = await fetch(`/api/congresses/public/commission/${token}/opinion`, {
+        const res = await fetch(`${API_BASE}/api/congresses/public/commission/${token}/opinion`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ opinion_report: content })

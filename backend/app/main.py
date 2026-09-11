@@ -52,7 +52,9 @@ app = FastAPI(
 
 from fastapi import Request
 from fastapi.responses import JSONResponse
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=["*"])
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 ALLOWED_ORIGINS = [
     "https://umpgestao.netlify.app",
