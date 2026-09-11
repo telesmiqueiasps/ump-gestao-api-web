@@ -271,9 +271,11 @@
       }
 
       .page-header-actions select,
-      .page-header-actions button {
+      .page-header-actions button,
+      .page-header-actions .btn {
         flex: 1;
         min-width: 100px;
+        justify-content: center;
       }
 
       .collector-banner-header {
@@ -383,6 +385,7 @@
       .page-header-actions,
       .subtabs-container,
       #btn-print-report,
+      #btn-portal-nacional,
       .collector-banner-actions {
         display: none !important;
       }
@@ -442,6 +445,11 @@
               <option value="2025">2025</option>
               <option value="2024">2024</option>
             </select>
+
+            <a href="https://ump.app.br/login" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm"
+              id="btn-portal-nacional" style="text-decoration: none;" title="Acessar Portal Nacional">
+              Portal Nacional
+            </a>
 
             <button class="btn btn-secondary btn-sm" id="btn-print-report" onclick="window.print()"
               title="Imprimir Relatório">
@@ -1083,7 +1091,8 @@
         const cfg = cunhoConfig[cunhoKey]
         const val = byCunho[cunhoKey] || 0
         const pct = totalEvents > 0 ? Math.round((val / evBase) * 100) : 0
-        return renderStatBarRow(`${cfg.icon} ${cfg.label}`, val, pct, cfg.color)
+        const label = cfg.icon ? `${cfg.icon} ${cfg.label}` : cfg.label
+        return renderStatBarRow(label, val, pct, cfg.color)
       }).join('')
 
       // 3. Sexo
