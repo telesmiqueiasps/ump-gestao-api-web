@@ -71,10 +71,12 @@ class OpinionPayload(BaseModel):
 def _presign_url_if_needed(url: Optional[str]) -> Optional[str]:
     if not url:
         return None
-    # Se já for URL absoluta externa http/https, tenta extrair caminho ou retorna como está
-    match = re.search(r'(?:/file/[^/]+/|/|^)(activity-reports/.+|activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+|congresses/.+)$', url)
+    # Se a URL já contiver query string (ex: ?X-Amz-...), remove para isolar a chave pura
+    clean_url = url.split('?')[0].strip()
+    match = re.search(r'(?:/file/[^/]+/|/|^)(activity-reports/[^?]+|activities/[^?]+|receipts/[^?]+|logos/[^?]+|reports/[^?]+|pix-qr/[^?]+|signatures/[^?]+|congresses/[^?]+)$', clean_url)
     if match:
-        return get_presigned_url(match.group(1), expires_in=7200)
+        key = match.group(1).lstrip('/')
+        return get_presigned_url(key, expires_in=7200)
     return url
 
 
@@ -401,7 +403,7 @@ def get_available_documents(
                     "title": f"Relatório Financeiro {p.fiscal_year} — {loc.name}",
                     "category": "financeiro",
                     "origin_name": loc.name,
-                    "document_url": _presign_url_if_needed(p.report_url),
+                    "document_url": p.report_url.split('?')[0],
                     "fiscal_year": p.fiscal_year,
                     "external_reference_id": str(p.id)
                 })
@@ -411,7 +413,7 @@ def get_available_documents(
                     "title": f"Comprovantes Financeiros {p.fiscal_year} — {loc.name}",
                     "category": "comprovantes",
                     "origin_name": loc.name,
-                    "document_url": _presign_url_if_needed(p.receipts_report_url),
+                    "document_url": p.receipts_report_url.split('?')[0],
                     "fiscal_year": p.fiscal_year,
                     "external_reference_id": str(p.id)
                 })
@@ -432,7 +434,7 @@ def get_available_documents(
                     "title": f"Relatório de Atividades {a.fiscal_year} — {loc.name}",
                     "category": "atividades",
                     "origin_name": loc.name,
-                    "document_url": _presign_url_if_needed(a.report_url),
+                    "document_url": a.report_url.split('?')[0],
                     "fiscal_year": a.fiscal_year,
                     "external_reference_id": str(a.id)
                 })
@@ -471,7 +473,7 @@ def get_available_documents(
                 "title": f"Relatório Financeiro {fp.fiscal_year} — {fed_name}",
                 "category": "financeiro",
                 "origin_name": fed_name,
-                "document_url": _presign_url_if_needed(fp.report_url),
+                "document_url": fp.report_url.split('?')[0],
                 "fiscal_year": fp.fiscal_year,
                 "external_reference_id": str(fp.id)
             })
@@ -481,7 +483,7 @@ def get_available_documents(
                 "title": f"Comprovantes Financeiros {fp.fiscal_year} — {fed_name}",
                 "category": "comprovantes",
                 "origin_name": fed_name,
-                "document_url": _presign_url_if_needed(fp.receipts_report_url),
+                "document_url": fp.receipts_report_url.split('?')[0],
                 "fiscal_year": fp.fiscal_year,
                 "external_reference_id": str(fp.id)
             })
@@ -502,7 +504,7 @@ def get_available_documents(
                 "title": f"Relatório de Atividades {fa.fiscal_year} — {fed_name}",
                 "category": "atividades",
                 "origin_name": fed_name,
-                "document_url": _presign_url_if_needed(fa.report_url),
+                "document_url": fa.report_url.split('?')[0],
                 "fiscal_year": fa.fiscal_year,
                 "external_reference_id": str(fa.id)
             })
@@ -539,10 +541,14 @@ def attach_commission_documents(
 
     new_docs = []
     for item in payload:
+        if item.document_url.startswith("http"):
+            clean_item_url = item.document_url.split('?')[0].strip()
+        else:
+            clean_item_url = item.document_url.strip()
         # Evita duplicidade por URL e título
         exists = db.query(CongressCommissionDocument).filter(
             CongressCommissionDocument.commission_id == comm.id,
-            CongressCommissionDocument.document_url == item.document_url
+            CongressCommissionDocument.document_url == clean_item_url
         ).first()
         if not exists:
             doc = CongressCommissionDocument(
@@ -550,7 +556,7 @@ def attach_commission_documents(
                 title=item.title.strip(),
                 category=item.category,
                 origin_name=item.origin_name.strip() if item.origin_name else None,
-                document_url=item.document_url,
+                document_url=clean_item_url,
                 external_reference_id=item.external_reference_id
             )
             db.add(doc)
@@ -584,14 +590,14 @@ async def upload_commission_document(
         raise HTTPException(status_code=400, detail="Arquivo muito grande. O limite máximo é 25MB.")
 
     key = f"congresses/{comm.congress_id}/commissions/{comm.id}/{file.filename}"
-    uploaded_url = upload_file(key, content, content_type=file.content_type or "application/pdf")
+    uploaded_url = upload_file(content, key, file.content_type or "application/pdf")
 
     doc = CongressCommissionDocument(
         commission_id=comm.id,
         title=title.strip(),
         category=category,
         origin_name=origin_name.strip() if origin_name else "Avulso",
-        document_url=uploaded_url
+        document_url=uploaded_url.split('?')[0].strip()
     )
     db.add(doc)
     db.commit()

@@ -54,6 +54,7 @@ def upload_file(contents: bytes, key: str, content_type: str) -> str:
 
 
 def get_presigned_url(key: str, expires_in: int = 3600) -> str:
+    key = key.split('?')[0].lstrip('/')
     client = _get_client()
     url = client.generate_presigned_url(
         "get_object",
