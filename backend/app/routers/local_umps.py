@@ -258,7 +258,7 @@ def get_local_activity_reports(
     from app.models.activity_report import ActivityReport
     reports = db.query(ActivityReport).filter(
         ActivityReport.organization_id == local_id,
-        ActivityReport.status == 'published',
+        ActivityReport.status.in_(['published', 'publicado']),
         ActivityReport.report_url != None,
     ).order_by(ActivityReport.fiscal_year.desc()).all()
 
@@ -295,14 +295,12 @@ def get_local_activity_report_url(
     report = db.query(ActivityReport).filter(
         ActivityReport.id == report_id,
         ActivityReport.organization_id == local_id,
-        ActivityReport.status == 'published',
+        ActivityReport.status.in_(['published', 'publicado']),
     ).first()
     if not report:
         raise HTTPException(status_code=404, detail="Relatório não encontrado")
 
-    settings_obj = get_settings()
-    bucket = settings_obj.b2_bucket_name
-    match = re.search(r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', report.report_url)
+    match = re.search(r'(?:/file/[^/]+/|/|^)(activity-reports/.+|activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', report.report_url)
     if not match:
         raise HTTPException(status_code=400, detail="URL inválida")
 

@@ -670,17 +670,16 @@ def get_published_url(
     report = db.query(ActivityReport).filter(
         ActivityReport.organization_id == current_user.organization_id,
         ActivityReport.fiscal_year == year,
-        ActivityReport.status == 'published',
+        ActivityReport.status.in_(['published', 'publicado']),
     ).first()
     if not report or not report.report_url:
         raise HTTPException(status_code=404, detail="Relatório publicado não encontrado")
 
     from app.services.storage import get_presigned_url
-    settings_obj = get_settings()
-    bucket = settings_obj.b2_bucket_name
-    match = re.search(r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', report.report_url)
+    match = re.search(r'(?:/file/[^/]+/|/|^)(activity-reports/.+|activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', report.report_url)
     if not match:
         raise HTTPException(status_code=400, detail="URL inválida")
 
     url = get_presigned_url(match.group(1), expires_in=3600)
     return {"url": url}
+

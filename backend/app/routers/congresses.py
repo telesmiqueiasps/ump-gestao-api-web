@@ -72,7 +72,7 @@ def _presign_url_if_needed(url: Optional[str]) -> Optional[str]:
     if not url:
         return None
     # Se já for URL absoluta externa http/https, tenta extrair caminho ou retorna como está
-    match = re.search(r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+|congresses/.+)$', url)
+    match = re.search(r'(?:/file/[^/]+/|/|^)(activity-reports/.+|activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+|congresses/.+)$', url)
     if match:
         return get_presigned_url(match.group(1), expires_in=7200)
     return url
@@ -419,20 +419,20 @@ def get_available_documents(
         # B. Relatórios de Atividades Publicados
         act_query = db.query(ActivityReport).filter(
             ActivityReport.organization_id == loc.id,
-            ActivityReport.status == "publicado"
+            ActivityReport.status.in_(["published", "publicado"])
         )
         if year:
             act_query = act_query.filter(ActivityReport.fiscal_year == year)
         act_reports = act_query.order_by(desc(ActivityReport.fiscal_year)).all()
 
         for a in act_reports:
-            if a.pdf_url:
+            if a.report_url:
                 documents.append({
                     "id": f"act_{a.id}",
                     "title": f"Relatório de Atividades {a.fiscal_year} — {loc.name}",
                     "category": "atividades",
                     "origin_name": loc.name,
-                    "document_url": _presign_url_if_needed(a.pdf_url),
+                    "document_url": _presign_url_if_needed(a.report_url),
                     "fiscal_year": a.fiscal_year,
                     "external_reference_id": str(a.id)
                 })
@@ -489,20 +489,20 @@ def get_available_documents(
     # Relatório de atividades da Federação
     fed_act_query = db.query(ActivityReport).filter(
         ActivityReport.organization_id == fed_id,
-        ActivityReport.status == "publicado"
+        ActivityReport.status.in_(["published", "publicado"])
     )
     if year:
         fed_act_query = fed_act_query.filter(ActivityReport.fiscal_year == year)
     fed_acts = fed_act_query.order_by(desc(ActivityReport.fiscal_year)).all()
 
     for fa in fed_acts:
-        if fa.pdf_url:
+        if fa.report_url:
             documents.append({
                 "id": f"act_fed_{fa.id}",
                 "title": f"Relatório de Atividades {fa.fiscal_year} — {fed_name}",
                 "category": "atividades",
                 "origin_name": fed_name,
-                "document_url": _presign_url_if_needed(fa.pdf_url),
+                "document_url": _presign_url_if_needed(fa.report_url),
                 "fiscal_year": fa.fiscal_year,
                 "external_reference_id": str(fa.id)
             })

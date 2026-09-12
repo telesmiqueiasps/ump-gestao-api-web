@@ -560,8 +560,14 @@
           <p style="font-size:.75rem; color:var(--slate-500); margin-bottom:.5rem;">
             Marque os delegados que farão parte desta comissão junto ao relator:
           </p>
-          <div id="delegates-checkbox-list" style="max-height: 220px; overflow-y:auto; display:flex; flex-direction:column; gap:.4rem; border:1px solid var(--slate-200); padding:.5rem; border-radius:var(--radius);">
+          <div style="margin-bottom:.5rem;">
+            <input type="text" id="search-delegates-input" class="input" placeholder="🔍 Pesquisar delegado pelo nome ou sociedade local..." oninput="filterCommissionDelegates()" />
+          </div>
+          <div id="delegates-checkbox-list" style="max-height: 240px; overflow-y:auto; display:flex; flex-direction:column; gap:.35rem; border:1px solid var(--slate-200); padding:.5rem; border-radius:var(--radius);">
             <!-- Renderizado via JS -->
+          </div>
+          <div id="delegates-search-empty" style="display:none; color:var(--slate-400); font-size:.8rem; text-align:center; padding:1rem 0;">
+            Nenhum delegado encontrado com os termos pesquisados.
           </div>
         </div>
       </div>
@@ -651,8 +657,8 @@
       document.querySelector('[data-page="congressos"]')?.classList.add('active')
       currentUser = getUser()
 
-      // Carrega delegados da federação em background para os selects
-      loadDelegates()
+      // Carrega delegados da federação para os selects e composições
+      await loadDelegates()
 
       // Carrega lista inicial de congressos
       await loadCongresses()
@@ -747,8 +753,9 @@
         document.getElementById('detail-congress-year').textContent = `Ano ${activeCongress.fiscal_year}`
         document.getElementById('detail-congress-status').textContent = activeCongress.status === 'aberto' ? 'Aberto' : 'Encerrado'
         document.getElementById('detail-congress-status').className = `badge ${activeCongress.status === 'aberto' ? 'badge-green' : 'badge-amber'}`
-        document.getElementById('detail-congress-comm-count').textContent = `${(activeCongress.commissions || []).length} Comissões`
-
+        if (!allDelegates || allDelegates.length === 0) {
+          await loadDelegates()
+        }
         renderCommissions()
       } catch (err) {
         showAlert('Erro ao abrir congresso: ' + (err.message || err))
@@ -785,7 +792,12 @@
 
       container.innerHTML = comms.map(comm => {
         const publicUrl = `${window.location.origin}/comissao.html?token=${comm.access_token}`
-        const relatorText = comm.relator_name || 'Não definido'
+        
+        // Identifica UMP Local do relator se disponível
+        const relatorDel = allDelegates.find(d => String(d.id) === String(comm.relator_id))
+        const relatorLoc = relatorDel?.local_society ? ` (${relatorDel.local_society})` : ''
+        const relatorText = comm.relator_name ? `${comm.relator_name}${relatorLoc}` : 'Não definido'
+        
         const otherMembers = (comm.members || []).filter(m => !m.is_relator)
         const docs = comm.documents || []
 
@@ -818,7 +830,11 @@
                 </div>
                 <div style="display:flex; flex-wrap:wrap; gap:.3rem; margin-top:.2rem;">
                   ${otherMembers.length > 0 
-                    ? otherMembers.map(m => `<span class="member-chip">${m.delegate_name}</span>`).join('')
+                    ? otherMembers.map(m => {
+                        const mDel = allDelegates.find(d => String(d.id) === String(m.delegate_id))
+                        const mLoc = mDel?.local_society ? ` (${mDel.local_society})` : ''
+                        return `<span class="member-chip" title="${m.delegate_name}${mLoc}">${m.delegate_name}${mLoc}</span>`
+                      }).join('')
                     : '<span style="font-size:.75rem; color:var(--slate-400); font-style:italic">Nenhum outro membro selecionado</span>'
                   }
                 </div>
@@ -943,45 +959,138 @@
 
     async function refreshActiveCongress() {
       if (!activeCongress) return
+      if (!allDelegates || allDelegates.length === 0) {
+        await loadDelegates()
+      }
       activeCongress = await api.get(`/api/congresses/${activeCongress.id}`)
       renderCommissions()
     }
 
     // ── GESTÃO DE MEMBROS E RELATOR ──
-    window.openMembersModal = function (commId) {
+    window.openMembersModal = async function (commId) {
       activeCommission = (activeCongress.commissions || []).find(c => c.id === commId)
       if (!activeCommission) return
 
+      if (!allDelegates || allDelegates.length === 0) {
+        await loadDelegates()
+      }
+
       document.getElementById('modal-members-comm-name').textContent = activeCommission.name
+
+      // Limpa campo de pesquisa
+      const searchInput = document.getElementById('search-delegates-input')
+      if (searchInput) searchInput.value = ''
+
+      // Mapa de delegados já alocados em OUTRAS comissões do mesmo congresso
+      const assignedToOtherMap = new Map() // delegate_id (string) -> commission_name
+      for (const comm of (activeCongress.commissions || [])) {
+        if (comm.id === activeCommission.id) continue
+        const commName = comm.name || 'Outra comissão'
+        if (comm.relator_id) {
+          assignedToOtherMap.set(String(comm.relator_id), commName)
+        }
+        for (const m of (comm.members || [])) {
+          if (m.delegate_id) {
+            assignedToOtherMap.set(String(m.delegate_id), commName)
+          }
+        }
+      }
 
       // Popula o select do relator
       const relatorSelect = document.getElementById('select-relator')
       relatorSelect.innerHTML = '<option value="">Selecione o relator entre os delegados...</option>' +
-        allDelegates.map(d => `<option value="${d.id}" ${d.id === activeCommission.relator_id ? 'selected' : ''}>${d.full_name}</option>`).join('')
+        allDelegates.map(d => {
+          const otherComm = assignedToOtherMap.get(String(d.id))
+          const isCurrentRelator = String(d.id) === String(activeCommission.relator_id)
+          const locText = d.local_society ? ` (${d.local_society})` : ' (Sem UMP Local)'
+          if (otherComm) {
+            return `<option value="${d.id}" disabled style="color:var(--slate-400)">${d.full_name}${locText} — [Indisponível: Na comissão "${otherComm}"]</option>`
+          }
+          return `<option value="${d.id}" ${isCurrentRelator ? 'selected' : ''}>${d.full_name}${locText}</option>`
+        }).join('')
 
-      // Popula checkboxes dos demais membros
-      const existingMemberIds = new Set((activeCommission.members || []).map(m => m.delegate_id))
+      // Auto-seleciona no checkbox se mudar o relator
+      relatorSelect.onchange = () => {
+        const val = relatorSelect.value
+        if (val) {
+          const chk = document.querySelector(`input[name="comm_delegate"][value="${val}"]`)
+          if (chk && !chk.checked) {
+            chk.checked = true
+          }
+        }
+      }
+
+      // Popula checkboxes dos membros
+      const existingMemberIds = new Set((activeCommission.members || []).map(m => String(m.delegate_id)))
       const listContainer = document.getElementById('delegates-checkbox-list')
 
       if (allDelegates.length === 0) {
-        listContainer.innerHTML = '<p style="color:var(--slate-400); font-size:.8rem;">Nenhum delegado encontrado na aba Delegados.</p>'
+        listContainer.innerHTML = '<p style="color:var(--slate-400); font-size:.8rem; padding:.5rem;">Nenhum delegado encontrado na aba Delegados.</p>'
       } else {
-        listContainer.innerHTML = allDelegates.map(d => `
-          <label style="display:flex; align-items:center; gap:.5rem; font-size:.85rem; cursor:pointer; padding:.25rem;">
-            <input type="checkbox" name="comm_delegate" value="${d.id}" data-name="${d.full_name.replace(/"/g, '&quot;')}" ${existingMemberIds.has(d.id) ? 'checked' : ''} />
-            <span>${d.full_name}</span>
-          </label>
-        `).join('')
+        listContainer.innerHTML = allDelegates.map(d => {
+          const otherComm = assignedToOtherMap.get(String(d.id))
+          const isChecked = existingMemberIds.has(String(d.id))
+          const locName = d.local_society || 'Sem UMP Local'
+          const searchData = `${d.full_name} ${locName}`.toLowerCase()
+
+          if (otherComm) {
+            return `
+              <label class="delegate-choice-item" data-search="${searchData}"
+                     style="display:flex; align-items:center; gap:.6rem; font-size:.84rem; padding:.45rem .6rem; border-radius:var(--radius); background:var(--slate-50); opacity:.65; cursor:not-allowed; border:1px dashed var(--slate-200);">
+                <input type="checkbox" disabled />
+                <div style="flex:1; min-width:0; display:flex; align-items:center; gap:.4rem; flex-wrap:wrap;">
+                  <span style="font-weight:600; color:var(--slate-600); text-decoration:line-through;">${d.full_name}</span>
+                  <span class="badge" style="font-size:.68rem; background:var(--slate-200); color:var(--slate-600);">${locName}</span>
+                </div>
+                <span style="font-size:.72rem; color:var(--red-600); font-weight:600; white-space:nowrap;">
+                  🔒 Já na comissão "${otherComm}"
+                </span>
+              </label>
+            `
+          } else {
+            return `
+              <label class="delegate-choice-item" data-search="${searchData}"
+                     style="display:flex; align-items:center; gap:.6rem; font-size:.84rem; padding:.45rem .6rem; border-radius:var(--radius); cursor:pointer; border:1px solid transparent;"
+                     onmouseover="this.style.background='var(--slate-50)'" onmouseout="this.style.background='transparent'">
+                <input type="checkbox" name="comm_delegate" value="${d.id}" data-name="${d.full_name.replace(/"/g, '&quot;')}" ${isChecked ? 'checked' : ''} />
+                <div style="flex:1; min-width:0; display:flex; align-items:center; gap:.4rem; flex-wrap:wrap;">
+                  <span style="font-weight:500; color:var(--slate-800);">${d.full_name}</span>
+                  <span class="badge badge-slate" style="font-size:.68rem; font-weight:500;">${locName}</span>
+                </div>
+              </label>
+            `
+          }
+        }).join('')
       }
 
+      const emptyMsg = document.getElementById('delegates-search-empty')
+      if (emptyMsg) emptyMsg.style.display = 'none'
+
       openModal('modal-members')
+    }
+
+    window.filterCommissionDelegates = function () {
+      const query = (document.getElementById('search-delegates-input')?.value || '').toLowerCase().trim()
+      const items = document.querySelectorAll('#delegates-checkbox-list .delegate-choice-item')
+      let visibleCount = 0
+      items.forEach(el => {
+        const text = el.getAttribute('data-search') || ''
+        const match = !query || text.includes(query)
+        el.style.display = match ? 'flex' : 'none'
+        if (match) visibleCount++
+      })
+      const emptyMsg = document.getElementById('delegates-search-empty')
+      if (emptyMsg) {
+        emptyMsg.style.display = (visibleCount === 0 && items.length > 0) ? 'block' : 'none'
+      }
     }
 
     window.saveCommissionMembers = async function () {
       if (!activeCommission) return
       const relatorSelect = document.getElementById('select-relator')
       const relatorId = relatorSelect.value || null
-      const relatorName = relatorId ? relatorSelect.options[relatorSelect.selectedIndex].text : null
+      const selectedRelatorObj = allDelegates.find(d => String(d.id) === String(relatorId))
+      const relatorName = selectedRelatorObj ? selectedRelatorObj.full_name : null
 
       const checkedBoxes = Array.from(document.querySelectorAll('input[name="comm_delegate"]:checked'))
       const members = checkedBoxes.map(chk => ({
@@ -991,7 +1100,7 @@
       }))
 
       // Se o relator não estiver entre os marcados, inclui-o na lista de membros também
-      if (relatorId && !members.some(m => m.delegate_id === relatorId)) {
+      if (relatorId && !members.some(m => String(m.delegate_id) === String(relatorId))) {
         members.unshift({
           delegate_id: relatorId,
           delegate_name: relatorName,
