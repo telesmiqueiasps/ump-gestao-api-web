@@ -308,6 +308,73 @@ def get_local_activity_report_url(
     return {"url": url, "fiscal_year": report.fiscal_year}
 
 
+# Federação acessa relatórios estatísticos publicados de uma Local sua
+@router.get("/{local_id}/statistic-reports")
+def get_local_statistic_reports(
+    local_id: UUID,
+    current_user: User = Depends(require_federation),
+    db: Session = Depends(get_db),
+):
+    local = db.query(LocalUmp).filter(
+        LocalUmp.id == local_id,
+        LocalUmp.federation_id == current_user.organization_id,
+    ).first()
+    if not local:
+        raise HTTPException(status_code=404, detail="UMP Local não encontrada")
+
+    from app.models.ump_statistic import UmpStatisticCollector
+    collectors = db.query(UmpStatisticCollector).filter(
+        UmpStatisticCollector.local_ump_id == local_id,
+        UmpStatisticCollector.status.in_(['published', 'publicado']),
+        UmpStatisticCollector.report_url != None,
+    ).order_by(UmpStatisticCollector.fiscal_year.desc()).all()
+
+    return [
+        {
+            "id": str(c.id),
+            "fiscal_year": c.fiscal_year,
+            "report_url": c.report_url,
+            "published_at": c.published_at.isoformat() if c.published_at else None,
+            "updated_at": c.updated_at.isoformat() if c.updated_at else None,
+        }
+        for c in collectors
+    ]
+
+
+@router.get("/{local_id}/statistic-reports/{collector_id}/url")
+def get_local_statistic_report_url(
+    local_id: UUID,
+    collector_id: UUID,
+    current_user: User = Depends(require_federation),
+    db: Session = Depends(get_db),
+):
+    import re
+    local = db.query(LocalUmp).filter(
+        LocalUmp.id == local_id,
+        LocalUmp.federation_id == current_user.organization_id,
+    ).first()
+    if not local:
+        raise HTTPException(status_code=404, detail="UMP Local não encontrada")
+
+    from app.models.ump_statistic import UmpStatisticCollector
+    from app.services.storage import get_presigned_url
+
+    collector = db.query(UmpStatisticCollector).filter(
+        UmpStatisticCollector.id == collector_id,
+        UmpStatisticCollector.local_ump_id == local_id,
+        UmpStatisticCollector.status.in_(['published', 'publicado']),
+    ).first()
+    if not collector or not collector.report_url:
+        raise HTTPException(status_code=404, detail="Relatório estatístico publicado não encontrado")
+
+    match = re.search(r'(?:/file/[^/]+/|/|^)(ump-statistics/.+|activity-reports/.+|activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', collector.report_url)
+    if not match:
+        raise HTTPException(status_code=400, detail="URL inválida")
+
+    url = get_presigned_url(match.group(1), expires_in=3600)
+    return {"url": url, "fiscal_year": collector.fiscal_year}
+
+
 # Federação atualiza uma Local sua
 @router.put("/{local_id}")
 def update_local_ump(

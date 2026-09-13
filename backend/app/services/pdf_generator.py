@@ -2754,3 +2754,237 @@ def generate_election_report(
 
     doc.build(story)
     return buf.getvalue()
+
+
+def generate_ump_statistics_report(
+    org_data: dict,
+    fiscal_year: int,
+    metrics: dict,
+    logo_bytes: bytes = None,
+    ipb_logo_bytes: bytes = None,
+    b2_client = None,
+) -> bytes:
+    """Gera o Relatório Estatístico UMP em formato PDF oficial (A4)."""
+    buf = io.BytesIO()
+    ML = MR = 15 * mm
+    MT = 20 * mm
+    MB = 18 * mm
+    W = A4[0] - ML - MR
+    TC = _tc(org_data.get('theme_color', '#1a2a6c'))
+
+    doc = SimpleDocTemplate(
+        buf,
+        pagesize=A4,
+        leftMargin=ML,
+        rightMargin=MR,
+        topMargin=MT,
+        bottomMargin=MB,
+    )
+
+    story = []
+
+    ipb_reader = None
+    if ipb_logo_bytes:
+        try:
+            from reportlab.lib.utils import ImageReader
+            ipb_reader = ImageReader(io.BytesIO(ipb_logo_bytes))
+        except Exception:
+            pass
+
+    org_reader = None
+    if logo_bytes:
+        try:
+            from reportlab.lib.utils import ImageReader
+            org_reader = ImageReader(io.BytesIO(logo_bytes))
+        except Exception:
+            pass
+
+    def _make_header_footer(canvas_obj, doc_obj):
+        canvas_obj.saveState()
+        if doc_obj.page > 1:
+            canvas_obj.setStrokeColor(TC)
+            canvas_obj.setLineWidth(0.5)
+            if ipb_reader:
+                try:
+                    canvas_obj.drawImage(ipb_reader, ML, A4[1]-13*mm, width=9*mm, height=9*mm, preserveAspectRatio=True, mask='auto')
+                except Exception:
+                    pass
+            canvas_obj.setFont("Helvetica-Bold", 8)
+            canvas_obj.setFillColor(TC)
+            org_name = org_data.get('name', 'UMP Local')
+            canvas_obj.drawString(ML + 11*mm, A4[1]-9*mm, f"{org_name} — Relatório Estatístico {fiscal_year}")
+            canvas_obj.line(ML, A4[1]-14*mm, A4[0]-MR, A4[1]-14*mm)
+
+        canvas_obj.setStrokeColor(GRAY_LINE)
+        canvas_obj.setLineWidth(0.5)
+        canvas_obj.line(ML, 13*mm, A4[0]-MR, 13*mm)
+        canvas_obj.setFont("Helvetica", 8)
+        canvas_obj.setFillColor(GRAY_TXT)
+        canvas_obj.drawString(ML, 8*mm, f"Gerado em {datetime.datetime.now().strftime('%d/%m/%Y às %H:%M')} — SIGES UMP")
+        canvas_obj.drawRightString(A4[0]-MR, 8*mm, f"Página {doc_obj.page}")
+        canvas_obj.restoreState()
+
+    cell1 = Image(io.BytesIO(ipb_logo_bytes), width=16*mm, height=16*mm) if ipb_logo_bytes else Paragraph("", _ps())
+    title_text = f"<b><font size=14 color='{TC.hexval()}'>RELATÓRIO ESTATÍSTICO {fiscal_year}</font></b><br/>" \
+                 f"<b><font size=11 color='#334155'>{org_data.get('name', 'UMP Local')}</font></b>"
+    if org_data.get('presbytery_name'):
+        title_text += f"<br/><font size=9 color='#64748b'>{org_data.get('presbytery_name')}</font>"
+    cell2 = Paragraph(f"<para align=center>{title_text}</para>", _ps())
+    cell3 = Image(io.BytesIO(logo_bytes), width=16*mm, height=16*mm) if logo_bytes else Paragraph("", _ps())
+
+    hdr_table = Table([[cell1, cell2, cell3]], colWidths=[20*mm, W - 40*mm, 20*mm])
+    hdr_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+    ]))
+    story.append(hdr_table)
+    story.append(Spacer(1, 4*mm))
+    story.append(HRFlowable(width=W, thickness=1.5, color=TC))
+    story.append(Spacer(1, 5*mm))
+
+    def section_bar(title):
+        p = Paragraph(f"<b><font color='white' size=9>{title.upper()}</font></b>", _ps(color=WHITE, bold=True))
+        t = Table([[p]], colWidths=[W])
+        t.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,-1), TC),
+            ('TOPPADDING', (0,0), (-1,-1), 4),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+            ('LEFTPADDING', (0,0), (-1,-1), 8),
+        ]))
+        return t
+
+    def make_stat_table(rows):
+        table_data = []
+        for label, val in rows:
+            p_lbl = Paragraph(f"<font color='#334155'>{label}</font>", _ps(9))
+            p_val = Paragraph(f"<para align=right><b><font color='#1e293b'>{val}</font></b></para>", _ps(9))
+            table_data.append([p_lbl, p_val])
+
+        t = Table(table_data, colWidths=[W*0.7, W*0.3])
+        t.setStyle(TableStyle([
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('GRID', (0,0), (-1,-1), 0.5, GRAY_LINE),
+            ('ROWBACKGROUNDS', (0,0), (-1,-1), [WHITE, GRAY_ROW]),
+            ('TOPPADDING', (0,0), (-1,-1), 4),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+            ('LEFTPADDING', (0,0), (-1,-1), 8),
+            ('RIGHTPADDING', (0,0), (-1,-1), 8),
+        ]))
+        return t
+
+    # SEÇÃO 1: Resumo do Censo / Recenseamento
+    story.append(section_bar("1. Resumo do Recenseamento"))
+    story.append(Spacer(1, 2*mm))
+
+    tot_reg = metrics.get('total_registered', 0)
+    tot_act = metrics.get('total_active', 0)
+    tot_coop = metrics.get('total_cooperating', 0)
+    tot_resp = metrics.get('total_responded', 0)
+    resp_rate = metrics.get('response_rate_percent', 0)
+    avg_age = metrics.get('age_metrics', {}).get('average_age', 0)
+
+    resumo_rows = [
+        ("Total de Sócios Cadastrados", str(tot_reg)),
+        ("Sócios Ativos", str(tot_act)),
+        ("Sócios Cooperadores", str(tot_coop)),
+        ("Sócios Recenseados (Formulários Respondidos)", f"{tot_resp} ({resp_rate}%)"),
+        ("Média de Idade", f"{avg_age} anos" if avg_age else "N/A"),
+    ]
+    story.append(make_stat_table(resumo_rows))
+    story.append(Spacer(1, 5*mm))
+
+    # SEÇÃO 2: Perfil Demográfico
+    story.append(section_bar("2. Perfil Demográfico dos Sócios"))
+    story.append(Spacer(1, 2*mm))
+
+    age_groups = metrics.get('age_metrics', {}).get('groups', {})
+    gender = metrics.get('gender_metrics', {})
+    marital = metrics.get('marital_status_metrics', {})
+    children = metrics.get('children_metrics', {})
+
+    demo_rows = [
+        ("Menores de 19 anos", str(age_groups.get('menores_19', 0))),
+        ("Entre 19 e 23 anos", str(age_groups.get('19_23', 0))),
+        ("Entre 24 e 29 anos", str(age_groups.get('24_29', 0))),
+        ("Entre 30 e 35 anos", str(age_groups.get('30_35', 0))),
+        ("Homens", str(gender.get('Masculino', 0))),
+        ("Mulheres", str(gender.get('Feminino', 0))),
+        ("Solteiros(as)", str(marital.get('Solteiro(a)', 0))),
+        ("Casados(as)", str(marital.get('Casado(a)', 0))),
+        ("Divorciados(as)", str(marital.get('Divorciado(a)', 0))),
+        ("Viúvos(as)", str(marital.get('Viúvo(a)', 0))),
+        ("Com Filhos", str(children.get('com_filhos', 0))),
+        ("Sem Filhos", str(children.get('sem_filhos', 0))),
+    ]
+    story.append(make_stat_table(demo_rows))
+    story.append(Spacer(1, 5*mm))
+
+    # SEÇÃO 3: Escolaridade
+    story.append(section_bar("3. Nível de Escolaridade"))
+    story.append(Spacer(1, 2*mm))
+
+    edu = metrics.get('education_metrics', {})
+    edu_rows = [
+        ("Ensino Fundamental", str(edu.get('Ensino Fundamental', 0))),
+        ("Ensino Médio", str(edu.get('Ensino Médio', 0))),
+        ("Ensino Técnico", str(edu.get('Técnico', 0) or edu.get('Ensino Técnico', 0))),
+        ("Ensino Superior", str(edu.get('Superior', 0) or edu.get('Ensino Superior', 0))),
+        ("Pós-graduação", str(edu.get('Pós-graduação', 0) or edu.get('Pós-Graduação', 0))),
+    ]
+    story.append(make_stat_table(edu_rows))
+    story.append(Spacer(1, 5*mm))
+
+    # SEÇÃO 4: Deficiências e Acessibilidade
+    story.append(section_bar("4. Deficiências e Acessibilidade"))
+    story.append(Spacer(1, 2*mm))
+
+    dis_gen = metrics.get('disabilities_metrics', {}).get('general', {})
+    dis_brk = metrics.get('disabilities_metrics', {}).get('breakdown', {})
+    dis_rows = [
+        ("Possuem Deficiência / Necessidade Específica", str(dis_gen.get('com_deficiencia', 0))),
+        ("Surdos", str(dis_brk.get('surdo', 0))),
+        ("Deficiência Auditiva", str(dis_brk.get('deficiente_auditivo', 0))),
+        ("Cegos", str(dis_brk.get('cego', 0))),
+        ("Baixa Visão", str(dis_brk.get('baixa_visao', 0))),
+        ("Deficiência Física (Membro Inferior)", str(dis_brk.get('deficiencia_fisica_membro_inferior', 0))),
+        ("Deficiência Física (Membro Superior)", str(dis_brk.get('deficiencia_fisica_membro_superior', 0))),
+        ("Transtorno Neurológico", str(dis_brk.get('transtorno_neurologico', 0))),
+        ("Deficiência Intelectual", str(dis_brk.get('deficiencia_intelectual', 0))),
+        ("Outros", str(dis_brk.get('outros', 0))),
+    ]
+    story.append(make_stat_table(dis_rows))
+    story.append(Spacer(1, 5*mm))
+
+    # SEÇÃO 5: Programações Realizadas
+    story.append(section_bar("5. Programações por Cunho"))
+    story.append(Spacer(1, 2*mm))
+
+    ev_metrics = metrics.get('events_metrics', {})
+    by_cunho = ev_metrics.get('by_cunho', {})
+    prog_rows = [
+        ("Total de Programações no Ano", str(ev_metrics.get('total_events', 0))),
+        ("Social", str(by_cunho.get('Social', 0))),
+        ("Evangelístico / Missional", str(by_cunho.get('Evangelístico/Missional', 0))),
+        ("Espiritual", str(by_cunho.get('Espiritual', 0))),
+        ("Recreativo", str(by_cunho.get('Recreativo', 0))),
+        ("Oração e Vigílias", str(by_cunho.get('Oração/Vigília', 0))),
+    ]
+    story.append(make_stat_table(prog_rows))
+    story.append(Spacer(1, 5*mm))
+
+    # SEÇÃO 6: Arrecadação de ACI
+    story.append(section_bar("6. Arrecadação de ACI (Contribuição Anual)"))
+    story.append(Spacer(1, 2*mm))
+
+    aci = metrics.get('aci_metrics', {})
+    aci_rows = [
+        ("Valor da ACI por Sócio", f"R$ {aci.get('aci_year_value', 0):,.2f}".replace(',','X').replace('.',',').replace('X','.')),
+        ("Total Previsto / A Arrecadar", f"R$ {aci.get('total_to_collect', 0):,.2f}".replace(',','X').replace('.',',').replace('X','.')),
+        ("Total Arrecadado", f"R$ {aci.get('total_collected', 0):,.2f}".replace(',','X').replace('.',',').replace('X','.')),
+        ("Saldo Restante", f"R$ {aci.get('remaining', 0):,.2f}".replace(',','X').replace('.',',').replace('X','.')),
+        ("Percentual de Cumprimento", f"{aci.get('progress_percent', 0)}%"),
+    ]
+    story.append(make_stat_table(aci_rows))
+
+    doc.build(story, onFirstPage=_make_header_footer, onLaterPages=_make_header_footer)
+    return buf.getvalue()

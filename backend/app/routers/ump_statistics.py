@@ -1,7 +1,12 @@
 import datetime
+import io
+import os
+import re
+import logging
 from uuid import UUID
 from typing import Optional, List, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
+from fastapi.responses import Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import func, extract
@@ -22,6 +27,8 @@ from app.models.ump_statistic import (
     generate_unique_token
 )
 from app.core.dependencies import require_local_or_federation, get_current_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -249,6 +256,10 @@ def get_collector_status(
         "local_ump_name": local_obj.name if local_obj else "UMP Local",
         "fiscal_year": collector.fiscal_year,
         "title": collector.title,
+        "status": collector.status or "draft",
+        "report_url": collector.report_url,
+        "published_at": collector.published_at.isoformat() if collector.published_at else None,
+        "is_published": (collector.status == "published"),
         "total_members": total_voters,
         "responded_count": responded_count,
         "pending_count": pending_count,
@@ -295,6 +306,8 @@ def get_ump_statistics_metrics(
     inactive_locals_count = sum(1 for l in all_locals if l.is_active is False)
     all_local_ids = [l.id for l in all_locals]
 
+    collector_ref = None
+
     # Decide se é visualização consolidada da federação ou de uma UMP Local específica
     if is_federation and not local_ump_id:
         is_consolidated = True
@@ -302,30 +315,34 @@ def get_ump_statistics_metrics(
         local_name = "Todas as UMPs Locais (Consolidado)"
 
         if all_local_ids:
-            active_members_count = db.query(Member).filter(
-                Member.local_ump_id.in_(all_local_ids),
-                Member.is_active == True,
-                Member.member_type == MemberType.ativo
-            ).count()
-
-            coop_members_count = db.query(Member).filter(
-                Member.local_ump_id.in_(all_local_ids),
-                Member.is_active == True,
-                Member.member_type == MemberType.cooperador
-            ).count()
-
-            collectors = db.query(UmpStatisticCollector).filter(
+            published_collectors = db.query(UmpStatisticCollector).filter(
                 UmpStatisticCollector.local_ump_id.in_(all_local_ids),
-                UmpStatisticCollector.fiscal_year == target_year
+                UmpStatisticCollector.fiscal_year == target_year,
+                UmpStatisticCollector.status == 'published'
             ).all()
-            collector_ids = [c.id for c in collectors]
-            if collector_ids:
+            published_local_ids = [c.local_ump_id for c in published_collectors]
+            collector_ids = [c.id for c in published_collectors]
+
+            if published_local_ids:
+                active_members_count = db.query(Member).filter(
+                    Member.local_ump_id.in_(published_local_ids),
+                    Member.is_active == True,
+                    Member.member_type == MemberType.ativo
+                ).count()
+
+                coop_members_count = db.query(Member).filter(
+                    Member.local_ump_id.in_(published_local_ids),
+                    Member.is_active == True,
+                    Member.member_type == MemberType.cooperador
+                ).count()
+
                 responses = db.query(UmpStatisticResponse).filter(
                     UmpStatisticResponse.collector_id.in_(collector_ids)
                 ).all()
             else:
+                active_members_count = 0
+                coop_members_count = 0
                 responses = []
-
         else:
             active_members_count = 0
             coop_members_count = 0
@@ -379,6 +396,44 @@ def get_ump_statistics_metrics(
 
         if not collector:
             collector = _get_or_create_collector_with_sync(resolved_local_id, target_year, db, current_user.id)
+
+        collector_ref = collector
+
+        # Se for consulta da federação para uma UMP Local e o relatório NÃO estiver publicado:
+        if is_federation and collector.status != 'published':
+            return {
+                "fiscal_year": target_year,
+                "is_federation": True,
+                "is_consolidated": False,
+                "local_ump_id": str(resolved_local_id),
+                "local_ump_name": local_name,
+                "collector_status": collector.status or "draft",
+                "report_url": collector.report_url,
+                "published_at": collector.published_at.isoformat() if collector.published_at else None,
+                "is_published": False,
+                "total_registered": 0,
+                "total_active": 0,
+                "total_cooperating": 0,
+                "total_responded": 0,
+                "response_rate_percent": 0,
+                "federation_metrics": {
+                    "total_locals": total_locals,
+                    "active_locals": active_locals_count,
+                    "inactive_locals": inactive_locals_count
+                },
+                "available_locals": [
+                    {"id": str(l.id), "name": l.name, "is_active": (l.is_active is True or l.is_active is None)}
+                    for l in all_locals
+                ],
+                "age_metrics": {"groups": {"menores_19": 0, "19_23": 0, "24_29": 0, "30_35": 0, "not_informed": 0}, "average_age": 0},
+                "gender_metrics": {"Masculino": 0, "Feminino": 0, "Outro/Não informado": 0},
+                "education_metrics": {level: 0 for level in VALID_EDUCATION},
+                "marital_status_metrics": {st: 0 for st in VALID_MARITAL_STATUS},
+                "children_metrics": {"com_filhos": 0, "sem_filhos": 0, "nao_informado": 0},
+                "disabilities_metrics": {"general": {"com_deficiencia": 0, "sem_deficiencia": 0, "nao_informado": 0}, "breakdown": {}, "other_descriptions": []},
+                "events_metrics": {"total_events": 0, "by_cunho": {}},
+                "aci_metrics": {"aci_year_value": 0, "total_received": 0, "total_to_collect": 0, "total_collected": 0, "remaining": 0, "progress_percent": 0, "is_complete": False}
+            }
 
         responses = db.query(UmpStatisticResponse).filter(
             UmpStatisticResponse.collector_id == collector.id
@@ -532,6 +587,10 @@ def get_ump_statistics_metrics(
         "is_consolidated": is_consolidated,
         "local_ump_id": str(resolved_local_id) if resolved_local_id else None,
         "local_ump_name": local_name,
+        "collector_status": collector_ref.status if collector_ref else "draft",
+        "report_url": collector_ref.report_url if collector_ref else None,
+        "published_at": collector_ref.published_at.isoformat() if (collector_ref and collector_ref.published_at) else None,
+        "is_published": (collector_ref.status == 'published') if collector_ref else False,
         "total_registered": total_registered,
         "total_active": active_members_count,
         "total_cooperating": coop_members_count,
@@ -690,3 +749,231 @@ def submit_public_survey(token: str, payload: SurveyAnswerPayload, db: Session =
         "message": "Formulário estatístico enviado com sucesso! Suas respostas foram computadas.",
         "responded_at": response.responded_at.isoformat()
     }
+
+
+# ── HELPERS PARA PUBLICAÇÃO E PDF ──
+
+def _get_org_data_for_stats(db: Session, organization_id: UUID, org_type: str):
+    if org_type == 'federation':
+        org_obj = db.query(Federation).filter(Federation.id == organization_id).first()
+        return {
+            "name": org_obj.name if org_obj else '',
+            "presbytery_name": org_obj.presbytery_name if org_obj else '',
+            "synodal_name": getattr(org_obj, 'synodal_name', '') or '',
+            "logo_url": org_obj.logo_url if org_obj else None,
+            "theme_color": getattr(org_obj, 'theme_color', '#1a2a6c') or '#1a2a6c',
+            "organization_type": org_type,
+            "society_type": getattr(org_obj, 'society_type', 'UMP') or 'UMP',
+        }
+    else:
+        org_obj = db.query(LocalUmp).filter(LocalUmp.id == organization_id).first()
+        return {
+            "name": org_obj.name if org_obj else '',
+            "presbytery_name": org_obj.presbytery_name if org_obj else '',
+            "synodal_name": '',
+            "logo_url": org_obj.logo_url if org_obj else None,
+            "theme_color": getattr(org_obj, 'theme_color', '#1a2a6c') or '#1a2a6c',
+            "organization_type": org_type,
+            "society_type": getattr(org_obj, 'society_type', 'UMP') or 'UMP',
+        }
+
+
+def _get_logos_for_stats(org_data: dict, b2_client=None):
+    from app.core.config import get_settings
+    from app.services.storage import _get_client
+    settings_obj = get_settings()
+    bucket = settings_obj.b2_bucket_name
+    b2 = b2_client if b2_client is not None else _get_client()
+
+    logo_bytes = None
+    if org_data.get('logo_url'):
+        match = re.search(r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', org_data['logo_url'])
+        if match:
+            try:
+                resp = b2.get_object(Bucket=bucket, Key=match.group(1))
+                logo_bytes = resp['Body'].read()
+                try:
+                    from PIL import Image as PILImage
+                    with PILImage.open(io.BytesIO(logo_bytes)) as pil_img:
+                        pil_img.thumbnail((500, 500), PILImage.LANCZOS)
+                        out_io = io.BytesIO()
+                        fmt = pil_img.format if pil_img.format else 'PNG'
+                        pil_img.save(out_io, format=fmt)
+                        logo_bytes = out_io.getvalue()
+                except Exception:
+                    pass
+            except Exception:
+                pass
+
+    ipb_logo_bytes = None
+    try:
+        ipb_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'ipb_logo.png')
+        if os.path.exists(ipb_path):
+            with open(ipb_path, 'rb') as f:
+                ipb_logo_bytes = f.read()
+    except Exception:
+        pass
+
+    return logo_bytes, ipb_logo_bytes
+
+
+def generate_and_publish_ump_statistics_task(
+    organization_id: UUID,
+    org_type: str,
+    year: int,
+    collector_id: UUID
+):
+    from app.db.session import SessionLocal
+    from app.services.storage import upload_file, _get_client
+    from app.services.pdf_generator import generate_ump_statistics_report
+
+    db = SessionLocal()
+    try:
+        collector = db.query(UmpStatisticCollector).filter(UmpStatisticCollector.id == collector_id).first()
+        if not collector:
+            logger.error(f"Collector {collector_id} não encontrado para publicação")
+            return
+
+        class MockUser:
+            def __init__(self, org_id, o_type):
+                self.organization_id = org_id
+                self.organization_type = OrgType.local_ump if o_type == 'local_ump' else OrgType.federation
+                self.id = None
+
+        mock_user = MockUser(organization_id, org_type)
+
+        b2_client = _get_client()
+        org_data = _get_org_data_for_stats(db, organization_id, org_type)
+        logo_bytes, ipb_logo_bytes = _get_logos_for_stats(org_data, b2_client=b2_client)
+
+        metrics = get_ump_statistics_metrics(year=year, local_ump_id=organization_id, current_user=mock_user, db=db)
+
+        pdf_bytes = generate_ump_statistics_report(
+            org_data=org_data,
+            fiscal_year=year,
+            metrics=metrics,
+            logo_bytes=logo_bytes,
+            ipb_logo_bytes=ipb_logo_bytes,
+            b2_client=b2_client
+        )
+
+        key = f"ump-statistics/{organization_id}/{year}/relatorio_estatistico_{year}.pdf"
+        url = upload_file(pdf_bytes, key, 'application/pdf')
+
+        collector.report_url = url
+        collector.status = 'published'
+        collector.published_at = datetime.datetime.now(datetime.timezone.utc)
+        db.commit()
+        logger.info(f"Relatório estatístico de {year} publicado com sucesso para org {organization_id}")
+    except Exception as e:
+        logger.error(f"Erro ao gerar relatório estatístico em background para {organization_id} ({year}): {e}")
+        try:
+            db.rollback()
+            collector = db.query(UmpStatisticCollector).filter(UmpStatisticCollector.id == collector_id).first()
+            if collector:
+                collector.status = 'failed'
+                db.commit()
+        except Exception as ex:
+            logger.error(f"Erro ao alterar status de falha no coletor: {ex}")
+    finally:
+        db.close()
+
+
+@router.post("/report/{year}/publish")
+def publish_ump_statistics_report(
+    year: int,
+    background_tasks: BackgroundTasks,
+    local_ump_id: Optional[UUID] = Query(default=None),
+    current_user: User = Depends(require_local_or_federation),
+    db: Session = Depends(get_db)
+):
+    target_year = year
+    resolved_local_id = _resolve_local_ump_id(current_user, db, local_ump_id)
+
+    collector = _get_or_create_collector_with_sync(resolved_local_id, target_year, db, current_user.id)
+    if collector.status == 'generating':
+        return {"detail": "O relatório estatístico já está sendo gerado em background", "status": "generating"}
+
+    collector.status = 'generating'
+    collector.report_url = None
+    db.commit()
+
+    org_type_str = current_user.organization_type.value if hasattr(current_user.organization_type, 'value') else str(current_user.organization_type)
+
+    background_tasks.add_task(
+        generate_and_publish_ump_statistics_task,
+        organization_id=resolved_local_id,
+        org_type=org_type_str,
+        year=target_year,
+        collector_id=collector.id
+    )
+
+    return {"detail": "Geração do relatório estatístico iniciada em background", "status": "generating"}
+
+
+@router.get("/report/{year}/preview-pdf")
+def preview_ump_statistics_pdf(
+    year: int,
+    local_ump_id: Optional[UUID] = Query(default=None),
+    current_user: User = Depends(require_local_or_federation),
+    db: Session = Depends(get_db)
+):
+    target_year = year
+    resolved_local_id = _resolve_local_ump_id(current_user, db, local_ump_id)
+
+    org_type_str = current_user.organization_type.value if hasattr(current_user.organization_type, 'value') else str(current_user.organization_type)
+    org_data = _get_org_data_for_stats(db, resolved_local_id, org_type_str)
+
+    from app.services.storage import _get_client
+    b2_client = _get_client()
+    logo_bytes, ipb_logo_bytes = _get_logos_for_stats(org_data, b2_client=b2_client)
+
+    metrics = get_ump_statistics_metrics(year=target_year, local_ump_id=resolved_local_id, current_user=current_user, db=db)
+
+    from app.services.pdf_generator import generate_ump_statistics_report
+    pdf_bytes = generate_ump_statistics_report(
+        org_data=org_data,
+        fiscal_year=target_year,
+        metrics=metrics,
+        logo_bytes=logo_bytes,
+        ipb_logo_bytes=ipb_logo_bytes,
+        b2_client=b2_client
+    )
+
+    filename = f"Previa_Relatorio_Estatistico_{target_year}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type='application/pdf',
+        headers={
+            "Content-Disposition": f'inline; filename="{filename}"',
+            "Access-Control-Expose-Headers": "Content-Disposition",
+        }
+    )
+
+
+@router.get("/report/{year}/published-url")
+def get_published_ump_statistics_url(
+    year: int,
+    local_ump_id: Optional[UUID] = Query(default=None),
+    current_user: User = Depends(require_local_or_federation),
+    db: Session = Depends(get_db)
+):
+    target_year = year
+    resolved_local_id = _resolve_local_ump_id(current_user, db, local_ump_id)
+
+    collector = db.query(UmpStatisticCollector).filter(
+        UmpStatisticCollector.local_ump_id == resolved_local_id,
+        UmpStatisticCollector.fiscal_year == target_year,
+        UmpStatisticCollector.status.in_(['published', 'publicado']),
+    ).first()
+
+    if not collector or not collector.report_url:
+        raise HTTPException(status_code=404, detail="Relatório estatístico publicado não encontrado")
+
+    from app.services.storage import get_presigned_url
+    match = re.search(r'(?:/file/[^/]+/|/|^)(ump-statistics/.+|activity-reports/.+|activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', collector.report_url)
+    if not match:
+        raise HTTPException(status_code=400, detail="URL inválida")
+
+    url = get_presigned_url(match.group(1), expires_in=3600)
+    return {"url": url, "published_at": collector.published_at.isoformat() if collector.published_at else None}

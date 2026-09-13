@@ -292,10 +292,8 @@
 
     <!-- Aba Estatísticas -->
     <div id="tab-reports-estatisticas" style="display:none">
-      <div style="text-align:center;padding:2.5rem 1rem;color:var(--slate-400)">
-        <div style="font-size:2rem;margin-bottom:.5rem">📊</div>
-        <p style="font-weight:500;color:var(--slate-600)">Em breve</p>
-        <p style="font-size:.8rem;margin-top:.25rem">Relatórios de estatísticas em desenvolvimento.</p>
+      <div id="local-statistic-reports-list">
+        <div class="loading-center"><div class="spinner"></div></div>
       </div>
     </div>
 
@@ -907,6 +905,15 @@
       document.getElementById('local-activity-reports-list').innerHTML =
         `<div class="alert alert-error">${err.message}</div>`
     }
+
+    // Carrega estatísticas
+    try {
+      const statReports = await api.get(`/api/local-umps/${localId}/statistic-reports`)
+      renderStatisticReports(localId, statReports)
+    } catch(err) {
+      document.getElementById('local-statistic-reports-list').innerHTML =
+        `<div class="alert alert-error">${err.message}</div>`
+    }
   }
 
   function renderFinancialReports(localId, reports) {
@@ -976,6 +983,38 @@
       </div>`
   }
 
+  function renderStatisticReports(localId, reports) {
+    const list = document.getElementById('local-statistic-reports-list')
+    if (!reports.length) {
+      list.innerHTML = `
+        <div style="text-align:center;padding:2rem;color:var(--slate-400)">
+          <div style="font-size:1.8rem;margin-bottom:.5rem">📭</div>
+          <p>Nenhum relatório estatístico disponível.</p>
+          <p style="font-size:.75rem;margin-top:.25rem">Os relatórios aparecem após publicação pela UMP local.</p>
+        </div>`
+      return
+    }
+    list.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:.6rem">
+        ${reports.map(r => `
+          <div style="background:var(--slate-50);border:1.5px solid var(--slate-200);
+                      border-radius:var(--radius-lg);padding:1rem 1.25rem">
+            <div style="display:flex;align-items:center;justify-content:space-between;
+                        flex-wrap:wrap;gap:.75rem">
+              <div>
+                <div style="font-weight:600;font-size:.9rem">Ano Fiscal ${r.fiscal_year}</div>
+                <div style="font-size:.75rem;color:var(--green-600);margin-top:.15rem">✓ Publicado</div>
+              </div>
+              <button class="btn btn-primary btn-sm"
+                onclick="openLocalStatisticReport('${localId}','${r.id}')">
+                📊 Ver Relatório PDF
+              </button>
+            </div>
+          </div>
+        `).join('')}
+      </div>`
+  }
+
   window.openLocalReport = async (localId, periodId, type) => {
     try {
       const data = await api.get(`/api/local-umps/${localId}/reports/${periodId}/urls`)
@@ -1001,6 +1040,15 @@
       window.open(data.url, '_blank')
     } catch(err) {
       alert('Erro ao obter relatório: ' + err.message)
+    }
+  }
+
+  window.openLocalStatisticReport = async (localId, collectorId) => {
+    try {
+      const data = await api.get(`/api/local-umps/${localId}/statistic-reports/${collectorId}/url`)
+      window.open(data.url, '_blank')
+    } catch(err) {
+      alert('Erro ao obter relatório estatístico: ' + err.message)
     }
   }
 
