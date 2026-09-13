@@ -313,6 +313,10 @@ def get_ump_statistics_metrics(
         is_consolidated = True
         resolved_local_id = None
         local_name = "Todas as UMPs Locais (Consolidado)"
+        collector_ref = db.query(UmpStatisticCollector).filter(
+            UmpStatisticCollector.federation_id == current_user.organization_id,
+            UmpStatisticCollector.fiscal_year == target_year
+        ).first()
 
         if all_local_ids:
             published_collectors = db.query(UmpStatisticCollector).filter(
@@ -817,6 +821,36 @@ def _get_logos_for_stats(org_data: dict, b2_client=None):
     return logo_bytes, ipb_logo_bytes
 
 
+def _get_or_create_federation_collector(federation_id: UUID, year: int, db: Session, user_id: Optional[UUID] = None) -> UmpStatisticCollector:
+    collector = db.query(UmpStatisticCollector).filter(
+        UmpStatisticCollector.federation_id == federation_id,
+        UmpStatisticCollector.fiscal_year == year
+    ).first()
+
+    if not collector:
+        fed_obj = db.query(Federation).filter(Federation.id == federation_id).first()
+        fed_name = fed_obj.name if fed_obj else "Federação"
+        collector = UmpStatisticCollector(
+            federation_id=federation_id,
+            local_ump_id=None,
+            fiscal_year=year,
+            title=f"Dados Estatísticos Consolidados {year} — {fed_name}",
+            created_by=user_id
+        )
+        try:
+            db.add(collector)
+            db.commit()
+            db.refresh(collector)
+        except IntegrityError:
+            db.rollback()
+            collector = db.query(UmpStatisticCollector).filter(
+                UmpStatisticCollector.federation_id == federation_id,
+                UmpStatisticCollector.fiscal_year == year
+            ).first()
+
+    return collector
+
+
 def generate_and_publish_ump_statistics_task(
     organization_id: UUID,
     org_type: str,
@@ -846,7 +880,8 @@ def generate_and_publish_ump_statistics_task(
         org_data = _get_org_data_for_stats(db, organization_id, org_type)
         logo_bytes, ipb_logo_bytes = _get_logos_for_stats(org_data, b2_client=b2_client)
 
-        metrics = get_ump_statistics_metrics(year=year, local_ump_id=organization_id, current_user=mock_user, db=db)
+        local_param = organization_id if org_type == 'local_ump' else None
+        metrics = get_ump_statistics_metrics(year=year, local_ump_id=local_param, current_user=mock_user, db=db)
 
         pdf_bytes = generate_ump_statistics_report(
             org_data=org_data,
@@ -888,9 +923,16 @@ def publish_ump_statistics_report(
     db: Session = Depends(get_db)
 ):
     target_year = year
-    resolved_local_id = _resolve_local_ump_id(current_user, db, local_ump_id)
+    org_type_str = current_user.organization_type.value if hasattr(current_user.organization_type, 'value') else str(current_user.organization_type)
 
-    collector = _get_or_create_collector_with_sync(resolved_local_id, target_year, db, current_user.id)
+    if current_user.organization_type == OrgType.federation and not local_ump_id:
+        collector = _get_or_create_federation_collector(current_user.organization_id, target_year, db, current_user.id)
+        target_org_id = current_user.organization_id
+    else:
+        resolved_local_id = _resolve_local_ump_id(current_user, db, local_ump_id)
+        collector = _get_or_create_collector_with_sync(resolved_local_id, target_year, db, current_user.id)
+        target_org_id = resolved_local_id
+
     if collector.status == 'generating':
         return {"detail": "O relatório estatístico já está sendo gerado em background", "status": "generating"}
 
@@ -898,57 +940,15 @@ def publish_ump_statistics_report(
     collector.report_url = None
     db.commit()
 
-    org_type_str = current_user.organization_type.value if hasattr(current_user.organization_type, 'value') else str(current_user.organization_type)
-
     background_tasks.add_task(
         generate_and_publish_ump_statistics_task,
-        organization_id=resolved_local_id,
+        organization_id=target_org_id,
         org_type=org_type_str,
         year=target_year,
         collector_id=collector.id
     )
 
     return {"detail": "Geração do relatório estatístico iniciada em background", "status": "generating"}
-
-
-@router.get("/report/{year}/preview-pdf")
-def preview_ump_statistics_pdf(
-    year: int,
-    local_ump_id: Optional[UUID] = Query(default=None),
-    current_user: User = Depends(require_local_or_federation),
-    db: Session = Depends(get_db)
-):
-    target_year = year
-    resolved_local_id = _resolve_local_ump_id(current_user, db, local_ump_id)
-
-    org_type_str = current_user.organization_type.value if hasattr(current_user.organization_type, 'value') else str(current_user.organization_type)
-    org_data = _get_org_data_for_stats(db, resolved_local_id, org_type_str)
-
-    from app.services.storage import _get_client
-    b2_client = _get_client()
-    logo_bytes, ipb_logo_bytes = _get_logos_for_stats(org_data, b2_client=b2_client)
-
-    metrics = get_ump_statistics_metrics(year=target_year, local_ump_id=resolved_local_id, current_user=current_user, db=db)
-
-    from app.services.pdf_generator import generate_ump_statistics_report
-    pdf_bytes = generate_ump_statistics_report(
-        org_data=org_data,
-        fiscal_year=target_year,
-        metrics=metrics,
-        logo_bytes=logo_bytes,
-        ipb_logo_bytes=ipb_logo_bytes,
-        b2_client=b2_client
-    )
-
-    filename = f"Previa_Relatorio_Estatistico_{target_year}.pdf"
-    return Response(
-        content=pdf_bytes,
-        media_type='application/pdf',
-        headers={
-            "Content-Disposition": f'inline; filename="{filename}"',
-            "Access-Control-Expose-Headers": "Content-Disposition",
-        }
-    )
 
 
 @router.get("/report/{year}/published-url")
@@ -959,13 +959,20 @@ def get_published_ump_statistics_url(
     db: Session = Depends(get_db)
 ):
     target_year = year
-    resolved_local_id = _resolve_local_ump_id(current_user, db, local_ump_id)
 
-    collector = db.query(UmpStatisticCollector).filter(
-        UmpStatisticCollector.local_ump_id == resolved_local_id,
-        UmpStatisticCollector.fiscal_year == target_year,
-        UmpStatisticCollector.status.in_(['published', 'publicado']),
-    ).first()
+    if current_user.organization_type == OrgType.federation and not local_ump_id:
+        collector = db.query(UmpStatisticCollector).filter(
+            UmpStatisticCollector.federation_id == current_user.organization_id,
+            UmpStatisticCollector.fiscal_year == target_year,
+            UmpStatisticCollector.status.in_(['published', 'publicado']),
+        ).first()
+    else:
+        resolved_local_id = _resolve_local_ump_id(current_user, db, local_ump_id)
+        collector = db.query(UmpStatisticCollector).filter(
+            UmpStatisticCollector.local_ump_id == resolved_local_id,
+            UmpStatisticCollector.fiscal_year == target_year,
+            UmpStatisticCollector.status.in_(['published', 'publicado']),
+        ).first()
 
     if not collector or not collector.report_url:
         raise HTTPException(status_code=404, detail="Relatório estatístico publicado não encontrado")

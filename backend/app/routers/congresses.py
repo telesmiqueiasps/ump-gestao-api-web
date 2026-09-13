@@ -367,12 +367,14 @@ def set_commission_members(
 @router.get("/available-documents/list")
 def get_available_documents(
     year: Optional[int] = Query(default=None),
+    congress_id: Optional[UUID] = Query(default=None),
     current_user: User = Depends(require_federation),
     db: Session = Depends(get_db)
 ):
     """
     Retorna todos os documentos do sistema gerados pelas UMPs Locais e pela própria Federação,
     prontos para serem selecionados e disponibilizados para as comissões.
+    Se congress_id for fornecido, oculta os documentos que já foram atribuídos a alguma comissão deste congresso.
     """
     fed_id = current_user.organization_id
     fed_obj = db.query(Federation).filter(Federation.id == fed_id).first()
@@ -439,9 +441,11 @@ def get_available_documents(
                     "external_reference_id": str(a.id)
                 })
 
-        # C. Levantamentos Estatísticos Concluídos
+        # C. Relatórios Estatísticos Publicados (Apenas PDF publicado)
         stat_query = db.query(UmpStatisticCollector).filter(
-            UmpStatisticCollector.local_ump_id == loc.id
+            UmpStatisticCollector.local_ump_id == loc.id,
+            UmpStatisticCollector.status.in_(["published", "publicado"]),
+            UmpStatisticCollector.report_url != None
         )
         if year:
             stat_query = stat_query.filter(UmpStatisticCollector.fiscal_year == year)
@@ -449,10 +453,10 @@ def get_available_documents(
         for col in collectors:
             documents.append({
                 "id": f"stat_{col.id}",
-                "title": f"Dados Estatísticos {col.fiscal_year} — {loc.name}",
+                "title": f"Relatório Estatístico {col.fiscal_year} — {loc.name}",
                 "category": "estatistica",
                 "origin_name": loc.name,
-                "document_url": f"/pages/ump-statistics.html?local_id={loc.id}&year={col.fiscal_year}",
+                "document_url": col.report_url.split('?')[0],
                 "fiscal_year": col.fiscal_year,
                 "external_reference_id": str(col.id)
             })
@@ -509,17 +513,53 @@ def get_available_documents(
                 "external_reference_id": str(fa.id)
             })
 
-    # Dados estatísticos consolidados da Federação
+    # Relatório estatístico consolidado publicado da Federação
+    fed_stat_query = db.query(UmpStatisticCollector).filter(
+        UmpStatisticCollector.federation_id == fed_id,
+        UmpStatisticCollector.status.in_(["published", "publicado"]),
+        UmpStatisticCollector.report_url != None
+    )
     if year:
+        fed_stat_query = fed_stat_query.filter(UmpStatisticCollector.fiscal_year == year)
+    fed_stat_collectors = fed_stat_query.all()
+    for fsc in fed_stat_collectors:
         documents.append({
-            "id": f"stat_fed_{year}",
-            "title": f"Dados Estatísticos Consolidados {year} — {fed_name}",
+            "id": f"stat_fed_{fsc.id}",
+            "title": f"Relatório Estatístico Consolidado {fsc.fiscal_year} — {fed_name}",
             "category": "estatistica",
             "origin_name": fed_name,
-            "document_url": f"/pages/ump-statistics.html?year={year}",
-            "fiscal_year": year,
-            "external_reference_id": f"fed_{year}"
+            "document_url": fsc.report_url.split('?')[0],
+            "fiscal_year": fsc.fiscal_year,
+            "external_reference_id": str(fsc.id)
         })
+
+    # 3. Filtrar documentos já vinculados a qualquer comissão deste congresso
+    if congress_id:
+        commissions_in_congress = db.query(CongressCommission.id).filter(
+            CongressCommission.congress_id == congress_id
+        ).all()
+        comm_ids = [c.id for c in commissions_in_congress]
+        if comm_ids:
+            already_attached = db.query(CongressCommissionDocument).filter(
+                CongressCommissionDocument.commission_id.in_(comm_ids)
+            ).all()
+
+            used_refs = {doc.external_reference_id for doc in already_attached if doc.external_reference_id}
+            used_urls = {doc.document_url.split('?')[0].strip() for doc in already_attached if doc.document_url}
+            used_titles = {doc.title.strip() for doc in already_attached if doc.title}
+
+            filtered_documents = []
+            for d in documents:
+                doc_id = d.get('id')
+                ext_id = d.get('external_reference_id')
+                doc_url = d.get('document_url', '').split('?')[0].strip()
+                doc_title = d.get('title', '').strip()
+
+                if doc_id in used_refs or ext_id in used_refs or doc_url in used_urls or doc_title in used_titles:
+                    continue
+                filtered_documents.append(d)
+
+            return filtered_documents
 
     return documents
 
@@ -539,28 +579,52 @@ def attach_commission_documents(
     if not comm:
         raise HTTPException(status_code=404, detail="Comissão não encontrada.")
 
+    # Busca todas as comissões do mesmo congresso
+    other_commissions = db.query(CongressCommission.id).filter(
+        CongressCommission.congress_id == comm.congress_id
+    ).all()
+    other_comm_ids = [c.id for c in other_commissions]
+
+    attached_docs_in_congress = db.query(CongressCommissionDocument).filter(
+        CongressCommissionDocument.commission_id.in_(other_comm_ids)
+    ).all()
+
+    used_refs = {doc.external_reference_id for doc in attached_docs_in_congress if doc.external_reference_id}
+    used_urls = {doc.document_url.split('?')[0].strip() for doc in attached_docs_in_congress if doc.document_url}
+    used_titles = {doc.title.strip() for doc in attached_docs_in_congress if doc.title}
+
     new_docs = []
     for item in payload:
         if item.document_url.startswith("http"):
             clean_item_url = item.document_url.split('?')[0].strip()
         else:
             clean_item_url = item.document_url.strip()
-        # Evita duplicidade por URL e título
-        exists = db.query(CongressCommissionDocument).filter(
-            CongressCommissionDocument.commission_id == comm.id,
-            CongressCommissionDocument.document_url == clean_item_url
-        ).first()
-        if not exists:
-            doc = CongressCommissionDocument(
-                commission_id=comm.id,
-                title=item.title.strip(),
-                category=item.category,
-                origin_name=item.origin_name.strip() if item.origin_name else None,
-                document_url=clean_item_url,
-                external_reference_id=item.external_reference_id
+
+        item_title = item.title.strip()
+        item_ref = item.external_reference_id
+
+        # Verifica se o documento já está vinculado em QUALQUER comissão deste congresso
+        if clean_item_url in used_urls or item_title in used_titles or (item_ref and item_ref in used_refs):
+            raise HTTPException(
+                status_code=400,
+                detail=f"O documento '{item_title}' já está disponibilizado para uma comissão neste congresso."
             )
-            db.add(doc)
-            new_docs.append(doc)
+
+        doc = CongressCommissionDocument(
+            commission_id=comm.id,
+            title=item_title,
+            category=item.category,
+            origin_name=item.origin_name.strip() if item.origin_name else None,
+            document_url=clean_item_url,
+            external_reference_id=item_ref
+        )
+        db.add(doc)
+        new_docs.append(doc)
+
+        used_urls.add(clean_item_url)
+        used_titles.add(item_title)
+        if item_ref:
+            used_refs.add(item_ref)
 
     db.commit()
     db.refresh(comm)

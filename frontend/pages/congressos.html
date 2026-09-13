@@ -1132,7 +1132,7 @@
       document.getElementById('upload-doc-file').value = ''
 
       try {
-        availableDocs = await api.get(`/api/congresses/available-documents/list?year=${activeCongress.fiscal_year}`)
+        availableDocs = await api.get(`/api/congresses/available-documents/list?year=${activeCongress.fiscal_year}&congress_id=${activeCongress.id}`)
         filterAvailableDocs()
         openModal('modal-documents')
       } catch (err) {

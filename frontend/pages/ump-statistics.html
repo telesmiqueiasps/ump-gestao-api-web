@@ -541,10 +541,6 @@
             <p id="page-subtitle">Levantamento e dados estatísticos anuais dos sócios da mocidade</p>
           </div>
           <div class="page-header-actions">
-            <!-- Seletor de UMP Local (para usuários de federação) -->
-            <select class="select" id="select-local-ump" style="display:none; width: auto; min-width: 170px;">
-            </select>
-
             <!-- Seletor de Ano -->
             <select class="select" id="select-year" style="width: auto; min-width: 95px; font-weight: 700;">
               <option value="2026" selected>2026</option>
@@ -556,9 +552,6 @@
             <span id="status-badge" class="badge" style="display:none; padding: 6px 12px; font-size: 0.82rem; font-weight: 700; border-radius: 8px;"></span>
 
             <!-- Botões de PDF e Publicação -->
-            <button class="btn btn-secondary btn-sm" id="btn-preview-pdf" onclick="previewReportPdf()" title="Visualizar Prévia em PDF" style="display:none;">
-              👁️ Prévia PDF
-            </button>
             <button class="btn btn-primary btn-sm" id="btn-publish-report" onclick="publishReport()" title="Publicar Relatório para a Federação" style="display:none; background: linear-gradient(135deg, #1a2a6c, #27408b); border: none;">
               🚀 Publicar Relatório
             </button>
@@ -570,11 +563,6 @@
               id="btn-portal-nacional" style="text-decoration: none;" title="Acessar Portal Nacional">
               Portal Nacional
             </a>
-
-            <button class="btn btn-secondary btn-sm" id="btn-print-report" onclick="printStatisticsReport()"
-              title="Imprimir Relatório">
-              🖨️ Imprimir
-            </button>
           </div>
         </div>
 
@@ -1041,21 +1029,6 @@
           loadAllData()
         })
 
-        // Seletor de UMP Local (para Federação)
-        const localSelect = document.getElementById('select-local-ump')
-        localSelect.addEventListener('change', (e) => {
-          selectedLocalId = e.target.value || null
-          if (isFederation()) {
-            const subEl = document.getElementById('page-subtitle')
-            if (subEl) {
-              subEl.textContent = selectedLocalId
-                ? 'Dados estatísticos anuais da UMP Local selecionada'
-                : 'Dados estatísticos anuais consolidados das UMPs Locais'
-            }
-          }
-          loadAllData()
-        })
-
         // Fechar modal no overlay
         document.querySelectorAll('.modal-overlay').forEach(modal => {
           modal.addEventListener('click', (e) => {
@@ -1089,17 +1062,6 @@
 
       collectorData = await api.get(url)
 
-      // Se for federação, popula o seletor de UMP local
-      if (collectorData.available_locals && collectorData.available_locals.length > 0) {
-        const localSelect = document.getElementById('select-local-ump')
-        localSelect.style.display = 'inline-block'
-        if (localSelect.children.length === 0) {
-          localSelect.innerHTML = collectorData.available_locals.map(l =>
-            `<option value="${l.id}" ${l.id === collectorData.local_ump_id ? 'selected' : ''}>${l.name}</option>`
-          ).join('')
-        }
-      }
-
       document.getElementById('collector-society-title').textContent = `Coletor de Dados — ${collectorData.local_ump_name}`
       document.getElementById('collector-progress-text').textContent =
         `${collectorData.responded_count} de ${collectorData.total_members} respondidos (${collectorData.percent_complete}%)`
@@ -1128,30 +1090,11 @@
 
       metricsData = await api.get(url)
 
-      // Se for federação, popula o seletor de UMP local com a opção de Consolidado no início
-      if (metricsData.is_federation && metricsData.available_locals && metricsData.available_locals.length > 0) {
-        const localSelect = document.getElementById('select-local-ump')
-        localSelect.style.display = 'inline-block'
-        if (localSelect.children.length === 0) {
-          let optionsHtml = `<option value="">📊 Todas as UMPs Locais (Consolidado)</option>`
-          optionsHtml += metricsData.available_locals.map(l =>
-            `<option value="${l.id}" ${l.id === selectedLocalId ? 'selected' : ''}>🏛️ ${l.name}${l.is_active ? '' : ' (Inativa)'}</option>`
-          ).join('')
-          localSelect.innerHTML = optionsHtml
-        }
-      }
-
       renderGeneralMetrics(metricsData)
       renderReportStatus(metricsData)
     }
 
     // ── GESTÃO DE PUBLICAÇÃO E PDF ──
-    window.previewReportPdf = function () {
-      let url = `/api/ump-statistics/report/${selectedYear}/preview-pdf`
-      if (selectedLocalId) url += `?local_ump_id=${selectedLocalId}`
-      window.open(url, '_blank')
-    }
-
     window.publishReport = async function () {
       let url = `/api/ump-statistics/report/${selectedYear}/publish`
       if (selectedLocalId) url += `?local_ump_id=${selectedLocalId}`
@@ -1209,106 +1152,63 @@
       const status = data ? (data.collector_status || 'draft') : 'draft'
 
       const badge = document.getElementById('status-badge')
-      const btnPreview = document.getElementById('btn-preview-pdf')
       const btnPublish = document.getElementById('btn-publish-report')
       const btnViewPdf = document.getElementById('btn-view-pdf')
       const fedAlert = document.getElementById('federation-not-published-alert')
       const secGeneral = document.getElementById('sec-general')
 
-      // Alerta da Federação quando visualizando UMP Local não publicada
-      if (isFed && selectedLocalId && !isPub) {
-        if (fedAlert) fedAlert.style.display = 'block'
-        if (secGeneral) secGeneral.style.display = 'none'
-      } else {
-        if (fedAlert) fedAlert.style.display = 'none'
-        if (secGeneral) secGeneral.style.display = 'block'
-      }
+      if (fedAlert) fedAlert.style.display = 'none'
+      if (secGeneral) secGeneral.style.display = 'block'
 
-      // Federação sem UMP Local selecionada (Consolidado)
-      if (isFed && !selectedLocalId) {
-        if (badge) badge.style.display = 'none'
-        if (btnPreview) btnPreview.style.display = 'none'
-        if (btnPublish) btnPublish.style.display = 'none'
+      if (status === 'published' || status === 'publicado') {
+        if (badge) {
+          badge.style.display = 'inline-block'
+          badge.className = 'badge badge-green'
+          badge.textContent = '✅ Publicado'
+        }
+        if (btnPublish) {
+          btnPublish.style.display = 'inline-block'
+          btnPublish.disabled = false
+          btnPublish.innerHTML = isFed ? '🔄 Republicar Relatório Consolidado' : '🔄 Republicar Relatório'
+        }
+        if (btnViewPdf) btnViewPdf.style.display = 'inline-block'
+      } else if (status === 'generating') {
+        if (badge) {
+          badge.style.display = 'inline-block'
+          badge.className = 'badge badge-blue'
+          badge.textContent = '⏳ Gerando PDF...'
+        }
+        if (btnPublish) {
+          btnPublish.style.display = 'inline-block'
+          btnPublish.disabled = true
+          btnPublish.innerHTML = '⏳ Gerando...'
+        }
         if (btnViewPdf) btnViewPdf.style.display = 'none'
-        return
-      }
-
-      // Federação com UMP Local selecionada
-      if (isFed && selectedLocalId) {
-        if (btnPreview) btnPreview.style.display = 'none'
-        if (btnPublish) btnPublish.style.display = 'none'
-        if (isPub) {
-          if (badge) {
-            badge.style.display = 'inline-block'
-            badge.className = 'badge badge-green'
-            badge.textContent = '✅ Publicado'
-          }
-          if (btnViewPdf) btnViewPdf.style.display = 'inline-block'
-        } else {
-          if (badge) {
-            badge.style.display = 'inline-block'
-            badge.className = 'badge badge-amber'
-            badge.textContent = '⏳ Não Publicado'
-          }
-          if (btnViewPdf) btnViewPdf.style.display = 'none'
+      } else if (status === 'failed') {
+        if (badge) {
+          badge.style.display = 'inline-block'
+          badge.className = 'badge badge-red'
+          badge.textContent = '❌ Erro ao Gerar'
         }
-        return
-      }
-
-      // Diretoria da UMP Local:
-      if (!isFed) {
-        if (btnPreview) btnPreview.style.display = 'inline-block'
-
-        if (status === 'published' || status === 'publicado') {
-          if (badge) {
-            badge.style.display = 'inline-block'
-            badge.className = 'badge badge-green'
-            badge.textContent = '✅ Publicado'
-          }
-          if (btnPublish) {
-            btnPublish.style.display = 'inline-block'
-            btnPublish.disabled = false
-            btnPublish.innerHTML = '🔄 Republicar Relatório'
-          }
-          if (btnViewPdf) btnViewPdf.style.display = 'inline-block'
-        } else if (status === 'generating') {
-          if (badge) {
-            badge.style.display = 'inline-block'
-            badge.className = 'badge badge-blue'
-            badge.textContent = '⏳ Gerando PDF...'
-          }
-          if (btnPublish) {
-            btnPublish.style.display = 'inline-block'
-            btnPublish.disabled = true
-            btnPublish.innerHTML = '⏳ Gerando...'
-          }
-          if (btnViewPdf) btnViewPdf.style.display = 'none'
-        } else if (status === 'failed') {
-          if (badge) {
-            badge.style.display = 'inline-block'
-            badge.className = 'badge badge-red'
-            badge.textContent = '❌ Erro ao Gerar'
-          }
-          if (btnPublish) {
-            btnPublish.style.display = 'inline-block'
-            btnPublish.disabled = false
-            btnPublish.innerHTML = '⚠️ Tentar Novamente'
-          }
-          if (btnViewPdf) btnViewPdf.style.display = 'none'
-        } else {
-          // draft / rascunho
-          if (badge) {
-            badge.style.display = 'inline-block'
-            badge.className = 'badge badge-slate'
-            badge.textContent = 'Rascunho'
-          }
-          if (btnPublish) {
-            btnPublish.style.display = 'inline-block'
-            btnPublish.disabled = false
-            btnPublish.innerHTML = '🚀 Publicar Relatório'
-          }
-          if (btnViewPdf) btnViewPdf.style.display = 'none'
+        if (btnPublish) {
+          btnPublish.style.display = 'inline-block'
+          btnPublish.disabled = false
+          btnPublish.innerHTML = '⚠️ Tentar Novamente'
         }
+        if (btnViewPdf) btnViewPdf.style.display = 'none'
+      } else {
+        // draft / rascunho
+        if (badge) {
+          badge.style.display = 'inline-block'
+          badge.className = 'badge badge-slate'
+          badge.textContent = 'Rascunho'
+        }
+        if (btnPublish) {
+          btnPublish.style.display = 'inline-block'
+          btnPublish.disabled = false
+          btnPublish.innerHTML = isFed ? '🚀 Publicar Relatório Consolidado' : '🚀 Publicar Relatório'
+        }
+        if (btnViewPdf) btnViewPdf.style.display = 'none'
       }
     }
 

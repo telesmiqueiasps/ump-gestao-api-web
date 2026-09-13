@@ -10,7 +10,8 @@ class UmpStatisticCollector(Base):
     __tablename__ = "ump_statistic_collectors"
 
     id = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
-    local_ump_id = Column(UUID(as_uuid=True), ForeignKey("local_umps.id"), nullable=False)
+    local_ump_id = Column(UUID(as_uuid=True), ForeignKey("local_umps.id"), nullable=True)
+    federation_id = Column(UUID(as_uuid=True), ForeignKey("federations.id"), nullable=True)
     fiscal_year = Column(Integer, nullable=False)
     title = Column(String(200), nullable=False)
     is_active = Column(Boolean, nullable=False, default=True)
@@ -26,6 +27,7 @@ class UmpStatisticCollector(Base):
     )
 
     local_ump = relationship("LocalUmp")
+    federation = relationship("Federation")
     creator = relationship("User")
     responses = relationship("UmpStatisticResponse", back_populates="collector", cascade="all, delete-orphan")
 
