@@ -279,7 +279,12 @@ def sync_collector_members(
     """Sincroniza os membros da UMP Local no coletor do ano."""
     target_year = year or datetime.date.today().year
     resolved_local_id = _resolve_local_ump_id(current_user, db, local_ump_id)
-    _get_or_create_collector_with_sync(resolved_local_id, target_year, db, current_user.id)
+    collector = _get_or_create_collector_with_sync(resolved_local_id, target_year, db, current_user.id)
+    if collector.status in ['published', 'publicado']:
+        raise HTTPException(
+            status_code=400,
+            detail="O relatório estatístico deste ano já foi publicado. Para sincronizar sócios, despublique o relatório primeiro."
+        )
     return {"message": "Sócios sincronizados com sucesso."}
 
 
@@ -305,6 +310,28 @@ def get_ump_statistics_metrics(
     active_locals_count = sum(1 for l in all_locals if l.is_active is True or l.is_active is None)
     inactive_locals_count = sum(1 for l in all_locals if l.is_active is False)
     all_local_ids = [l.id for l in all_locals]
+
+    locals_pub_status = []
+    published_locals_count = 0
+    if is_federation and all_local_ids:
+        collectors_in_year = db.query(UmpStatisticCollector).filter(
+            UmpStatisticCollector.local_ump_id.in_(all_local_ids),
+            UmpStatisticCollector.fiscal_year == target_year
+        ).all()
+        pub_map = {c.local_ump_id: c for c in collectors_in_year}
+        for l in all_locals:
+            col = pub_map.get(l.id)
+            is_pub = (col.status in ['published', 'publicado']) if col else False
+            if is_pub:
+                published_locals_count += 1
+            locals_pub_status.append({
+                "id": str(l.id),
+                "name": l.name,
+                "is_active": (l.is_active is True or l.is_active is None),
+                "is_published": is_pub,
+                "published_at": col.published_at.isoformat() if (col and col.published_at) else None,
+                "validation_code": col.validation_code if (col and is_pub) else None
+            })
 
     collector_ref = None
 
@@ -603,7 +630,9 @@ def get_ump_statistics_metrics(
         "federation_metrics": {
             "total_locals": total_locals,
             "active_locals": active_locals_count,
-            "inactive_locals": inactive_locals_count
+            "inactive_locals": inactive_locals_count,
+            "published_locals_count": published_locals_count,
+            "locals_publication_status": locals_pub_status
         } if is_federation else None,
         "available_locals": [
             {"id": str(l.id), "name": l.name, "is_active": (l.is_active is True or l.is_active is None)}
@@ -657,6 +686,12 @@ def submit_manual_response(
     if current_user.organization_type == OrgType.local_ump and collector.local_ump_id != current_user.organization_id:
         raise HTTPException(status_code=403, detail="Acesso não autorizado a este coletor")
 
+    if collector.status in ['published', 'publicado']:
+        raise HTTPException(
+            status_code=400,
+            detail="O relatório estatístico deste ano está publicado. Para alterar dados ou registrar respostas manuais, despublique o relatório primeiro."
+        )
+
     response.birth_date = payload.birth_date
     response.gender = payload.gender
     response.education_level = payload.education_level
@@ -694,6 +729,7 @@ def get_public_survey_info(token: str, db: Session = Depends(get_db)):
         "society_name": local_ump.name if local_ump else "UMP Local",
         "fiscal_year": collector.fiscal_year,
         "title": collector.title,
+        "is_published": (collector.status in ['published', 'publicado']),
         "has_responded": response.has_responded,
         "responded_at": response.responded_at.isoformat() if response.responded_at else None,
         "answers": {
@@ -718,6 +754,12 @@ def submit_public_survey(token: str, payload: SurveyAnswerPayload, db: Session =
 
     if not response:
         raise HTTPException(status_code=404, detail="Link de formulário inválido ou expirado.")
+
+    if response.collector and response.collector.status in ['published', 'publicado']:
+        raise HTTPException(
+            status_code=400,
+            detail="O relatório estatístico deste ano foi oficialmente publicado pela diretoria e a coleta de dados está encerrada."
+        )
 
     # Validações básicas
     if payload.gender and payload.gender not in VALID_GENDERS:
@@ -883,13 +925,18 @@ def generate_and_publish_ump_statistics_task(
         local_param = organization_id if org_type == 'local_ump' else None
         metrics = get_ump_statistics_metrics(year=year, local_ump_id=local_param, current_user=mock_user, db=db)
 
+        import uuid
+        val_code = collector.validation_code or f"VAL-ESTAT-{year}-" + uuid.uuid4().hex[:8].upper()
+        collector.validation_code = val_code
+
         pdf_bytes = generate_ump_statistics_report(
             org_data=org_data,
             fiscal_year=year,
             metrics=metrics,
             logo_bytes=logo_bytes,
             ipb_logo_bytes=ipb_logo_bytes,
-            b2_client=b2_client
+            b2_client=b2_client,
+            validation_code=val_code
         )
 
         key = f"ump-statistics/{organization_id}/{year}/relatorio_estatistico_{year}.pdf"
@@ -899,7 +946,7 @@ def generate_and_publish_ump_statistics_task(
         collector.status = 'published'
         collector.published_at = datetime.datetime.now(datetime.timezone.utc)
         db.commit()
-        logger.info(f"Relatório estatístico de {year} publicado com sucesso para org {organization_id}")
+        logger.info(f"Relatório estatístico de {year} publicado com sucesso para org {organization_id} (Código: {val_code})")
     except Exception as e:
         logger.error(f"Erro ao gerar relatório estatístico em background para {organization_id} ({year}): {e}")
         try:
@@ -949,6 +996,39 @@ def publish_ump_statistics_report(
     )
 
     return {"detail": "Geração do relatório estatístico iniciada em background", "status": "generating"}
+
+
+@router.post("/report/{year}/unpublish")
+def unpublish_ump_statistics_report(
+    year: int,
+    local_ump_id: Optional[UUID] = Query(default=None),
+    current_user: User = Depends(require_local_or_federation),
+    db: Session = Depends(get_db)
+):
+    target_year = year
+
+    if current_user.organization_type == OrgType.federation and not local_ump_id:
+        collector = db.query(UmpStatisticCollector).filter(
+            UmpStatisticCollector.federation_id == current_user.organization_id,
+            UmpStatisticCollector.fiscal_year == target_year
+        ).first()
+    else:
+        resolved_local_id = _resolve_local_ump_id(current_user, db, local_ump_id)
+        collector = db.query(UmpStatisticCollector).filter(
+            UmpStatisticCollector.local_ump_id == resolved_local_id,
+            UmpStatisticCollector.fiscal_year == target_year
+        ).first()
+
+    if not collector:
+        raise HTTPException(status_code=404, detail="Relatório estatístico não encontrado")
+
+    collector.status = 'draft'
+    collector.report_url = None
+    collector.published_at = None
+    collector.validation_code = None
+    db.commit()
+
+    return {"message": "Relatório estatístico despublicado com sucesso. A coleta de dados foi reaberta para alterações."}
 
 
 @router.get("/report/{year}/published-url")

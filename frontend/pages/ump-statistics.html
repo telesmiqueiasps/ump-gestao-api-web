@@ -555,6 +555,9 @@
             <button class="btn btn-primary btn-sm" id="btn-publish-report" onclick="publishReport()" title="Publicar Relatório para a Federação" style="display:none; background: linear-gradient(135deg, #1a2a6c, #27408b); border: none;">
               🚀 Publicar Relatório
             </button>
+            <button class="btn btn-warning btn-sm" id="btn-unpublish-report" onclick="unpublishReport()" title="Despublicar Relatório para reabrir a coleta de dados" style="display:none; background: #d97706; color: #fff; border: none; font-weight: 700;">
+              🔓 Despublicar Relatório
+            </button>
             <button class="btn btn-secondary btn-sm" id="btn-view-pdf" onclick="viewPublishedPdf()" title="Visualizar PDF Publicado" style="display:none; color: var(--brand-blue, #1a2a6c); border-color: var(--brand-blue, #1a2a6c); font-weight: 700;">
               📄 Ver PDF Publicado
             </button>
@@ -597,6 +600,20 @@
         <!-- SUB-ABA 1: ESTATÍSTICAS GERAIS                          -->
         <!-- ══════════════════════════════════════════════════════════ -->
         <section id="sec-general">
+          <!-- Checklist de Publicação das UMPs Locais (Exclusivo para Federação) -->
+          <div id="card-fed-publication-checklist" class="card" style="display:none; margin-bottom: 1.5rem; background: #ffffff; border: 1.5px solid var(--slate-200); padding: 1.25rem; border-radius: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: .5rem;">
+              <div style="display: flex; align-items: center; gap: .5rem;">
+                <span style="font-size: 1.2rem;">📋</span>
+                <h3 style="font-size: .95rem; font-weight: 700; color: var(--slate-800); margin: 0;">Status de Publicação das UMPs Locais</h3>
+              </div>
+              <span id="fed-pub-count-badge" class="badge" style="background: var(--blue-50); color: var(--blue-700); font-weight: 700; font-size: .78rem; padding: 4px 10px; border-radius: 99px;">0 de 0 publicaram</span>
+            </div>
+            <div id="fed-publication-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.65rem;">
+              <!-- Renderizado via JS -->
+            </div>
+          </div>
+
           <!-- Cards de Resumo Executivo -->
           <div class="stats-summary-grid">
             <!-- Cards Exclusivos para Federação: Locais Ativas e Inativas -->
@@ -765,6 +782,17 @@
         <!-- SUB-ABA 2: COLETOR DE DADOS (MONITORAMENTO E ENVIO)     -->
         <!-- ══════════════════════════════════════════════════════════ -->
         <section id="sec-collector" class="hidden">
+          <!-- Alerta de Coletor Bloqueado quando o relatório está publicado -->
+          <div id="collector-locked-banner" class="card" style="display:none; background: #fffbe6; border: 1.5px solid #ffe58f; padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1.25rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <span style="font-size: 1.5rem;">🔒</span>
+              <div>
+                <h4 style="margin: 0 0 0.2rem 0; color: #873800; font-size: .92rem; font-weight: 700;">Coletor de Dados Bloqueado</h4>
+                <p style="margin: 0; color: #612500; font-size: 0.82rem;">O relatório estatístico deste ano foi oficialmente publicado e não aceita mais novas respostas ou alterações. Para reabrir a coleta, clique no botão <b>"Despublicar Relatório"</b> no topo da página.</p>
+              </div>
+            </div>
+          </div>
+
           <!-- Banner de Status do Coletor -->
           <div class="card"
             style="margin-bottom: 1.25rem; background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%); border-left: 4px solid var(--blue-600);">
@@ -1080,6 +1108,25 @@
         badgePending.style.display = 'none'
       }
 
+      // Bloqueio de Coletor se o relatório estiver publicado
+      const isPub = collectorData ? (collectorData.is_published || collectorData.status === 'published') : false
+      const lockedBanner = document.getElementById('collector-locked-banner')
+      const btnSync = document.getElementById('btn-sync-members')
+      const btnCopyAll = document.getElementById('btn-copy-all-links')
+      const btnWsp = document.getElementById('btn-whatsapp-template')
+
+      if (isPub) {
+        if (lockedBanner) lockedBanner.style.display = 'block'
+        if (btnSync) btnSync.disabled = true
+        if (btnCopyAll) btnCopyAll.disabled = true
+        if (btnWsp) btnWsp.disabled = true
+      } else {
+        if (lockedBanner) lockedBanner.style.display = 'none'
+        if (btnSync) btnSync.disabled = false
+        if (btnCopyAll) btnCopyAll.disabled = false
+        if (btnWsp) btnWsp.disabled = false
+      }
+
       renderCollectorList()
     }
 
@@ -1146,6 +1193,25 @@
       }
     }
 
+    window.unpublishReport = async function () {
+      if (!confirm('Deseja despublicar este relatório estatístico? O coletor de dados será reaberto para receber novas respostas e edições.')) return
+      let url = `/api/ump-statistics/report/${selectedYear}/unpublish`
+      if (selectedLocalId) url += `?local_ump_id=${selectedLocalId}`
+
+      try {
+        const btnUnpub = document.getElementById('btn-unpublish-report')
+        if (btnUnpub) btnUnpub.disabled = true
+
+        await api.post(url)
+        alert('Relatório despublicado com sucesso! A coleta de dados foi reaberta.')
+        await loadAllData()
+      } catch (err) {
+        alert(err.message || 'Erro ao despublicar relatório estatístico.')
+        const btnUnpub = document.getElementById('btn-unpublish-report')
+        if (btnUnpub) btnUnpub.disabled = false
+      }
+    }
+
     function renderReportStatus(data) {
       const isFed = isFederation()
       const isPub = data ? (data.is_published || data.collector_status === 'published') : false
@@ -1153,6 +1219,7 @@
 
       const badge = document.getElementById('status-badge')
       const btnPublish = document.getElementById('btn-publish-report')
+      const btnUnpublish = document.getElementById('btn-unpublish-report')
       const btnViewPdf = document.getElementById('btn-view-pdf')
       const fedAlert = document.getElementById('federation-not-published-alert')
       const secGeneral = document.getElementById('sec-general')
@@ -1166,10 +1233,10 @@
           badge.className = 'badge badge-green'
           badge.textContent = '✅ Publicado'
         }
-        if (btnPublish) {
-          btnPublish.style.display = 'inline-block'
-          btnPublish.disabled = false
-          btnPublish.innerHTML = isFed ? '🔄 Republicar Relatório Consolidado' : '🔄 Republicar Relatório'
+        if (btnPublish) btnPublish.style.display = 'none'
+        if (btnUnpublish) {
+          btnUnpublish.style.display = 'inline-block'
+          btnUnpublish.disabled = false
         }
         if (btnViewPdf) btnViewPdf.style.display = 'inline-block'
       } else if (status === 'generating') {
@@ -1183,6 +1250,7 @@
           btnPublish.disabled = true
           btnPublish.innerHTML = '⏳ Gerando...'
         }
+        if (btnUnpublish) btnUnpublish.style.display = 'none'
         if (btnViewPdf) btnViewPdf.style.display = 'none'
       } else if (status === 'failed') {
         if (badge) {
@@ -1195,6 +1263,7 @@
           btnPublish.disabled = false
           btnPublish.innerHTML = '⚠️ Tentar Novamente'
         }
+        if (btnUnpublish) btnUnpublish.style.display = 'none'
         if (btnViewPdf) btnViewPdf.style.display = 'none'
       } else {
         // draft / rascunho
@@ -1208,6 +1277,7 @@
           btnPublish.disabled = false
           btnPublish.innerHTML = isFed ? '🚀 Publicar Relatório Consolidado' : '🚀 Publicar Relatório'
         }
+        if (btnUnpublish) btnUnpublish.style.display = 'none'
         if (btnViewPdf) btnViewPdf.style.display = 'none'
       }
     }
@@ -1217,14 +1287,59 @@
       // Cards específicos para Federação (Locais Ativas e Inativas)
       const cardActive = document.getElementById('card-fed-active-locals')
       const cardInactive = document.getElementById('card-fed-inactive-locals')
+      const checklistCard = document.getElementById('card-fed-publication-checklist')
+      const checklistList = document.getElementById('fed-publication-list')
+      const pubCountBadge = document.getElementById('fed-pub-count-badge')
+
       if (data.is_federation && data.federation_metrics) {
         if (cardActive) cardActive.style.display = 'flex'
         if (cardInactive) cardInactive.style.display = 'flex'
         document.getElementById('stat-fed-active-locals').textContent = data.federation_metrics.active_locals ?? 0
         document.getElementById('stat-fed-inactive-locals').textContent = data.federation_metrics.inactive_locals ?? 0
+
+        // Checklist de publicação das UMPs Locais
+        if (data.federation_metrics.locals_publication_status) {
+          if (checklistCard) checklistCard.style.display = 'block'
+          const pubStatus = data.federation_metrics.locals_publication_status
+          const pubCount = data.federation_metrics.published_locals_count || 0
+          const totalLoc = data.federation_metrics.total_locals || 0
+
+          if (pubCountBadge) pubCountBadge.textContent = `${pubCount} de ${totalLoc} publicaram`
+
+          if (checklistList) {
+            checklistList.innerHTML = pubStatus.map(item => {
+              if (item.is_published) {
+                const dt = item.published_at ? new Date(item.published_at).toLocaleDateString('pt-BR') : ''
+                const codeTxt = item.validation_code ? ` · ${item.validation_code}` : ''
+                return `
+                  <div style="display:flex; align-items:center; gap:.5rem; font-size:.82rem; color:var(--slate-700); background:#f0fdf4; border:1px solid #bbf7d0; padding:.5rem .75rem; border-radius:8px;">
+                    <span style="color:#16a34a; font-weight:700; font-size:1rem;">☑️</span>
+                    <div style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                      <div style="font-weight:700; color:var(--slate-800);">${item.name}</div>
+                      <div style="font-size:.72rem; color:#15803d;">Publicado em ${dt}${codeTxt}</div>
+                    </div>
+                  </div>
+                `
+              } else {
+                return `
+                  <div style="display:flex; align-items:center; gap:.5rem; font-size:.82rem; color:var(--slate-500); background:#f8fafc; border:1px solid #e2e8f0; padding:.5rem .75rem; border-radius:8px;">
+                    <span style="color:var(--slate-400); font-size:1rem;">⬜</span>
+                    <div style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                      <div style="font-weight:600; color:var(--slate-600);">${item.name}</div>
+                      <div style="font-size:.72rem; color:var(--slate-400);">Pendente de publicação</div>
+                    </div>
+                  </div>
+                `
+              }
+            }).join('')
+          }
+        } else {
+          if (checklistCard) checklistCard.style.display = 'none'
+        }
       } else {
         if (cardActive) cardActive.style.display = 'none'
         if (cardInactive) cardInactive.style.display = 'none'
+        if (checklistCard) checklistCard.style.display = 'none'
       }
 
       document.getElementById('stat-total-registered').textContent = data.total_registered || 0

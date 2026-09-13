@@ -41,6 +41,7 @@ try:
         conn.execute(text("ALTER TABLE ump_statistic_collectors ADD COLUMN IF NOT EXISTS published_at TIMESTAMP WITH TIME ZONE;"))
         conn.execute(text("ALTER TABLE ump_statistic_collectors ALTER COLUMN local_ump_id DROP NOT NULL;"))
         conn.execute(text("ALTER TABLE ump_statistic_collectors ADD COLUMN IF NOT EXISTS federation_id UUID;"))
+        conn.execute(text("ALTER TABLE ump_statistic_collectors ADD COLUMN IF NOT EXISTS validation_code VARCHAR(64);"))
 except Exception as e:
     import logging
     logging.getLogger("uvicorn").error(f"Error creating database tables or migrating columns: {e}")

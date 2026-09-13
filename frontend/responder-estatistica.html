@@ -569,6 +569,13 @@
       document.getElementById('member-welcome-name').textContent = `Olá, ${data.member_name}! 👋`
       document.getElementById('society-welcome-name').textContent = data.society_name || 'sua UMP Local'
 
+      if (data.is_published) {
+        showError('🔒 O relatório estatístico deste ano foi oficialmente publicado pela diretoria da UMP Local e o período de coleta de dados está encerrado.')
+        document.getElementById('census-form')?.classList.add('hidden')
+        document.getElementById('success-state')?.classList.add('hidden')
+        return
+      }
+
       // Se já respondeu anteriormente, mostra tela de agradecimento mas permite editar
       if (data.has_responded) {
         document.getElementById('success-state').classList.remove('hidden')

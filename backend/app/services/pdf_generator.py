@@ -2763,6 +2763,7 @@ def generate_ump_statistics_report(
     logo_bytes: bytes = None,
     ipb_logo_bytes: bytes = None,
     b2_client = None,
+    validation_code: str = None
 ) -> bytes:
     """Gera o Relatório Estatístico UMP em formato PDF oficial (A4)."""
     buf = io.BytesIO()
@@ -2818,9 +2819,12 @@ def generate_ump_statistics_report(
         canvas_obj.setStrokeColor(GRAY_LINE)
         canvas_obj.setLineWidth(0.5)
         canvas_obj.line(ML, 13*mm, A4[0]-MR, 13*mm)
-        canvas_obj.setFont("Helvetica", 8)
+        canvas_obj.setFont("Helvetica", 7.5)
         canvas_obj.setFillColor(GRAY_TXT)
-        canvas_obj.drawString(ML, 8*mm, f"Gerado em {datetime.datetime.now().strftime('%d/%m/%Y às %H:%M')} — SIGES UMP")
+        footer_str = f"Gerado em {datetime.datetime.now().strftime('%d/%m/%Y às %H:%M')} — SIGES UMP"
+        if validation_code:
+            footer_str += f" · Autenticidade: {validation_code}"
+        canvas_obj.drawString(ML, 8*mm, footer_str)
         canvas_obj.drawRightString(A4[0]-MR, 8*mm, f"Página {doc_obj.page}")
         canvas_obj.restoreState()
 
