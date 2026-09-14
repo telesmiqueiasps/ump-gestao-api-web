@@ -3208,6 +3208,7 @@ def generate_commission_report(
     approval_date: str = None,
     presbytery_name: str = None,
     federation_name: str = None,
+    validation_code: str = None,
     is_preview: bool = False
 ) -> bytes:
     """Generates official or preview PDF for Congress Commission Report (Images 1 & 2 layout)."""
@@ -3359,7 +3360,9 @@ def generate_commission_report(
         canvas_obj.setFont("Helvetica", 7.5)
         canvas_obj.setFillColor(colors.HexColor('#64748b'))
         foot_str = f"Gerado em {datetime.datetime.now().strftime('%d/%m/%Y às %H:%M')} — SIGES UMP"
-        if not is_preview:
+        if validation_code:
+            foot_str += f" · Autenticidade: {validation_code}"
+        elif not is_preview:
             foot_str += " · Documento Oficial Aprovado"
         else:
             foot_str += " · Prévia para Conferência"

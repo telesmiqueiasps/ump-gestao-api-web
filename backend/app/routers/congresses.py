@@ -93,6 +93,7 @@ def _serialize_commission(comm: CongressCommission) -> dict:
         "access_token": comm.access_token,
         "opinion_report": comm.opinion_report or "",
         "approval_date": comm.approval_date,
+        "validation_code": comm.validation_code,
         "status": comm.status or "em_elaboracao",
         "final_report_url": _presign_url_if_needed(comm.final_report_url),
         "approved_at": comm.approved_at.isoformat() if comm.approved_at else None,
@@ -756,6 +757,7 @@ def preview_commission_pdf_admin(
         approval_date=comm.approval_date,
         presbytery_name=fed.presbytery_name if fed else None,
         federation_name=fed.name if fed else None,
+        validation_code=comm.validation_code,
         is_preview=True
     )
 
@@ -774,10 +776,11 @@ def approve_commission_opinion(
 ):
     """
     Aprova oficialmente o parecer da comissão pela diretoria da federação:
-    1. Compila o PDF oficial (sem marca d'água de prévia).
-    2. Faz upload para o Cloudflare R2.
-    3. Bloqueia a comissão para novas edições (status='aprovado').
-    4. Grava url do parecer oficial, data e usuário que aprovou.
+    1. Gera código aleatório único de autenticidade (VAL-COM-YYYY-XXXXXXXX).
+    2. Compila o PDF oficial com autenticidade no rodapé (sem marca d'água de prévia).
+    3. Faz upload para o Cloudflare R2.
+    4. Bloqueia a comissão para novas edições (status='aprovado').
+    5. Grava url do parecer oficial, data, código de autenticidade e usuário que aprovou.
     """
     comm = db.query(CongressCommission).join(Congress).filter(
         CongressCommission.id == commission_id,
@@ -792,6 +795,12 @@ def approve_commission_opinion(
     congress = comm.congress
     fed = db.query(Federation).filter(Federation.id == congress.federation_id).first() if congress else None
 
+    # Gerar código de validação único
+    year = congress.fiscal_year if congress else datetime.utcnow().year
+    import uuid as _uuid
+    val_code = comm.validation_code or f"VAL-COM-{year}-{_uuid.uuid4().hex[:8].upper()}"
+    comm.validation_code = val_code
+
     # Gerar PDF Oficial (is_preview=False)
     pdf_bytes = generate_commission_report(
         congress_title=congress.title if congress else "Congresso Ordinário",
@@ -802,6 +811,7 @@ def approve_commission_opinion(
         approval_date=comm.approval_date,
         presbytery_name=fed.presbytery_name if fed else None,
         federation_name=fed.name if fed else None,
+        validation_code=val_code,
         is_preview=False
     )
 
@@ -909,6 +919,7 @@ def preview_public_commission_pdf(
         approval_date=comm.approval_date,
         presbytery_name=fed.presbytery_name if fed else None,
         federation_name=fed.name if fed else None,
+        validation_code=comm.validation_code,
         is_preview=True
     )
 

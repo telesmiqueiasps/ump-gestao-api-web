@@ -767,6 +767,7 @@
           <div class="locked-banner-text">
             <h3><span>✓</span> Parecer Homologado e Aprovado</h3>
             <p>Este relatório foi oficialmente aprovado pela diretoria da federação e está bloqueado para edições.</p>
+            <p id="locked-banner-val-code" style="display:none; font-family:monospace; font-size:.78rem; font-weight:700; color:#065f46; margin-top:.35rem;"></p>
           </div>
           <a id="btn-download-pdf-banner" href="#" target="_blank" class="btn-download-official">
             📄 Baixar Parecer Oficial (PDF)
@@ -1038,6 +1039,13 @@
       // Bloqueio se já Aprovado Oficialmente
       if (comm.status === 'aprovado' || comm.is_locked) {
         document.getElementById('locked-banner').style.display = 'flex'
+        if (comm.validation_code) {
+          const valEl = document.getElementById('locked-banner-val-code')
+          if (valEl) {
+            valEl.textContent = `Código de Autenticidade: ${comm.validation_code}`
+            valEl.style.display = 'block'
+          }
+        }
         if (comm.final_report_url) {
           document.getElementById('btn-download-pdf-banner').href = comm.final_report_url
           const btnBottom = document.getElementById('btn-approved-pdf-bottom')

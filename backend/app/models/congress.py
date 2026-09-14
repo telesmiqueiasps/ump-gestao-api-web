@@ -46,6 +46,7 @@ class CongressCommission(Base):
     # Status e Aprovação Oficial pela Diretoria
     status = Column(String(30), nullable=False, default="em_andamento")  # em_andamento, aprovado
     approval_date = Column(Date, nullable=True)
+    validation_code = Column(String(64), nullable=True)
     final_report_url = Column(Text, nullable=True)
     approved_at = Column(DateTime, nullable=True)
     approved_by = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)

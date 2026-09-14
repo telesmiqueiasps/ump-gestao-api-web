@@ -873,7 +873,10 @@
                 <span style="font-size:.78rem; font-weight:600; color:var(--slate-600)">Status do Parecer:</span>
                 <div>
                   ${comm.status === 'aprovado'
-                    ? '<span style="display:inline-flex; align-items:center; gap:.25rem; font-size:.75rem; font-weight:700; color:#15803d; background:#dcfce7; border:1px solid #86efac; border-radius:99px; padding:2px 8px;">✓ Aprovado Oficialmente</span>'
+                    ? `<div style="text-align:right;">
+                         <span style="display:inline-flex; align-items:center; gap:.25rem; font-size:.75rem; font-weight:700; color:#15803d; background:#dcfce7; border:1px solid #86efac; border-radius:99px; padding:2px 8px;">✓ Aprovado Oficialmente</span>
+                         ${comm.validation_code ? `<div style="font-size:.68rem; font-family:monospace; color:var(--slate-500); margin-top:2px;">Autenticidade: ${comm.validation_code}</div>` : ''}
+                       </div>`
                     : comm.has_opinion
                       ? '<span style="display:inline-flex; align-items:center; gap:.25rem; font-size:.75rem; font-weight:700; color:#1d4ed8; background:#eff6ff; border:1px solid #bfdbfe; border-radius:99px; padding:2px 8px;">✍️ Redigido (Em análise)</span>'
                       : '<span style="font-size:.75rem; color:var(--slate-400); font-style:italic">⏳ Aguardando confecção</span>'

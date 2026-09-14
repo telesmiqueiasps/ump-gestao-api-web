@@ -42,6 +42,12 @@ try:
         conn.execute(text("ALTER TABLE ump_statistic_collectors ALTER COLUMN local_ump_id DROP NOT NULL;"))
         conn.execute(text("ALTER TABLE ump_statistic_collectors ADD COLUMN IF NOT EXISTS federation_id UUID;"))
         conn.execute(text("ALTER TABLE ump_statistic_collectors ADD COLUMN IF NOT EXISTS validation_code VARCHAR(64);"))
+        conn.execute(text("ALTER TABLE congress_commissions ADD COLUMN IF NOT EXISTS validation_code VARCHAR(64);"))
+        conn.execute(text("ALTER TABLE congress_commissions ADD COLUMN IF NOT EXISTS status VARCHAR(30) DEFAULT 'em_elaboracao';"))
+        conn.execute(text("ALTER TABLE congress_commissions ADD COLUMN IF NOT EXISTS approval_date DATE;"))
+        conn.execute(text("ALTER TABLE congress_commissions ADD COLUMN IF NOT EXISTS final_report_url TEXT;"))
+        conn.execute(text("ALTER TABLE congress_commissions ADD COLUMN IF NOT EXISTS approved_at TIMESTAMP WITH TIME ZONE;"))
+        conn.execute(text("ALTER TABLE congress_commissions ADD COLUMN IF NOT EXISTS approved_by UUID;"))
 except Exception as e:
     import logging
     logging.getLogger("uvicorn").error(f"Error creating database tables or migrating columns: {e}")
