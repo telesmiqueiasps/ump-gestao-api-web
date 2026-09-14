@@ -11,7 +11,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
   <style>
-    *, *::before, *::after {
+    *,
+    *::before,
+    *::after {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
@@ -422,7 +424,8 @@
       text-indent: 0;
     }
 
-    .editor-content ul, .editor-content ol {
+    .editor-content ul,
+    .editor-content ol {
       margin-left: 2rem;
       margin-bottom: .85rem;
       text-indent: 0;
@@ -499,7 +502,7 @@
 
     .approval-date-input:focus {
       border-color: #2563eb;
-      box-shadow: 0 0 0 2px rgba(37,99,235,0.2);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
     }
 
     /* ── Banner de Parecer Aprovado / Bloqueado ── */
@@ -546,7 +549,7 @@
       display: inline-flex;
       align-items: center;
       gap: .5rem;
-      box-shadow: 0 2px 4px rgba(16,185,129,0.2);
+      box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
       transition: all .15s;
     }
 
@@ -579,8 +582,15 @@
     }
 
     @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: .4; }
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: .4;
+      }
     }
 
     /* Ações inferiores */
@@ -610,14 +620,20 @@
       background: var(--brand-accent);
       color: #fff;
     }
-    .btn-primary:hover { background: #1d4ed8; }
+
+    .btn-primary:hover {
+      background: #1d4ed8;
+    }
 
     .btn-secondary {
       background: #fff;
       color: var(--slate-700);
       border-color: var(--slate-300);
     }
-    .btn-secondary:hover { background: var(--slate-50); }
+
+    .btn-secondary:hover {
+      background: var(--slate-50);
+    }
 
     /* Estado de Erro / Loading */
     .state-box {
@@ -684,7 +700,8 @@
       }
     }
 
-    .print-timbre, .print-signatures {
+    .print-timbre,
+    .print-signatures {
       display: none;
     }
   </style>
@@ -711,7 +728,7 @@
     <div id="commission-content" style="display:none">
       <!-- Cabeçalho Institucional -->
       <header class="header-card">
-        <img src="/assets/img/ump_logo.png" onerror="this.src='/assets/img/logo.png'" class="logo-img" alt="Logo UMP" />
+        <img src="/assets/img/logo_parecer.png" onerror="this.src='assets/img/logo_parecer.png'" class="logo-img" alt="Logo Parecer" />
         <div class="fed-title" id="fed-name-label">Federação de Mocidades Presbiterianas</div>
         <h1 class="congress-title" id="congress-title-label">XXXII Congresso Ordinário</h1>
         <div class="commission-badge-title" id="commission-title-label">Comissão de Planos e Metas</div>
@@ -719,20 +736,23 @@
 
       <!-- Timbre para impressão -->
       <div class="print-timbre">
-        <h2 id="print-fed-name" style="font-size:12pt; text-transform:uppercase;">Federação de Mocidades Presbiterianas</h2>
-        <h1 id="print-congress-title" style="font-size:14pt; font-weight:bold; margin:.2rem 0;">XXXII Congresso Ordinário</h1>
-        <h3 id="print-comm-title" style="font-size:12pt; font-weight:bold; margin-top:.3rem;">Relatório e Parecer da Comissão</h3>
+        <h2 id="print-fed-name" style="font-size:12pt; text-transform:uppercase;">Federação de Mocidades Presbiterianas
+        </h2>
+        <h1 id="print-congress-title" style="font-size:14pt; font-weight:bold; margin:.2rem 0;">XXXII Congresso
+          Ordinário</h1>
+        <h3 id="print-comm-title" style="font-size:12pt; font-weight:bold; margin-top:.3rem;">Relatório e Parecer da
+          Comissão</h3>
       </div>
 
       <!-- 1. Composição da Comissão -->
       <section class="content-card">
         <div class="card-title-row">
-          <div class="card-title">👥 Composição da Comissão</div>
+          <div class="card-title">Composição da Comissão</div>
         </div>
 
         <div class="members-wrap">
           <div class="relator-highlight">
-            <div class="relator-icon">👑</div>
+            <div class="relator-icon"></div>
             <div>
               <div class="relator-label">Relator da Comissão</div>
               <div class="relator-name" id="relator-name-label">Não definido</div>
@@ -740,7 +760,8 @@
           </div>
 
           <div>
-            <span style="font-size:.78rem; font-weight:700; color:var(--slate-500); text-transform:uppercase;">Membros Integrantes</span>
+            <span style="font-size:.78rem; font-weight:700; color:var(--slate-500); text-transform:uppercase;">Membros
+              Integrantes</span>
             <div class="other-members-list" id="members-list-container">
               <!-- Renderizado via JS -->
             </div>
@@ -767,7 +788,9 @@
           <div class="locked-banner-text">
             <h3><span>✓</span> Parecer Homologado e Aprovado</h3>
             <p>Este relatório foi oficialmente aprovado pela diretoria da federação e está bloqueado para edições.</p>
-            <p id="locked-banner-val-code" style="display:none; font-family:monospace; font-size:.78rem; font-weight:700; color:#065f46; margin-top:.35rem;"></p>
+            <p id="locked-banner-val-code"
+              style="display:none; font-family:monospace; font-size:.78rem; font-weight:700; color:#065f46; margin-top:.35rem;">
+            </p>
           </div>
           <a id="btn-download-pdf-banner" href="#" target="_blank" class="btn-download-official">
             📄 Baixar Parecer Oficial (PDF)
@@ -775,21 +798,23 @@
         </div>
 
         <div class="card-title-row">
-          <div class="card-title">✍️ Parecer da Comissão</div>
+          <div class="card-title">Parecer da Comissão</div>
           <div class="save-status-badge" id="save-status">
             <span>✓ Salvo</span>
           </div>
         </div>
 
         <p style="font-size:.82rem; color:var(--slate-500); margin-bottom:1rem;">
-          Utilize o espaço abaixo para redigir o relatório e parecer da comissão. O texto é mantido justificado e salvo automaticamente em tempo real.
+          Utilize o espaço abaixo para redigir o relatório e parecer da comissão. O texto é mantido justificado e salvo
+          automaticamente em tempo real.
         </p>
 
         <!-- Timbre Institucional Oficial (Layout Imagem 1) -->
         <div class="official-timbre-preview">
           <div class="timbre-top-row">
             <div style="width:130px; display:flex; align-items:center;">
-              <img src="/assets/img/logo_parecer.png" onerror="this.src='assets/img/logo_parecer.png'" class="timbre-logo" alt="Logo Parecer" />
+              <img src="/assets/img/logo_parecer.png" onerror="this.src='assets/img/logo_parecer.png'"
+                class="timbre-logo" alt="Logo Parecer" />
             </div>
             <div class="timbre-meta">
               <h4>IGREJA PRESBITERIANA DO BRASIL</h4>
@@ -809,7 +834,8 @@
           <!-- Tamanho da Fonte -->
           <button type="button" class="tool-btn" onclick="stepFontSize(-1)" title="Diminuir Fonte (A-)">A-</button>
           <button type="button" class="tool-btn" onclick="stepFontSize(1)" title="Aumentar Fonte (A+)">A+</button>
-          <select id="font-size-select" class="tool-select" onchange="changeFontSize(this.value)" title="Tamanho da Fonte">
+          <select id="font-size-select" class="tool-select" onchange="changeFontSize(this.value)"
+            title="Tamanho da Fonte">
             <option value="13px">13px</option>
             <option value="14px">14px</option>
             <option value="15px" selected>15px (Padrão)</option>
@@ -819,9 +845,12 @@
           <span class="tool-separator"></span>
 
           <!-- Estrutura de Texto -->
-          <button type="button" class="tool-btn" onclick="formatDoc('formatBlock', '<p>')" title="Parágrafo Normal">P</button>
-          <button type="button" class="tool-btn" onclick="formatDoc('formatBlock', '<h2>')" title="Título Maior">H2</button>
-          <button type="button" class="tool-btn" onclick="formatDoc('formatBlock', '<h3>')" title="Subtítulo">H3</button>
+          <button type="button" class="tool-btn" onclick="formatDoc('formatBlock', '<p>')"
+            title="Parágrafo Normal">P</button>
+          <button type="button" class="tool-btn" onclick="formatDoc('formatBlock', '<h2>')"
+            title="Título Maior">H2</button>
+          <button type="button" class="tool-btn" onclick="formatDoc('formatBlock', '<h3>')"
+            title="Subtítulo">H3</button>
           <span class="tool-separator"></span>
 
           <!-- Estilos Básicos -->
@@ -831,22 +860,31 @@
           <span class="tool-separator"></span>
 
           <!-- Justificar & Recuo de Parágrafo -->
-          <button type="button" class="tool-btn" onclick="formatDoc('justifyFull')" title="Alinhar Justificado (Padrão)">≡ Justificar</button>
-          <button type="button" class="tool-btn" onclick="formatDoc('indent')" title="Aumentar Recuo (Parágrafo)">⇥ Recuo</button>
-          <button type="button" class="tool-btn" onclick="formatDoc('outdent')" title="Diminuir Recuo">⇤ Reduzir</button>
+          <button type="button" class="tool-btn" onclick="formatDoc('justifyFull')"
+            title="Alinhar Justificado (Padrão)">≡ Justificar</button>
+          <button type="button" class="tool-btn" onclick="formatDoc('indent')" title="Aumentar Recuo (Parágrafo)">⇥
+            Recuo</button>
+          <button type="button" class="tool-btn" onclick="formatDoc('outdent')" title="Diminuir Recuo">⇤
+            Reduzir</button>
           <span class="tool-separator"></span>
 
           <!-- Listas e Citações -->
-          <button type="button" class="tool-btn" onclick="formatDoc('insertUnorderedList')" title="Tópicos / Marcadores">• Lista</button>
-          <button type="button" class="tool-btn" onclick="formatDoc('insertOrderedList')" title="Numeração">1. Lista</button>
-          <button type="button" class="tool-btn" onclick="formatDoc('formatBlock', '<blockquote>')" title="Citação">“ Citação</button>
+          <button type="button" class="tool-btn" onclick="formatDoc('insertUnorderedList')"
+            title="Tópicos / Marcadores">• Lista</button>
+          <button type="button" class="tool-btn" onclick="formatDoc('insertOrderedList')" title="Numeração">1.
+            Lista</button>
+          <button type="button" class="tool-btn" onclick="formatDoc('formatBlock', '<blockquote>')" title="Citação">“
+            Citação</button>
           <span class="tool-separator"></span>
 
-          <button type="button" class="tool-btn" onclick="formatDoc('removeFormat')" title="Limpar Formatação">✕ Limpar</button>
+          <button type="button" class="tool-btn" onclick="formatDoc('removeFormat')" title="Limpar Formatação">✕
+            Limpar</button>
         </div>
 
         <!-- Área de Escrita -->
-        <div id="editor" class="editor-content" contenteditable="true" placeholder="Redija aqui o parecer da comissão (considerações, deliberações e recomendações ao plenário)..."></div>
+        <div id="editor" class="editor-content" contenteditable="true"
+          placeholder="Redija aqui o parecer da comissão (considerações, deliberações e recomendações ao plenário)...">
+        </div>
 
         <!-- Campo de Data de Aprovação e Prévia do Encerramento (Imagem 2) -->
         <div class="approval-date-wrapper" id="approval-date-container">
@@ -854,7 +892,8 @@
             📅 Data de Aprovação do Parecer:
           </label>
           <input type="date" id="approval-date-input" class="approval-date-input" onchange="onApprovalDateChange()" />
-          <span style="font-size:.78rem; color:#2563eb;">(Preenchida pelo relator para constar no encerramento oficial do relatório)</span>
+          <span style="font-size:.78rem; color:#2563eb;">(Preenchida pelo relator para constar no encerramento oficial
+            do relatório)</span>
         </div>
 
         <div class="signoff-box" id="signoff-box-preview">
@@ -875,14 +914,12 @@
             Última alteração: nunca
           </div>
           <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
-            <button type="button" class="btn btn-secondary" onclick="copyOpinionText()">
-              📋 Copiar Texto
-            </button>
             <button type="button" class="btn btn-primary" onclick="openPdfPreview()">
-              👁️ Ver Prévia do Relatório
+              Ver Prévia do Relatório
             </button>
-            <a id="btn-approved-pdf-bottom" href="#" target="_blank" class="btn btn-primary" style="display:none; background:#10b981; border-color:#10b981;">
-              📄 Baixar Parecer Oficial (PDF)
+            <a id="btn-approved-pdf-bottom" href="#" target="_blank" class="btn btn-primary"
+              style="display:none; background:#10b981; border-color:#10b981;">
+              Baixar Parecer Oficial (PDF)
             </a>
           </div>
         </div>
@@ -1075,7 +1112,7 @@
     function renderPrintSignatures(comm) {
       const sigContainer = document.getElementById('print-signatures-area')
       let html = '<div style="text-align:center; margin-top:3rem;">'
-      
+
       if (comm.relator_name) {
         html += `
           <div class="sig-line">
@@ -1179,15 +1216,6 @@
 
     window.openPdfPreview = function () {
       window.open(`${API_BASE}/api/congresses/public/commission/${token}/preview-pdf`, '_blank')
-    }
-
-    window.copyOpinionText = function () {
-      const text = document.getElementById('editor').innerText
-      navigator.clipboard.writeText(text).then(() => {
-        alert('Texto do parecer copiado!')
-      }).catch(() => {
-        alert('Não foi possível copiar automaticamente.')
-      })
     }
 
     function showError(msg) {
