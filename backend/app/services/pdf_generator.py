@@ -3141,6 +3141,64 @@ def _format_commission_date(dt_input):
         return "___ de ____________ de ______"
 
 
+_COMMISSION_LOGO_BYTES = None
+
+def _get_commission_logo_flowable():
+    """Obtém o flowable da logo do cabeçalho institucional (logo_parecer.png)."""
+    global _COMMISSION_LOGO_BYTES
+    if _COMMISSION_LOGO_BYTES is None:
+        candidate_paths = [
+            # 1. Caminho dentro do backend (Docker container / local)
+            os.path.join(os.path.dirname(__file__), '..', 'assets', 'logo_parecer.png'),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'assets', 'logo_parecer.png'),
+            '/app/app/assets/logo_parecer.png',
+            # 2. Caminhos na raiz do projeto / frontend
+            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), 'backend', 'app', 'assets', 'logo_parecer.png'),
+            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), 'frontend', 'assets', 'img', 'logo_parecer.png'),
+            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), 'frontend', 'img', 'logo_parecer.png'),
+        ]
+        for p in candidate_paths:
+            try:
+                if os.path.exists(p):
+                    with open(p, 'rb') as f:
+                        _COMMISSION_LOGO_BYTES = f.read()
+                        logger.info("Carregada logo_parecer de %s (%d bytes)", p, len(_COMMISSION_LOGO_BYTES))
+                        break
+            except Exception as e:
+                logger.warning("Falha ao ler logo de %s: %s", p, e)
+
+        # 3. Fallback remoto via Cloudflare R2 presigned URL
+        if not _COMMISSION_LOGO_BYTES:
+            try:
+                import urllib.request
+                from app.services.storage import get_presigned_url
+                signed_url = get_presigned_url("assets/logo_parecer.png", expires_in=3600)
+                with urllib.request.urlopen(signed_url, timeout=6) as resp:
+                    if resp.status == 200:
+                        _COMMISSION_LOGO_BYTES = resp.read()
+                        logger.info("Carregada logo_parecer via R2 (%d bytes)", len(_COMMISSION_LOGO_BYTES))
+            except Exception as e:
+                logger.warning("Falha ao buscar logo_parecer no R2: %s", e)
+
+        # 4. Fallback local para ipb_logo.png
+        if not _COMMISSION_LOGO_BYTES:
+            ipb_p = os.path.join(os.path.dirname(__file__), '..', 'assets', 'ipb_logo.png')
+            if os.path.exists(ipb_p):
+                try:
+                    with open(ipb_p, 'rb') as f:
+                        _COMMISSION_LOGO_BYTES = f.read()
+                except Exception:
+                    pass
+
+    if _COMMISSION_LOGO_BYTES:
+        try:
+            return Image(io.BytesIO(_COMMISSION_LOGO_BYTES), width=52*mm, height=28.5*mm)
+        except Exception as e:
+            logger.warning("Falha ao criar Image ReportLab para logo_parecer: %s", e)
+
+    return Paragraph("<b><font size=16 color='#0f172a'>UMP</font></b>", ParagraphStyle('NoLogo', alignment=TA_CENTER))
+
+
 def generate_commission_report(
     congress_title: str,
     commission_name: str,
@@ -3167,24 +3225,7 @@ def generate_commission_report(
     story = []
 
     # 1. Header Table (Image 1 layout)
-    # Search for logo_parecer.png
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-    logo_paths = [
-        os.path.join(base_dir, 'frontend', 'assets', 'img', 'logo_parecer.png'),
-        os.path.join(base_dir, 'frontend', 'img', 'logo_parecer.png'),
-        os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', 'frontend', 'assets', 'img', 'logo_parecer.png'),
-    ]
-    logo_path = None
-    for lp in logo_paths:
-        if os.path.exists(lp):
-            logo_path = lp
-            break
-
-    if logo_path:
-        # 1695x928 (ratio ~1.82:1) -> 52mm width, 28.5mm height
-        logo_img = Image(logo_path, width=52*mm, height=28.5*mm)
-    else:
-        logo_img = Paragraph("<b><font size=16 color='#0f172a'>UMP</font></b>", ParagraphStyle('NoLogo', alignment=TA_CENTER))
+    logo_img = _get_commission_logo_flowable()
 
     ipb_title = "IGREJA PRESBITERIANA DO BRASIL"
     presb_str = presbytery_name or "PRESBITÉRIO OESTE DA PARAÍBA"
