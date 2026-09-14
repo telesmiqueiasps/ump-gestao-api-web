@@ -95,7 +95,7 @@ const NAV_ITEMS = [
   {
     page: 'congressos',
     label: 'Congressos',
-    icon: '🏛️',
+    icon: '/assets/img/congressos.png',
     path: '/pages/congressos.html',
     fedOnly: true,
     roles: ['presidente', 'vice_presidente', 'tesoureiro',

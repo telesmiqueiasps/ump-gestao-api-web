@@ -65,7 +65,7 @@ const NAV_ITEMS = [
     roles: null
   },
   {
-    page: 'congressos', label: 'Congressos', icon: '🏛️',
+    page: 'congressos', label: 'Congressos', icon: '/assets/img/congressos.png',
     path: '/pages/congressos.html',
     fedOnly: true,
     roles: ['presidente','vice_presidente','1_secretario','2_secretario','secretario_executivo','conselheiro','secretario_presbiterial']
@@ -105,12 +105,17 @@ export function renderShell() {
       if (item.roles === null) return true
       return item.roles.some(r => userRoles.includes(r))
     })
-    .map(item => `
-      <button class="nav-item" data-page="${item.page}" onclick="navigate('${item.page}')">
-        <span class="nav-icon">${item.icon}</span>
-        ${item.label}
-      </button>
-    `).join('')
+    .map(item => {
+      const iconHtml = item.icon.startsWith('/')
+        ? `<img class="nav-icon" src="${item.icon}" alt="" />`
+        : `<span class="nav-icon">${item.icon}</span>`
+      return `
+        <button class="nav-item" data-page="${item.page}" onclick="navigate('${item.page}')">
+          ${iconHtml}
+          ${item.label}
+        </button>
+      `
+    }).join('')
 
   // Formata o nome para cabeçalho (Primeiro e Último nome se tiver 3+ partes)
   const formatHeaderName = (fullName) => {
