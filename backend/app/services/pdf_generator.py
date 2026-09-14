@@ -1,4 +1,5 @@
 import io
+import os
 import re
 import datetime
 import gc
@@ -6,16 +7,17 @@ import logging
 import time
 import concurrent.futures
 import threading
+from html.parser import HTMLParser
 from PIL import Image as _PILImage
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.units import mm
 from reportlab.platypus import (
     SimpleDocTemplate, Spacer, Table, TableStyle,
-    HRFlowable, PageBreak, Image, Paragraph, Flowable
+    HRFlowable, PageBreak, Image, Paragraph, Flowable, KeepTogether
 )
 from reportlab.lib.styles import ParagraphStyle
-from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT, TA_JUSTIFY
 
 logger = logging.getLogger(__name__)
 
@@ -2992,3 +2994,337 @@ def generate_ump_statistics_report(
 
     doc.build(story, onFirstPage=_make_header_footer, onLaterPages=_make_header_footer)
     return buf.getvalue()
+
+
+class _CommissionRoundedBox(Flowable):
+    """Draws a rounded bordered box containing inner story flowables (Image 2 sign-off style)."""
+    def __init__(self, flowables, width, padding=12, border_color='#94a3b8', bg_color='#f8fafc', radius=6):
+        super().__init__()
+        self.flowables = flowables
+        self.width = width
+        self.padding = padding
+        self.border_color = colors.HexColor(border_color) if isinstance(border_color, str) else border_color
+        self.bg_color = colors.HexColor(bg_color) if isinstance(bg_color, str) else bg_color
+        self.radius = radius
+        self.inner_width = width - (2 * padding)
+        self.total_height = 0
+
+    def wrap(self, availWidth, availHeight):
+        h = self.padding * 2
+        for f in self.flowables:
+            _, fh = f.wrap(self.inner_width, availHeight)
+            h += fh
+        self.total_height = h
+        return self.width, self.total_height
+
+    def draw(self):
+        self.canv.saveState()
+        self.canv.setStrokeColor(self.border_color)
+        self.canv.setLineWidth(1)
+        self.canv.setFillColor(self.bg_color)
+        self.canv.roundRect(0, 0, self.width, self.total_height, self.radius, stroke=1, fill=1)
+        self.canv.restoreState()
+
+        curr_y = self.total_height - self.padding
+        for f in self.flowables:
+            curr_y -= f.height
+            f.drawOn(self.canv, self.padding, curr_y)
+
+
+class _CommissionHTMLParser(HTMLParser):
+    """Parses rich HTML from the commission editor into ReportLab Flowables."""
+    def __init__(self, base_style, bold_style, h2_style, h3_style, quote_style):
+        super().__init__()
+        self.base_style = base_style
+        self.bold_style = bold_style
+        self.h2_style = h2_style
+        self.h3_style = h3_style
+        self.quote_style = quote_style
+        self.flowables = []
+        self.curr_text = []
+        self.tag_stack = []
+
+    def handle_starttag(self, tag, attrs):
+        t = tag.lower()
+        self.tag_stack.append(t)
+        if t in ('p', 'div', 'h1', 'h2', 'h3', 'blockquote', 'li'):
+            self._flush()
+        if t in ('b', 'strong'):
+            self.curr_text.append('<b>')
+        elif t in ('i', 'em'):
+            self.curr_text.append('<i>')
+        elif t == 'u':
+            self.curr_text.append('<u>')
+        elif t in ('strike', 's'):
+            self.curr_text.append('<strike>')
+        elif t == 'br':
+            self.curr_text.append('<br/>')
+
+    def handle_endtag(self, tag):
+        t = tag.lower()
+        if t in ('b', 'strong'):
+            self.curr_text.append('</b>')
+        elif t in ('i', 'em'):
+            self.curr_text.append('</i>')
+        elif t == 'u':
+            self.curr_text.append('</u>')
+        elif t in ('strike', 's'):
+            self.curr_text.append('</strike>')
+        elif t in ('p', 'div', 'h1', 'h2', 'h3', 'blockquote', 'li'):
+            self._flush(block_tag=t)
+        if self.tag_stack and self.tag_stack[-1] == t:
+            self.tag_stack.pop()
+        elif t in self.tag_stack:
+            self.tag_stack.remove(t)
+
+    def handle_data(self, data):
+        # Escape XML entities for ReportLab Paragraph
+        text = data.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+        self.curr_text.append(text)
+
+    def _flush(self, block_tag=None):
+        raw = "".join(self.curr_text).strip()
+        self.curr_text = []
+        if not raw:
+            return
+        
+        style = self.base_style
+        prefix = ""
+        tag = block_tag or (self.tag_stack[-1] if self.tag_stack else 'p')
+        if tag in ('h1', 'h2'):
+            style = self.h2_style
+        elif tag == 'h3':
+            style = self.h3_style
+        elif tag == 'blockquote':
+            style = self.quote_style
+        elif tag == 'li':
+            prefix = "• &nbsp; "
+        
+        raw_clean = re.sub(r'[ \t]+', ' ', raw)
+        try:
+            self.flowables.append(Paragraph(f"{prefix}{raw_clean}", style))
+            self.flowables.append(Spacer(1, 2.5*mm))
+        except Exception:
+            clean_text = re.sub(r'<[^>]+>', '', raw_clean)
+            self.flowables.append(Paragraph(f"{prefix}{clean_text}", style))
+            self.flowables.append(Spacer(1, 2.5*mm))
+
+    def get_flowables(self):
+        self._flush()
+        return self.flowables
+
+
+def _format_commission_date(dt_input):
+    """Formats date to 'DD de Mês de YYYY' or blank template if not provided."""
+    if not dt_input:
+        return "___ de ____________ de ______"
+    try:
+        if isinstance(dt_input, str):
+            dt_str = dt_input.split('T')[0].strip()
+            parts = dt_str.split('-')
+            if len(parts) == 3:
+                y, m, d = int(parts[0]), int(parts[1]), int(parts[2])
+            else:
+                return dt_input
+        elif hasattr(dt_input, 'year'):
+            y, m, d = dt_input.year, dt_input.month, dt_input.day
+        else:
+            return "___ de ____________ de ______"
+        
+        meses = [
+            '', 'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+            'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+        ]
+        mes_nome = meses[m] if 1 <= m <= 12 else str(m)
+        return f"{d} de {mes_nome} de {y}"
+    except Exception:
+        return "___ de ____________ de ______"
+
+
+def generate_commission_report(
+    congress_title: str,
+    commission_name: str,
+    relator_name: str,
+    members_list: list,
+    opinion_html: str,
+    approval_date: str = None,
+    presbytery_name: str = None,
+    federation_name: str = None,
+    is_preview: bool = False
+) -> bytes:
+    """Generates official or preview PDF for Congress Commission Report (Images 1 & 2 layout)."""
+    buf = io.BytesIO()
+    ML, MR, MT, MB = 18*mm, 18*mm, 20*mm, 20*mm
+    doc = SimpleDocTemplate(
+        buf,
+        pagesize=A4,
+        leftMargin=ML,
+        rightMargin=MR,
+        topMargin=MT,
+        bottomMargin=MB
+    )
+    W = A4[0] - ML - MR
+    story = []
+
+    # 1. Header Table (Image 1 layout)
+    # Search for logo_parecer.png
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+    logo_paths = [
+        os.path.join(base_dir, 'frontend', 'assets', 'img', 'logo_parecer.png'),
+        os.path.join(base_dir, 'frontend', 'img', 'logo_parecer.png'),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', 'frontend', 'assets', 'img', 'logo_parecer.png'),
+    ]
+    logo_path = None
+    for lp in logo_paths:
+        if os.path.exists(lp):
+            logo_path = lp
+            break
+
+    if logo_path:
+        # 1695x928 (ratio ~1.82:1) -> 52mm width, 28.5mm height
+        logo_img = Image(logo_path, width=52*mm, height=28.5*mm)
+    else:
+        logo_img = Paragraph("<b><font size=16 color='#0f172a'>UMP</font></b>", ParagraphStyle('NoLogo', alignment=TA_CENTER))
+
+    ipb_title = "IGREJA PRESBITERIANA DO BRASIL"
+    presb_str = presbytery_name or "PRESBITÉRIO OESTE DA PARAÍBA"
+    fed_str = federation_name or "FEDERAÇÃO DE MOCIDADE PRESBITERIANA"
+
+    header_text = (
+        f"<font size=10 color='#0f172a'><b>{ipb_title}</b></font><br/>"
+        f"<font size=9 color='#1e293b'><b>{presb_str}</b></font><br/>"
+        f"<font size=9 color='#1e293b'><b>{fed_str}</b></font>"
+    )
+    header_para = Paragraph(header_text, ParagraphStyle('HeaderMeta', leading=13, alignment=TA_LEFT))
+
+    hdr_table = Table([[logo_img, header_para]], colWidths=[56*mm, W - 56*mm])
+    hdr_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+    ]))
+    story.append(hdr_table)
+    story.append(Spacer(1, 4*mm))
+
+    # Divider line
+    story.append(HRFlowable(width=W, thickness=1, color=colors.HexColor('#0f172a'), spaceAfter=5*mm))
+
+    # Congress Title, Commission Title & Relatório subtitle
+    cong_title = (congress_title or "CONGRESSO ORDINÁRIO").upper()
+    comm_title = (commission_name or "COMISSÃO").upper()
+
+    t_cong = Paragraph(f"<b><font size=12 color='#0f172a'>{cong_title}</font></b>", ParagraphStyle('CongTitle', leading=15, alignment=TA_CENTER))
+    t_comm = Paragraph(f"<b><font size=11 color='#1e293b'>{comm_title}</font></b>", ParagraphStyle('CommTitle', leading=14, alignment=TA_CENTER, spaceBefore=2*mm))
+    t_rel = Paragraph("<font size=10 color='#334155'><i>Relatório</i></font>", ParagraphStyle('RelTitle', leading=12, alignment=TA_CENTER, spaceBefore=2*mm))
+
+    story.append(t_cong)
+    story.append(t_comm)
+    story.append(t_rel)
+    story.append(Spacer(1, 6*mm))
+
+    # Preview Banner if requested
+    if is_preview:
+        p_prev = Paragraph(
+            "<b><font size=8 color='#e11d48'>[ PRÉVIA DO RELATÓRIO — DOCUMENTO EM REVISÃO / NÃO OFICIAL ]</font></b>",
+            ParagraphStyle('PrevWarn', alignment=TA_CENTER, spaceAfter=4*mm)
+        )
+        story.append(p_prev)
+
+    # 2. Commission Opinion Body
+    p_base = ParagraphStyle(
+        'CommissionBase',
+        fontName='Helvetica',
+        fontSize=10.5,
+        leading=15,
+        textColor=colors.HexColor('#1e293b'),
+        alignment=TA_JUSTIFY,
+        firstLineIndent=14
+    )
+    p_bold = ParagraphStyle('CommissionBold', parent=p_base, fontName='Helvetica-Bold')
+    p_h2 = ParagraphStyle('CommissionH2', fontName='Helvetica-Bold', fontSize=11.5, leading=16, textColor=colors.HexColor('#0f172a'), spaceBefore=3*mm, spaceAfter=2*mm)
+    p_h3 = ParagraphStyle('CommissionH3', fontName='Helvetica-Bold', fontSize=10.5, leading=15, textColor=colors.HexColor('#1e293b'), spaceBefore=2*mm, spaceAfter=1*mm)
+    p_quote = ParagraphStyle('CommissionQuote', fontName='Helvetica-Oblique', fontSize=10, leading=14, leftIndent=20, rightIndent=15, textColor=colors.HexColor('#334155'), alignment=TA_JUSTIFY)
+
+    clean_opinion = (opinion_html or "").strip()
+    if clean_opinion:
+        parser = _CommissionHTMLParser(p_base, p_bold, p_h2, p_h3, p_quote)
+        parser.feed(clean_opinion)
+        flowables = parser.get_flowables()
+        if flowables:
+            story.extend(flowables)
+        else:
+            story.append(Paragraph("<i>Nenhum parecer redigido até o momento.</i>", p_base))
+    else:
+        story.append(Paragraph("<i>Nenhum parecer redigido até o momento.</i>", p_base))
+
+    story.append(Spacer(1, 6*mm))
+
+    # 3. Footer Sign-off Box (Image 2 layout)
+    formatted_date = _format_commission_date(approval_date)
+    box_elements = []
+
+    p_sessao = Paragraph(
+        f"<b>Sessão Regular Online</b> , {formatted_date}",
+        ParagraphStyle('Sessao', fontName='Helvetica', fontSize=9.5, leading=13, textColor=colors.HexColor('#1e293b'))
+    )
+    box_elements.append(p_sessao)
+    box_elements.append(Spacer(1, 4*mm))
+
+    r_name = (relator_name or "Não informado").strip()
+    p_relator = Paragraph(
+        f"<b>Relator:</b> {r_name}",
+        ParagraphStyle('RelatorSign', fontName='Helvetica', fontSize=9.5, leading=13, textColor=colors.HexColor('#1e293b'))
+    )
+    box_elements.append(p_relator)
+
+    if members_list:
+        for m in members_list:
+            m_name = (m.get('name') if isinstance(m, dict) else str(m)).strip()
+            if m_name and m_name.lower() != r_name.lower():
+                box_elements.append(Spacer(1, 1.5*mm))
+                box_elements.append(Paragraph(
+                    f"<b>Membro:</b> {m_name}",
+                    ParagraphStyle('MemberSign', fontName='Helvetica', fontSize=9.5, leading=13, textColor=colors.HexColor('#1e293b'))
+                ))
+
+    sign_box = _CommissionRoundedBox(
+        box_elements,
+        width=W,
+        padding=12,
+        border_color='#94a3b8',
+        bg_color='#f8fafc',
+        radius=6
+    )
+    story.append(KeepTogether([sign_box]))
+
+    # Page callback for header & footer
+    def _commission_page_footer(canvas_obj, doc_obj):
+        canvas_obj.saveState()
+        # Top banner on later pages
+        if doc_obj.page > 1:
+            canvas_obj.setStrokeColor(colors.HexColor('#cbd5e1'))
+            canvas_obj.setLineWidth(0.5)
+            canvas_obj.line(ML, A4[1]-14*mm, A4[0]-MR, A4[1]-14*mm)
+            canvas_obj.setFont("Helvetica", 7.5)
+            canvas_obj.setFillColor(colors.HexColor('#64748b'))
+            canvas_obj.drawString(ML, A4[1]-11*mm, f"{cong_title} — {comm_title}")
+
+        # Bottom footer
+        canvas_obj.setStrokeColor(colors.HexColor('#cbd5e1'))
+        canvas_obj.setLineWidth(0.5)
+        canvas_obj.line(ML, 13*mm, A4[0]-MR, 13*mm)
+        canvas_obj.setFont("Helvetica", 7.5)
+        canvas_obj.setFillColor(colors.HexColor('#64748b'))
+        foot_str = f"Gerado em {datetime.datetime.now().strftime('%d/%m/%Y às %H:%M')} — SIGES UMP"
+        if not is_preview:
+            foot_str += " · Documento Oficial Aprovado"
+        else:
+            foot_str += " · Prévia para Conferência"
+        canvas_obj.drawString(ML, 8*mm, foot_str)
+        canvas_obj.drawRightString(A4[0]-MR, 8*mm, f"Página {doc_obj.page}")
+        canvas_obj.restoreState()
+
+    doc.build(story, onFirstPage=_commission_page_footer, onLaterPages=_commission_page_footer)
+    return buf.getvalue()

@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Form, status
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Form, status, Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
@@ -19,6 +19,7 @@ from app.models.activity_report import ActivityReport
 from app.models.ump_statistic import UmpStatisticCollector
 from app.models.congress import Congress, CongressCommission, CongressCommissionMember, CongressCommissionDocument
 from app.services.storage import get_presigned_url, upload_file
+from app.services.pdf_generator import generate_commission_report
 from app.core.config import get_settings
 
 router = APIRouter()
@@ -64,6 +65,7 @@ class DocumentAttachItem(BaseModel):
 
 class OpinionPayload(BaseModel):
     opinion_report: str
+    approval_date: Optional[str] = None
 
 
 # ── HELPERS ──
@@ -90,6 +92,12 @@ def _serialize_commission(comm: CongressCommission) -> dict:
         "relator_name": comm.relator_name,
         "access_token": comm.access_token,
         "opinion_report": comm.opinion_report or "",
+        "approval_date": comm.approval_date,
+        "status": comm.status or "em_elaboracao",
+        "final_report_url": _presign_url_if_needed(comm.final_report_url),
+        "approved_at": comm.approved_at.isoformat() if comm.approved_at else None,
+        "approved_by": str(comm.approved_by) if comm.approved_by else None,
+        "is_locked": (comm.status == "aprovado"),
         "opinion_updated_at": comm.opinion_updated_at.isoformat() if comm.opinion_updated_at else None,
         "has_opinion": bool(comm.opinion_report and comm.opinion_report.strip()),
         "created_at": comm.created_at.isoformat() if comm.created_at else None,
@@ -712,11 +720,104 @@ def save_commission_opinion_admin(
         raise HTTPException(status_code=404, detail="Comissão não encontrada.")
 
     comm.opinion_report = payload.opinion_report
+    if payload.approval_date is not None:
+        comm.approval_date = payload.approval_date
     comm.opinion_updated_at = datetime.utcnow()
     db.commit()
     return {
         "message": "Parecer salvo com sucesso.",
         "opinion_updated_at": comm.opinion_updated_at.isoformat()
+    }
+
+
+@router.get("/commissions/{commission_id}/preview-pdf")
+def preview_commission_pdf_admin(
+    commission_id: UUID,
+    current_user: User = Depends(require_federation),
+    db: Session = Depends(get_db)
+):
+    """Gera a prévia em PDF do parecer da comissão a partir do painel da federação."""
+    comm = db.query(CongressCommission).join(Congress).filter(
+        CongressCommission.id == commission_id,
+        Congress.federation_id == current_user.organization_id
+    ).first()
+    if not comm:
+        raise HTTPException(status_code=404, detail="Comissão não encontrada.")
+
+    congress = comm.congress
+    fed = db.query(Federation).filter(Federation.id == congress.federation_id).first() if congress else None
+
+    pdf_bytes = generate_commission_report(
+        congress_title=congress.title if congress else "Congresso Ordinário",
+        commission_name=comm.name,
+        relator_name=comm.relator_name,
+        members_list=[m.delegate_name for m in comm.members],
+        opinion_html=comm.opinion_report or "",
+        approval_date=comm.approval_date,
+        presbytery_name=fed.presbytery_name if fed else None,
+        federation_name=fed.name if fed else None,
+        is_preview=True
+    )
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"inline; filename=previa_parecer_{comm.id}.pdf"}
+    )
+
+
+@router.post("/commissions/{commission_id}/approve")
+def approve_commission_opinion(
+    commission_id: UUID,
+    current_user: User = Depends(require_federation),
+    db: Session = Depends(get_db)
+):
+    """
+    Aprova oficialmente o parecer da comissão pela diretoria da federação:
+    1. Compila o PDF oficial (sem marca d'água de prévia).
+    2. Faz upload para o Cloudflare R2.
+    3. Bloqueia a comissão para novas edições (status='aprovado').
+    4. Grava url do parecer oficial, data e usuário que aprovou.
+    """
+    comm = db.query(CongressCommission).join(Congress).filter(
+        CongressCommission.id == commission_id,
+        Congress.federation_id == current_user.organization_id
+    ).first()
+    if not comm:
+        raise HTTPException(status_code=404, detail="Comissão não encontrada.")
+
+    if not comm.opinion_report or not comm.opinion_report.strip():
+        raise HTTPException(status_code=400, detail="Esta comissão ainda não possui parecer redigido para aprovação.")
+
+    congress = comm.congress
+    fed = db.query(Federation).filter(Federation.id == congress.federation_id).first() if congress else None
+
+    # Gerar PDF Oficial (is_preview=False)
+    pdf_bytes = generate_commission_report(
+        congress_title=congress.title if congress else "Congresso Ordinário",
+        commission_name=comm.name,
+        relator_name=comm.relator_name,
+        members_list=[m.delegate_name for m in comm.members],
+        opinion_html=comm.opinion_report,
+        approval_date=comm.approval_date,
+        presbytery_name=fed.presbytery_name if fed else None,
+        federation_name=fed.name if fed else None,
+        is_preview=False
+    )
+
+    # Upload para o Cloudflare R2
+    key = f"congresses/{comm.congress_id}/parecer_{comm.id}.pdf"
+    file_url = upload_file(pdf_bytes, key, "application/pdf")
+
+    comm.status = "aprovado"
+    comm.final_report_url = file_url
+    comm.approved_at = datetime.utcnow()
+    comm.approved_by = current_user.id
+    db.commit()
+
+    return {
+        "message": "Parecer da comissão aprovado oficialmente com sucesso!",
+        "commission": _serialize_commission(comm)
     }
 
 
@@ -769,7 +870,12 @@ def save_public_commission_opinion(
     if not comm:
         raise HTTPException(status_code=404, detail="Link de comissão inválido.")
 
+    if comm.status == "aprovado":
+        raise HTTPException(status_code=403, detail="Este parecer já foi aprovado oficialmente pela diretoria e está bloqueado para edições.")
+
     comm.opinion_report = payload.opinion_report
+    if payload.approval_date is not None:
+        comm.approval_date = payload.approval_date
     comm.opinion_updated_at = datetime.utcnow()
     db.commit()
 
@@ -777,3 +883,37 @@ def save_public_commission_opinion(
         "message": "Parecer salvo com sucesso.",
         "saved_at": comm.opinion_updated_at.strftime("%H:%M:%S")
     }
+
+
+@router.get("/public/commission/{token}/preview-pdf")
+def preview_public_commission_pdf(
+    token: str,
+    db: Session = Depends(get_db)
+):
+    """Gera a prévia em PDF do parecer da comissão com layout oficial (sem aprovação)."""
+    comm = db.query(CongressCommission).filter(
+        CongressCommission.access_token == token
+    ).first()
+    if not comm:
+        raise HTTPException(status_code=404, detail="Comissão não encontrada.")
+
+    congress = comm.congress
+    fed = db.query(Federation).filter(Federation.id == congress.federation_id).first() if congress else None
+
+    pdf_bytes = generate_commission_report(
+        congress_title=congress.title if congress else "Congresso Ordinário",
+        commission_name=comm.name,
+        relator_name=comm.relator_name,
+        members_list=[m.delegate_name for m in comm.members],
+        opinion_html=comm.opinion_report or "",
+        approval_date=comm.approval_date,
+        presbytery_name=fed.presbytery_name if fed else None,
+        federation_name=fed.name if fed else None,
+        is_preview=True
+    )
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"inline; filename=previa_parecer_{comm.id}.pdf"}
+    )

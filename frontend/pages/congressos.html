@@ -867,14 +867,47 @@
               </div>
             </div>
 
-            <!-- Status do Parecer -->
-            <div style="background:#f8fafc; border:1px solid var(--slate-100); border-radius:var(--radius); padding:.6rem .8rem; display:flex; align-items:center; justify-content:space-between;">
-              <span style="font-size:.8rem; color:var(--slate-600)">
-                Parecer: ${comm.has_opinion ? '<strong style="color:var(--green-600)">✓ Redigido</strong>' : '<span style="color:var(--slate-400)">⏳ Aguardando confecção</span>'}
-              </span>
-              <a href="${publicUrl}" target="_blank" class="btn-ghost" style="font-size:.78rem; font-weight:600; color:var(--blue-600); text-decoration:none;">
-                Visualizar ↗
-              </a>
+            <!-- Status do Parecer & Ações de Homologação -->
+            <div style="background:#f8fafc; border:1px solid var(--slate-200); border-radius:var(--radius); padding:.75rem; display:flex; flex-direction:column; gap:.5rem;">
+              <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.35rem;">
+                <span style="font-size:.78rem; font-weight:600; color:var(--slate-600)">Status do Parecer:</span>
+                <div>
+                  ${comm.status === 'aprovado'
+                    ? '<span style="display:inline-flex; align-items:center; gap:.25rem; font-size:.75rem; font-weight:700; color:#15803d; background:#dcfce7; border:1px solid #86efac; border-radius:99px; padding:2px 8px;">✓ Aprovado Oficialmente</span>'
+                    : comm.has_opinion
+                      ? '<span style="display:inline-flex; align-items:center; gap:.25rem; font-size:.75rem; font-weight:700; color:#1d4ed8; background:#eff6ff; border:1px solid #bfdbfe; border-radius:99px; padding:2px 8px;">✍️ Redigido (Em análise)</span>'
+                      : '<span style="font-size:.75rem; color:var(--slate-400); font-style:italic">⏳ Aguardando confecção</span>'
+                  }
+                </div>
+              </div>
+
+              <!-- Botões de Ação do Parecer -->
+              <div style="display:flex; gap:.4rem; flex-wrap:wrap; margin-top:.25rem;">
+                <a href="${publicUrl}" target="_blank" class="btn btn-secondary btn-sm" style="flex:1; justify-content:center; font-size:.75rem; padding:.35rem .6rem; text-decoration:none;">
+                  Abrir Tela ↗
+                </a>
+
+                ${comm.has_opinion
+                  ? `<button type="button" class="btn btn-secondary btn-sm" style="font-size:.75rem; padding:.35rem .6rem;" onclick="previewCommissionPdf('${comm.access_token}')" title="Ver Prévia do Relatório em PDF">
+                       👁️ Prévia PDF
+                     </button>`
+                  : ''
+                }
+
+                ${comm.has_opinion && comm.status !== 'aprovado'
+                  ? `<button type="button" class="btn btn-primary btn-sm" style="background:#16a34a; border-color:#16a34a; font-size:.75rem; padding:.35rem .6rem;" onclick="approveCommissionOpinion('${comm.id}', '${comm.name.replace(/'/g, "\\'")}')" title="Aprovar e homologar oficialmente o parecer">
+                       ✅ Aprovar Parecer
+                     </button>`
+                  : ''
+                }
+
+                ${comm.status === 'aprovado' && comm.final_report_url
+                  ? `<a href="${comm.final_report_url}" target="_blank" class="btn btn-sm" style="background:#10b981; color:#fff; font-size:.75rem; padding:.35rem .6rem; text-decoration:none; font-weight:700;" title="Abrir PDF Oficial Aprovado">
+                       📄 PDF Oficial ↗
+                     </a>`
+                  : ''
+                }
+              </div>
             </div>
 
             <!-- Link Público & WhatsApp -->
@@ -1277,6 +1310,28 @@
     }
     window.closeModal = function (id) {
       document.getElementById(id).classList.remove('open')
+    }
+
+    // ── PRÉVIA E APROVAÇÃO OFICIAL DO PARECER ──
+    window.previewCommissionPdf = function (token) {
+      const base = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
+        ? ''
+        : 'https://umpgestaopopb-825585682536.us-west1.run.app'
+      window.open(`${base}/api/congresses/public/commission/${token}/preview-pdf`, '_blank')
+    }
+
+    window.approveCommissionOpinion = async function (commId, commName) {
+      if (!confirm(`Deseja homologar e APROVAR OFICIALMENTE o parecer da comissão "${commName}"?\n\nIsso compilará o PDF oficial institucional, registrará no sistema e bloqueará o parecer para novas edições.`)) {
+        return
+      }
+
+      try {
+        const res = await api.post(`/api/congresses/commissions/${commId}/approve`)
+        alert('✓ Parecer da comissão aprovado oficialmente com sucesso!')
+        await refreshActiveCongress()
+      } catch (err) {
+        alert('Erro ao aprovar parecer: ' + (err.message || err))
+      }
     }
 
     function showAlert(msg) {

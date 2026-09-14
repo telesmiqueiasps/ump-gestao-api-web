@@ -240,6 +240,80 @@
       border-color: var(--brand-accent);
     }
 
+    /* ── Timbre Oficial do Parecer (Cabeçalho Institucional) ── */
+    .official-timbre-preview {
+      background: #fff;
+      border: 1px solid var(--slate-200);
+      border-bottom: 2px solid var(--slate-800);
+      border-radius: var(--radius) var(--radius) 0 0;
+      padding: 1.25rem 1.5rem 1rem;
+    }
+
+    .timbre-top-row {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      margin-bottom: .75rem;
+    }
+
+    .timbre-logo {
+      height: 52px;
+      max-width: 140px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    .timbre-meta {
+      flex: 1;
+      text-align: left;
+    }
+
+    .timbre-meta h4 {
+      font-size: .85rem;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: .3px;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+
+    .timbre-meta p {
+      font-size: .78rem;
+      font-weight: 700;
+      color: #334155;
+      text-transform: uppercase;
+      line-height: 1.3;
+      margin: 0;
+    }
+
+    .timbre-center-titles {
+      text-align: center;
+      padding-top: .6rem;
+      border-top: 1px solid var(--slate-200);
+    }
+
+    .timbre-cong-title {
+      font-size: .95rem;
+      font-weight: 800;
+      color: #0f172a;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+
+    .timbre-comm-title {
+      font-size: .88rem;
+      font-weight: 700;
+      color: #1e293b;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+
+    .timbre-rel-subtitle {
+      font-size: .82rem;
+      font-style: italic;
+      color: #64748b;
+    }
+
     /* ── Editor de Parecer ── */
     .editor-toolbar {
       display: flex;
@@ -247,9 +321,9 @@
       gap: 4px;
       background: var(--slate-100);
       border: 1px solid var(--slate-200);
+      border-top: none;
       border-bottom: none;
-      border-radius: var(--radius) var(--radius) 0 0;
-      padding: .4rem .5rem;
+      padding: .45rem .6rem;
       align-items: center;
     }
 
@@ -257,8 +331,8 @@
       background: #fff;
       border: 1px solid var(--slate-300);
       border-radius: 4px;
-      padding: 4px 9px;
-      font-size: .82rem;
+      padding: 4px 8px;
+      font-size: .8rem;
       font-weight: 600;
       color: var(--slate-700);
       cursor: pointer;
@@ -275,16 +349,40 @@
       color: var(--slate-900);
     }
 
-    .editor-content {
-      min-height: 280px;
-      border: 1px solid var(--slate-200);
-      border-radius: 0 0 var(--radius) var(--radius);
-      padding: 1rem 1.25rem;
+    .tool-select {
       background: #fff;
-      font-size: .95rem;
-      line-height: 1.7;
+      border: 1px solid var(--slate-300);
+      border-radius: 4px;
+      padding: 3px 6px;
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--slate-700);
+      height: 28px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .tool-separator {
+      width: 1px;
+      height: 18px;
+      background: var(--slate-300);
+      margin: 0 3px;
+      display: inline-block;
+    }
+
+    .editor-content {
+      min-height: 320px;
+      border: 1px solid var(--slate-200);
+      border-top: none;
+      border-radius: 0 0 var(--radius) var(--radius);
+      padding: 1.25rem 1.5rem;
+      background: #fff;
+      font-size: 15px;
+      line-height: 1.75;
       color: var(--slate-800);
       outline: none;
+      text-align: justify;
+      text-justify: inter-word;
       transition: border-color .15s;
     }
 
@@ -299,35 +397,162 @@
       font-style: italic;
     }
 
+    .editor-content p {
+      margin-bottom: .85rem;
+      text-align: justify;
+      text-justify: inter-word;
+      text-indent: 1.5rem;
+    }
+
     .editor-content h2 {
       font-size: 1.25rem;
       font-weight: 700;
-      margin: 1rem 0 .5rem;
+      margin: 1.1rem 0 .45rem;
       color: var(--slate-900);
+      text-align: left;
+      text-indent: 0;
     }
 
     .editor-content h3 {
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       font-weight: 600;
-      margin: .85rem 0 .4rem;
+      margin: .9rem 0 .35rem;
       color: var(--slate-800);
+      text-align: left;
+      text-indent: 0;
     }
 
     .editor-content ul, .editor-content ol {
-      margin-left: 1.5rem;
-      margin-bottom: .75rem;
-    }
-
-    .editor-content p {
-      margin-bottom: .75rem;
+      margin-left: 2rem;
+      margin-bottom: .85rem;
+      text-indent: 0;
     }
 
     .editor-content blockquote {
       border-left: 3px solid var(--brand-accent);
-      padding-left: .85rem;
+      padding-left: 1rem;
       color: var(--slate-600);
-      margin: .75rem 0;
+      margin: .85rem 0;
       font-style: italic;
+      text-indent: 0;
+      text-align: justify;
+    }
+
+    /* ── Caixa de Encerramento e Assinaturas (Layout Imagem 2) ── */
+    .signoff-box {
+      border: 1.5px solid var(--slate-300);
+      border-radius: var(--radius);
+      background: #f8fafc;
+      padding: 1.25rem 1.5rem;
+      margin-top: 1rem;
+      line-height: 1.6;
+      font-size: .92rem;
+      color: var(--slate-800);
+    }
+
+    .signoff-sessao {
+      font-weight: 700;
+      margin-bottom: .75rem;
+      color: #0f172a;
+    }
+
+    .signoff-line {
+      margin-bottom: .3rem;
+      font-size: .9rem;
+    }
+
+    .signoff-line strong {
+      color: #0f172a;
+    }
+
+    .approval-date-wrapper {
+      margin-top: 1.15rem;
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      flex-wrap: wrap;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: var(--radius);
+      padding: .75rem 1rem;
+    }
+
+    .approval-date-label {
+      font-size: .82rem;
+      font-weight: 700;
+      color: #1e40af;
+      display: flex;
+      align-items: center;
+      gap: .35rem;
+    }
+
+    .approval-date-input {
+      border: 1px solid #93c5fd;
+      border-radius: 6px;
+      padding: .4rem .65rem;
+      font-size: .85rem;
+      color: #1e293b;
+      background: #fff;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .approval-date-input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 2px rgba(37,99,235,0.2);
+    }
+
+    /* ── Banner de Parecer Aprovado / Bloqueado ── */
+    .locked-banner {
+      background: #ecfdf5;
+      border: 1.5px solid #10b981;
+      border-radius: var(--radius-lg);
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .locked-banner-text {
+      color: #065f46;
+    }
+
+    .locked-banner-text h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: .25rem;
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+    }
+
+    .locked-banner-text p {
+      font-size: .85rem;
+      color: #047857;
+    }
+
+    .btn-download-official {
+      background: #10b981;
+      color: #fff;
+      border: none;
+      padding: .65rem 1.25rem;
+      border-radius: var(--radius);
+      font-weight: 700;
+      font-size: .9rem;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      box-shadow: 0 2px 4px rgba(16,185,129,0.2);
+      transition: all .15s;
+    }
+
+    .btn-download-official:hover {
+      background: #059669;
+      color: #fff;
     }
 
     /* Status do Auto-Save */
@@ -537,6 +762,17 @@
 
       <!-- 3. Confecção do Parecer da Comissão (com Auto-Save) -->
       <section class="content-card" id="card-opinion">
+        <!-- Banner de Parecer Aprovado (se aplicável) -->
+        <div id="locked-banner" class="locked-banner" style="display:none">
+          <div class="locked-banner-text">
+            <h3><span>✓</span> Parecer Homologado e Aprovado</h3>
+            <p>Este relatório foi oficialmente aprovado pela diretoria da federação e está bloqueado para edições.</p>
+          </div>
+          <a id="btn-download-pdf-banner" href="#" target="_blank" class="btn-download-official">
+            📄 Baixar Parecer Oficial (PDF)
+          </a>
+        </div>
+
         <div class="card-title-row">
           <div class="card-title">✍️ Parecer da Comissão</div>
           <div class="save-status-badge" id="save-status">
@@ -544,42 +780,109 @@
           </div>
         </div>
 
-        <p style="font-size:.82rem; color:var(--slate-500); margin-bottom:.75rem;">
-          Utilize o espaço abaixo para redigir o relatório e parecer da comissão. O texto é formatado e salvo automaticamente em tempo real.
+        <p style="font-size:.82rem; color:var(--slate-500); margin-bottom:1rem;">
+          Utilize o espaço abaixo para redigir o relatório e parecer da comissão. O texto é mantido justificado e salvo automaticamente em tempo real.
         </p>
 
-        <!-- Barra de Ferramentas de Formatação -->
-        <div class="editor-toolbar">
-          <button type="button" class="tool-btn" onclick="formatDoc('formatBlock', '<h2>')" title="Título">H2</button>
+        <!-- Timbre Institucional Oficial (Layout Imagem 1) -->
+        <div class="official-timbre-preview">
+          <div class="timbre-top-row">
+            <div style="width:130px; display:flex; align-items:center;">
+              <img src="/assets/img/logo_parecer.png" onerror="this.src='assets/img/logo_parecer.png'" class="timbre-logo" alt="Logo Parecer" />
+            </div>
+            <div class="timbre-meta">
+              <h4>IGREJA PRESBITERIANA DO BRASIL</h4>
+              <p id="timbre-presbytery-name">PRESBITÉRIO OESTE DA PARAÍBA</p>
+              <p id="timbre-fed-name">FEDERAÇÃO DE MOCIDADES PRESBITERIANAS</p>
+            </div>
+          </div>
+          <div class="timbre-center-titles">
+            <div class="timbre-cong-title" id="timbre-congress-title">XXXII CONGRESSO ORDINÁRIO</div>
+            <div class="timbre-comm-title" id="timbre-commission-title">COMISSÃO DE PLANOS E METAS</div>
+            <div class="timbre-rel-subtitle">Relatório</div>
+          </div>
+        </div>
+
+        <!-- Barra de Ferramentas de Formatação e Tipografia -->
+        <div class="editor-toolbar" id="editor-toolbar">
+          <!-- Tamanho da Fonte -->
+          <button type="button" class="tool-btn" onclick="stepFontSize(-1)" title="Diminuir Fonte (A-)">A-</button>
+          <button type="button" class="tool-btn" onclick="stepFontSize(1)" title="Aumentar Fonte (A+)">A+</button>
+          <select id="font-size-select" class="tool-select" onchange="changeFontSize(this.value)" title="Tamanho da Fonte">
+            <option value="13px">13px</option>
+            <option value="14px">14px</option>
+            <option value="15px" selected>15px (Padrão)</option>
+            <option value="16px">16px</option>
+            <option value="18px">18px</option>
+          </select>
+          <span class="tool-separator"></span>
+
+          <!-- Estrutura de Texto -->
+          <button type="button" class="tool-btn" onclick="formatDoc('formatBlock', '<p>')" title="Parágrafo Normal">P</button>
+          <button type="button" class="tool-btn" onclick="formatDoc('formatBlock', '<h2>')" title="Título Maior">H2</button>
           <button type="button" class="tool-btn" onclick="formatDoc('formatBlock', '<h3>')" title="Subtítulo">H3</button>
-          <button type="button" class="tool-btn" onclick="formatDoc('formatBlock', '<p>')" title="Parágrafo">P</button>
-          <span style="width:1px; height:18px; background:var(--slate-300); margin:0 3px;"></span>
+          <span class="tool-separator"></span>
+
+          <!-- Estilos Básicos -->
           <button type="button" class="tool-btn" onclick="formatDoc('bold')" title="Negrito"><b>B</b></button>
           <button type="button" class="tool-btn" onclick="formatDoc('italic')" title="Itálico"><i>I</i></button>
           <button type="button" class="tool-btn" onclick="formatDoc('underline')" title="Sublinhado"><u>U</u></button>
-          <span style="width:1px; height:18px; background:var(--slate-300); margin:0 3px;"></span>
+          <span class="tool-separator"></span>
+
+          <!-- Justificar & Recuo de Parágrafo -->
+          <button type="button" class="tool-btn" onclick="formatDoc('justifyFull')" title="Alinhar Justificado (Padrão)">≡ Justificar</button>
+          <button type="button" class="tool-btn" onclick="formatDoc('indent')" title="Aumentar Recuo (Parágrafo)">⇥ Recuo</button>
+          <button type="button" class="tool-btn" onclick="formatDoc('outdent')" title="Diminuir Recuo">⇤ Reduzir</button>
+          <span class="tool-separator"></span>
+
+          <!-- Listas e Citações -->
           <button type="button" class="tool-btn" onclick="formatDoc('insertUnorderedList')" title="Tópicos / Marcadores">• Lista</button>
           <button type="button" class="tool-btn" onclick="formatDoc('insertOrderedList')" title="Numeração">1. Lista</button>
           <button type="button" class="tool-btn" onclick="formatDoc('formatBlock', '<blockquote>')" title="Citação">“ Citação</button>
-          <span style="width:1px; height:18px; background:var(--slate-300); margin:0 3px;"></span>
+          <span class="tool-separator"></span>
+
           <button type="button" class="tool-btn" onclick="formatDoc('removeFormat')" title="Limpar Formatação">✕ Limpar</button>
         </div>
 
         <!-- Área de Escrita -->
         <div id="editor" class="editor-content" contenteditable="true" placeholder="Redija aqui o parecer da comissão (considerações, deliberações e recomendações ao plenário)..."></div>
 
+        <!-- Campo de Data de Aprovação e Prévia do Encerramento (Imagem 2) -->
+        <div class="approval-date-wrapper" id="approval-date-container">
+          <label for="approval-date-input" class="approval-date-label">
+            📅 Data de Aprovação do Parecer:
+          </label>
+          <input type="date" id="approval-date-input" class="approval-date-input" onchange="onApprovalDateChange()" />
+          <span style="font-size:.78rem; color:#2563eb;">(Preenchida pelo relator para constar no encerramento oficial do relatório)</span>
+        </div>
+
+        <div class="signoff-box" id="signoff-box-preview">
+          <div class="signoff-sessao" id="signoff-sessao-text">
+            Sessão Regular Online , <span id="signoff-date-display">___ de ____________ de ______</span>
+          </div>
+          <div class="signoff-line">
+            <strong>Relator:</strong> <span id="signoff-relator-display">Não informado</span>
+          </div>
+          <div id="signoff-members-container">
+            <!-- Renderizado via JS -->
+          </div>
+        </div>
+
         <!-- Botões de Ação -->
         <div class="bottom-actions">
           <div style="font-size:.78rem; color:var(--slate-400)" id="last-saved-time">
             Última alteração: nunca
           </div>
-          <div style="display:flex; gap:.5rem;">
+          <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
             <button type="button" class="btn btn-secondary" onclick="copyOpinionText()">
               📋 Copiar Texto
             </button>
-            <button type="button" class="btn btn-primary" onclick="printOpinionReport()">
-              🖨️ Imprimir Parecer
+            <button type="button" class="btn btn-primary" onclick="openPdfPreview()">
+              👁️ Ver Prévia do Relatório
             </button>
+            <a id="btn-approved-pdf-bottom" href="#" target="_blank" class="btn btn-primary" style="display:none; background:#10b981; border-color:#10b981;">
+              📄 Baixar Parecer Oficial (PDF)
+            </a>
           </div>
         </div>
 
@@ -623,26 +926,51 @@
       }
     }
 
+    function formatBrazilianDate(isoDateStr) {
+      if (!isoDateStr) return '___ de ____________ de ______'
+      try {
+        const parts = isoDateStr.split('T')[0].split('-')
+        if (parts.length !== 3) return isoDateStr
+        const [y, m, d] = parts
+        const meses = [
+          '', 'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+          'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+        ]
+        const mesNome = meses[parseInt(m, 10)] || m
+        return `${parseInt(d, 10)} de ${mesNome} de ${y}`
+      } catch (e) {
+        return '___ de ____________ de ______'
+      }
+    }
+
     function renderCommission(data) {
       document.getElementById('loading-state').style.display = 'none'
       document.getElementById('commission-content').style.display = 'block'
 
       const comm = data.commission
       const congress = data.congress
+      const fedName = data.federation_name || 'Federação'
 
-      // Títulos
-      document.getElementById('fed-name-label').textContent = data.federation_name || 'Federação'
+      // Títulos topo
+      document.getElementById('fed-name-label').textContent = fedName
       document.getElementById('congress-title-label').textContent = `${congress.title || 'Congresso'} (${congress.fiscal_year || ''})`
       document.getElementById('commission-title-label').textContent = comm.name
       document.title = `${comm.name} — ${congress.title}`
 
+      // Timbre Institucional Oficial
+      document.getElementById('timbre-presbytery-name').textContent = (data.presbytery_name || 'PRESBITÉRIO OESTE DA PARAÍBA').toUpperCase()
+      document.getElementById('timbre-fed-name').textContent = fedName.toUpperCase()
+      document.getElementById('timbre-congress-title').textContent = (congress.title || 'CONGRESSO ORDINÁRIO').toUpperCase()
+      document.getElementById('timbre-commission-title').textContent = comm.name.toUpperCase()
+
       // Timbre de Impressão
-      document.getElementById('print-fed-name').textContent = data.federation_name || 'Federação'
+      document.getElementById('print-fed-name').textContent = fedName
       document.getElementById('print-congress-title').textContent = `${congress.title || 'Congresso'} (${congress.fiscal_year || ''})`
       document.getElementById('print-comm-title').textContent = `Parecer da ${comm.name}`
 
       // Relator
       document.getElementById('relator-name-label').textContent = comm.relator_name || 'Não definido'
+      document.getElementById('signoff-relator-display').textContent = comm.relator_name || 'Não informado'
 
       // Outros Membros
       const otherMembers = (comm.members || []).filter(m => !m.is_relator)
@@ -651,6 +979,18 @@
         membersContainer.innerHTML = '<span style="font-size:.8rem; color:var(--slate-400); font-style:italic">Nenhum outro membro integrante.</span>'
       } else {
         membersContainer.innerHTML = otherMembers.map(m => `<span class="member-pill">${m.delegate_name}</span>`).join('')
+      }
+
+      // Membros no Signoff Box (Imagem 2)
+      const signoffMembers = document.getElementById('signoff-members-container')
+      if (otherMembers.length > 0) {
+        signoffMembers.innerHTML = otherMembers.map(m => `
+          <div class="signoff-line">
+            <strong>Membro:</strong> ${m.delegate_name}
+          </div>
+        `).join('')
+      } else {
+        signoffMembers.innerHTML = ''
       }
 
       // Documentos
@@ -681,16 +1021,47 @@
       const editor = document.getElementById('editor')
       editor.innerHTML = comm.opinion_report || ''
 
+      // Data de Aprovação
+      const dateInput = document.getElementById('approval-date-input')
+      if (comm.approval_date) {
+        dateInput.value = comm.approval_date.split('T')[0]
+        document.getElementById('signoff-date-display').textContent = formatBrazilianDate(comm.approval_date)
+      } else {
+        document.getElementById('signoff-date-display').textContent = '___ de ____________ de ______'
+      }
+
       if (comm.opinion_updated_at) {
         const d = new Date(comm.opinion_updated_at)
         document.getElementById('last-saved-time').textContent = `Última alteração salva em ${d.toLocaleDateString('pt-BR')} às ${d.toLocaleTimeString('pt-BR')}`
       }
 
-      // Configura Assinaturas para Impressão
-      renderPrintSignatures(comm)
+      // Bloqueio se já Aprovado Oficialmente
+      if (comm.status === 'aprovado' || comm.is_locked) {
+        document.getElementById('locked-banner').style.display = 'flex'
+        if (comm.final_report_url) {
+          document.getElementById('btn-download-pdf-banner').href = comm.final_report_url
+          const btnBottom = document.getElementById('btn-approved-pdf-bottom')
+          btnBottom.href = comm.final_report_url
+          btnBottom.style.display = 'inline-flex'
+        }
 
-      // Listener de Auto-Save
-      editor.addEventListener('input', triggerAutoSave)
+        editor.setAttribute('contenteditable', 'false')
+        editor.style.background = '#f8fafc'
+        editor.style.cursor = 'default'
+        document.getElementById('editor-toolbar').style.opacity = '0.45'
+        document.getElementById('editor-toolbar').style.pointerEvents = 'none'
+        dateInput.disabled = true
+
+        const statusEl = document.getElementById('save-status')
+        statusEl.className = 'save-status-badge status-saved'
+        statusEl.innerHTML = '<span>✓ Parecer Oficial Aprovado</span>'
+      } else {
+        // Listener de Auto-Save somente se não aprovado
+        editor.addEventListener('input', triggerAutoSave)
+      }
+
+      // Assinaturas para Impressão nativa
+      renderPrintSignatures(comm)
     }
 
     function renderPrintSignatures(comm) {
@@ -720,26 +1091,51 @@
       sigContainer.innerHTML = html
     }
 
-    // ── LÓGICA DE FORMATAÇÃO DO EDITOR ──
+    // ── LÓGICA DE FORMATAÇÃO E TIPOGRAFIA ──
     window.formatDoc = function (cmd, val = null) {
+      if (commissionData && (commissionData.commission.status === 'aprovado' || commissionData.commission.is_locked)) return
       document.execCommand(cmd, false, val)
       document.getElementById('editor').focus()
       triggerAutoSave()
     }
 
+    window.changeFontSize = function (size) {
+      const editor = document.getElementById('editor')
+      editor.style.fontSize = size
+      document.getElementById('font-size-select').value = size
+    }
+
+    window.stepFontSize = function (delta) {
+      const select = document.getElementById('font-size-select')
+      let idx = select.selectedIndex + delta
+      if (idx < 0) idx = 0
+      if (idx >= select.options.length) idx = select.options.length - 1
+      select.selectedIndex = idx
+      changeFontSize(select.value)
+    }
+
+    window.onApprovalDateChange = function () {
+      const val = document.getElementById('approval-date-input').value
+      document.getElementById('signoff-date-display').textContent = formatBrazilianDate(val)
+      triggerAutoSave()
+    }
+
     // ── LÓGICA DE AUTO-SAVE COM DEBOUNCE ──
     function triggerAutoSave() {
+      if (commissionData && (commissionData.commission.status === 'aprovado' || commissionData.commission.is_locked)) return
       const statusEl = document.getElementById('save-status')
       statusEl.className = 'save-status-badge status-saving'
       statusEl.innerHTML = '<span>● Salvando alterações...</span>'
 
       clearTimeout(autoSaveTimeout)
-      autoSaveTimeout = setTimeout(saveOpinion, 900) // Salva após 900ms sem digitação
+      autoSaveTimeout = setTimeout(saveOpinion, 900)
     }
 
     async function saveOpinion() {
+      if (commissionData && (commissionData.commission.status === 'aprovado' || commissionData.commission.is_locked)) return
       const editor = document.getElementById('editor')
       const content = editor.innerHTML
+      const approvalDate = document.getElementById('approval-date-input').value || null
       const statusEl = document.getElementById('save-status')
 
       isSaving = true
@@ -747,8 +1143,17 @@
         const res = await fetch(`${API_BASE}/api/congresses/public/commission/${token}/opinion`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ opinion_report: content })
+          body: JSON.stringify({
+            opinion_report: content,
+            approval_date: approvalDate
+          })
         })
+
+        if (res.status === 403) {
+          alert('Este parecer foi aprovado e bloqueado para edições.')
+          window.location.reload()
+          return
+        }
 
         if (!res.ok) throw new Error('Erro ao salvar')
 
@@ -764,6 +1169,10 @@
       }
     }
 
+    window.openPdfPreview = function () {
+      window.open(`${API_BASE}/api/congresses/public/commission/${token}/preview-pdf`, '_blank')
+    }
+
     window.copyOpinionText = function () {
       const text = document.getElementById('editor').innerText
       navigator.clipboard.writeText(text).then(() => {
@@ -771,10 +1180,6 @@
       }).catch(() => {
         alert('Não foi possível copiar automaticamente.')
       })
-    }
-
-    window.printOpinionReport = function () {
-      window.print()
     }
 
     function showError(msg) {

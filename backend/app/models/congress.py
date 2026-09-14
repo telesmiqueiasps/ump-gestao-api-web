@@ -1,7 +1,7 @@
 import uuid
 import secrets
 from datetime import datetime
-from sqlalchemy import Column, String, Integer, Text, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, String, Integer, Text, Boolean, DateTime, Date, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.db.session import Base
@@ -42,6 +42,13 @@ class CongressCommission(Base):
     # Parecer/Relatório da comissão redigido com formatação
     opinion_report = Column(Text, nullable=False, default="")
     opinion_updated_at = Column(DateTime, nullable=True)
+
+    # Status e Aprovação Oficial pela Diretoria
+    status = Column(String(30), nullable=False, default="em_andamento")  # em_andamento, aprovado
+    approval_date = Column(Date, nullable=True)
+    final_report_url = Column(Text, nullable=True)
+    approved_at = Column(DateTime, nullable=True)
+    approved_by = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
