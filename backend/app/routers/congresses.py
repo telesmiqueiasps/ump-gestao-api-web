@@ -1,4 +1,6 @@
 import re
+import secrets
+import logging
 from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
@@ -18,9 +20,11 @@ from app.models.finance import FinancialPeriod
 from app.models.activity_report import ActivityReport
 from app.models.ump_statistic import UmpStatisticCollector
 from app.models.congress import Congress, CongressCommission, CongressCommissionMember, CongressCommissionDocument
-from app.services.storage import get_presigned_url, upload_file
+from app.services.storage import get_presigned_url, upload_file, delete_file, delete_folder, extract_key_from_url
 from app.services.pdf_generator import generate_commission_report
 from app.core.config import get_settings
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -83,13 +87,14 @@ def _presign_url_if_needed(url: Optional[str]) -> Optional[str]:
 
 
 def _serialize_commission(comm: CongressCommission) -> dict:
+    rel_name = comm.relator.full_name.strip() if (comm.relator and comm.relator.full_name) else comm.relator_name
     return {
         "id": str(comm.id),
         "congress_id": str(comm.congress_id),
         "name": comm.name,
         "description": comm.description,
         "relator_id": str(comm.relator_id) if comm.relator_id else None,
-        "relator_name": comm.relator_name,
+        "relator_name": rel_name,
         "access_token": comm.access_token,
         "opinion_report": comm.opinion_report or "",
         "approval_date": comm.approval_date,
@@ -106,7 +111,7 @@ def _serialize_commission(comm: CongressCommission) -> dict:
             {
                 "id": str(m.id),
                 "delegate_id": str(m.delegate_id) if m.delegate_id else None,
-                "delegate_name": m.delegate_name,
+                "delegate_name": m.delegate.full_name.strip() if (m.delegate and m.delegate.full_name) else m.delegate_name,
                 "is_relator": m.is_relator
             }
             for m in comm.members
@@ -260,6 +265,13 @@ def delete_congress(
     ).first()
     if not congress:
         raise HTTPException(status_code=404, detail="Congresso não encontrado.")
+
+    # Exclui pasta com arquivos avulsos e pareceres gerados para o congresso no R2
+    try:
+        delete_folder(f"congresses/{congress.id}")
+    except Exception as e:
+        logger.error(f"Erro ao excluir pasta do congresso {congress.id} do R2: {e}")
+
     db.delete(congress)
     db.commit()
     return None
@@ -331,6 +343,17 @@ def delete_commission(
     ).first()
     if not comm:
         raise HTTPException(status_code=404, detail="Comissão não encontrada.")
+
+    # Exclui pasta de arquivos avulsos e parecer homologado da comissão no R2
+    try:
+        delete_folder(f"congresses/{comm.congress_id}/commissions/{comm.id}")
+        if comm.final_report_url:
+            pdf_key = extract_key_from_url(comm.final_report_url)
+            if pdf_key:
+                delete_file(pdf_key)
+    except Exception as e:
+        logger.error(f"Erro ao excluir arquivos da comissão {comm.id} do R2: {e}")
+
     db.delete(comm)
     db.commit()
     return None
@@ -352,16 +375,26 @@ def set_commission_members(
         raise HTTPException(status_code=404, detail="Comissão não encontrada.")
 
     comm.relator_id = payload.relator_id
-    comm.relator_name = payload.relator_name.strip() if payload.relator_name else None
+    if payload.relator_id:
+        rel_obj = db.query(Member).filter(Member.id == payload.relator_id).first()
+        comm.relator_name = rel_obj.full_name.strip() if rel_obj else (payload.relator_name.strip() if payload.relator_name else None)
+    else:
+        comm.relator_name = payload.relator_name.strip() if payload.relator_name else None
 
     # Remove membros antigos e adiciona os novos
     db.query(CongressCommissionMember).filter(CongressCommissionMember.commission_id == comm.id).delete()
 
     for m in payload.members:
+        del_name = m.delegate_name.strip()
+        if m.delegate_id:
+            del_obj = db.query(Member).filter(Member.id == m.delegate_id).first()
+            if del_obj:
+                del_name = del_obj.full_name.strip()
+
         member_obj = CongressCommissionMember(
             commission_id=comm.id,
             delegate_id=m.delegate_id,
-            delegate_name=m.delegate_name.strip(),
+            delegate_name=del_name,
             is_relator=m.is_relator
         )
         db.add(member_obj)
@@ -662,7 +695,9 @@ async def upload_commission_document(
     if len(content) > 25 * 1024 * 1024:  # 25 MB max
         raise HTTPException(status_code=400, detail="Arquivo muito grande. O limite máximo é 25MB.")
 
-    key = f"congresses/{comm.congress_id}/commissions/{comm.id}/{file.filename}"
+    clean_filename = re.sub(r'[^a-zA-Z0-9_.-]', '_', file.filename or "documento.pdf")
+    unique_prefix = secrets.token_hex(4)
+    key = f"congresses/{comm.congress_id}/commissions/{comm.id}/{unique_prefix}_{clean_filename}"
     uploaded_url = upload_file(content, key, file.content_type or "application/pdf")
 
     doc = CongressCommissionDocument(
@@ -670,7 +705,8 @@ async def upload_commission_document(
         title=title.strip(),
         category=category,
         origin_name=origin_name.strip() if origin_name else "Avulso",
-        document_url=uploaded_url.split('?')[0].strip()
+        document_url=uploaded_url.split('?')[0].strip(),
+        external_reference_id=None
     )
     db.add(doc)
     db.commit()
@@ -685,7 +721,7 @@ def remove_commission_document(
     current_user: User = Depends(require_federation),
     db: Session = Depends(get_db)
 ):
-    """Remove um documento vinculado à comissão."""
+    """Remove um documento vinculado à comissão. Se for documento avulso (upload), exclui também do bucket R2."""
     comm = db.query(CongressCommission).join(Congress).filter(
         CongressCommission.id == commission_id,
         Congress.federation_id == current_user.organization_id
@@ -699,6 +735,18 @@ def remove_commission_document(
     ).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Documento não encontrado.")
+
+    # Exclui do bucket R2 APENAS se for documento avulso (upload para a comissão).
+    # Documentos gerados pelo sistema (financeiro, comprovantes, atividades, estatísticas) NÃO são excluídos do bucket.
+    is_avulso = (doc.category == "avulso") or (not doc.external_reference_id and "commissions/" in (doc.document_url or ""))
+    if is_avulso and doc.document_url:
+        key = extract_key_from_url(doc.document_url)
+        if key:
+            try:
+                delete_file(key)
+                logger.info(f"Documento avulso excluído do R2 com sucesso: {key}")
+            except Exception as e:
+                logger.error(f"Erro ao excluir documento avulso {key} do R2: {e}")
 
     db.delete(doc)
     db.commit()
@@ -748,11 +796,14 @@ def preview_commission_pdf_admin(
     congress = comm.congress
     fed = db.query(Federation).filter(Federation.id == congress.federation_id).first() if congress else None
 
+    rel_name = comm.relator.full_name.strip() if (comm.relator and comm.relator.full_name) else (comm.relator_name or "Não informado")
+    members_names = [(m.delegate.full_name.strip() if (m.delegate and m.delegate.full_name) else m.delegate_name) for m in comm.members]
+
     pdf_bytes = generate_commission_report(
         congress_title=congress.title if congress else "Congresso Ordinário",
         commission_name=comm.name,
-        relator_name=comm.relator_name,
-        members_list=[m.delegate_name for m in comm.members],
+        relator_name=rel_name,
+        members_list=members_names,
         opinion_html=comm.opinion_report or "",
         approval_date=comm.approval_date,
         presbytery_name=fed.presbytery_name if fed else None,
@@ -802,11 +853,14 @@ def approve_commission_opinion(
     comm.validation_code = val_code
 
     # Gerar PDF Oficial (is_preview=False)
+    rel_name = comm.relator.full_name.strip() if (comm.relator and comm.relator.full_name) else (comm.relator_name or "Não informado")
+    members_names = [(m.delegate.full_name.strip() if (m.delegate and m.delegate.full_name) else m.delegate_name) for m in comm.members]
+
     pdf_bytes = generate_commission_report(
         congress_title=congress.title if congress else "Congresso Ordinário",
         commission_name=comm.name,
-        relator_name=comm.relator_name,
-        members_list=[m.delegate_name for m in comm.members],
+        relator_name=rel_name,
+        members_list=members_names,
         opinion_html=comm.opinion_report,
         approval_date=comm.approval_date,
         presbytery_name=fed.presbytery_name if fed else None,
@@ -910,11 +964,14 @@ def preview_public_commission_pdf(
     congress = comm.congress
     fed = db.query(Federation).filter(Federation.id == congress.federation_id).first() if congress else None
 
+    rel_name = comm.relator.full_name.strip() if (comm.relator and comm.relator.full_name) else (comm.relator_name or "Não informado")
+    members_names = [(m.delegate.full_name.strip() if (m.delegate and m.delegate.full_name) else m.delegate_name) for m in comm.members]
+
     pdf_bytes = generate_commission_report(
         congress_title=congress.title if congress else "Congresso Ordinário",
         commission_name=comm.name,
-        relator_name=comm.relator_name,
-        members_list=[m.delegate_name for m in comm.members],
+        relator_name=rel_name,
+        members_list=members_names,
         opinion_html=comm.opinion_report or "",
         approval_date=comm.approval_date,
         presbytery_name=fed.presbytery_name if fed else None,

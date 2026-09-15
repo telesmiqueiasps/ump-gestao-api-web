@@ -55,6 +55,7 @@ class CongressCommission(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     congress = relationship("Congress", back_populates="commissions")
+    relator = relationship("Member", foreign_keys=[relator_id], lazy="joined")
     members = relationship("CongressCommissionMember", back_populates="commission", cascade="all, delete-orphan", order_by="CongressCommissionMember.delegate_name")
     documents = relationship("CongressCommissionDocument", back_populates="commission", cascade="all, delete-orphan", order_by="CongressCommissionDocument.created_at")
 
@@ -71,6 +72,7 @@ class CongressCommissionMember(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     commission = relationship("CongressCommission", back_populates="members")
+    delegate = relationship("Member", foreign_keys=[delegate_id], lazy="joined")
 
 
 class CongressCommissionDocument(Base):

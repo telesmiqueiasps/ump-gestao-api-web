@@ -771,9 +771,7 @@
         document.getElementById('detail-congress-year').textContent = `Ano ${activeCongress.fiscal_year}`
         document.getElementById('detail-congress-status').textContent = activeCongress.status === 'aberto' ? 'Aberto' : 'Encerrado'
         document.getElementById('detail-congress-status').className = `badge ${activeCongress.status === 'aberto' ? 'badge-green' : 'badge-amber'}`
-        if (!allDelegates || allDelegates.length === 0) {
-          await loadDelegates()
-        }
+        await loadDelegates()
         renderCommissions()
       } catch (err) {
         showAlert('Erro ao abrir congresso: ' + (err.message || err))
@@ -909,7 +907,7 @@
                 </a>
 
                 ${comm.has_opinion
-            ? `<button type="button" class="btn btn-secondary btn-sm" style="font-size:.75rem; padding:.35rem .6rem;" onclick="previewCommissionPdf('${comm.access_token}')" title="Ver Prévia do Relatório em PDF">
+            ? `<button type="button" class="btn btn-secondary btn-sm" style="background:#2563eb; border-color:#2563eb; font-size:.75rem; padding:.35rem .6rem;" onclick="previewCommissionPdf('${comm.access_token}')" title="Ver Prévia do Relatório em PDF">
                        Prévia PDF
                      </button>`
             : ''
@@ -1013,9 +1011,7 @@
 
     async function refreshActiveCongress() {
       if (!activeCongress) return
-      if (!allDelegates || allDelegates.length === 0) {
-        await loadDelegates()
-      }
+      await loadDelegates()
       activeCongress = await api.get(`/api/congresses/${activeCongress.id}`)
       renderCommissions()
     }
@@ -1025,9 +1021,7 @@
       activeCommission = (activeCongress.commissions || []).find(c => c.id === commId)
       if (!activeCommission) return
 
-      if (!allDelegates || allDelegates.length === 0) {
-        await loadDelegates()
-      }
+      await loadDelegates()
 
       document.getElementById('modal-members-comm-name').textContent = activeCommission.name
 

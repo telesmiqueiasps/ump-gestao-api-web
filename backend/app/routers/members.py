@@ -285,6 +285,18 @@ def update_member(
         member.latitude = lat
         member.longitude = lon
 
+    # Se o nome do delegado/sócio for alterado, sincroniza nas comissões de congresso onde ele atua
+    if "full_name" in dump and dump["full_name"]:
+        new_name = dump["full_name"].strip()
+        from app.models.congress import CongressCommission, CongressCommissionMember
+        db.query(CongressCommission).filter(
+            CongressCommission.relator_id == member.id
+        ).update({"relator_name": new_name}, synchronize_session=False)
+
+        db.query(CongressCommissionMember).filter(
+            CongressCommissionMember.delegate_id == member.id
+        ).update({"delegate_name": new_name}, synchronize_session=False)
+
     db.commit()
     db.refresh(member)
     return _to_out(member)

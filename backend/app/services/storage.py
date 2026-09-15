@@ -159,6 +159,7 @@ def get_file_base64(url: str) -> str:
 def extract_key_from_url(url: str) -> str | None:
     if not url:
         return None
+    url = url.split('?')[0].strip()
     public_domain = settings.r2_public_domain.rstrip('/')
     if url.startswith(public_domain):
         return url.replace(f"{public_domain}/", "")
