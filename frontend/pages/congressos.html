@@ -90,13 +90,13 @@
       flex-direction: column;
       justify-content: space-between;
       gap: 1.15rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,.04);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, .04);
       transition: all .2s ease;
     }
 
     .congress-card:hover {
       transform: translateY(-2px);
-      box-shadow: 0 10px 20px -5px rgba(0,0,0,.08);
+      box-shadow: 0 10px 20px -5px rgba(0, 0, 0, .08);
       border-color: var(--blue-400);
     }
 
@@ -114,7 +114,7 @@
       display: flex;
       flex-direction: column;
       gap: 1.15rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,.04);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, .04);
       transition: all .2s ease;
       position: relative;
     }
@@ -214,7 +214,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 1px 3px rgba(0,0,0,.03);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, .03);
     }
 
     .empty-state-box .ei {
@@ -325,7 +325,7 @@
       border-radius: 8px;
       font-size: .85rem;
       font-weight: 500;
-      box-shadow: 0 10px 15px -3px rgba(0,0,0,.2);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, .2);
       z-index: 9999;
       opacity: 0;
       transform: translateY(10px);
@@ -365,13 +365,13 @@
         align-items: flex-start;
       }
 
-      .congress-header-banner > div:last-child {
+      .congress-header-banner>div:last-child {
         width: 100%;
         display: flex;
         flex-direction: column;
       }
 
-      .congress-header-banner > div:last-child button {
+      .congress-header-banner>div:last-child button {
         width: 100%;
         justify-content: center;
       }
@@ -453,14 +453,19 @@
               <div class="congress-banner-badges">
                 <span class="badge badge-blue" id="detail-congress-year">2026</span>
                 <span class="badge badge-green" id="detail-congress-status">Aberto</span>
-                <span class="badge" style="background: rgba(255,255,255,.18); color: #fff; font-weight:600;" id="detail-congress-comm-count">4 Comissões</span>
+                <span class="badge" style="background: rgba(255,255,255,.18); color: #fff; font-weight:600;"
+                  id="detail-congress-comm-count">4 Comissões</span>
               </div>
             </div>
             <div style="display:flex; gap:.6rem; align-items:center; flex-wrap:wrap">
-              <button class="btn btn-secondary btn-sm" style="background:rgba(255,255,255,.15); color:#fff; border-color:rgba(255,255,255,.25);" onclick="showCongressListView()">
+              <button class="btn btn-secondary btn-sm"
+                style="background:rgba(255,255,255,.15); color:#fff; border-color:rgba(255,255,255,.25);"
+                onclick="showCongressListView()">
                 ← Voltar aos Congressos
               </button>
-              <button class="btn btn-primary btn-sm" style="background:#fff; color:var(--brand-blue, #1a2a6c); border-color:#fff; font-weight:700;" onclick="openNewCommissionModal()">
+              <button class="btn btn-primary btn-sm"
+                style="background:#fff; color:var(--brand-blue, #1a2a6c); border-color:#fff; font-weight:700;"
+                onclick="openNewCommissionModal()">
                 + Nova Comissão
               </button>
             </div>
@@ -484,14 +489,16 @@
   <div class="modal-overlay" id="modal-congress">
     <div class="modal-box">
       <div class="modal-box-header">
-        <h3 id="modal-congress-title" style="font-weight:700; font-size:1.1rem; color:var(--slate-800)">Novo Congresso</h3>
+        <h3 id="modal-congress-title" style="font-weight:700; font-size:1.1rem; color:var(--slate-800)">Novo Congresso
+        </h3>
         <button type="button" class="modal-close" onclick="closeModal('modal-congress')">✕</button>
       </div>
       <form id="form-congress" onsubmit="handleSaveCongress(event)">
         <div class="modal-box-body">
           <div class="field">
             <label>Título do Congresso *</label>
-            <input type="text" id="c-title" class="input" placeholder="Ex: XXXII Congresso Ordinário da FPOPB" required />
+            <input type="text" id="c-title" class="input" placeholder="Ex: XXXII Congresso Ordinário da FPOPB"
+              required />
           </div>
           <div class="field">
             <label>Ano do Congresso *</label>
@@ -499,7 +506,8 @@
           </div>
           <div class="field">
             <label>Descrição (Opcional)</label>
-            <textarea id="c-desc" class="input" rows="3" placeholder="Informações gerais, local, tema do congresso..."></textarea>
+            <textarea id="c-desc" class="input" rows="3"
+              placeholder="Informações gerais, local, tema do congresso..."></textarea>
           </div>
         </div>
         <div class="modal-box-footer">
@@ -514,7 +522,8 @@
   <div class="modal-overlay" id="modal-commission">
     <div class="modal-box">
       <div class="modal-box-header">
-        <h3 id="modal-commission-title" style="font-weight:700; font-size:1.1rem; color:var(--slate-800)">Nova Comissão</h3>
+        <h3 id="modal-commission-title" style="font-weight:700; font-size:1.1rem; color:var(--slate-800)">Nova Comissão
+        </h3>
         <button type="button" class="modal-close" onclick="closeModal('modal-commission')">✕</button>
       </div>
       <form id="form-commission" onsubmit="handleSaveCommission(event)">
@@ -526,7 +535,8 @@
           </div>
           <div class="field">
             <label>Descrição da Comissão (Opcional)</label>
-            <textarea id="comm-desc" class="input" rows="3" placeholder="Finalidade ou orientações para a comissão..."></textarea>
+            <textarea id="comm-desc" class="input" rows="3"
+              placeholder="Finalidade ou orientações para a comissão..."></textarea>
           </div>
         </div>
         <div class="modal-box-footer">
@@ -561,12 +571,16 @@
             Marque os delegados que farão parte desta comissão junto ao relator:
           </p>
           <div style="margin-bottom:.5rem;">
-            <input type="text" id="search-delegates-input" class="input" placeholder="🔍 Pesquisar delegado pelo nome ou sociedade local..." oninput="filterCommissionDelegates()" />
+            <input type="text" id="search-delegates-input" class="input"
+              placeholder="🔍 Pesquisar delegado pelo nome ou sociedade local..."
+              oninput="filterCommissionDelegates()" />
           </div>
-          <div id="delegates-checkbox-list" style="max-height: 240px; overflow-y:auto; display:flex; flex-direction:column; gap:.35rem; border:1px solid var(--slate-200); padding:.5rem; border-radius:var(--radius);">
+          <div id="delegates-checkbox-list"
+            style="max-height: 240px; overflow-y:auto; display:flex; flex-direction:column; gap:.35rem; border:1px solid var(--slate-200); padding:.5rem; border-radius:var(--radius);">
             <!-- Renderizado via JS -->
           </div>
-          <div id="delegates-search-empty" style="display:none; color:var(--slate-400); font-size:.8rem; text-align:center; padding:1rem 0;">
+          <div id="delegates-search-empty"
+            style="display:none; color:var(--slate-400); font-size:.8rem; text-align:center; padding:1rem 0;">
             Nenhum delegado encontrado com os termos pesquisados.
           </div>
         </div>
@@ -590,7 +604,8 @@
       </div>
       <div class="modal-box-body">
         <div style="display:flex; gap:.5rem; align-items:center;">
-          <input type="text" id="search-docs-input" class="input" placeholder="🔍 Filtrar por UMP Local ou título..." oninput="filterAvailableDocs()" />
+          <input type="text" id="search-docs-input" class="input" placeholder="🔍 Filtrar por UMP Local ou título..."
+            oninput="filterAvailableDocs()" />
           <select id="filter-docs-category" class="select" style="width: auto;" onchange="filterAvailableDocs()">
             <option value="">Todas as Categorias</option>
             <option value="financeiro">Financeiro</option>
@@ -604,7 +619,8 @@
           Selecione os relatórios gerados no sistema para liberar acesso a esta comissão:
         </p>
 
-        <div id="available-docs-list" style="max-height: 280px; overflow-y:auto; display:flex; flex-direction:column; gap:.5rem;">
+        <div id="available-docs-list"
+          style="max-height: 280px; overflow-y:auto; display:flex; flex-direction:column; gap:.5rem;">
           <!-- Renderizado via JS -->
         </div>
 
@@ -616,9 +632,11 @@
             Ou envie um documento avulso (PDF)
           </h4>
           <div style="display:flex; gap:.5rem; align-items:center; flex-wrap:wrap">
-            <input type="text" id="upload-doc-title" class="input" placeholder="Título do arquivo (Ex: Proposta de Emenda)" style="flex:1" />
+            <input type="text" id="upload-doc-title" class="input"
+              placeholder="Título do arquivo (Ex: Proposta de Emenda)" style="flex:1" />
             <input type="file" id="upload-doc-file" accept=".pdf,.doc,.docx,.png,.jpg" class="input" style="flex:1" />
-            <button type="button" class="btn btn-secondary btn-sm" onclick="handleUploadDocument()">📤 Enviar Arquivo</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="handleUploadDocument()">📤 Enviar
+              Arquivo</button>
           </div>
         </div>
       </div>
@@ -644,25 +662,25 @@
     let allDelegates = []
     let availableDocs = []
 
-    // ── INICIALIZAÇÃO ──
-    ;(async () => {
-      if (!requireAuth()) return
-      if (!canAccessPage('congressos')) {
-        window.location.href = '/pages/dashboard.html'
-        return
-      }
+      // ── INICIALIZAÇÃO ──
+      ; (async () => {
+        if (!requireAuth()) return
+        if (!canAccessPage('congressos')) {
+          window.location.href = '/pages/dashboard.html'
+          return
+        }
 
-      await renderShell()
-      renderBottomNav('congressos')
-      document.querySelector('[data-page="congressos"]')?.classList.add('active')
-      currentUser = getUser()
+        await renderShell()
+        renderBottomNav('congressos')
+        document.querySelector('[data-page="congressos"]')?.classList.add('active')
+        currentUser = getUser()
 
-      // Carrega delegados da federação para os selects e composições
-      await loadDelegates()
+        // Carrega delegados da federação para os selects e composições
+        await loadDelegates()
 
-      // Carrega lista inicial de congressos
-      await loadCongresses()
-    })()
+        // Carrega lista inicial de congressos
+        await loadCongresses()
+      })()
 
     // ── CARREGAMENTO DE DADOS ──
     async function loadCongresses() {
@@ -792,12 +810,12 @@
 
       container.innerHTML = comms.map(comm => {
         const publicUrl = `${window.location.origin}/comissao.html?token=${comm.access_token}`
-        
+
         // Identifica UMP Local do relator se disponível
         const relatorDel = allDelegates.find(d => String(d.id) === String(comm.relator_id))
         const relatorLoc = relatorDel?.local_society ? ` (${relatorDel.local_society})` : ''
         const relatorText = comm.relator_name ? `${comm.relator_name}${relatorLoc}` : 'Não definido'
-        
+
         const otherMembers = (comm.members || []).filter(m => !m.is_relator)
         const docs = comm.documents || []
 
@@ -818,25 +836,25 @@
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.4rem;">
                 <span style="font-size:.75rem; font-weight:700; color:var(--slate-500); text-transform:uppercase;">Composição</span>
                 <button class="btn-ghost" style="font-size:.75rem; color:var(--blue-600); font-weight:600; padding:0;" onclick="openMembersModal('${comm.id}')">
-                  👥 Definir Membros
+                  + Definir Membros
                 </button>
               </div>
 
               <div style="display:flex; flex-direction:column; gap:.35rem;">
                 <div>
                   <span class="relator-badge">
-                    <span>👑 Relator:</span> <strong>${relatorText}</strong>
+                    <span>Relator:</span> <strong>${relatorText}</strong>
                   </span>
                 </div>
                 <div style="display:flex; flex-wrap:wrap; gap:.3rem; margin-top:.2rem;">
-                  ${otherMembers.length > 0 
-                    ? otherMembers.map(m => {
-                        const mDel = allDelegates.find(d => String(d.id) === String(m.delegate_id))
-                        const mLoc = mDel?.local_society ? ` (${mDel.local_society})` : ''
-                        return `<span class="member-chip" title="${m.delegate_name}${mLoc}">${m.delegate_name}${mLoc}</span>`
-                      }).join('')
-                    : '<span style="font-size:.75rem; color:var(--slate-400); font-style:italic">Nenhum outro membro selecionado</span>'
-                  }
+                  ${otherMembers.length > 0
+            ? otherMembers.map(m => {
+              const mDel = allDelegates.find(d => String(d.id) === String(m.delegate_id))
+              const mLoc = mDel?.local_society ? ` (${mDel.local_society})` : ''
+              return `<span class="member-chip" title="${m.delegate_name}${mLoc}">${m.delegate_name}${mLoc}</span>`
+            }).join('')
+            : '<span style="font-size:.75rem; color:var(--slate-400); font-style:italic">Nenhum outro membro selecionado</span>'
+          }
                 </div>
               </div>
             </div>
@@ -854,7 +872,7 @@
 
               <div style="display:flex; flex-direction:column; gap:.35rem; max-height:140px; overflow-y:auto;">
                 ${docs.length > 0
-                  ? docs.map(d => `
+            ? docs.map(d => `
                     <div class="doc-item-row">
                       <span style="display:inline-flex; align-items:center; gap:.35rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                         📄 <a href="${d.document_url}" target="_blank" style="color:var(--slate-700); text-decoration:none; font-weight:500;">${d.title}</a>
@@ -862,8 +880,8 @@
                       <button class="btn-ghost" style="padding:0 .25rem; color:var(--red-400); font-size:.8rem;" onclick="removeCommissionDoc('${comm.id}', '${d.id}')" title="Desvincular">✕</button>
                     </div>
                   `).join('')
-                  : '<div style="font-size:.75rem; color:var(--slate-400); font-style:italic; padding:.4rem 0;">Nenhum documento anexado a esta comissão ainda.</div>'
-                }
+            : '<div style="font-size:.75rem; color:var(--slate-400); font-style:italic; padding:.4rem 0;">Nenhum documento anexado a esta comissão ainda.</div>'
+          }
               </div>
             </div>
 
@@ -873,14 +891,14 @@
                 <span style="font-size:.78rem; font-weight:600; color:var(--slate-600)">Status do Parecer:</span>
                 <div>
                   ${comm.status === 'aprovado'
-                    ? `<div style="text-align:right;">
+            ? `<div style="text-align:right;">
                          <span style="display:inline-flex; align-items:center; gap:.25rem; font-size:.75rem; font-weight:700; color:#15803d; background:#dcfce7; border:1px solid #86efac; border-radius:99px; padding:2px 8px;">✓ Aprovado Oficialmente</span>
                          ${comm.validation_code ? `<div style="font-size:.68rem; font-family:monospace; color:var(--slate-500); margin-top:2px;">Autenticidade: ${comm.validation_code}</div>` : ''}
                        </div>`
-                    : comm.has_opinion
-                      ? '<span style="display:inline-flex; align-items:center; gap:.25rem; font-size:.75rem; font-weight:700; color:#1d4ed8; background:#eff6ff; border:1px solid #bfdbfe; border-radius:99px; padding:2px 8px;">✍️ Redigido (Em análise)</span>'
-                      : '<span style="font-size:.75rem; color:var(--slate-400); font-style:italic">⏳ Aguardando confecção</span>'
-                  }
+            : comm.has_opinion
+              ? '<span style="display:inline-flex; align-items:center; gap:.25rem; font-size:.75rem; font-weight:700; color:#1d4ed8; background:#eff6ff; border:1px solid #bfdbfe; border-radius:99px; padding:2px 8px;">Redigido (Em análise)</span>'
+              : '<span style="font-size:.75rem; color:var(--slate-400); font-style:italic">⏳ Aguardando confecção</span>'
+          }
                 </div>
               </div>
 
@@ -891,25 +909,25 @@
                 </a>
 
                 ${comm.has_opinion
-                  ? `<button type="button" class="btn btn-secondary btn-sm" style="font-size:.75rem; padding:.35rem .6rem;" onclick="previewCommissionPdf('${comm.access_token}')" title="Ver Prévia do Relatório em PDF">
-                       👁️ Prévia PDF
+            ? `<button type="button" class="btn btn-secondary btn-sm" style="font-size:.75rem; padding:.35rem .6rem;" onclick="previewCommissionPdf('${comm.access_token}')" title="Ver Prévia do Relatório em PDF">
+                       Prévia PDF
                      </button>`
-                  : ''
-                }
+            : ''
+          }
 
                 ${comm.has_opinion && comm.status !== 'aprovado'
-                  ? `<button type="button" class="btn btn-primary btn-sm" style="background:#16a34a; border-color:#16a34a; font-size:.75rem; padding:.35rem .6rem;" onclick="approveCommissionOpinion('${comm.id}', '${comm.name.replace(/'/g, "\\'")}')" title="Aprovar e homologar oficialmente o parecer">
-                       ✅ Aprovar Parecer
+            ? `<button type="button" class="btn btn-primary btn-sm" style="background:#16a34a; border-color:#16a34a; font-size:.75rem; padding:.35rem .6rem;" onclick="approveCommissionOpinion('${comm.id}', '${comm.name.replace(/'/g, "\\'")}')" title="Aprovar e homologar oficialmente o parecer">
+                       Aprovar Parecer
                      </button>`
-                  : ''
-                }
+            : ''
+          }
 
                 ${comm.status === 'aprovado' && comm.final_report_url
-                  ? `<a href="${comm.final_report_url}" target="_blank" class="btn btn-sm" style="background:#10b981; color:#fff; font-size:.75rem; padding:.35rem .6rem; text-decoration:none; font-weight:700;" title="Abrir PDF Oficial Aprovado">
+            ? `<a href="${comm.final_report_url}" target="_blank" class="btn btn-sm" style="background:#10b981; color:#fff; font-size:.75rem; padding:.35rem .6rem; text-decoration:none; font-weight:700;" title="Abrir PDF Oficial Aprovado">
                        📄 PDF Oficial ↗
                      </a>`
-                  : ''
-                }
+            : ''
+          }
               </div>
             </div>
 
