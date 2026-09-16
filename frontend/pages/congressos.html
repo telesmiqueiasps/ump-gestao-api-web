@@ -463,14 +463,12 @@
                 onclick="showCongressListView()">
                 ← Voltar aos Congressos
               </button>
-              <button class="btn btn-primary btn-sm"
-                id="btn-new-commission"
+              <button class="btn btn-primary btn-sm" id="btn-new-commission"
                 style="background:#fff; color:var(--brand-blue, #1a2a6c); border-color:#fff; font-weight:700;"
                 onclick="openNewCommissionModal()">
                 + Nova Comissão
               </button>
-              <button class="btn btn-sm"
-                id="btn-toggle-congress-status"
+              <button class="btn btn-sm" id="btn-toggle-congress-status"
                 style="display:inline-flex; align-items:center; gap:.35rem; font-weight:700;"
                 onclick="toggleCongressStatus()">
                 <!-- Preenchido via JS -->
@@ -479,12 +477,15 @@
           </div>
 
           <!-- Alerta de Congresso Encerrado -->
-          <div id="congress-closed-banner" style="display:none; background:#fef3c7; border:1px solid #f59e0b; border-radius:var(--radius); padding:1rem 1.25rem; margin-bottom:1.5rem; align-items:center; gap:1rem; color:#92400e;">
+          <div id="congress-closed-banner"
+            style="display:none; background:#fef3c7; border:1px solid #f59e0b; border-radius:var(--radius); padding:1rem 1.25rem; margin-bottom:1.5rem; align-items:center; gap:1rem; color:#92400e;">
             <div style="font-size:1.8rem; line-height:1;">🔒</div>
             <div style="flex:1;">
               <div style="font-weight:700; font-size:.95rem;">Congresso Encerrado (Modo Somente Leitura)</div>
               <div style="font-size:.84rem; color:#b45309; margin-top:.2rem; line-height:1.45;">
-                Este congresso foi oficialmente encerrado. A criação, edição e exclusão de comissões, membros e documentos estão bloqueadas. Os nomes de relatores e membros foram salvos estaticamente para preservação histórica, e todos os relatórios e pareceres permanecem disponíveis para consulta e download em PDF.
+                Este congresso foi oficialmente encerrado. A criação, edição e exclusão de comissões, membros e
+                documentos estão bloqueadas. Todos os relatórios e pareceres permanecem disponíveis para consulta e
+                download em PDF.
               </div>
             </div>
           </div>
