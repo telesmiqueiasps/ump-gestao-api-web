@@ -672,7 +672,9 @@
     <div class="main-area">
       <header class="header">
         <div class="header-left">
-          <button class="btn-menu" id="btn-menu">☰</button>
+          <button class="btn-menu" id="btn-menu" title="Menu" style="display:inline-flex; align-items:center; justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          </button>
           <div class="header-org">
             <span class="header-org-name" id="header-org-name"></span>
           </div>
@@ -695,30 +697,38 @@
             <p id="page-subtitle">Levantamento e dados estatísticos anuais dos sócios da mocidade</p>
           </div>
           <div class="page-header-actions">
-            <!-- Seletor de Ano -->
-            <select class="select" id="select-year" style="width: auto; min-width: 95px; font-weight: 700;">
-              <option value="2026" selected>2026</option>
-              <option value="2025">2025</option>
-              <option value="2024">2024</option>
-            </select>
+            <!-- Seletor de Ano com Ícone de Calendário -->
+            <div style="display:inline-flex; align-items:center; position:relative;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute; left:10px; pointer-events:none; color:var(--slate-500);"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              <select class="select" id="select-year" style="width: auto; min-width: 105px; padding-left: 32px; font-weight: 700;">
+                <option value="2026" selected>2026</option>
+                <option value="2025">2025</option>
+                <option value="2024">2024</option>
+              </select>
+            </div>
 
             <!-- Badge de Status de Publicação -->
             <span id="status-badge" class="badge" style="display:none; padding: 6px 12px; font-size: 0.82rem; font-weight: 700; border-radius: 8px;"></span>
 
-            <!-- Botões de PDF e Publicação -->
-            <button class="btn btn-primary btn-sm" id="btn-publish-report" onclick="publishReport()" title="Publicar Relatório para a Federação" style="display:none; background: linear-gradient(135deg, #1a2a6c, #27408b); border: none;">
-              🚀 Publicar Relatório
+            <!-- Botões de PDF e Publicação com Ícones SVG -->
+            <button class="btn btn-primary btn-sm" id="btn-publish-report" onclick="publishReport()" title="Publicar Relatório para a Federação" style="display:none; background: linear-gradient(135deg, #1a2a6c, #27408b); border: none; align-items:center; gap:.4rem;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path></svg>
+              <span>Publicar Relatório</span>
             </button>
-            <button class="btn btn-warning btn-sm" id="btn-unpublish-report" onclick="unpublishReport()" title="Despublicar Relatório para reabrir a coleta de dados" style="display:none; background: #d97706; color: #fff; border: none; font-weight: 700;">
-              🔓 Despublicar Relatório
+            <button class="btn btn-warning btn-sm" id="btn-unpublish-report" onclick="unpublishReport()" title="Despublicar Relatório para reabrir a coleta de dados" style="display:none; background: #d97706; color: #fff; border: none; font-weight: 700; align-items:center; gap:.4rem;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+              <span>Despublicar Relatório</span>
             </button>
-            <button class="btn btn-secondary btn-sm" id="btn-view-pdf" onclick="viewPublishedPdf()" title="Visualizar PDF Publicado" style="display:none; color: var(--brand-blue, #1a2a6c); border-color: var(--brand-blue, #1a2a6c); font-weight: 700;">
-              📄 Ver PDF Publicado
+            <button class="btn btn-secondary btn-sm" id="btn-view-pdf" onclick="viewPublishedPdf()" title="Visualizar PDF Publicado" style="display:none; color: var(--brand-blue, #1a2a6c); border-color: var(--brand-blue, #1a2a6c); font-weight: 700; align-items:center; gap:.4rem;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+              <span>Ver PDF Publicado</span>
             </button>
 
+            <!-- Botão Portal Nacional com Ícone de Globo SVG -->
             <a href="https://ump.app.br/login" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm"
-              id="btn-portal-nacional" style="text-decoration: none;" title="Acessar Portal Nacional">
-              Portal Nacional
+              id="btn-portal-nacional" style="text-decoration: none; display:inline-flex; align-items:center; gap:.4rem;" title="Acessar Portal Nacional">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+              <span>Portal Nacional</span>
             </a>
           </div>
         </div>
@@ -726,26 +736,29 @@
         <div id="page-alert" class="hidden"></div>
 
         <!-- Alerta para a Federação quando o relatório não foi publicado -->
-        <div id="federation-not-published-alert" class="card" style="display:none; background: #fffbe6; border: 1.5px solid #ffe58f; padding: 1.25rem; border-radius: 12px; margin-bottom: 1.5rem;">
-          <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <span style="font-size: 1.8rem;">⚠️</span>
+        <div id="federation-not-published-alert" class="card" style="display:none; background: #fffbe6; border: 1.5px solid #ffe58f; padding: 1.1rem 1.25rem; border-radius: 12px; margin-bottom: 1.5rem;">
+          <div style="display: flex; align-items: center; gap: 0.85rem;">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: #fef3c7; border: 1px solid #fde68a; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #d97706;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            </div>
             <div>
-              <h4 style="margin: 0 0 0.25rem 0; color: #873800; font-size: 1rem; font-weight: 700;">Relatório Não Publicado</h4>
-              <p style="margin: 0; color: #612500; font-size: 0.88rem;">O relatório estatístico deste ano ainda não foi publicado pela diretoria da UMP Local. Os dados estarão disponíveis para a Federação assim que o relatório for oficialmente publicado.</p>
+              <h4 style="margin: 0 0 0.25rem 0; color: #873800; font-size: .95rem; font-weight: 700;">Relatório Não Publicado</h4>
+              <p style="margin: 0; color: #612500; font-size: 0.85rem; line-height: 1.4;">O relatório estatístico deste ano ainda não foi publicado pela diretoria da UMP Local. Os dados estarão disponíveis para a Federação assim que o relatório for oficialmente publicado.</p>
             </div>
           </div>
         </div>
 
-        <!-- Sub-abas: Estatísticas Gerais vs Coletor de Dados -->
+        <!-- Sub-abas: Estatísticas Gerais vs Coletor de Dados com Ícones SVG -->
         <div class="subtabs-container">
           <div class="segmented-control">
             <button class="segmented-btn active" id="btn-subtab-general" onclick="switchSubTab('general')">
-              📊 Estatísticas Gerais
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+              <span>Estatísticas Gerais</span>
             </button>
             <button class="segmented-btn" id="btn-subtab-collector" onclick="switchSubTab('collector')">
-              📋 Coletor de Dados
-              <span class="badge badge-amber" id="subtab-pending-badge" style="display:none; margin-left:.35rem;">0
-                pendentes</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+              <span>Coletor de Dados</span>
+              <span class="badge badge-amber" id="subtab-pending-badge" style="display:none; margin-left:.35rem;">0 pendentes</span>
             </button>
           </div>
         </div>
@@ -951,7 +964,9 @@
           <!-- Alerta de Coletor Bloqueado quando o relatório está publicado -->
           <div id="collector-locked-banner" class="card" style="display:none; background: #fffbe6; border: 1.5px solid #ffe58f; padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1.25rem;">
             <div style="display: flex; align-items: center; gap: 0.75rem;">
-              <span style="font-size: 1.5rem;">🔒</span>
+              <span style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background: #ffe58f; color: #873800; flex-shrink: 0;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+              </span>
               <div>
                 <h4 style="margin: 0 0 0.2rem 0; color: #873800; font-size: .92rem; font-weight: 700;">Coletor de Dados Bloqueado</h4>
                 <p style="margin: 0; color: #612500; font-size: 0.82rem;">O relatório estatístico deste ano foi oficialmente publicado e não aceita mais novas respostas ou alterações. Para reabrir a coleta, clique no botão <b>"Despublicar Relatório"</b> no topo da página.</p>
@@ -972,15 +987,18 @@
                 </p>
               </div>
               <div class="collector-banner-actions">
-                <button class="btn btn-secondary btn-sm" id="btn-sync-members" onclick="syncMembers()">
-                  🔄 Sincronizar Sócios
+                <button class="btn btn-secondary btn-sm" id="btn-sync-members" onclick="syncMembers()" style="display: inline-flex; align-items: center; gap: 0.4rem;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                  <span>Sincronizar Sócios</span>
                 </button>
-                <button class="btn btn-secondary btn-sm" id="btn-copy-all-links" onclick="copyAllLinks()">
-                  📋 Copiar Todos os Links
+                <button class="btn btn-secondary btn-sm" id="btn-copy-all-links" onclick="copyAllLinks()" style="display: inline-flex; align-items: center; gap: 0.4rem;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  <span>Copiar Todos os Links</span>
                 </button>
                 <button class="btn btn-secondary btn-sm" id="btn-whatsapp-template"
-                  onclick="openWhatsappTemplateModal()">
-                  💬 Modelo WhatsApp
+                  onclick="openWhatsappTemplateModal()" style="display: inline-flex; align-items: center; gap: 0.4rem;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                  <span>Modelo WhatsApp</span>
                 </button>
               </div>
             </div>
@@ -1007,18 +1025,21 @@
                 Todos (<span id="count-collector-all">0</span>)
               </button>
               <button class="btn btn-secondary btn-sm filter-pill" id="tab-voters-voted"
-                onclick="filterVoters('voted')">
-                ✓ Já Responderam (<span id="count-collector-voted">0</span>)
+                onclick="filterVoters('voted')" style="display: inline-flex; align-items: center; gap: 0.35rem;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: #10b981;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Já Responderam (<span id="count-collector-voted">0</span>)</span>
               </button>
               <button class="btn btn-secondary btn-sm filter-pill" id="tab-voters-pending"
-                onclick="filterVoters('pending')">
-                ⏳ Faltam Responder (<span id="count-collector-pending">0</span>)
+                onclick="filterVoters('pending')" style="display: inline-flex; align-items: center; gap: 0.35rem;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #f59e0b;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                <span>Faltam Responder (<span id="count-collector-pending">0</span>)</span>
               </button>
             </div>
 
-            <div style="flex: 1; min-width: 200px; max-width: 320px;">
-              <input type="text" class="input" id="search-voter" placeholder="🔍 Buscar sócio por nome..."
-                oninput="renderCollectorList()" style="padding: .4rem .75rem; font-size: .85rem;" />
+            <div style="flex: 1; min-width: 200px; max-width: 320px; position: relative;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 0.65rem; top: 50%; transform: translateY(-50%); color: var(--slate-400); pointer-events: none;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input type="text" class="input" id="search-voter" placeholder="Buscar sócio por nome..."
+                oninput="renderCollectorList()" style="padding: .4rem .75rem .4rem 2rem; font-size: .85rem; width: 100%;" />
             </div>
           </div>
 
@@ -1170,7 +1191,10 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeModal('modal-whatsapp-template')">Fechar</button>
-        <button class="btn btn-primary" onclick="copyWhatsappTemplate()">📋 Copiar Texto</button>
+        <button class="btn btn-primary" onclick="copyWhatsappTemplate()" style="display: inline-flex; align-items: center; gap: 0.4rem;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          <span>Copiar Texto</span>
+        </button>
       </div>
     </div>
   </div>
@@ -1395,53 +1419,68 @@
 
       if (status === 'published' || status === 'publicado') {
         if (badge) {
-          badge.style.display = 'inline-block'
+          badge.style.display = 'inline-flex'
+          badge.style.alignItems = 'center'
+          badge.style.gap = '0.3rem'
           badge.className = 'badge badge-green'
-          badge.textContent = '✅ Publicado'
+          badge.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Publicado</span>'
         }
         if (btnPublish) btnPublish.style.display = 'none'
         if (btnUnpublish) {
-          btnUnpublish.style.display = 'inline-block'
+          btnUnpublish.style.display = 'inline-flex'
           btnUnpublish.disabled = false
         }
-        if (btnViewPdf) btnViewPdf.style.display = 'inline-block'
+        if (btnViewPdf) btnViewPdf.style.display = 'inline-flex'
       } else if (status === 'generating') {
         if (badge) {
-          badge.style.display = 'inline-block'
+          badge.style.display = 'inline-flex'
+          badge.style.alignItems = 'center'
+          badge.style.gap = '0.3rem'
           badge.className = 'badge badge-blue'
-          badge.textContent = '⏳ Gerando PDF...'
+          badge.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="spin"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg><span>Gerando PDF...</span>'
         }
         if (btnPublish) {
-          btnPublish.style.display = 'inline-block'
+          btnPublish.style.display = 'inline-flex'
+          btnPublish.style.alignItems = 'center'
+          btnPublish.style.gap = '0.4rem'
           btnPublish.disabled = true
-          btnPublish.innerHTML = '⏳ Gerando...'
+          btnPublish.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="spin"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg><span>Gerando...</span>'
         }
         if (btnUnpublish) btnUnpublish.style.display = 'none'
         if (btnViewPdf) btnViewPdf.style.display = 'none'
       } else if (status === 'failed') {
         if (badge) {
-          badge.style.display = 'inline-block'
+          badge.style.display = 'inline-flex'
+          badge.style.alignItems = 'center'
+          badge.style.gap = '0.3rem'
           badge.className = 'badge badge-red'
-          badge.textContent = '❌ Erro ao Gerar'
+          badge.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg><span>Erro ao Gerar</span>'
         }
         if (btnPublish) {
-          btnPublish.style.display = 'inline-block'
+          btnPublish.style.display = 'inline-flex'
+          btnPublish.style.alignItems = 'center'
+          btnPublish.style.gap = '0.4rem'
           btnPublish.disabled = false
-          btnPublish.innerHTML = '⚠️ Tentar Novamente'
+          btnPublish.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg><span>Tentar Novamente</span>'
         }
         if (btnUnpublish) btnUnpublish.style.display = 'none'
         if (btnViewPdf) btnViewPdf.style.display = 'none'
       } else {
         // draft / rascunho
         if (badge) {
-          badge.style.display = 'inline-block'
+          badge.style.display = 'inline-flex'
+          badge.style.alignItems = 'center'
+          badge.style.gap = '0.3rem'
           badge.className = 'badge badge-slate'
-          badge.textContent = 'Rascunho'
+          badge.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg><span>Rascunho</span>'
         }
         if (btnPublish) {
-          btnPublish.style.display = 'inline-block'
+          btnPublish.style.display = 'inline-flex'
+          btnPublish.style.alignItems = 'center'
+          btnPublish.style.gap = '0.4rem'
           btnPublish.disabled = false
-          btnPublish.innerHTML = isFed ? '🚀 Publicar Relatório Consolidado' : '🚀 Publicar Relatório'
+          const publishSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-3.05 11a22.77 22.77 0 0 1-3.95 2z"></path><path d="M9 12H4s.55-3.03 2-4.5c1.47-1.47 4.5-2 4.5-2"></path><path d="M15 12v5s3.03-.55 4.5-2c1.47-1.47 2-4.5 2-4.5"></path></svg>'
+          btnPublish.innerHTML = `${publishSvg}<span>${isFed ? 'Publicar Relatório Consolidado' : 'Publicar Relatório'}</span>`
         }
         if (btnUnpublish) btnUnpublish.style.display = 'none'
         if (btnViewPdf) btnViewPdf.style.display = 'none'
@@ -1709,11 +1748,11 @@
       container.innerHTML = filtered.map(v => {
         const link = `${window.location.origin}/responder-estatistica.html?token=${v.access_token}`
         const statusBadge = v.has_responded
-          ? `<span class="badge-voted">✓ Respondido</span>`
-          : `<span class="badge-pending">⏳ Pendente</span>`
+          ? `<span class="badge-voted" style="display:inline-flex;align-items:center;gap:.25rem;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>Respondido</span>`
+          : `<span class="badge-pending" style="display:inline-flex;align-items:center;gap:.25rem;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>Pendente</span>`
 
         const typeLabel = v.member_type === 'cooperador' ? 'Cooperador' : 'Ativo'
-        const phoneFormatted = v.phone ? ` · 📞 ${v.phone}` : ''
+        const phoneFormatted = v.phone ? ` · <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;display:inline-block;margin-right:2px;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>${v.phone}` : ''
 
         return `
           <div class="voter-card">
@@ -1725,15 +1764,17 @@
               </div>
             </div>
             <div class="voter-actions">
-              <button class="btn btn-secondary btn-sm btn-action" onclick="copyIndividualLink('${link}')" title="Copiar link para o sócio">
-                🔗 Copiar Link
+              <button class="btn btn-secondary btn-sm btn-action" onclick="copyIndividualLink('${link}')" title="Copiar link para o sócio" style="display:inline-flex;align-items:center;gap:.35rem;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                <span>Copiar Link</span>
               </button>
-              <button class="btn btn-secondary btn-sm btn-action btn-whatsapp" onclick="sendWhatsapp('${v.full_name.replace(/'/g, "\\'")}', '${v.phone || ''}', '${link}')" title="Enviar via WhatsApp">
-                💬 WhatsApp
+              <button class="btn btn-secondary btn-sm btn-action btn-whatsapp" onclick="sendWhatsapp('${v.full_name.replace(/'/g, "\\'")}', '${v.phone || ''}', '${link}')" title="Enviar via WhatsApp" style="display:inline-flex;align-items:center;gap:.35rem;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                <span>WhatsApp</span>
               </button>
               ${v.has_responded
-            ? `<button class="btn btn-secondary btn-sm btn-action" onclick="viewVoterAnswers('${v.response_id}')">👁️ Respostas</button>`
-            : `<button class="btn btn-primary btn-sm btn-action" onclick="openManualEntryModal('${v.response_id}', '${v.full_name.replace(/'/g, "\\'")}')">✍️ Preencher</button>`
+            ? `<button class="btn btn-secondary btn-sm btn-action" onclick="viewVoterAnswers('${v.response_id}')" style="display:inline-flex;align-items:center;gap:.35rem;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg><span>Respostas</span></button>`
+            : `<button class="btn btn-primary btn-sm btn-action" onclick="openManualEntryModal('${v.response_id}', '${v.full_name.replace(/'/g, "\\'")}')" style="display:inline-flex;align-items:center;gap:.35rem;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg><span>Preencher</span></button>`
           }
             </div>
           </div>
@@ -1764,7 +1805,7 @@
       clearAlert()
       const btn = document.getElementById('btn-sync-members')
       btn.disabled = true
-      btn.innerHTML = 'Sincronizando... ⏳'
+      btn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:.35rem;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="spin"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Sincronizando...</span>'
       try {
         let url = `/api/ump-statistics/collector/sync?year=${selectedYear}`
         if (selectedLocalId) url += `&local_ump_id=${selectedLocalId}`
@@ -1776,7 +1817,7 @@
         showAlert(err.message || 'Erro ao sincronizar sócios.')
       } finally {
         btn.disabled = false
-        btn.innerHTML = '🔄 Sincronizar Sócios'
+        btn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:.4rem;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg><span>Sincronizar Sócios</span></span>'
       }
     }
 

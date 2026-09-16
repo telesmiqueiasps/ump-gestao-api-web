@@ -340,7 +340,13 @@ export async function renderShell() {
   if (sidebarFooter && !document.querySelector('.sidebar-pw-btn')) {
     const pwBtn = document.createElement('button')
     pwBtn.className = 'sidebar-pw-btn'
-    pwBtn.innerHTML = '🔒 Alterar senha'
+    pwBtn.innerHTML = `
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      </svg>
+      <span>Alterar senha</span>
+    `
     pwBtn.addEventListener('click', () => openPasswordModal())
     sidebarFooter.parentNode.insertBefore(pwBtn, sidebarFooter)
   }
@@ -367,7 +373,7 @@ export async function renderShell() {
           </div>
           <div id="sidebar-pw-alert" class="hidden" style="margin-bottom:1rem"></div>
           <div id="sidebar-pw-success" class="hidden" style="margin-bottom:1rem">
-            <div class="alert alert-success">✅ Senha alterada com sucesso!</div>
+            <div class="alert alert-success" style="display: flex; align-items: center; gap: 0.5rem;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Senha alterada com sucesso!</div>
           </div>
           <div class="modal-footer">
             <button class="btn btn-secondary modal-close">Cancelar</button>
