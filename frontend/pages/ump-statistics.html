@@ -85,12 +85,166 @@
       }
     }
 
-    /* ── Cards de Estatísticas Grid ── */
+    /* ── Cards de Estatísticas Grid (Compactos e Modernos) ── */
     .stats-summary-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 1rem;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: .75rem;
       margin-bottom: 1.25rem;
+    }
+
+    .stats-summary-grid .stat-card {
+      padding: .8rem .95rem;
+      gap: .75rem;
+      border-radius: 10px;
+      border: 1px solid var(--slate-200);
+      background: #ffffff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+      align-items: center;
+    }
+
+    .stats-summary-grid .stat-card:hover {
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+      border-color: var(--slate-300);
+    }
+
+    .stats-summary-grid .stat-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .stats-summary-grid .stat-label {
+      font-size: .72rem;
+      font-weight: 600;
+      color: var(--slate-500);
+      text-transform: uppercase;
+      letter-spacing: .3px;
+      margin-bottom: 1px;
+    }
+
+    .stats-summary-grid .stat-value {
+      font-size: 1.22rem;
+      font-weight: 800;
+      color: var(--slate-800);
+      margin-top: 1px;
+      line-height: 1.2;
+    }
+
+    .stats-summary-grid .stat-sub {
+      font-size: .71rem;
+      color: var(--slate-400);
+      margin-top: 2px;
+    }
+
+    /* ── Checklist de Publicação das UMPs (Discreto e Moderno) ── */
+    #card-fed-publication-checklist {
+      display: none;
+      margin-bottom: 1.15rem;
+      background: #fafbfc;
+      border: 1px solid var(--slate-200);
+      padding: .85rem 1rem;
+      border-radius: 10px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, .02);
+    }
+
+    .fed-pub-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 0.45rem;
+    }
+
+    .fed-pub-pill {
+      display: flex;
+      align-items: center;
+      gap: .45rem;
+      padding: .35rem .55rem;
+      border-radius: 7px;
+      transition: all .15s ease;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .fed-pub-pill.published {
+      background: #f0fdf4;
+      border: 1px solid #dcfce7;
+    }
+
+    .fed-pub-pill.published:hover {
+      background: #dcfce7;
+      border-color: #bbf7d0;
+    }
+
+    .fed-pub-pill.pending {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+    }
+
+    .fed-pub-pill.pending:hover {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+
+    .fed-pub-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .fed-pub-icon.check {
+      background: #dcfce7;
+    }
+
+    .fed-pub-icon.wait {
+      background: #f1f5f9;
+    }
+
+    .fed-pub-info {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .fed-pub-name {
+      font-size: .75rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.25;
+    }
+
+    .fed-pub-pill.published .fed-pub-name {
+      color: #15803d;
+    }
+
+    .fed-pub-pill.pending .fed-pub-name {
+      color: var(--slate-700);
+    }
+
+    .fed-pub-status-txt {
+      font-size: .65rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.2;
+    }
+
+    .fed-pub-status-txt.success {
+      color: #16a34a;
+    }
+
+    .fed-pub-status-txt.pending {
+      color: var(--slate-400);
     }
 
     /* ── Barras de Quantitativo ── */
@@ -601,15 +755,15 @@
         <!-- ══════════════════════════════════════════════════════════ -->
         <section id="sec-general">
           <!-- Checklist de Publicação das UMPs Locais (Exclusivo para Federação) -->
-          <div id="card-fed-publication-checklist" class="card" style="display:none; margin-bottom: 1.5rem; background: #ffffff; border: 1.5px solid var(--slate-200); padding: 1.25rem; border-radius: 12px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: .5rem;">
-              <div style="display: flex; align-items: center; gap: .5rem;">
-                <span style="font-size: 1.2rem;">📋</span>
-                <h3 style="font-size: .95rem; font-weight: 700; color: var(--slate-800); margin: 0;">Status de Publicação das UMPs Locais</h3>
+          <div id="card-fed-publication-checklist">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem;">
+              <div style="display: flex; align-items: center; gap: .45rem;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--slate-500);"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                <h3 style="font-size: .82rem; font-weight: 600; color: var(--slate-600); margin: 0; text-transform: uppercase; letter-spacing: .4px;">Status de Publicação das UMPs Locais</h3>
               </div>
-              <span id="fed-pub-count-badge" class="badge" style="background: var(--blue-50); color: var(--blue-700); font-weight: 700; font-size: .78rem; padding: 4px 10px; border-radius: 99px;">0 de 0 publicaram</span>
+              <span id="fed-pub-count-badge" class="badge" style="background: #f1f5f9; color: var(--slate-700); font-weight: 600; font-size: .72rem; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--slate-200);">0 de 0 publicaram</span>
             </div>
-            <div id="fed-publication-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.65rem;">
+            <div id="fed-publication-list" class="fed-pub-grid" style="margin-top: .6rem;">
               <!-- Renderizado via JS -->
             </div>
           </div>
@@ -618,7 +772,9 @@
           <div class="stats-summary-grid">
             <!-- Cards Exclusivos para Federação: Locais Ativas e Inativas -->
             <div class="stat-card" id="card-fed-active-locals" style="display:none">
-              <div class="stat-icon green">🏛️</div>
+              <div class="stat-icon" style="background:#ecfdf5; color:#059669; border:1px solid #d1fae5;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 10h1M14 10h1M9 14h1M14 14h1M9 18h1M14 18h1"/></svg>
+              </div>
               <div style="flex:1; min-width:0">
                 <div class="stat-label">Locais Ativas</div>
                 <div class="stat-value" id="stat-fed-active-locals" style="color: var(--green-600, #16a34a)">0</div>
@@ -627,7 +783,9 @@
             </div>
 
             <div class="stat-card" id="card-fed-inactive-locals" style="display:none">
-              <div class="stat-icon" style="background:#fee2e2; color:#dc2626">🏛️</div>
+              <div class="stat-icon" style="background:#fff1f2; color:#e11d48; border:1px solid #ffe4e6;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+              </div>
               <div style="flex:1; min-width:0">
                 <div class="stat-label">Locais Inativas</div>
                 <div class="stat-value" id="stat-fed-inactive-locals" style="color: var(--red-600, #dc2626)">0</div>
@@ -636,21 +794,23 @@
             </div>
 
             <div class="stat-card">
-              <div class="stat-icon blue">👥</div>
+              <div class="stat-icon" style="background:#eff6ff; color:#2563eb; border:1px solid #dbeafe;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+              </div>
               <div style="flex:1; min-width:0">
                 <div class="stat-label">Total de Sócios</div>
                 <div class="stat-value" id="stat-total-registered">0</div>
                 <div class="stat-sub" id="stat-members-sub">
-                  <span style="font-weight: 600; color: var(--blue-700);"><span id="stat-total-active">0</span>
-                    Ativos</span> ·
-                  <span style="font-weight: 600; color: var(--slate-600);"><span id="stat-total-coop">0</span>
-                    Coop.</span>
+                  <span style="font-weight: 600; color: var(--blue-700);"><span id="stat-total-active">0</span> Ativos</span> ·
+                  <span style="font-weight: 600; color: var(--slate-600);"><span id="stat-total-coop">0</span> Coop.</span>
                 </div>
               </div>
             </div>
 
             <div class="stat-card">
-              <div class="stat-icon green">✓</div>
+              <div class="stat-icon" style="background:#f0fdf4; color:#16a34a; border:1px solid #dcfce7;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+              </div>
               <div style="flex:1; min-width:0">
                 <div class="stat-label">Recenseados</div>
                 <div class="stat-value" id="stat-total-responded" style="color: var(--green-600, #16a34a)">0</div>
@@ -659,34 +819,40 @@
             </div>
 
             <div class="stat-card">
-              <div class="stat-icon slate">📈</div>
+              <div class="stat-icon" style="background:#f5f3ff; color:#7c3aed; border:1px solid #ede9fe;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+              </div>
               <div style="flex:1; min-width:0">
                 <div class="stat-label">Taxa de Resposta</div>
                 <div class="stat-value" id="stat-response-rate">0%</div>
-                <div class="stat-bar-bg" style="margin-top: .4rem;">
+                <div class="stat-bar-bg" style="margin-top: .35rem; height: 6px;">
                   <div class="stat-bar-fill" id="stat-response-bar"
                     style="width: 0%; background: var(--green-600, #16a34a)"></div>
                 </div>
               </div>
             </div>
 
-            <div class="stat-card">
-              <div class="stat-icon" style="background: var(--blue-50); color: #1a2a6c">🎂</div>
+            <div class="stat-card" id="card-stat-avg-age">
+              <div class="stat-icon" style="background:#fffbeb; color:#d97706; border:1px solid #fef3c7;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              </div>
               <div style="flex:1; min-width:0">
                 <div class="stat-label">Média de Idade</div>
-                <div class="stat-value" id="stat-average-age" style="color: #1a2a6c">—</div>
+                <div class="stat-value" id="stat-average-age" style="color: #b45309">—</div>
                 <div class="stat-sub">Mocidade local</div>
               </div>
             </div>
 
             <div class="stat-card">
-              <div class="stat-icon" style="background: #eff6ff; color: #1e40af">🏛️</div>
+              <div class="stat-icon" style="background:#f0fdfa; color:#0d9488; border:1px solid #ccfbf1;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="2"></circle><path d="M6 12h.01M18 12h.01"></path></svg>
+              </div>
               <div style="flex:1; min-width:0">
                 <div class="stat-label">Total ACI a Repassar</div>
-                <div class="stat-value" id="stat-aci-total" style="color: #1a2a6c; font-size: 1.25rem;">R$ 0,00</div>
+                <div class="stat-value" id="stat-aci-total" style="color: #0f766e; font-size: 1.15rem;">R$ 0,00</div>
                 <div class="stat-sub" id="stat-aci-sub"
                   style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">0 sócios × R$ 0,00</div>
-                <div class="stat-bar-bg" style="margin-top: .4rem; height: 6px;">
+                <div class="stat-bar-bg" style="margin-top: .35rem; height: 6px;">
                   <div class="stat-bar-fill" id="stat-aci-bar" style="width: 0%; background: var(--green-600, #16a34a)">
                   </div>
                 </div>
@@ -1297,36 +1463,41 @@
         document.getElementById('stat-fed-active-locals').textContent = data.federation_metrics.active_locals ?? 0
         document.getElementById('stat-fed-inactive-locals').textContent = data.federation_metrics.inactive_locals ?? 0
 
-        // Checklist de publicação das UMPs Locais
+        // Checklist de publicação das UMPs Locais (Apenas UMPs ativas)
         if (data.federation_metrics.locals_publication_status) {
           if (checklistCard) checklistCard.style.display = 'block'
-          const pubStatus = data.federation_metrics.locals_publication_status
-          const pubCount = data.federation_metrics.published_locals_count || 0
-          const totalLoc = data.federation_metrics.total_locals || 0
+          // Garante que UMPs inativas não apareçam no status de publicação
+          const activePubStatus = data.federation_metrics.locals_publication_status.filter(item => item.is_active !== false)
+          const pubCount = activePubStatus.filter(item => item.is_published).length
+          const totalActiveLoc = activePubStatus.length
 
-          if (pubCountBadge) pubCountBadge.textContent = `${pubCount} de ${totalLoc} publicaram`
+          if (pubCountBadge) pubCountBadge.textContent = `${pubCount} de ${totalActiveLoc} publicaram`
 
           if (checklistList) {
-            checklistList.innerHTML = pubStatus.map(item => {
+            checklistList.innerHTML = activePubStatus.map(item => {
               if (item.is_published) {
                 const dt = item.published_at ? new Date(item.published_at).toLocaleDateString('pt-BR') : ''
                 const codeTxt = item.validation_code ? ` · ${item.validation_code}` : ''
                 return `
-                  <div style="display:flex; align-items:center; gap:.5rem; font-size:.82rem; color:var(--slate-700); background:#f0fdf4; border:1px solid #bbf7d0; padding:.5rem .75rem; border-radius:8px;">
-                    <span style="color:#16a34a; font-weight:700; font-size:1rem;">☑️</span>
-                    <div style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                      <div style="font-weight:700; color:var(--slate-800);">${item.name}</div>
-                      <div style="font-size:.72rem; color:#15803d;">Publicado em ${dt}${codeTxt}</div>
+                  <div class="fed-pub-pill published" title="Publicado em ${dt}${codeTxt}">
+                    <div class="fed-pub-icon check">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                    <div class="fed-pub-info">
+                      <div class="fed-pub-name">${item.name}</div>
+                      <div class="fed-pub-status-txt success">Publicado · ${dt}</div>
                     </div>
                   </div>
                 `
               } else {
                 return `
-                  <div style="display:flex; align-items:center; gap:.5rem; font-size:.82rem; color:var(--slate-500); background:#f8fafc; border:1px solid #e2e8f0; padding:.5rem .75rem; border-radius:8px;">
-                    <span style="color:var(--slate-400); font-size:1rem;">⬜</span>
-                    <div style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                      <div style="font-weight:600; color:var(--slate-600);">${item.name}</div>
-                      <div style="font-size:.72rem; color:var(--slate-400);">Pendente de publicação</div>
+                  <div class="fed-pub-pill pending" title="Pendente de publicação">
+                    <div class="fed-pub-icon wait">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    </div>
+                    <div class="fed-pub-info">
+                      <div class="fed-pub-name">${item.name}</div>
+                      <div class="fed-pub-status-txt pending">Pendente</div>
                     </div>
                   </div>
                 `
@@ -1350,6 +1521,13 @@
       document.getElementById('stat-responded-sub').textContent = `${(data.total_registered || 0) - (data.total_responded || 0)} pendentes`
       document.getElementById('stat-response-rate').textContent = `${data.response_rate_percent}%`
       document.getElementById('stat-response-bar').style.width = `${data.response_rate_percent}%`
+
+      // Card Média de Idade: removido na Federação conforme solicitado
+      const cardAvgAge = document.getElementById('card-stat-avg-age')
+      if (cardAvgAge) {
+        cardAvgAge.style.display = data.is_federation ? 'none' : 'flex'
+      }
+
       document.getElementById('stat-average-age').textContent = (data.age_metrics && data.age_metrics.average_age > 0)
         ? `${data.age_metrics.average_age} anos`
         : '—'

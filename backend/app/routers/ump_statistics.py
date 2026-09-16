@@ -320,6 +320,9 @@ def get_ump_statistics_metrics(
         ).all()
         pub_map = {c.local_ump_id: c for c in collectors_in_year}
         for l in all_locals:
+            # UMPs inativas não aparecem no status de publicação
+            if l.is_active is False:
+                continue
             col = pub_map.get(l.id)
             is_pub = (col.status in ['published', 'publicado']) if col else False
             if is_pub:
@@ -327,7 +330,7 @@ def get_ump_statistics_metrics(
             locals_pub_status.append({
                 "id": str(l.id),
                 "name": l.name,
-                "is_active": (l.is_active is True or l.is_active is None),
+                "is_active": True,
                 "is_published": is_pub,
                 "published_at": col.published_at.isoformat() if (col and col.published_at) else None,
                 "validation_code": col.validation_code if (col and is_pub) else None
