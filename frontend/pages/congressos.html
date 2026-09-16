@@ -464,10 +464,28 @@
                 ← Voltar aos Congressos
               </button>
               <button class="btn btn-primary btn-sm"
+                id="btn-new-commission"
                 style="background:#fff; color:var(--brand-blue, #1a2a6c); border-color:#fff; font-weight:700;"
                 onclick="openNewCommissionModal()">
                 + Nova Comissão
               </button>
+              <button class="btn btn-sm"
+                id="btn-toggle-congress-status"
+                style="display:inline-flex; align-items:center; gap:.35rem; font-weight:700;"
+                onclick="toggleCongressStatus()">
+                <!-- Preenchido via JS -->
+              </button>
+            </div>
+          </div>
+
+          <!-- Alerta de Congresso Encerrado -->
+          <div id="congress-closed-banner" style="display:none; background:#fef3c7; border:1px solid #f59e0b; border-radius:var(--radius); padding:1rem 1.25rem; margin-bottom:1.5rem; align-items:center; gap:1rem; color:#92400e;">
+            <div style="font-size:1.8rem; line-height:1;">🔒</div>
+            <div style="flex:1;">
+              <div style="font-weight:700; font-size:.95rem;">Congresso Encerrado (Modo Somente Leitura)</div>
+              <div style="font-size:.84rem; color:#b45309; margin-top:.2rem; line-height:1.45;">
+                Este congresso foi oficialmente encerrado. A criação, edição e exclusão de comissões, membros e documentos estão bloqueadas. Os nomes de relatores e membros foram salvos estaticamente para preservação histórica, e todos os relatórios e pareceres permanecem disponíveis para consulta e download em PDF.
+              </div>
             </div>
           </div>
 
@@ -739,11 +757,13 @@
             </div>
             <div style="display:flex; gap:.5rem;">
               <button class="btn btn-primary btn-sm" style="flex:1; justify-content:center;" onclick="openCongressDetail('${c.id}')">
-                Gerenciar Comissões ➔
+                ${c.status === 'encerrado' ? 'Visualizar Comissões ➔' : 'Gerenciar Comissões ➔'}
               </button>
+              ${c.status !== 'encerrado' ? `
               <button class="btn btn-secondary btn-sm btn-icon" onclick="deleteCongress('${c.id}', '${c.title.replace(/'/g, "\\'")}')" title="Excluir Congresso">
                 🗑️
               </button>
+              ` : ''}
             </div>
           </div>
         </div>
@@ -763,14 +783,45 @@
           <span> / ${activeCongress.title}</span>
         `
 
+        const isClosed = activeCongress.status === 'encerrado'
+
         document.getElementById('page-title').textContent = activeCongress.title
         document.getElementById('page-subtitle').textContent = activeCongress.description || `Comissões de trabalho e relatórios do Congresso ${activeCongress.fiscal_year}`
 
         document.getElementById('detail-congress-title').textContent = activeCongress.title
         document.getElementById('detail-congress-desc').textContent = activeCongress.description || 'Gestão de comissões temáticas deste congresso.'
         document.getElementById('detail-congress-year').textContent = `Ano ${activeCongress.fiscal_year}`
-        document.getElementById('detail-congress-status').textContent = activeCongress.status === 'aberto' ? 'Aberto' : 'Encerrado'
-        document.getElementById('detail-congress-status').className = `badge ${activeCongress.status === 'aberto' ? 'badge-green' : 'badge-amber'}`
+        document.getElementById('detail-congress-status').textContent = isClosed ? 'Encerrado' : 'Aberto'
+        document.getElementById('detail-congress-status').className = `badge ${isClosed ? 'badge-amber' : 'badge-green'}`
+        document.getElementById('detail-congress-comm-count').textContent = `${(activeCongress.commissions || []).length} Comissões`
+
+        const btnToggle = document.getElementById('btn-toggle-congress-status')
+        if (btnToggle) {
+          if (isClosed) {
+            btnToggle.innerHTML = '🔓 Reabrir Congresso'
+            btnToggle.style.background = 'rgba(255,255,255,0.2)'
+            btnToggle.style.color = '#fff'
+            btnToggle.style.borderColor = 'rgba(255,255,255,0.4)'
+            btnToggle.title = 'Reabrir congresso para permitir novas alterações'
+          } else {
+            btnToggle.innerHTML = '🔒 Encerrar Congresso'
+            btnToggle.style.background = '#ef4444'
+            btnToggle.style.color = '#fff'
+            btnToggle.style.borderColor = '#dc2626'
+            btnToggle.title = 'Encerrar congresso e congelar comissões e membros'
+          }
+        }
+
+        const btnNewComm = document.getElementById('btn-new-commission')
+        if (btnNewComm) {
+          btnNewComm.style.display = isClosed ? 'none' : 'inline-flex'
+        }
+
+        const closedBanner = document.getElementById('congress-closed-banner')
+        if (closedBanner) {
+          closedBanner.style.display = isClosed ? 'flex' : 'none'
+        }
+
         await loadDelegates()
         renderCommissions()
       } catch (err) {
@@ -793,14 +844,15 @@
     function renderCommissions() {
       const container = document.getElementById('commissions-container')
       const comms = activeCongress.commissions || []
+      const isClosed = activeCongress && activeCongress.status === 'encerrado'
 
       if (comms.length === 0) {
         container.innerHTML = `
           <div class="empty-state-box" style="padding: 2.5rem 1rem;">
             <div class="ei" style="font-size:2.5rem">📋</div>
             <h3>Nenhuma comissão cadastrada neste congresso</h3>
-            <p>Adicione as comissões temáticas de trabalho responsáveis por analisar relatórios e redigir pareceres.</p>
-            <button class="btn btn-primary btn-sm" onclick="openNewCommissionModal()">+ Adicionar Comissão</button>
+            <p>${isClosed ? 'Nenhuma comissão foi registrada neste congresso.' : 'Adicione as comissões temáticas de trabalho responsáveis por analisar relatórios e redigir pareceres.'}</p>
+            ${!isClosed ? '<button class="btn btn-primary btn-sm" onclick="openNewCommissionModal()">+ Adicionar Comissão</button>' : ''}
           </div>
         `
         return
@@ -824,18 +876,22 @@
                 <h4 class="commission-title">${comm.name}</h4>
                 <p style="font-size:.78rem; color:var(--slate-500); margin-top:.2rem;">${comm.description || ''}</p>
               </div>
+              ${!isClosed ? `
               <button class="btn-ghost" style="padding:.2rem .4rem; color:var(--slate-400)" onclick="deleteCommission('${comm.id}', '${comm.name.replace(/'/g, "\\'")}')" title="Excluir Comissão">
                 🗑️
               </button>
+              ` : ''}
             </div>
 
             <!-- Relator & Membros -->
             <div>
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.4rem;">
                 <span style="font-size:.75rem; font-weight:700; color:var(--slate-500); text-transform:uppercase;">Composição</span>
+                ${!isClosed ? `
                 <button class="btn-ghost" style="font-size:.75rem; color:var(--blue-600); font-weight:600; padding:0;" onclick="openMembersModal('${comm.id}')">
                   + Definir Membros
                 </button>
+                ` : ''}
               </div>
 
               <div style="display:flex; flex-direction:column; gap:.35rem;">
@@ -863,9 +919,11 @@
                 <span style="font-size:.75rem; font-weight:700; color:var(--slate-500); text-transform:uppercase;">
                   Documentos para Análise (${docs.length})
                 </span>
+                ${!isClosed ? `
                 <button class="btn-ghost" style="font-size:.75rem; color:var(--blue-600); font-weight:600; padding:0;" onclick="openDocumentsModal('${comm.id}')">
                   + Anexar Docs
                 </button>
+                ` : ''}
               </div>
 
               <div style="display:flex; flex-direction:column; gap:.35rem; max-height:140px; overflow-y:auto;">
@@ -875,7 +933,9 @@
                       <span style="display:inline-flex; align-items:center; gap:.35rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                         📄 <a href="${d.document_url}" target="_blank" style="color:var(--slate-700); text-decoration:none; font-weight:500;">${d.title}</a>
                       </span>
+                      ${!isClosed ? `
                       <button class="btn-ghost" style="padding:0 .25rem; color:var(--red-400); font-size:.8rem;" onclick="removeCommissionDoc('${comm.id}', '${d.id}')" title="Desvincular">✕</button>
+                      ` : ''}
                     </div>
                   `).join('')
             : '<div style="font-size:.75rem; color:var(--slate-400); font-style:italic; padding:.4rem 0;">Nenhum documento anexado a esta comissão ainda.</div>'
@@ -913,7 +973,7 @@
             : ''
           }
 
-                ${comm.has_opinion && comm.status !== 'aprovado'
+                ${!isClosed && comm.has_opinion && comm.status !== 'aprovado'
             ? `<button type="button" class="btn btn-primary btn-sm" style="background:#16a34a; border-color:#16a34a; font-size:.75rem; padding:.35rem .6rem;" onclick="approveCommissionOpinion('${comm.id}', '${comm.name.replace(/'/g, "\\'")}')" title="Aprovar e homologar oficialmente o parecer">
                        Aprovar Parecer
                      </button>`
@@ -967,7 +1027,52 @@
       }
     }
 
+    // ── STATUS DO CONGRESSO (ENCERRAR / REABRIR) ──
+    window.toggleCongressStatus = async function () {
+      if (!activeCongress) return
+      const isClosed = activeCongress.status === 'encerrado'
+
+      if (!isClosed) {
+        const confirmed = confirm(
+          `Deseja realmente ENCERRAR o congresso "${activeCongress.title}"?\n\n` +
+          `• Todas as comissões, membros e documentos serão bloqueados para criação, edição ou exclusão.\n` +
+          `• Os nomes dos relatores e membros serão salvos estaticamente para preservação histórica (mesmo se alterados ou excluídos na aba Delegados).\n` +
+          `• Todos os relatórios e pareceres permanecerão disponíveis para consulta e download em PDF.`
+        )
+        if (!confirmed) return
+
+        try {
+          const updated = await api.post(`/api/congresses/${activeCongress.id}/close`)
+          activeCongress = updated
+          await openCongressDetail(activeCongress.id)
+          alert('Congresso encerrado com sucesso! Nomes de relatores e membros foram salvos estaticamente e novas edições estão bloqueadas.')
+        } catch (err) {
+          alert('Erro ao encerrar congresso: ' + (err.message || err))
+        }
+      } else {
+        const confirmed = confirm(
+          `Deseja REABRIR o congresso "${activeCongress.title}"?\n\n` +
+          `Isso permitirá novamente criar, editar ou excluir comissões, membros e documentos.`
+        )
+        if (!confirmed) return
+
+        try {
+          const updated = await api.post(`/api/congresses/${activeCongress.id}/reopen`)
+          activeCongress = updated
+          await openCongressDetail(activeCongress.id)
+          alert('Congresso reaberto com sucesso.')
+        } catch (err) {
+          alert('Erro ao reabrir congresso: ' + (err.message || err))
+        }
+      }
+    }
+
     window.deleteCongress = async function (id, title) {
+      const cong = (congressesList || []).find(c => c.id === id)
+      if (cong && cong.status === 'encerrado') {
+        alert('Este congresso está encerrado e não pode ser excluído.')
+        return
+      }
       if (!confirm(`Tem certeza que deseja excluir o congresso "${title}" e todas as suas comissões?`)) return
       try {
         await api.delete(`/api/congresses/${id}`)
@@ -979,6 +1084,10 @@
 
     // ── MODAL COMISSÃO (CRIAR) ──
     window.openNewCommissionModal = function () {
+      if (activeCongress && activeCongress.status === 'encerrado') {
+        alert('Este congresso está encerrado. Não é possível criar novas comissões.')
+        return
+      }
       document.getElementById('comm-name').value = ''
       document.getElementById('comm-desc').value = ''
       openModal('modal-commission')
@@ -987,6 +1096,10 @@
     window.handleSaveCommission = async function (e) {
       e.preventDefault()
       if (!activeCongress) return
+      if (activeCongress.status === 'encerrado') {
+        alert('Este congresso está encerrado. Não é possível criar novas comissões.')
+        return
+      }
       const name = document.getElementById('comm-name').value.trim()
       const description = document.getElementById('comm-desc').value.trim()
 
@@ -1000,6 +1113,10 @@
     }
 
     window.deleteCommission = async function (commId, name) {
+      if (activeCongress && activeCongress.status === 'encerrado') {
+        alert('Este congresso está encerrado. Não é possível excluir comissões.')
+        return
+      }
       if (!confirm(`Excluir a comissão "${name}"?`)) return
       try {
         await api.delete(`/api/congresses/commissions/${commId}`)
@@ -1018,6 +1135,10 @@
 
     // ── GESTÃO DE MEMBROS E RELATOR ──
     window.openMembersModal = async function (commId) {
+      if (activeCongress && activeCongress.status === 'encerrado') {
+        alert('Este congresso está encerrado. Não é possível alterar membros da comissão.')
+        return
+      }
       activeCommission = (activeCongress.commissions || []).find(c => c.id === commId)
       if (!activeCommission) return
 
@@ -1156,6 +1277,11 @@
         })
       }
 
+      if (activeCongress && activeCongress.status === 'encerrado') {
+        alert('Este congresso está encerrado. Não é possível alterar membros da comissão.')
+        return
+      }
+
       try {
         await api.put(`/api/congresses/commissions/${activeCommission.id}/members`, {
           relator_id: relatorId,
@@ -1171,6 +1297,10 @@
 
     // ── GESTÃO DE DOCUMENTOS ──
     window.openDocumentsModal = async function (commId) {
+      if (activeCongress && activeCongress.status === 'encerrado') {
+        alert('Este congresso está encerrado. Não é possível anexar documentos.')
+        return
+      }
       activeCommission = (activeCongress.commissions || []).find(c => c.id === commId)
       if (!activeCommission) return
 
@@ -1236,6 +1366,10 @@
 
     window.saveSelectedDocuments = async function () {
       if (!activeCommission) return
+      if (activeCongress && activeCongress.status === 'encerrado') {
+        alert('Este congresso está encerrado. Não é possível vincular documentos.')
+        return
+      }
       const checked = Array.from(document.querySelectorAll('input[name="avail_doc"]:checked:not(:disabled)'))
       if (checked.length === 0) {
         closeModal('modal-documents')
@@ -1260,6 +1394,10 @@
 
     window.handleUploadDocument = async function () {
       if (!activeCommission) return
+      if (activeCongress && activeCongress.status === 'encerrado') {
+        alert('Este congresso está encerrado. Não é possível enviar documentos.')
+        return
+      }
       const titleInput = document.getElementById('upload-doc-title')
       const fileInput = document.getElementById('upload-doc-file')
 
@@ -1287,6 +1425,10 @@
     }
 
     window.removeCommissionDoc = async function (commId, docId) {
+      if (activeCongress && activeCongress.status === 'encerrado') {
+        alert('Este congresso está encerrado. Não é possível desvincular documentos.')
+        return
+      }
       if (!confirm('Desvincular este documento da comissão?')) return
       try {
         await api.delete(`/api/congresses/commissions/${commId}/documents/${docId}`)
@@ -1336,6 +1478,10 @@
     }
 
     window.approveCommissionOpinion = async function (commId, commName) {
+      if (activeCongress && activeCongress.status === 'encerrado') {
+        alert('Este congresso está encerrado. Não é possível aprovar novos pareceres.')
+        return
+      }
       if (!confirm(`Deseja homologar e APROVAR OFICIALMENTE o parecer da comissão "${commName}"?\n\nIsso compilará o PDF oficial institucional, registrará no sistema e bloqueará o parecer para novas edições.`)) {
         return
       }

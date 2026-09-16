@@ -86,8 +86,23 @@ def _presign_url_if_needed(url: Optional[str]) -> Optional[str]:
     return url
 
 
+def _freeze_congress_members(congress: Congress):
+    """Salva de forma estática e definitiva os nomes de relatores e membros nas comissões."""
+    for comm in congress.commissions:
+        if comm.relator and comm.relator.full_name:
+            comm.relator_name = comm.relator.full_name.strip()
+        for m in comm.members:
+            if m.delegate and m.delegate.full_name:
+                m.delegate_name = m.delegate.full_name.strip()
+
+
 def _serialize_commission(comm: CongressCommission) -> dict:
-    rel_name = comm.relator.full_name.strip() if (comm.relator and comm.relator.full_name) else comm.relator_name
+    is_closed = bool(comm.congress and comm.congress.status == "encerrado")
+    if is_closed:
+        rel_name = comm.relator_name
+    else:
+        rel_name = comm.relator.full_name.strip() if (comm.relator and comm.relator.full_name) else comm.relator_name
+
     return {
         "id": str(comm.id),
         "congress_id": str(comm.congress_id),
@@ -103,7 +118,7 @@ def _serialize_commission(comm: CongressCommission) -> dict:
         "final_report_url": _presign_url_if_needed(comm.final_report_url),
         "approved_at": comm.approved_at.isoformat() if comm.approved_at else None,
         "approved_by": str(comm.approved_by) if comm.approved_by else None,
-        "is_locked": (comm.status == "aprovado"),
+        "is_locked": (comm.status == "aprovado" or is_closed),
         "opinion_updated_at": comm.opinion_updated_at.isoformat() if comm.opinion_updated_at else None,
         "has_opinion": bool(comm.opinion_report and comm.opinion_report.strip()),
         "created_at": comm.created_at.isoformat() if comm.created_at else None,
@@ -111,7 +126,7 @@ def _serialize_commission(comm: CongressCommission) -> dict:
             {
                 "id": str(m.id),
                 "delegate_id": str(m.delegate_id) if m.delegate_id else None,
-                "delegate_name": m.delegate.full_name.strip() if (m.delegate and m.delegate.full_name) else m.delegate_name,
+                "delegate_name": m.delegate_name if is_closed else (m.delegate.full_name.strip() if (m.delegate and m.delegate.full_name) else m.delegate_name),
                 "is_relator": m.is_relator
             }
             for m in comm.members
@@ -245,8 +260,51 @@ def update_congress(
     if payload.description is not None:
         congress.description = payload.description.strip() if payload.description else None
     if payload.status is not None:
+        if payload.status == "encerrado" and congress.status != "encerrado":
+            _freeze_congress_members(congress)
         congress.status = payload.status
 
+    db.commit()
+    db.refresh(congress)
+    return _serialize_congress(congress, include_commissions=True)
+
+
+@router.post("/{congress_id}/close")
+def close_congress(
+    congress_id: UUID,
+    current_user: User = Depends(require_federation),
+    db: Session = Depends(get_db)
+):
+    """Encerra oficialmente o congresso e congela estaticamente os nomes de relatores e membros nas comissões."""
+    congress = db.query(Congress).filter(
+        Congress.id == congress_id,
+        Congress.federation_id == current_user.organization_id
+    ).first()
+    if not congress:
+        raise HTTPException(status_code=404, detail="Congresso não encontrado.")
+
+    _freeze_congress_members(congress)
+    congress.status = "encerrado"
+    db.commit()
+    db.refresh(congress)
+    return _serialize_congress(congress, include_commissions=True)
+
+
+@router.post("/{congress_id}/reopen")
+def reopen_congress(
+    congress_id: UUID,
+    current_user: User = Depends(require_federation),
+    db: Session = Depends(get_db)
+):
+    """Reabre o congresso para edições."""
+    congress = db.query(Congress).filter(
+        Congress.id == congress_id,
+        Congress.federation_id == current_user.organization_id
+    ).first()
+    if not congress:
+        raise HTTPException(status_code=404, detail="Congresso não encontrado.")
+
+    congress.status = "aberto"
     db.commit()
     db.refresh(congress)
     return _serialize_congress(congress, include_commissions=True)
@@ -265,6 +323,8 @@ def delete_congress(
     ).first()
     if not congress:
         raise HTTPException(status_code=404, detail="Congresso não encontrado.")
+    if congress.status == "encerrado":
+        raise HTTPException(status_code=400, detail="Este congresso está encerrado e não pode ser excluído.")
 
     # Exclui pasta com arquivos avulsos e pareceres gerados para o congresso no R2
     try:
@@ -293,6 +353,8 @@ def create_commission(
     ).first()
     if not congress:
         raise HTTPException(status_code=404, detail="Congresso não encontrado.")
+    if congress.status == "encerrado":
+        raise HTTPException(status_code=400, detail="Este congresso está encerrado. Não é possível criar novas comissões.")
 
     commission = CongressCommission(
         congress_id=congress.id,
@@ -319,6 +381,8 @@ def update_commission(
     ).first()
     if not comm:
         raise HTTPException(status_code=404, detail="Comissão não encontrada.")
+    if comm.congress and comm.congress.status == "encerrado":
+        raise HTTPException(status_code=400, detail="Este congresso está encerrado. Não é possível editar comissões.")
 
     if payload.name is not None:
         comm.name = payload.name.strip()
@@ -343,6 +407,8 @@ def delete_commission(
     ).first()
     if not comm:
         raise HTTPException(status_code=404, detail="Comissão não encontrada.")
+    if comm.congress and comm.congress.status == "encerrado":
+        raise HTTPException(status_code=400, detail="Este congresso está encerrado. Não é possível excluir comissões.")
 
     # Exclui pasta de arquivos avulsos e parecer homologado da comissão no R2
     try:
@@ -373,6 +439,8 @@ def set_commission_members(
     ).first()
     if not comm:
         raise HTTPException(status_code=404, detail="Comissão não encontrada.")
+    if comm.congress and comm.congress.status == "encerrado":
+        raise HTTPException(status_code=400, detail="Este congresso está encerrado. Não é possível editar comissões.")
 
     comm.relator_id = payload.relator_id
     if payload.relator_id:
@@ -620,6 +688,8 @@ def attach_commission_documents(
     ).first()
     if not comm:
         raise HTTPException(status_code=404, detail="Comissão não encontrada.")
+    if comm.congress and comm.congress.status == "encerrado":
+        raise HTTPException(status_code=400, detail="Este congresso está encerrado. Não é possível vincular documentos.")
 
     # Busca todas as comissões do mesmo congresso
     other_commissions = db.query(CongressCommission.id).filter(
@@ -690,6 +760,8 @@ async def upload_commission_document(
     ).first()
     if not comm:
         raise HTTPException(status_code=404, detail="Comissão não encontrada.")
+    if comm.congress and comm.congress.status == "encerrado":
+        raise HTTPException(status_code=400, detail="Este congresso está encerrado. Não é possível enviar novos documentos.")
 
     content = await file.read()
     if len(content) > 25 * 1024 * 1024:  # 25 MB max
@@ -728,6 +800,8 @@ def remove_commission_document(
     ).first()
     if not comm:
         raise HTTPException(status_code=404, detail="Comissão não encontrada.")
+    if comm.congress and comm.congress.status == "encerrado":
+        raise HTTPException(status_code=400, detail="Este congresso está encerrado. Não é possível desvincular documentos.")
 
     doc = db.query(CongressCommissionDocument).filter(
         CongressCommissionDocument.id == doc_id,
@@ -767,6 +841,8 @@ def save_commission_opinion_admin(
     ).first()
     if not comm:
         raise HTTPException(status_code=404, detail="Comissão não encontrada.")
+    if comm.congress and comm.congress.status == "encerrado":
+        raise HTTPException(status_code=400, detail="Este congresso está encerrado. O parecer está bloqueado para edições.")
 
     comm.opinion_report = payload.opinion_report
     if payload.approval_date is not None:
@@ -796,8 +872,9 @@ def preview_commission_pdf_admin(
     congress = comm.congress
     fed = db.query(Federation).filter(Federation.id == congress.federation_id).first() if congress else None
 
-    rel_name = comm.relator.full_name.strip() if (comm.relator and comm.relator.full_name) else (comm.relator_name or "Não informado")
-    members_names = [(m.delegate.full_name.strip() if (m.delegate and m.delegate.full_name) else m.delegate_name) for m in comm.members]
+    is_closed = bool(congress and congress.status == "encerrado")
+    rel_name = comm.relator_name if is_closed else (comm.relator.full_name.strip() if (comm.relator and comm.relator.full_name) else (comm.relator_name or "Não informado"))
+    members_names = [m.delegate_name if is_closed else (m.delegate.full_name.strip() if (m.delegate and m.delegate.full_name) else m.delegate_name) for m in comm.members]
 
     pdf_bytes = generate_commission_report(
         congress_title=congress.title if congress else "Congresso Ordinário",
@@ -839,6 +916,8 @@ def approve_commission_opinion(
     ).first()
     if not comm:
         raise HTTPException(status_code=404, detail="Comissão não encontrada.")
+    if comm.congress and comm.congress.status == "encerrado":
+        raise HTTPException(status_code=400, detail="Este congresso já está encerrado. Não é possível aprovar pareceres.")
 
     if not comm.opinion_report or not comm.opinion_report.strip():
         raise HTTPException(status_code=400, detail="Esta comissão ainda não possui parecer redigido para aprovação.")
@@ -936,6 +1015,8 @@ def save_public_commission_opinion(
 
     if comm.status == "aprovado":
         raise HTTPException(status_code=403, detail="Este parecer já foi aprovado oficialmente pela diretoria e está bloqueado para edições.")
+    if comm.congress and comm.congress.status == "encerrado":
+        raise HTTPException(status_code=403, detail="Este congresso foi oficialmente encerrado pela federação. O parecer está bloqueado para edições.")
 
     comm.opinion_report = payload.opinion_report
     if payload.approval_date is not None:
@@ -964,8 +1045,9 @@ def preview_public_commission_pdf(
     congress = comm.congress
     fed = db.query(Federation).filter(Federation.id == congress.federation_id).first() if congress else None
 
-    rel_name = comm.relator.full_name.strip() if (comm.relator and comm.relator.full_name) else (comm.relator_name or "Não informado")
-    members_names = [(m.delegate.full_name.strip() if (m.delegate and m.delegate.full_name) else m.delegate_name) for m in comm.members]
+    is_closed = bool(congress and congress.status == "encerrado")
+    rel_name = comm.relator_name if is_closed else (comm.relator.full_name.strip() if (comm.relator and comm.relator.full_name) else (comm.relator_name or "Não informado"))
+    members_names = [m.delegate_name if is_closed else (m.delegate.full_name.strip() if (m.delegate and m.delegate.full_name) else m.delegate_name) for m in comm.members]
 
     pdf_bytes = generate_commission_report(
         congress_title=congress.title if congress else "Congresso Ordinário",

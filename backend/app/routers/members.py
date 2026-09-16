@@ -285,17 +285,31 @@ def update_member(
         member.latitude = lat
         member.longitude = lon
 
-    # Se o nome do delegado/sócio for alterado, sincroniza nas comissões de congresso onde ele atua
+    # Se o nome do delegado/sócio for alterado, sincroniza apenas nas comissões de congressos ABERTOS (preservando o histórico dos encerrados)
     if "full_name" in dump and dump["full_name"]:
         new_name = dump["full_name"].strip()
-        from app.models.congress import CongressCommission, CongressCommissionMember
-        db.query(CongressCommission).filter(
-            CongressCommission.relator_id == member.id
-        ).update({"relator_name": new_name}, synchronize_session=False)
+        from app.models.congress import CongressCommission, CongressCommissionMember, Congress
+        open_comm_ids = [
+            c_id for (c_id,) in db.query(CongressCommission.id).join(Congress).filter(
+                CongressCommission.relator_id == member.id,
+                Congress.status == "aberto"
+            ).all()
+        ]
+        if open_comm_ids:
+            db.query(CongressCommission).filter(
+                CongressCommission.id.in_(open_comm_ids)
+            ).update({"relator_name": new_name}, synchronize_session=False)
 
-        db.query(CongressCommissionMember).filter(
-            CongressCommissionMember.delegate_id == member.id
-        ).update({"delegate_name": new_name}, synchronize_session=False)
+        open_member_ids = [
+            m_id for (m_id,) in db.query(CongressCommissionMember.id).join(CongressCommission).join(Congress).filter(
+                CongressCommissionMember.delegate_id == member.id,
+                Congress.status == "aberto"
+            ).all()
+        ]
+        if open_member_ids:
+            db.query(CongressCommissionMember).filter(
+                CongressCommissionMember.id.in_(open_member_ids)
+            ).update({"delegate_name": new_name}, synchronize_session=False)
 
     db.commit()
     db.refresh(member)

@@ -1073,11 +1073,30 @@
         document.getElementById('last-saved-time').textContent = `Última alteração salva em ${d.toLocaleDateString('pt-BR')} às ${d.toLocaleTimeString('pt-BR')}`
       }
 
-      // Bloqueio se já Aprovado Oficialmente
+      // Bloqueio se já Aprovado Oficialmente ou se Congresso Encerrado
+      const isApproved = comm.status === 'aprovado'
+      const isCongressClosed = Boolean(congress && congress.status === 'encerrado')
+      const isLocked = isApproved || comm.is_locked || isCongressClosed
+
       const btnPreview = document.getElementById('btn-preview-pdf')
-      if (comm.status === 'aprovado' || comm.is_locked) {
-        if (btnPreview) btnPreview.style.display = 'none'
-        document.getElementById('locked-banner').style.display = 'flex'
+      if (isApproved && btnPreview) {
+        btnPreview.style.display = 'none'
+      }
+
+      if (isLocked) {
+        const lockedBanner = document.getElementById('locked-banner')
+        lockedBanner.style.display = 'flex'
+
+        const bannerTitle = lockedBanner.querySelector('h3')
+        const bannerDesc = lockedBanner.querySelector('p')
+        if (isApproved) {
+          if (bannerTitle) bannerTitle.innerHTML = '<span>✓</span> Parecer Homologado e Aprovado'
+          if (bannerDesc) bannerDesc.textContent = 'Este relatório foi oficialmente aprovado pela mesa do congresso e está bloqueado para edições.'
+        } else if (isCongressClosed) {
+          if (bannerTitle) bannerTitle.innerHTML = '<span>🔒</span> Congresso Encerrado'
+          if (bannerDesc) bannerDesc.textContent = 'Este congresso foi oficialmente encerrado. O relatório desta comissão está finalizado para consulta e bloqueado para novas edições.'
+        }
+
         if (comm.validation_code) {
           const valEl = document.getElementById('locked-banner-val-code')
           if (valEl) {
@@ -1086,10 +1105,19 @@
           }
         }
         if (comm.final_report_url) {
-          document.getElementById('btn-download-pdf-banner').href = comm.final_report_url
+          const btnBannerDownload = document.getElementById('btn-download-pdf-banner')
+          if (btnBannerDownload) {
+            btnBannerDownload.href = comm.final_report_url
+            btnBannerDownload.style.display = 'inline-flex'
+          }
           const btnBottom = document.getElementById('btn-approved-pdf-bottom')
-          btnBottom.href = comm.final_report_url
-          btnBottom.style.display = 'inline-flex'
+          if (btnBottom) {
+            btnBottom.href = comm.final_report_url
+            btnBottom.style.display = 'inline-flex'
+          }
+        } else {
+          const btnBannerDownload = document.getElementById('btn-download-pdf-banner')
+          if (btnBannerDownload) btnBannerDownload.style.display = 'none'
         }
 
         editor.setAttribute('contenteditable', 'false')
@@ -1101,9 +1129,9 @@
 
         const statusEl = document.getElementById('save-status')
         statusEl.className = 'save-status-badge status-saved'
-        statusEl.innerHTML = '<span>✓ Parecer Oficial Aprovado</span>'
+        statusEl.innerHTML = isApproved ? '<span>✓ Parecer Oficial Aprovado</span>' : '<span>🔒 Congresso Encerrado</span>'
       } else {
-        // Listener de Auto-Save somente se não aprovado
+        // Listener de Auto-Save somente se não travado
         editor.addEventListener('input', triggerAutoSave)
       }
 
@@ -1140,7 +1168,7 @@
 
     // ── LÓGICA DE FORMATAÇÃO E TIPOGRAFIA ──
     window.formatDoc = function (cmd, val = null) {
-      if (commissionData && (commissionData.commission.status === 'aprovado' || commissionData.commission.is_locked)) return
+      if (commissionData && (commissionData.commission.status === 'aprovado' || commissionData.commission.is_locked || (commissionData.congress && commissionData.congress.status === 'encerrado'))) return
       document.execCommand(cmd, false, val)
       document.getElementById('editor').focus()
       triggerAutoSave()
@@ -1169,7 +1197,7 @@
 
     // ── LÓGICA DE AUTO-SAVE COM DEBOUNCE ──
     function triggerAutoSave() {
-      if (commissionData && (commissionData.commission.status === 'aprovado' || commissionData.commission.is_locked)) return
+      if (commissionData && (commissionData.commission.status === 'aprovado' || commissionData.commission.is_locked || (commissionData.congress && commissionData.congress.status === 'encerrado'))) return
       const statusEl = document.getElementById('save-status')
       statusEl.className = 'save-status-badge status-saving'
       statusEl.innerHTML = '<span>● Salvando alterações...</span>'
@@ -1179,7 +1207,7 @@
     }
 
     async function saveOpinion() {
-      if (commissionData && (commissionData.commission.status === 'aprovado' || commissionData.commission.is_locked)) return
+      if (commissionData && (commissionData.commission.status === 'aprovado' || commissionData.commission.is_locked || (commissionData.congress && commissionData.congress.status === 'encerrado'))) return
       const editor = document.getElementById('editor')
       const content = editor.innerHTML
       const approvalDate = document.getElementById('approval-date-input').value || null
@@ -1197,7 +1225,7 @@
         })
 
         if (res.status === 403) {
-          alert('Este parecer foi aprovado e bloqueado para edições.')
+          alert('Este relatório está bloqueado para edições.')
           window.location.reload()
           return
         }
