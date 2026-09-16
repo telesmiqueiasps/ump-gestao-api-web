@@ -914,7 +914,7 @@
             Última alteração: nunca
           </div>
           <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
-            <button type="button" class="btn btn-primary" onclick="openPdfPreview()">
+            <button type="button" class="btn btn-primary" id="btn-preview-pdf" onclick="openPdfPreview()">
               Ver Prévia do Relatório
             </button>
             <a id="btn-approved-pdf-bottom" href="#" target="_blank" class="btn btn-primary"
@@ -1074,7 +1074,9 @@
       }
 
       // Bloqueio se já Aprovado Oficialmente
+      const btnPreview = document.getElementById('btn-preview-pdf')
       if (comm.status === 'aprovado' || comm.is_locked) {
+        if (btnPreview) btnPreview.style.display = 'none'
         document.getElementById('locked-banner').style.display = 'flex'
         if (comm.validation_code) {
           const valEl = document.getElementById('locked-banner-val-code')
