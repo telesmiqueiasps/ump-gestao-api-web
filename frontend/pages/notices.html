@@ -162,7 +162,7 @@
   <div class="main-area">
     <header class="header">
       <div class="header-left">
-        <button class="btn-menu" id="btn-menu">☰</button>
+        <button class="btn-menu" id="btn-menu" aria-label="Menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
         <div class="header-org">
           <span class="header-org-name" id="header-org-name"></span>
         </div>
@@ -197,7 +197,10 @@
         <div>
           <div class="section-header">
             <span class="section-label">Avisos Enviados às Locais</span>
-            <button class="btn btn-primary btn-sm" id="btn-new-notice">+ Novo aviso</button>
+            <button class="btn btn-primary btn-sm" id="btn-new-notice" style="display:inline-flex;align-items:center;gap:.35rem">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              <span>Novo aviso</span>
+            </button>
           </div>
           <div id="sent-notices-list">
             <div class="loading-center"><div class="spinner"></div></div>
@@ -219,7 +222,9 @@
           <div id="birthdays-loading" class="loading-center"><div class="spinner"></div></div>
           <div id="birthdays-list" class="stack" style="display:none"></div>
           <div id="birthdays-empty" class="empty-box" style="display:none">
-            <div class="ei">🎈</div>
+            <div class="ei" style="display:inline-flex;align-items:center;justify-content:center;color:var(--slate-400)">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>
+            </div>
             <p>Nenhum aniversariante este mês.</p>
             <p style="font-size:.75rem;margin-top:.25rem">Cadastre as datas de nascimento dos sócios.</p>
           </div>
@@ -246,7 +251,7 @@
   <div class="modal">
     <div class="modal-header">
       <h2>Novo Aviso</h2>
-      <button class="modal-close">✕</button>
+      <button class="modal-close" aria-label="Fechar" style="display:inline-flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     <div class="field mb-4">
       <label>Título</label>
@@ -261,8 +266,8 @@
     <div class="field mb-4">
       <label>Destinatário</label>
       <select class="input" id="notice-target-type">
-        <option value="all">📢 Todas as Locais</option>
-        <option value="specific">📍 Uma local específica</option>
+        <option value="all">Todas as Locais</option>
+        <option value="specific">Uma local específica</option>
       </select>
     </div>
     <div class="field mb-4" id="notice-target-local-wrap" style="display:none">
@@ -351,7 +356,12 @@
     if (!anniversaries.length) {
       section.innerHTML = `
         <div class="section-header"><span class="section-label">Aniversários de Locais este Mês</span></div>
-        <div class="empty-box"><div class="ei">🏛️</div><p>Nenhuma local faz aniversário este mês.</p></div>`
+        <div class="empty-box">
+          <div class="ei" style="display:inline-flex;align-items:center;justify-content:center;color:var(--slate-400)">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"></path><path d="M5 21V7l7-4 7 4v14"></path><path d="M9 10v4"></path><path d="M15 10v4"></path></svg>
+          </div>
+          <p>Nenhuma local faz aniversário este mês.</p>
+        </div>`
       return
     }
     section.innerHTML = `
@@ -359,7 +369,11 @@
       <div class="stack">
         ${anniversaries.map(a => `
           <div class="bday-card ${a.is_today ? 'today' : ''} ${a.already_passed && !a.is_today ? 'passed' : ''}">
-            <div class="bday-avatar">${a.is_today ? '🎉' : '🏛️'}</div>
+            <div class="bday-avatar">
+              ${a.is_today 
+                ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>'
+                : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"></path><path d="M5 21V7l7-4 7 4v14"></path><path d="M9 10v4"></path><path d="M15 10v4"></path></svg>'}
+            </div>
             <div style="flex:1;min-width:0">
               <div class="bday-name">${a.name}</div>
               <div class="bday-sub">
@@ -370,7 +384,7 @@
               </div>
             </div>
             <span class="bday-pill ${a.is_today ? 'today' : a.already_passed ? 'passed' : 'future'}">
-              ${a.is_today ? '🎉 Hoje' : a.already_passed ? 'Passou' : `Dia ${a.org_day}`}
+              ${a.is_today ? 'Hoje' : a.already_passed ? 'Passou' : `Dia ${a.org_day}`}
             </span>
           </div>
         `).join('')}
@@ -387,7 +401,13 @@
   function renderSentNotices(notices) {
     const container = document.getElementById('sent-notices-list')
     if (!notices.length) {
-      container.innerHTML = `<div class="empty-box"><div class="ei">📭</div><p>Nenhum aviso enviado ainda.</p></div>`
+      container.innerHTML = `
+        <div class="empty-box">
+          <div class="ei" style="display:inline-flex;align-items:center;justify-content:center;color:var(--slate-400)">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 13h-6l-2 3h-4l-2-3H2"></path><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+          </div>
+          <p>Nenhum aviso enviado ainda.</p>
+        </div>`
       return
     }
     container.innerHTML = `<div class="stack">${notices.map(n => `
@@ -396,8 +416,10 @@
           <div style="flex:1;min-width:0">
             <div class="notice-item-title">${n.title}</div>
             <div class="notice-item-meta">
-              <span class="badge ${n.target_type === 'all' ? 'badge-blue' : 'badge-slate'}" style="font-size:.68rem">
-                ${n.target_type === 'all' ? '📢 Todas as Locais' : `📍 ${n.target_local_name || 'Local específica'}`}
+              <span class="badge ${n.target_type === 'all' ? 'badge-blue' : 'badge-slate'}" style="font-size:.68rem;display:inline-flex;align-items:center;gap:.3rem">
+                ${n.target_type === 'all' 
+                  ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg> Todas as Locais' 
+                  : `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> ${n.target_local_name || 'Local específica'}`}
               </span>
               <span>${formatDate(n.created_at?.split('T')[0])}</span>
               ${n.expires_at ? `<span style="color:var(--amber-700)">Expira ${formatDate(n.expires_at?.split('T')[0])}</span>` : ''}
@@ -405,10 +427,12 @@
             </div>
           </div>
           <div class="notice-item-actions">
-            <button class="btn btn-ghost btn-icon" onclick="toggleNotice('${n.id}', ${n.is_active})" title="${n.is_active ? 'Desativar' : 'Ativar'}" style="font-size:.9rem">
-              ${n.is_active ? '👁️' : '🚫'}
+            <button class="btn btn-ghost btn-icon" onclick="toggleNotice('${n.id}', ${n.is_active})" title="${n.is_active ? 'Desativar' : 'Ativar'}" style="display:inline-flex;align-items:center;justify-content:center">
+              ${n.is_active 
+                ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>' 
+                : '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>'}
             </button>
-            <button class="btn btn-ghost btn-icon danger" onclick="deleteNotice('${n.id}')" title="Excluir">✕</button>
+            <button class="btn btn-ghost btn-icon danger" onclick="deleteNotice('${n.id}')" title="Excluir" style="display:inline-flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
           </div>
         </div>
         <div class="notice-item-content">${n.content}</div>
@@ -508,14 +532,18 @@
       section.innerHTML = `
         <div class="section-header"><span class="section-label">Aniversário da Sociedade</span></div>
         <div class="anniversary-banner ${isToday ? 'blue' : 'green'}">
-          <div class="anniversary-banner-icon">${isToday ? '🎉' : '🏛️'}</div>
+          <div class="anniversary-banner-icon" style="display:flex;align-items:center;justify-content:center">
+            ${isToday 
+              ? '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>' 
+              : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"></path><path d="M5 21V7l7-4 7 4v14"></path><path d="M9 10v4"></path><path d="M15 10v4"></path></svg>'}
+          </div>
           <div>
             <div class="anniversary-banner-title">
               ${isToday ? `Hoje é o aniversário de ${orgData.name}!` : `${orgData.name} faz aniversário este mês!`}
             </div>
             <div class="anniversary-banner-sub">
               ${isToday
-                ? `Completando ${years} anos de história! 🎊`
+                ? `Completando ${years} anos de história!`
                 : `Dia ${orgDate.getDate()} de ${MONTH_NAMES[currentMonth]} — ${years} anos`}
             </div>
           </div>
@@ -536,19 +564,23 @@
       const initials = b.full_name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
       return `
         <div class="bday-card ${b.is_today ? 'today' : ''} ${b.already_passed && !b.is_today ? 'passed' : ''}">
-          <div class="bday-avatar">${b.is_today ? '🎂' : initials}</div>
+          <div class="bday-avatar">
+            ${b.is_today 
+              ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>' 
+              : initials}
+          </div>
           <div style="flex:1;min-width:0">
             <div class="bday-name">${b.full_name}</div>
             <div class="bday-sub">
               ${b.is_today
-                ? `🎉 Hoje! Completando ${b.age} anos`
+                ? `Hoje! Completando ${b.age} anos`
                 : b.already_passed
                   ? `Dia ${b.birth_day} — ${b.age} anos (passou)`
                   : `Dia ${b.birth_day} de ${MONTH_NAMES[currentMonth]} — ${b.age} anos`}
             </div>
           </div>
           <span class="bday-pill ${b.is_today ? 'today' : b.already_passed ? 'passed' : 'future'}">
-            ${b.is_today ? '🎉 Hoje' : b.already_passed ? 'Passou' : `Dia ${b.birth_day}`}
+            ${b.is_today ? 'Hoje' : b.already_passed ? 'Passou' : `Dia ${b.birth_day}`}
           </span>
         </div>`
     }).join('')
@@ -560,7 +592,13 @@
       const container = document.getElementById('received-notices-list')
 
       if (!notices.length) {
-        container.innerHTML = `<div class="empty-box"><div class="ei">📭</div><p>Nenhum aviso da Federação no momento.</p></div>`
+        container.innerHTML = `
+          <div class="empty-box">
+            <div class="ei" style="display:inline-flex;align-items:center;justify-content:center;color:var(--slate-400)">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 13h-6l-2 3h-4l-2-3H2"></path><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+            </div>
+            <p>Nenhum aviso da Federação no momento.</p>
+          </div>`
         return
       }
 
@@ -570,7 +608,7 @@
             <div style="flex:1;min-width:0">
               <div class="notice-item-title">${n.title}</div>
               <div class="notice-item-meta">
-                <span>📨 Federação · ${formatDate(n.created_at?.split('T')[0])}</span>
+                <span style="display:inline-flex;align-items:center;gap:.35rem"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg> Federação · ${formatDate(n.created_at?.split('T')[0])}</span>
                 ${n.target_type === 'specific' ? '<span class="badge badge-blue" style="font-size:.65rem">Direcionado para você</span>' : ''}
               </div>
             </div>
