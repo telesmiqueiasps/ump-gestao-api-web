@@ -40,7 +40,9 @@
   <div class="main-area">
     <header class="header">
       <div class="header-left">
-        <button class="btn-menu" id="btn-menu">☰</button>
+        <button class="btn-menu" id="btn-menu" aria-label="Abrir menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
         <div class="header-org">
           <span class="header-org-name" id="header-org-name"></span>
         </div>
@@ -62,8 +64,9 @@
           <p>Gerencie as sociedades vinculadas a esta Federação</p>
         </div>
         <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-          <button class="btn btn-secondary" id="btn-show-map" style="display:inline-flex;align-items:center;gap:.35rem">
-            🗺️ Ver Mapa
+          <button class="btn btn-secondary" id="btn-show-map" style="display:inline-flex;align-items:center;gap:.4rem">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
+            <span>Ver Mapa</span>
           </button>
           <button class="btn btn-primary" id="btn-new-local">+ Nova Local</button>
         </div>
@@ -77,7 +80,7 @@
         <button class="filter-btn" data-filter="all" onclick="setFilter('all')">Todas</button>
         <div style="margin-left:auto">
           <input class="input" type="text" id="search-local"
-            placeholder="🔍 Buscar local..."
+            placeholder="Buscar local..."
             style="width:200px;font-size:.82rem"
             oninput="filterLocals()" />
         </div>
@@ -96,7 +99,9 @@
   <div class="modal">
     <div class="modal-header">
       <h2 id="modal-local-title">Nova UMP Local</h2>
-      <button class="modal-close">✕</button>
+      <button class="modal-close" aria-label="Fechar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
     </div>
 
     <div class="field mb-4">
@@ -118,8 +123,9 @@
     </div>
 
     <!-- Campos de Endereço -->
-    <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--slate-400);margin-bottom:.6rem">
-      📌 Endereço da Sede (Igreja)
+    <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--slate-400);margin-bottom:.6rem;display:flex;align-items:center;gap:4px">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+      <span>Endereço da Sede (Igreja)</span>
     </div>
     <div class="grid-3 mb-4">
       <div class="field">
@@ -152,15 +158,20 @@
     <!-- Mini-Mapa de Geolocalização -->
     <div class="field mb-4" style="margin-top: 1rem;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">
-        <label style="font-weight:600;font-size:.82rem;color:var(--slate-700)">🗺️ Localização no Mapa (Sede)</label>
-        <button class="btn btn-secondary btn-sm" type="button" id="btn-locate-l-map" style="font-size:.78rem;padding: 3px 10px;">
-          🔍 Localizar no Mapa
+        <label style="font-weight:600;font-size:.82rem;color:var(--slate-700);display:flex;align-items:center;gap:4px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
+          <span>Localização no Mapa (Sede)</span>
+        </label>
+        <button class="btn btn-secondary btn-sm" type="button" id="btn-locate-l-map" style="font-size:.78rem;padding: 3px 10px;display:inline-flex;align-items:center;gap:4px">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <span>Localizar no Mapa</span>
         </button>
       </div>
       <div id="l-precision-badge" class="alert mb-2" style="display:none;font-size:.78rem;padding:.4rem .65rem;border-radius:6px"></div>
       <div id="l-form-map" style="width:100%;height:180px;border-radius:10px;border:1.5px solid var(--slate-200);position:relative;overflow:hidden"></div>
-      <p style="font-size:.72rem;color:var(--slate-400);margin-top:.3rem">
-        📍 Clique no mapa ou arraste o pino para ajustar a posição exata da igreja/sede.
+      <p style="font-size:.72rem;color:var(--slate-400);margin-top:.3rem;display:flex;align-items:center;gap:4px">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+        <span>Clique no mapa ou arraste o pino para ajustar a posição exata da igreja/sede.</span>
       </p>
       <input type="hidden" id="l-latitude" />
       <input type="hidden" id="l-longitude" />
@@ -179,8 +190,10 @@
 <div class="modal-overlay" id="modal-users">
   <div class="modal modal-lg" style="max-height:90vh;overflow-y:auto">
     <div class="modal-header">
-      <h2 id="modal-users-title">Usuários</h2>
-      <button class="modal-close">✕</button>
+      <h2>Usuários — <span id="modal-user-local-name"></span></h2>
+      <button class="modal-close" aria-label="Fechar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
     </div>
 
     <!-- Lista de usuários -->
@@ -260,19 +273,24 @@
         <h2>Relatórios</h2>
         <p class="text-sm text-slate-500" id="modal-reports-local-name"></p>
       </div>
-      <button class="modal-close">✕</button>
+      <button class="modal-close" aria-label="Fechar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
     </div>
 
     <!-- Abas -->
     <div style="display:flex;gap:.5rem;border-bottom:2px solid var(--slate-100);margin-bottom:1.25rem;overflow-x:auto">
-      <button class="reports-tab active" data-tab="financeiro" onclick="switchReportsTab('financeiro')">
-        💰 Financeiro
+      <button class="reports-tab active" data-tab="financeiro" onclick="switchReportsTab('financeiro')" style="display:inline-flex;align-items:center;gap:6px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+        <span>Financeiro</span>
       </button>
-      <button class="reports-tab" data-tab="atividades" onclick="switchReportsTab('atividades')">
-        📋 Atividades
+      <button class="reports-tab" data-tab="atividades" onclick="switchReportsTab('atividades')" style="display:inline-flex;align-items:center;gap:6px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        <span>Atividades</span>
       </button>
-      <button class="reports-tab" data-tab="estatisticas" onclick="switchReportsTab('estatisticas')">
-        📊 Estatísticas
+      <button class="reports-tab" data-tab="estatisticas" onclick="switchReportsTab('estatisticas')" style="display:inline-flex;align-items:center;gap:6px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+        <span>Estatísticas</span>
       </button>
     </div>
 
@@ -307,8 +325,13 @@
 <div class="modal-overlay" id="modal-map">
   <div class="modal modal-lg" style="max-width:95vw;width:900px;height:650px;max-height:92vh;display:flex;flex-direction:column">
     <div class="modal-header" style="flex-shrink:0">
-      <h2>🗺️ Mapa de UMPs Locais</h2>
-      <button class="modal-close">✕</button>
+      <h2 style="display:inline-flex;align-items:center;gap:8px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
+        <span>Mapa de UMPs Locais</span>
+      </h2>
+      <button class="modal-close" aria-label="Fechar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
     </div>
     <div style="flex:1;min-height:0;position:relative;border-radius:var(--radius-lg);overflow:hidden;border:1.5px solid var(--slate-200);margin-bottom:1rem">
       <div id="leaflet-map" style="width:100%;height:100%;z-index:1"></div>
@@ -370,7 +393,9 @@
     if (!locals.length) {
       grid.innerHTML = `
         <div style="text-align:center;padding:3rem;color:var(--slate-400);grid-column:1/-1">
-          <div style="font-size:2rem;margin-bottom:.5rem">🏛️</div>
+          <div style="display:flex;justify-content:center;margin-bottom:.75rem;color:var(--slate-400)">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"></path><path d="M5 21V9"></path><path d="M19 21V9"></path><path d="M9 21V9"></path><path d="M15 21V9"></path><path d="M2 9l10-6 10 6"></path></svg>
+          </div>
           <p>${currentFilter === 'inactive' ? 'Nenhuma local inativa.' : 'Nenhuma local encontrada.'}</p>
         </div>`
       return
@@ -395,13 +420,25 @@
         </div>
         <div class="local-card-actions" style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--slate-100)">
           ${l.is_active ? `
-            <button class="btn btn-secondary btn-sm" onclick="editLocal('${l.id}')">✎ Editar</button>
-            <button class="btn btn-secondary btn-sm" onclick="openUserModal('${l.id}','${l.name.replace(/'/g,"\\'")}')">👤 Usuários</button>
-            <button class="btn btn-ghost btn-sm" onclick="viewLocalReports('${l.id}','${l.name.replace(/'/g,"\\'")}')">📄 Relatórios</button>
+            <button class="btn btn-secondary btn-sm" onclick="editLocal('${l.id}')" style="display:inline-flex;align-items:center;gap:4px">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+              <span>Editar</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="openUserModal('${l.id}','${l.name.replace(/'/g,"\\'")}')" style="display:inline-flex;align-items:center;gap:4px">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              <span>Usuários</span>
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="viewLocalReports('${l.id}','${l.name.replace(/'/g,"\\'")}')" style="display:inline-flex;align-items:center;gap:4px">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+              <span>Relatórios</span>
+            </button>
             <button class="btn btn-ghost btn-sm" style="color:var(--red-600)"
               onclick="deactivateLocal('${l.id}','${l.name.replace(/'/g,"\\'")}')">Desativar</button>
           ` : `
-            <button class="btn btn-primary btn-sm" onclick="reactivateLocal('${l.id}','${l.name.replace(/'/g,"\\'")}')">✓ Reativar</button>
+            <button class="btn btn-primary btn-sm" onclick="reactivateLocal('${l.id}','${l.name.replace(/'/g,"\\'")}')" style="display:inline-flex;align-items:center;gap:4px">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Reativar</span>
+            </button>
           `}
         </div>
       </div>
@@ -604,16 +641,16 @@
 
     if (precision === 'manual' || precision === 'exato') {
       badge.className = 'alert alert-success mb-2'
-      badge.innerHTML = '🟢 <strong>Localização Exata:</strong> Posição da igreja confirmada no mapa.'
+      badge.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span><strong>Localização Exata:</strong> Posição da igreja confirmada no mapa.</span></span>'
     } else if (precision === 'aproximado_rua') {
       badge.className = 'alert alert-amber mb-2'
-      badge.innerHTML = '🟡 <strong>Localização Aproximada (Rua):</strong> Arraste o pino no mapa para marcar a igreja exata.'
+      badge.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><span><strong>Localização Aproximada (Rua):</strong> Arraste o pino no mapa para marcar a igreja exata.</span></span>'
     } else if (precision === 'bairro' || precision === 'cidade') {
       badge.className = 'alert alert-amber mb-2'
-      badge.innerHTML = '🟠 <strong>Localização Aproximada (Bairro/Cidade):</strong> Clique no mapa para posicionar a igreja.'
+      badge.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><span><strong>Localização Aproximada (Bairro/Cidade):</strong> Clique no mapa para posicionar a igreja.</span></span>'
     } else {
       badge.className = 'alert alert-error mb-2'
-      badge.innerHTML = '⚪ <strong>Sem coordenadas:</strong> Preencha o endereço e clique em "Localizar no Mapa" ou clique no mapa.'
+      badge.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg><span><strong>Sem coordenadas:</strong> Preencha o endereço e clique em "Localizar no Mapa" ou clique no mapa.</span></span>'
     }
   }
 
@@ -644,7 +681,7 @@
     } catch (err) {
       alert('Erro ao buscar localização: ' + err.message)
     } finally {
-      setLoading(btn, false, '🔍 Localizar no Mapa')
+      setLoading(btn, false, 'Localizar no Mapa')
     }
   }
 
@@ -675,15 +712,15 @@
   window.deactivateLocal = async (id, name) => {
     if (!confirm(
       `Desativar "${name}"?\n\n` +
-      `• A local ficará inativa\n` +
-      `• Todos os usuários desta local serão bloqueados\n` +
-      `• Os dados serão mantidos\n\n` +
+      `- A local ficará inativa\n` +
+      `- Todos os usuários desta local serão bloqueados\n` +
+      `- Os dados serão mantidos\n\n` +
       `Deseja continuar?`
     )) return
     try {
       const result = await api.post(`/api/local-umps/${id}/deactivate`)
       const count = result.inactivated_users?.length || 0
-      showAlert('page-alert', `✓ "${name}" desativada. ${count} usuário(s) bloqueado(s).`, 'success')
+      showAlert('page-alert', `"${name}" desativada. ${count} usuário(s) bloqueado(s).`, 'success')
       await loadLocals()
     } catch(err) { showAlert('page-alert', err.message, 'error') }
   }
@@ -692,7 +729,7 @@
     if (!confirm(`Reativar "${name}"?\n\nOs usuários voltarão a ter acesso.`)) return
     try {
       await api.post(`/api/local-umps/${id}/reactivate`)
-      showAlert('page-alert', `✓ "${name}" reativada com sucesso!`, 'success')
+      showAlert('page-alert', `"${name}" reativada com sucesso!`, 'success')
       await loadLocals()
     } catch(err) { showAlert('page-alert', err.message, 'error') }
   }
@@ -735,7 +772,7 @@
 
   window.openUserModal = (localId, localName) => {
     currentLocalId = localId
-    document.getElementById('modal-users-title').textContent = `Usuários — ${localName}`
+    document.getElementById('modal-user-local-name').textContent = localName
     document.getElementById('u-full-name').value = ''
     document.getElementById('u-email').value     = ''
     document.getElementById('u-password').value  = ''
@@ -802,7 +839,7 @@
 
     const indicator = document.getElementById('email-check-indicator')
     const saveBtn   = document.getElementById('btn-save-user')
-    indicator.innerHTML = '<span style="color:var(--slate-400);font-size:.75rem">🔍 Verificando...</span>'
+    indicator.innerHTML = '<span style="color:var(--slate-400);font-size:.75rem;display:inline-flex;align-items:center;gap:4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Verificando...</span>'
 
     try {
       const data = await api.get(
@@ -816,7 +853,10 @@
             border-radius:var(--radius);padding:.5rem .75rem;
             font-size:.78rem;color:var(--red-700);margin-top:.25rem;
           ">
-            <strong>✕ Cadastro não permitido</strong><br>
+            <div style="display:flex;align-items:center;gap:4px;font-weight:700;margin-bottom:2px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              <span>Cadastro não permitido</span>
+            </div>
             ${data.error}
           </div>`
         saveBtn.disabled = true
@@ -839,10 +879,10 @@
             color:var(--blue-700);
             margin-top:.25rem;
           ">
-            <strong>✓ Email já cadastrado</strong> em
-            <strong>${data.org_name}</strong>
-            (${data.org_type === 'federation' ? 'Federação' : 'UMP Local'})
-            como <strong>${data.full_name}</strong>.<br>
+            <div style="display:flex;align-items:center;gap:4px;font-weight:700;margin-bottom:2px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Email já cadastrado em <strong>${data.org_name}</strong> (${data.org_type === 'federation' ? 'Federação' : 'UMP Local'}) como <strong>${data.full_name}</strong>.</span>
+            </div>
             <span style="color:var(--blue-600)">
               A senha atual será mantida — não é necessário preencher uma nova.
             </span>
@@ -855,7 +895,7 @@
         const nameField = document.getElementById('u-full-name')
         if (nameField && !nameField.value.trim()) nameField.value = data.full_name
       } else {
-        indicator.innerHTML = '<span style="color:var(--green-600);font-size:.75rem">✓ Email disponível</span>'
+        indicator.innerHTML = '<span style="color:var(--green-600);font-size:.75rem;display:inline-flex;align-items:center;gap:4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Email disponível</span>'
 
         document.getElementById('u-password-wrap').style.display = 'block'
         const pwField = document.getElementById('u-password')
@@ -921,7 +961,9 @@
     if (!reports.length) {
       list.innerHTML = `
         <div style="text-align:center;padding:2rem;color:var(--slate-400)">
-          <div style="font-size:1.8rem;margin-bottom:.5rem">📭</div>
+          <div style="display:flex;justify-content:center;margin-bottom:.5rem;color:var(--slate-400)">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+          </div>
           <p>Nenhum relatório financeiro disponível.</p>
           <p style="font-size:.75rem;margin-top:.25rem">Os relatórios ficam disponíveis após o encerramento do período financeiro.</p>
         </div>`
@@ -936,14 +978,20 @@
                         flex-wrap:wrap;gap:.75rem">
               <div>
                 <div style="font-weight:600;font-size:.9rem">Período ${r.fiscal_year}</div>
-                <div style="font-size:.75rem;color:var(--slate-500);margin-top:.15rem">
-                  Encerrado em ${formatDate(r.closed_at?.split('T')[0])}
-                  ${r.validation_code ? ' · <span style="color:var(--green-600)">✓ Assinado digitalmente</span>' : ''}
+                <div style="font-size:.75rem;color:var(--slate-500);margin-top:.15rem;display:flex;align-items:center;gap:4px">
+                  <span>Encerrado em ${formatDate(r.closed_at?.split('T')[0])}</span>
+                  ${r.validation_code ? ' · <span style="color:var(--green-600);display:inline-flex;align-items:center;gap:3px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Assinado digitalmente</span>' : ''}
                 </div>
               </div>
               <div style="display:flex;gap:.4rem;flex-wrap:wrap">
-                ${r.report_url ? `<button class="btn btn-secondary btn-sm" onclick="openLocalReport('${localId}','${r.id}','financial')">📄 Financeiro</button>` : ''}
-                ${r.receipts_report_url ? `<button class="btn btn-secondary btn-sm" onclick="openLocalReport('${localId}','${r.id}','receipts')">🖼️ Comprovantes</button>` : ''}
+                ${r.report_url ? `<button class="btn btn-secondary btn-sm" onclick="openLocalReport('${localId}','${r.id}','financial')" style="display:inline-flex;align-items:center;gap:4px">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                  <span>Financeiro</span>
+                </button>` : ''}
+                ${r.receipts_report_url ? `<button class="btn btn-secondary btn-sm" onclick="openLocalReport('${localId}','${r.id}','receipts')" style="display:inline-flex;align-items:center;gap:4px">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                  <span>Comprovantes</span>
+                </button>` : ''}
               </div>
             </div>
           </div>
@@ -956,7 +1004,9 @@
     if (!reports.length) {
       list.innerHTML = `
         <div style="text-align:center;padding:2rem;color:var(--slate-400)">
-          <div style="font-size:1.8rem;margin-bottom:.5rem">📭</div>
+          <div style="display:flex;justify-content:center;margin-bottom:.5rem;color:var(--slate-400)">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+          </div>
           <p>Nenhum relatório de atividades disponível.</p>
           <p style="font-size:.75rem;margin-top:.25rem">Os relatórios aparecem após publicação pela local.</p>
         </div>`
@@ -971,11 +1021,15 @@
                         flex-wrap:wrap;gap:.75rem">
               <div>
                 <div style="font-weight:600;font-size:.9rem">Gestão ${r.fiscal_year}</div>
-                <div style="font-size:.75rem;color:var(--green-600);margin-top:.15rem">✓ Publicado</div>
+                <div style="font-size:.75rem;color:var(--green-600);margin-top:.15rem;display:flex;align-items:center;gap:3px">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Publicado</span>
+                </div>
               </div>
               <button class="btn btn-primary btn-sm"
-                onclick="openLocalActivityReport('${localId}','${r.id}')">
-                📊 Ver Relatório
+                onclick="openLocalActivityReport('${localId}','${r.id}')" style="display:inline-flex;align-items:center;gap:4px">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                <span>Ver Relatório</span>
               </button>
             </div>
           </div>
@@ -988,7 +1042,9 @@
     if (!reports.length) {
       list.innerHTML = `
         <div style="text-align:center;padding:2rem;color:var(--slate-400)">
-          <div style="font-size:1.8rem;margin-bottom:.5rem">📭</div>
+          <div style="display:flex;justify-content:center;margin-bottom:.5rem;color:var(--slate-400)">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+          </div>
           <p>Nenhum relatório estatístico disponível.</p>
           <p style="font-size:.75rem;margin-top:.25rem">Os relatórios aparecem após publicação pela UMP local.</p>
         </div>`
@@ -1003,11 +1059,15 @@
                         flex-wrap:wrap;gap:.75rem">
               <div>
                 <div style="font-weight:600;font-size:.9rem">Ano Fiscal ${r.fiscal_year}</div>
-                <div style="font-size:.75rem;color:var(--green-600);margin-top:.15rem">✓ Publicado</div>
+                <div style="font-size:.75rem;color:var(--green-600);margin-top:.15rem;display:flex;align-items:center;gap:3px">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Publicado</span>
+                </div>
               </div>
               <button class="btn btn-primary btn-sm"
-                onclick="openLocalStatisticReport('${localId}','${r.id}')">
-                📊 Ver Relatório PDF
+                onclick="openLocalStatisticReport('${localId}','${r.id}')" style="display:inline-flex;align-items:center;gap:4px">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                <span>Ver Relatório PDF</span>
               </button>
             </div>
           </div>
@@ -1142,8 +1202,8 @@
         } else {
           markerHtml = `
             <div class="marker-container" style="position:relative;width:40px;height:40px;">
-              <div style="width:36px;height:36px;border-radius:50%;border:3px solid #1a2a6c;overflow:hidden;background:#1a2a6c;color:#fff;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;box-shadow:var(--shadow)">
-                🏠
+              <div style="width:36px;height:36px;border-radius:50%;border:3px solid #1a2a6c;overflow:hidden;background:#1a2a6c;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
               </div>
               <div style="position:absolute;bottom:-2px;left:14px;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid #1a2a6c;"></div>
             </div>`;
@@ -1156,9 +1216,9 @@
           iconAnchor: [20, 40]
         });
         
-        const churchText = l.church_name ? `<br><span style="font-size:11px;color:#1e293b;">⛪ ${l.church_name}</span>` : '';
-        const pastorText = l.pastor_name ? `<br><span style="font-size:11px;color:#475569;">👤 Pastor: ${l.pastor_name}</span>` : '';
-        const addressText = l.logradouro ? `<br><span style="font-size:11px;color:#64748b;margin-top:4px;display:block;">📍 ${l.logradouro}, ${l.numero || 'S/N'} - ${l.bairro || ''}</span>` : '';
+        const churchText = l.church_name ? `<div style="font-size:11px;color:#1e293b;display:flex;align-items:center;gap:4px;margin-top:2px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"></path><path d="M5 21V9"></path><path d="M19 21V9"></path><path d="M9 21V9"></path><path d="M15 21V9"></path><path d="M2 9l10-6 10 6"></path></svg> <span>${l.church_name}</span></div>` : '';
+        const pastorText = l.pastor_name ? `<div style="font-size:11px;color:#475569;display:flex;align-items:center;gap:4px;margin-top:2px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> <span>Pastor: ${l.pastor_name}</span></div>` : '';
+        const addressText = l.logradouro ? `<div style="font-size:11px;color:#64748b;margin-top:4px;display:flex;align-items:center;gap:4px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> <span>${l.logradouro}, ${l.numero || 'S/N'} - ${l.bairro || ''}</span></div>` : '';
 
         L.marker([l.latitude, l.longitude], { icon: icon })
           .addTo(markersLayer)

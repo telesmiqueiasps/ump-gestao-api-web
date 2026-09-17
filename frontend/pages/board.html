@@ -37,7 +37,9 @@
   <div class="main-area">
     <header class="header">
       <div class="header-left">
-        <button class="btn-menu" id="btn-menu">☰</button>
+        <button class="btn-menu" id="btn-menu" aria-label="Abrir menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
         <div class="header-org">
           <span class="header-org-name" id="header-org-name"></span>
         </div>
@@ -118,7 +120,9 @@
   <div class="modal modal-sm">
     <div class="modal-header">
       <h2 id="modal-board-title">Adicionar Membro</h2>
-      <button class="modal-close">✕</button>
+      <button class="modal-close" aria-label="Fechar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
     </div>
     <div class="field mb-4">
       <label>Nome</label>
@@ -149,7 +153,9 @@
   <div class="modal modal-sm">
     <div class="modal-header">
       <h2 id="modal-secretary-title">Novo Secretário de Atividade</h2>
-      <button class="modal-close">✕</button>
+      <button class="modal-close" aria-label="Fechar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
     </div>
     <div class="field mb-4">
       <label>Nome</label>
@@ -178,7 +184,9 @@
   <div class="modal modal-sm">
     <div class="modal-header">
       <h2>Novo Usuário</h2>
-      <button class="modal-close">✕</button>
+      <button class="modal-close" aria-label="Fechar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
     </div>
     <div class="field mb-4">
       <label>Nome completo</label>
@@ -219,7 +227,9 @@
   <div class="modal modal-sm">
     <div class="modal-header">
       <h2>Editar Usuário</h2>
-      <button class="modal-close">✕</button>
+      <button class="modal-close" aria-label="Fechar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
     </div>
     <div class="field mb-4">
       <label>Nome completo</label>
@@ -330,11 +340,19 @@
               </div>
             </div>
           </div>
-          ${b.contact ? `<div class="board-card-contact" style="font-size:.75rem;color:var(--slate-500);margin-top:.2rem">📞 ${b.contact}</div>` : ''}
+          ${b.contact ? `<div class="board-card-contact" style="font-size:.75rem;color:var(--slate-500);margin-top:.2rem;display:flex;align-items:center;gap:4px">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+            <span>${b.contact}</span>
+          </div>` : ''}
           <div class="board-card-year">Mandato ${b.fiscal_year}</div>
           <div class="board-card-actions">
-            <button class="btn btn-secondary btn-sm" onclick="editBoard('${b.id}','${b.member_name}','${b.role}',${b.fiscal_year},'${b.contact ?? ''}')">✎ Editar</button>
-            <button class="btn btn-ghost btn-sm" style="color:var(--red-600)" onclick="removeBoard('${b.id}','${b.member_name}')">✕</button>
+            <button class="btn btn-secondary btn-sm" onclick="editBoard('${b.id}','${b.member_name}','${b.role}',${b.fiscal_year},'${b.contact ?? ''}')" style="display:inline-flex;align-items:center;gap:4px">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+              <span>Editar</span>
+            </button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--red-600);display:inline-flex;align-items:center;justify-content:center" onclick="removeBoard('${b.id}','${b.member_name}')" title="Excluir" aria-label="Excluir">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </button>
           </div>
         </div>
       `).join('')
@@ -425,7 +443,9 @@
     if (!secs.length) {
       list.innerHTML = `
         <div style="text-align:center;padding:1.5rem;color:var(--slate-400);font-size:.875rem">
-          <div style="font-size:1.5rem;margin-bottom:.4rem">🏛️</div>
+          <div style="display:flex;justify-content:center;margin-bottom:.5rem;color:var(--slate-400)">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"></path><path d="M5 21V9"></path><path d="M19 21V9"></path><path d="M9 21V9"></path><path d="M15 21V9"></path><path d="M2 9l10-6 10 6"></path></svg>
+          </div>
           Nenhum secretário de atividade cadastrado.
         </div>`
       return
@@ -445,15 +465,22 @@
             <div style="flex:1;min-width:0">
               <div style="font-weight:600;font-size:.875rem;color:var(--slate-800)">${s.member_name}</div>
               <div style="font-size:.75rem;color:var(--blue-600);font-weight:500;margin-top:.1rem">${s.activity_name}</div>
-              ${s.contact ? `<div style="font-size:.72rem;color:var(--slate-400);margin-top:.1rem">📞 ${s.contact}</div>` : ''}
+              ${s.contact ? `<div style="font-size:.72rem;color:var(--slate-400);margin-top:.1rem;display:flex;align-items:center;gap:4px">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                <span>${s.contact}</span>
+              </div>` : ''}
             </div>
             <div style="display:flex;gap:.3rem;flex-shrink:0">
               <button class="btn btn-ghost btn-icon"
                 onclick="editSecretary('${s.id}','${s.member_name.replace(/'/g,"\\'")}','${s.activity_name.replace(/'/g,"\\'")}','${s.contact||''}')"
-                title="Editar">✎</button>
+                title="Editar" aria-label="Editar">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+              </button>
               <button class="btn btn-ghost btn-icon danger"
                 onclick="deleteSecretary('${s.id}','${s.member_name.replace(/'/g,"\\'")}' )"
-                title="Excluir">✕</button>
+                title="Excluir" aria-label="Excluir">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
             </div>
           </div>
         `).join('')}
@@ -564,8 +591,14 @@
               <button class="btn btn-ghost btn-sm" style="color:var(--red-600)" onclick="deactivateFedUser('${u.id}','${u.full_name.replace(/'/g, "\\'")}')">Desativar</button>
             ` : ''}
             ${canManageUsers ? `
-              <button class="btn btn-ghost btn-sm" onclick="openEditUser('${u.id}','${u.full_name.replace(/'/g, "\\'")}','${u.email}')" title="Editar usuário">✎ Editar</button>
-              <button class="btn btn-ghost btn-sm" style="color:var(--amber-600)" onclick="resetUserPassword('${u.id}','${u.full_name.replace(/'/g, "\\'")}')" title="Resetar senha para 123456">🔑 Resetar senha</button>
+              <button class="btn btn-ghost btn-sm" onclick="openEditUser('${u.id}','${u.full_name.replace(/'/g, "\\'")}','${u.email}')" title="Editar usuário" style="display:inline-flex;align-items:center;gap:4px">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                <span>Editar</span>
+              </button>
+              <button class="btn btn-ghost btn-sm" style="color:var(--amber-600);display:inline-flex;align-items:center;gap:4px" onclick="resetUserPassword('${u.id}','${u.full_name.replace(/'/g, "\\'")}')" title="Resetar senha para 123456">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
+                <span>Resetar senha</span>
+              </button>
             ` : ''}
           </td>
         </tr>
@@ -630,7 +663,7 @@
 
     const indicator = document.getElementById('board-email-check-indicator')
     const saveBtn   = document.getElementById('btn-save-fed-user')
-    indicator.innerHTML = '<span style="color:var(--slate-400);font-size:.75rem">🔍 Verificando...</span>'
+    indicator.innerHTML = '<span style="color:var(--slate-400);font-size:.75rem;display:inline-flex;align-items:center;gap:4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Verificando...</span>'
 
     try {
       const orgId = getUser()?.organization_id ?? ''
@@ -645,7 +678,10 @@
             border-radius:var(--radius);padding:.5rem .75rem;
             font-size:.78rem;color:var(--red-700);margin-top:.25rem;
           ">
-            <strong>✕ Cadastro não permitido</strong><br>
+            <div style="display:flex;align-items:center;gap:4px;font-weight:700;margin-bottom:2px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              <span>Cadastro não permitido</span>
+            </div>
             ${data.error}
           </div>`
         saveBtn.disabled = true
@@ -664,10 +700,10 @@
             border-radius:var(--radius);padding:.5rem .75rem;
             font-size:.78rem;color:var(--blue-700);margin-top:.25rem;
           ">
-            <strong>✓ Email já cadastrado</strong> em
-            <strong>${data.org_name}</strong>
-            (${data.org_type === 'federation' ? 'Federação' : 'UMP Local'})
-            como <strong>${data.full_name}</strong>.<br>
+            <div style="display:flex;align-items:center;gap:4px;font-weight:700;margin-bottom:2px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Email já cadastrado em <strong>${data.org_name}</strong> (${data.org_type === 'federation' ? 'Federação' : 'UMP Local'}) como <strong>${data.full_name}</strong>.</span>
+            </div>
             <span style="color:var(--blue-600)">
               A senha atual será mantida — não é necessário preencher uma nova.
             </span>
@@ -680,7 +716,7 @@
         const nameField = document.getElementById('fu-full-name')
         if (nameField && !nameField.value.trim()) nameField.value = data.full_name
       } else {
-        indicator.innerHTML = '<span style="color:var(--green-600);font-size:.75rem">✓ Email disponível</span>'
+        indicator.innerHTML = '<span style="color:var(--green-600);font-size:.75rem;display:inline-flex;align-items:center;gap:4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Email disponível</span>'
 
         document.getElementById('board-password-wrap').style.display = 'block'
         const pw = document.getElementById('fu-password')
@@ -725,7 +761,7 @@
       try {
         await api.put(`/api/users/${editUserId}`, { full_name: name, email })
         closeModal('modal-edit-user')
-        showAlert('users-alert', '✓ Usuário atualizado com sucesso!', 'success')
+        showAlert('users-alert', 'Usuário atualizado com sucesso!', 'success')
         loadFedUsers()
       } catch(err) {
         showAlert('edit-user-alert', err.message, 'error')
@@ -741,7 +777,7 @@
     )) return
     try {
       const result = await api.post(`/api/users/${id}/reset-password-default`)
-      showAlert('users-alert', `🔑 ${result.detail}`, 'success')
+      showAlert('users-alert', result.detail, 'success')
     } catch(err) {
       showAlert('users-alert', err.message, 'error')
     }

@@ -402,7 +402,9 @@
     <div class="main-area">
       <header class="header">
         <div class="header-left">
-          <button class="btn-menu" id="btn-menu">☰</button>
+          <button class="btn-menu" id="btn-menu" aria-label="Abrir menu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          </button>
           <div class="header-org">
             <span class="header-org-name" id="header-org-name"></span>
           </div>
@@ -479,7 +481,9 @@
           <!-- Alerta de Congresso Encerrado -->
           <div id="congress-closed-banner"
             style="display:none; background:#fef3c7; border:1px solid #f59e0b; border-radius:var(--radius); padding:1rem 1.25rem; margin-bottom:1.5rem; align-items:center; gap:1rem; color:#92400e;">
-            <div style="font-size:1.8rem; line-height:1;">🔒</div>
+            <div style="width:36px;height:36px;border-radius:8px;background:#fde68a;display:flex;align-items:center;justify-content:center;color:#b45309;flex-shrink:0;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            </div>
             <div style="flex:1;">
               <div style="font-weight:700; font-size:.95rem;">Congresso Encerrado (Modo Somente Leitura)</div>
               <div style="font-size:.84rem; color:#b45309; margin-top:.2rem; line-height:1.45;">
@@ -510,7 +514,9 @@
       <div class="modal-box-header">
         <h3 id="modal-congress-title" style="font-weight:700; font-size:1.1rem; color:var(--slate-800)">Novo Congresso
         </h3>
-        <button type="button" class="modal-close" onclick="closeModal('modal-congress')">✕</button>
+        <button type="button" class="modal-close" onclick="closeModal('modal-congress')" aria-label="Fechar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
       </div>
       <form id="form-congress" onsubmit="handleSaveCongress(event)">
         <div class="modal-box-body">
@@ -543,7 +549,9 @@
       <div class="modal-box-header">
         <h3 id="modal-commission-title" style="font-weight:700; font-size:1.1rem; color:var(--slate-800)">Nova Comissão
         </h3>
-        <button type="button" class="modal-close" onclick="closeModal('modal-commission')">✕</button>
+        <button type="button" class="modal-close" onclick="closeModal('modal-commission')" aria-label="Fechar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
       </div>
       <form id="form-commission" onsubmit="handleSaveCommission(event)">
         <input type="hidden" id="comm-edit-id" value="" />
@@ -574,7 +582,9 @@
           <h3 style="font-weight:700; font-size:1.1rem; color:var(--slate-800)">Composição da Comissão</h3>
           <p id="modal-members-comm-name" style="font-size:.8rem; color:var(--slate-500)"></p>
         </div>
-        <button type="button" class="modal-close" onclick="closeModal('modal-members')">✕</button>
+        <button type="button" class="modal-close" onclick="closeModal('modal-members')" aria-label="Fechar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
       </div>
       <div class="modal-box-body">
         <div class="field">
@@ -591,7 +601,7 @@
           </p>
           <div style="margin-bottom:.5rem;">
             <input type="text" id="search-delegates-input" class="input"
-              placeholder="🔍 Pesquisar delegado pelo nome ou sociedade local..."
+              placeholder="Pesquisar delegado pelo nome ou sociedade local..."
               oninput="filterCommissionDelegates()" />
           </div>
           <div id="delegates-checkbox-list"
@@ -619,11 +629,13 @@
           <h3 style="font-weight:700; font-size:1.1rem; color:var(--slate-800)">Disponibilizar Documentos</h3>
           <p id="modal-docs-comm-name" style="font-size:.8rem; color:var(--slate-500)"></p>
         </div>
-        <button type="button" class="modal-close" onclick="closeModal('modal-documents')">✕</button>
+        <button type="button" class="modal-close" onclick="closeModal('modal-documents')" aria-label="Fechar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
       </div>
       <div class="modal-box-body">
         <div style="display:flex; gap:.5rem; align-items:center;">
-          <input type="text" id="search-docs-input" class="input" placeholder="🔍 Filtrar por UMP Local ou título..."
+          <input type="text" id="search-docs-input" class="input" placeholder="Filtrar por UMP Local ou título..."
             oninput="filterAvailableDocs()" />
           <select id="filter-docs-category" class="select" style="width: auto;" onchange="filterAvailableDocs()">
             <option value="">Todas as Categorias</option>
@@ -654,8 +666,10 @@
             <input type="text" id="upload-doc-title" class="input"
               placeholder="Título do arquivo (Ex: Proposta de Emenda)" style="flex:1" />
             <input type="file" id="upload-doc-file" accept=".pdf,.doc,.docx,.png,.jpg" class="input" style="flex:1" />
-            <button type="button" class="btn btn-secondary btn-sm" onclick="handleUploadDocument()">📤 Enviar
-              Arquivo</button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="handleUploadDocument()" style="display:inline-flex;align-items:center;gap:4px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+              <span>Enviar Arquivo</span>
+            </button>
           </div>
         </div>
       </div>
@@ -667,7 +681,10 @@
   </div>
 
   <!-- Toast para cópia de link -->
-  <div id="toast-copy" class="toast-copy">✓ Link público copiado para a área de transferência!</div>
+  <div id="toast-copy" class="toast-copy" style="display:none;align-items:center;gap:6px">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    <span>Link público copiado para a área de transferência!</span>
+  </div>
 
   <script type="module">
     import { api } from '../assets/js/api.js'
@@ -725,7 +742,9 @@
       if (!congressesList || congressesList.length === 0) {
         container.innerHTML = `
           <div class="empty-state-box">
-            <div class="ei">🏛️</div>
+            <div class="ei" style="display:flex;justify-content:center;margin-bottom:.5rem;color:var(--slate-400)">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"></path><path d="M5 21V9"></path><path d="M19 21V9"></path><path d="M9 21V9"></path><path d="M15 21V9"></path><path d="M2 9l10-6 10 6"></path></svg>
+            </div>
             <h3>Nenhum congresso cadastrado</h3>
             <p>Cadastre o congresso anual da sua federação para gerenciar comissões temáticas, delegados relatores e emissão de pareceres.</p>
             <button class="btn btn-primary" onclick="openNewCongressModal()">
@@ -757,12 +776,13 @@
               <span><strong>${c.total_documents_count || 0}</strong> documentos</span>
             </div>
             <div style="display:flex; gap:.5rem;">
-              <button class="btn btn-primary btn-sm" style="flex:1; justify-content:center;" onclick="openCongressDetail('${c.id}')">
-                ${c.status === 'encerrado' ? 'Visualizar Comissões ➔' : 'Gerenciar Comissões ➔'}
+              <button class="btn btn-primary btn-sm" style="flex:1; justify-content:center; display:inline-flex; align-items:center; gap:6px;" onclick="openCongressDetail('${c.id}')">
+                <span>${c.status === 'encerrado' ? 'Visualizar Comissões' : 'Gerenciar Comissões'}</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
               </button>
               ${c.status !== 'encerrado' ? `
-              <button class="btn btn-secondary btn-sm btn-icon" onclick="deleteCongress('${c.id}', '${c.title.replace(/'/g, "\\'")}')" title="Excluir Congresso">
-                🗑️
+              <button class="btn btn-secondary btn-sm btn-icon" onclick="deleteCongress('${c.id}', '${c.title.replace(/'/g, "\\'")}')" title="Excluir Congresso" aria-label="Excluir Congresso">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
               </button>
               ` : ''}
             </div>
@@ -799,13 +819,13 @@
         const btnToggle = document.getElementById('btn-toggle-congress-status')
         if (btnToggle) {
           if (isClosed) {
-            btnToggle.innerHTML = '🔓 Reabrir Congresso'
+            btnToggle.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg> <span>Reabrir Congresso</span>'
             btnToggle.style.background = 'rgba(255,255,255,0.2)'
             btnToggle.style.color = '#fff'
             btnToggle.style.borderColor = 'rgba(255,255,255,0.4)'
             btnToggle.title = 'Reabrir congresso para permitir novas alterações'
           } else {
-            btnToggle.innerHTML = '🔒 Encerrar Congresso'
+            btnToggle.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg> <span>Encerrar Congresso</span>'
             btnToggle.style.background = '#ef4444'
             btnToggle.style.color = '#fff'
             btnToggle.style.borderColor = '#dc2626'
@@ -850,7 +870,9 @@
       if (comms.length === 0) {
         container.innerHTML = `
           <div class="empty-state-box" style="padding: 2.5rem 1rem;">
-            <div class="ei" style="font-size:2.5rem">📋</div>
+            <div class="ei" style="display:flex;justify-content:center;margin-bottom:.5rem;color:var(--slate-400)">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+            </div>
             <h3>Nenhuma comissão cadastrada neste congresso</h3>
             <p>${isClosed ? 'Nenhuma comissão foi registrada neste congresso.' : 'Adicione as comissões temáticas de trabalho responsáveis por analisar relatórios e redigir pareceres.'}</p>
             ${!isClosed ? '<button class="btn btn-primary btn-sm" onclick="openNewCommissionModal()">+ Adicionar Comissão</button>' : ''}
@@ -878,8 +900,8 @@
                 <p style="font-size:.78rem; color:var(--slate-500); margin-top:.2rem;">${comm.description || ''}</p>
               </div>
               ${!isClosed ? `
-              <button class="btn-ghost" style="padding:.2rem .4rem; color:var(--slate-400)" onclick="deleteCommission('${comm.id}', '${comm.name.replace(/'/g, "\\'")}')" title="Excluir Comissão">
-                🗑️
+              <button class="btn-ghost" style="padding:.2rem .4rem; color:var(--slate-400); display:flex; align-items:center;" onclick="deleteCommission('${comm.id}', '${comm.name.replace(/'/g, "\\'")}')" title="Excluir Comissão" aria-label="Excluir Comissão">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
               </button>
               ` : ''}
             </div>
@@ -932,10 +954,13 @@
             ? docs.map(d => `
                     <div class="doc-item-row">
                       <span style="display:inline-flex; align-items:center; gap:.35rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                        📄 <a href="${d.document_url}" target="_blank" style="color:var(--slate-700); text-decoration:none; font-weight:500;">${d.title}</a>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                        <a href="${d.document_url}" target="_blank" style="color:var(--slate-700); text-decoration:none; font-weight:500;">${d.title}</a>
                       </span>
                       ${!isClosed ? `
-                      <button class="btn-ghost" style="padding:0 .25rem; color:var(--red-400); font-size:.8rem;" onclick="removeCommissionDoc('${comm.id}', '${d.id}')" title="Desvincular">✕</button>
+                      <button class="btn-ghost" style="padding:0 .25rem; color:var(--red-400); display:flex; align-items:center;" onclick="removeCommissionDoc('${comm.id}', '${d.id}')" title="Desvincular" aria-label="Desvincular">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                      </button>
                       ` : ''}
                     </div>
                   `).join('')
@@ -951,12 +976,12 @@
                 <div>
                   ${comm.status === 'aprovado'
             ? `<div style="text-align:right;">
-                         <span style="display:inline-flex; align-items:center; gap:.25rem; font-size:.75rem; font-weight:700; color:#15803d; background:#dcfce7; border:1px solid #86efac; border-radius:99px; padding:2px 8px;">✓ Aprovado Oficialmente</span>
+                         <span style="display:inline-flex; align-items:center; gap:.25rem; font-size:.75rem; font-weight:700; color:#15803d; background:#dcfce7; border:1px solid #86efac; border-radius:99px; padding:2px 8px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Aprovado Oficialmente</span>
                          ${comm.validation_code ? `<div style="font-size:.68rem; font-family:monospace; color:var(--slate-500); margin-top:2px;">Autenticidade: ${comm.validation_code}</div>` : ''}
                        </div>`
             : comm.has_opinion
               ? '<span style="display:inline-flex; align-items:center; gap:.25rem; font-size:.75rem; font-weight:700; color:#1d4ed8; background:#eff6ff; border:1px solid #bfdbfe; border-radius:99px; padding:2px 8px;">Redigido (Em análise)</span>'
-              : '<span style="font-size:.75rem; color:var(--slate-400); font-style:italic">⏳ Aguardando confecção</span>'
+              : '<span style="display:inline-flex; align-items:center; gap:4px; font-size:.75rem; color:var(--slate-400); font-style:italic"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Aguardando confecção</span>'
           }
                 </div>
               </div>
@@ -982,9 +1007,10 @@
           }
 
                 ${comm.status === 'aprovado' && comm.final_report_url
-            ? `<a href="${comm.final_report_url}" target="_blank" class="btn btn-sm" style="background:#10b981; color:#fff; font-size:.75rem; padding:.35rem .6rem; text-decoration:none; font-weight:700;" title="Abrir PDF Oficial Aprovado">
-                       📄 PDF Oficial ↗
-                     </a>`
+            ? `<a href="${comm.final_report_url}" target="_blank" class="btn btn-sm" style="background:#10b981; color:#fff; font-size:.75rem; padding:.35rem .6rem; text-decoration:none; font-weight:700; display:inline-flex; align-items:center; gap:4px;" title="Abrir PDF Oficial Aprovado">
+                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                         <span>PDF Oficial ↗</span>
+                       </a>`
             : ''
           }
               </div>
@@ -992,11 +1018,12 @@
 
             <!-- Link Público & WhatsApp -->
             <div style="display:flex; gap:.5rem; align-items:center; margin-top:auto; padding-top:.5rem; border-top:1px solid var(--slate-100);">
-              <button class="btn-public-link" style="flex:1; justify-content:center;" onclick="copyPublicLink('${publicUrl}')">
-                🔗 Copiar Link Público
+              <button class="btn-public-link" style="flex:1; justify-content:center; display:inline-flex; align-items:center; gap:4px;" onclick="copyPublicLink('${publicUrl}')">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                <span>Copiar Link Público</span>
               </button>
-              <button class="btn btn-secondary btn-sm" onclick="shareWhatsApp('${comm.name.replace(/'/g, "\\'")}', '${publicUrl}')" title="Compartilhar via WhatsApp">
-                💬
+              <button class="btn btn-secondary btn-sm" onclick="shareWhatsApp('${comm.name.replace(/'/g, "\\'")}', '${publicUrl}')" title="Compartilhar via WhatsApp" style="display:inline-flex; align-items:center;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
               </button>
             </div>
           </div>
@@ -1036,9 +1063,9 @@
       if (!isClosed) {
         const confirmed = confirm(
           `Deseja realmente ENCERRAR o congresso "${activeCongress.title}"?\n\n` +
-          `• Todas as comissões, membros e documentos serão bloqueados para criação, edição ou exclusão.\n` +
-          `• Os nomes dos relatores e membros serão salvos estaticamente para preservação histórica (mesmo se alterados ou excluídos na aba Delegados).\n` +
-          `• Todos os relatórios e pareceres permanecerão disponíveis para consulta e download em PDF.`
+          `- Todas as comissões, membros e documentos serão bloqueados para criação, edição ou exclusão.\n` +
+          `- Os nomes dos relatores e membros serão salvos estaticamente para preservação histórica (mesmo se alterados ou excluídos na aba Delegados).\n` +
+          `- Todos os relatórios e pareceres permanecerão disponíveis para consulta e download em PDF.`
         )
         if (!confirmed) return
 
@@ -1212,8 +1239,9 @@
                   <span style="font-weight:600; color:var(--slate-600); text-decoration:line-through;">${d.full_name}</span>
                   <span class="badge" style="font-size:.68rem; background:var(--slate-200); color:var(--slate-600);">${locName}</span>
                 </div>
-                <span style="font-size:.72rem; color:var(--red-600); font-weight:600; white-space:nowrap;">
-                  🔒 Já na comissão "${otherComm}"
+                <span style="font-size:.72rem; color:var(--red-600); font-weight:600; white-space:nowrap; display:inline-flex; align-items:center; gap:3px;">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                  <span>Já na comissão "${otherComm}"</span>
                 </span>
               </label>
             `
@@ -1359,7 +1387,7 @@
                 <span>${d.origin_name || ''}</span>
               </div>
             </div>
-            ${isAlreadyAttached ? '<span style="font-size:.75rem; color:var(--green-600); font-weight:600;">✓ Já vinculado</span>' : ''}
+            ${isAlreadyAttached ? '<span style="font-size:.75rem; color:var(--green-600); font-weight:600; display:inline-flex; align-items:center; gap:3px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Já vinculado</span>' : ''}
           </label>
         `
       }).join('')
@@ -1489,7 +1517,7 @@
 
       try {
         const res = await api.post(`/api/congresses/commissions/${commId}/approve`)
-        alert('✓ Parecer da comissão aprovado oficialmente com sucesso!')
+        alert('Parecer da comissão aprovado oficialmente com sucesso!')
         await refreshActiveCongress()
       } catch (err) {
         alert('Erro ao aprovar parecer: ' + (err.message || err))
