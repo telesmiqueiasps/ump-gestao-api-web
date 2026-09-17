@@ -334,7 +334,9 @@
   <div class="main-area">
     <header class="header">
       <div class="header-left">
-        <button class="btn-menu" id="btn-menu">☰</button>
+        <button class="btn-menu" id="btn-menu" title="Menu" style="display:inline-flex; align-items:center; justify-content:center;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
         <div class="header-org">
           <span class="header-org-name" id="header-org-name"></span>
         </div>
@@ -359,11 +361,14 @@
             <p id="period-year-subtitle">Selecione um mês para visualizar</p>
           </div>
           <div class="finances-toolbar">
-            <select class="input" id="year-select" style="width:auto;min-width:80px"></select>
+            <div style="position:relative; display:inline-flex; align-items:center;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute; left:10px; pointer-events:none; color:var(--slate-500);"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              <select class="input" id="year-select" style="padding-left:30px; width:auto; min-width:80px; font-weight:600;"></select>
+            </div>
             <div class="finances-actions">
               <button class="finances-btn btn-relatorio" id="btn-report" style="display:none" title="Gerar Relatório PDF">
-                <span class="btn-icon-only">📄</span>
-                <span class="btn-label">📄 Relatório PDF</span>
+                <span class="btn-icon-only" style="display:inline-flex;align-items:center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></span>
+                <span class="btn-label" style="display:inline-flex;align-items:center;gap:.4rem;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>Relatório PDF</span>
               </button>
             </div>
           </div>
@@ -402,10 +407,15 @@
         <!-- Sem período -->
         <div id="no-period" style="display:none">
           <div class="no-period-box">
-            <div style="font-size:2.5rem;margin-bottom:.75rem">📂</div>
+            <div style="width:56px;height:56px;border-radius:14px;background:var(--slate-100,#f1f5f9);display:inline-flex;align-items:center;justify-content:center;margin-bottom:.75rem;color:var(--slate-400);">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+            </div>
             <h2>Nenhum período financeiro para <span id="no-period-year"></span></h2>
             <p>Crie o período para começar a registrar lançamentos.</p>
-            <button class="btn btn-primary" id="btn-create-period" style="margin-top:1rem">+ Criar período <span id="no-period-year-btn"></span></button>
+            <button class="btn btn-primary" id="btn-create-period" style="margin-top:1rem;display:inline-flex;align-items:center;gap:.4rem;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              <span>Criar período <span id="no-period-year-btn"></span></span>
+            </button>
           </div>
         </div>
 
@@ -418,17 +428,23 @@
 
         <!-- Header do mês -->
         <div class="month-detail-header">
-          <button class="btn-back" id="btn-back-months" title="Voltar">←</button>
+          <button class="btn-back" id="btn-back-months" title="Voltar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          </button>
           <div class="month-nav">
-            <button class="month-nav-arrow" id="btn-prev-month" title="Mês anterior">‹</button>
+            <button class="month-nav-arrow" id="btn-prev-month" title="Mês anterior">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
             <div class="month-detail-title">
               <h1 id="month-detail-name"></h1>
               <span id="month-detail-year" style="color:var(--slate-400);font-size:1rem;margin-left:.4rem"></span>
             </div>
-            <button class="month-nav-arrow" id="btn-next-month" title="Próximo mês">›</button>
+            <button class="month-nav-arrow" id="btn-next-month" title="Próximo mês">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
           </div>
-          <button class="btn btn-primary" id="btn-new-tx" style="display:none">
-            <span style="font-size:1.1rem;line-height:1">+</span>
+          <button class="btn btn-primary" id="btn-new-tx" style="display:none; align-items:center; gap:.4rem;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             <span class="btn-label">Lançamento</span>
           </button>
         </div>
@@ -482,7 +498,9 @@
         <!-- Empty state -->
         <div id="month-empty-state" style="display:none">
           <div class="month-empty-box">
-            <div style="font-size:2.5rem;margin-bottom:.75rem">📋</div>
+            <div style="width:56px;height:56px;border-radius:14px;background:var(--slate-100,#f1f5f9);display:inline-flex;align-items:center;justify-content:center;margin-bottom:.75rem;color:var(--slate-400);">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><line x1="9" y1="12" x2="15" y2="12"></line><line x1="9" y1="16" x2="13" y2="16"></line></svg>
+            </div>
             <h2>Nenhum lançamento em <span id="month-empty-name"></span></h2>
             <p>Clique no botão acima para adicionar o primeiro lançamento deste mês.</p>
           </div>
@@ -499,7 +517,9 @@
   <div class="modal modal-sm">
     <div class="modal-header">
       <h2>Criar Período Financeiro</h2>
-      <button class="modal-close">✕</button>
+      <button class="modal-close" style="display:inline-flex;align-items:center;justify-content:center;" aria-label="Fechar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
     </div>
     <div class="field mb-4">
       <label>Ano</label>
@@ -512,7 +532,10 @@
     <div id="period-alert" class="hidden mt-4"></div>
     <div class="modal-footer">
       <button class="btn btn-secondary modal-close">Cancelar</button>
-      <button class="btn btn-primary" id="btn-save-period">Criar</button>
+      <button class="btn btn-primary" id="btn-save-period" style="display:inline-flex;align-items:center;gap:.35rem;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <span>Criar</span>
+      </button>
     </div>
   </div>
 </div>
@@ -522,7 +545,9 @@
   <div class="modal modal-sm">
     <div class="modal-header">
       <h2>Limpar Comprovantes</h2>
-      <button class="modal-close">✕</button>
+      <button class="modal-close" style="display:inline-flex;align-items:center;justify-content:center;" aria-label="Fechar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
     </div>
     <div style="margin-bottom:1rem">
       <p class="text-sm" style="color:var(--slate-600);margin-bottom:1rem">
@@ -534,14 +559,18 @@
         <select class="input" id="clean-year-select"></select>
       </div>
     </div>
-    <div class="alert alert-warning" style="margin-bottom:1rem">
-      ⚠️ Esta ação é irreversível. Os comprovantes serão excluídos permanentemente do Backblaze.
+    <div class="alert alert-warning" style="margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+      <span>Esta ação é irreversível. Os comprovantes serão excluídos permanentemente do Backblaze.</span>
     </div>
     <div id="clean-alert" class="hidden" style="margin-bottom:1rem"></div>
     <div id="clean-success" class="hidden" style="margin-bottom:1rem"></div>
     <div class="modal-footer">
       <button class="btn btn-secondary modal-close" id="btn-cancel-clean">Cancelar</button>
-      <button class="btn btn-danger" id="btn-confirm-clean">Excluir Comprovantes</button>
+      <button class="btn btn-danger" id="btn-confirm-clean" style="display:inline-flex;align-items:center;gap:.35rem;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        <span>Excluir Comprovantes</span>
+      </button>
     </div>
   </div>
 </div>
@@ -551,7 +580,9 @@
   <div class="modal">
     <div class="modal-header">
       <h2 id="modal-tx-title">Novo Lançamento</h2>
-      <button class="modal-close">✕</button>
+      <button class="modal-close" style="display:inline-flex;align-items:center;justify-content:center;" aria-label="Fechar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
     </div>
     <div class="grid-2 mb-4">
       <div class="field">
@@ -583,7 +614,10 @@
     <div id="tx-alert" class="hidden mt-4"></div>
     <div class="modal-footer">
       <button class="btn btn-secondary modal-close">Cancelar</button>
-      <button class="btn btn-primary" id="btn-save-tx">Salvar</button>
+      <button class="btn btn-primary" id="btn-save-tx" style="display:inline-flex;align-items:center;gap:.35rem;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+        <span>Salvar</span>
+      </button>
     </div>
   </div>
 </div>
@@ -593,17 +627,21 @@
   <div class="modal modal-sm">
     <div class="modal-header">
       <h2>Relatório Financeiro</h2>
-      <button class="modal-close">✕</button>
+      <button class="modal-close" style="display:inline-flex;align-items:center;justify-content:center;" aria-label="Fechar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
     </div>
     <p class="text-sm text-slate-500" style="margin-bottom:1.25rem">
       Escolha o tipo de relatório a gerar.
     </p>
     <div style="display:flex;flex-direction:column;gap:.75rem">
-      <button id="btn-report-preview" class="btn btn-primary" style="justify-content:center">
-        📄 Visualização (PDF local)
+      <button id="btn-report-preview" class="btn btn-primary" style="justify-content:center;display:flex;align-items:center;gap:.4rem;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+        <span>Visualização (PDF local)</span>
       </button>
-      <button id="btn-report-signed" class="btn btn-secondary" style="justify-content:center" id="btn-report-signed">
-        🔏 Solicitar Relatório Assinado
+      <button id="btn-report-signed" class="btn btn-secondary" style="justify-content:center;display:flex;align-items:center;gap:.4rem;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><polyline points="9 12 11 14 15 10"></polyline></svg>
+        <span>Solicitar Relatório Assinado</span>
       </button>
     </div>
     <div id="report-type-alert" style="margin-top:.75rem"></div>
@@ -618,17 +656,21 @@
   <div class="modal modal-sm">
     <div class="modal-header">
       <h2>Relatórios <span id="modal-reports-year"></span></h2>
-      <button class="modal-close">✕</button>
+      <button class="modal-close" style="display:inline-flex;align-items:center;justify-content:center;" aria-label="Fechar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
     </div>
     <p class="text-sm text-slate-500" style="margin-bottom:1.25rem">
       Relatórios gerados automaticamente no encerramento do período.
     </p>
     <div style="display:flex;flex-direction:column;gap:.75rem">
-      <a id="link-fin-report" href="#" target="_blank" class="btn btn-primary" style="justify-content:center;text-decoration:none">
-        📄 Relatório Financeiro
+      <a id="link-fin-report" href="#" target="_blank" class="btn btn-primary" style="justify-content:center;text-decoration:none;display:flex;align-items:center;gap:.4rem;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+        <span>Relatório Financeiro</span>
       </a>
-      <a id="link-rec-report" href="#" target="_blank" class="btn btn-secondary" style="justify-content:center;text-decoration:none">
-        🖼️ Relatório de Comprovantes
+      <a id="link-rec-report" href="#" target="_blank" class="btn btn-secondary" style="justify-content:center;text-decoration:none;display:flex;align-items:center;gap:.4rem;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+        <span>Relatório de Comprovantes</span>
       </a>
     </div>
     <div class="modal-footer" style="margin-top:1rem">
@@ -642,7 +684,9 @@
   <div class="modal modal-sm">
     <div class="modal-header">
       <h2>Observações do Período</h2>
-      <button class="modal-close">✕</button>
+      <button class="modal-close" style="display:inline-flex;align-items:center;justify-content:center;" aria-label="Fechar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
     </div>
     <div style="margin-bottom:.5rem">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">
@@ -661,9 +705,15 @@
     </p>
     <div id="obs-alert" class="hidden" style="margin-bottom:.75rem"></div>
     <div class="modal-footer">
-      <button class="btn btn-ghost" id="btn-clear-obs" style="color:var(--red-600)">Limpar</button>
+      <button class="btn btn-ghost" id="btn-clear-obs" style="color:var(--red-600);display:inline-flex;align-items:center;gap:.35rem;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        <span>Limpar</span>
+      </button>
       <button class="btn btn-secondary modal-close">Cancelar</button>
-      <button class="btn btn-primary" id="btn-save-obs">Salvar</button>
+      <button class="btn btn-primary" id="btn-save-obs" style="display:inline-flex;align-items:center;gap:.35rem;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+        <span>Salvar</span>
+      </button>
     </div>
   </div>
 </div>
@@ -674,7 +724,10 @@
     <div style="display:flex; flex-direction:column; align-items:center; gap:1.25rem; justify-content:center;">
       <span class="spinner" style="width:40px; height:40px; border-width:4px; border-top-color:var(--brand-orange, #e8630a);"></span>
       <div style="flex:1;">
-        <h3 style="font-weight:700; font-size:1.15rem; color:var(--slate-800); margin-bottom:.5rem;">🔒 Encerrando Período</h3>
+        <h3 style="font-weight:700; font-size:1.15rem; color:var(--slate-800); margin-bottom:.5rem; display:flex; align-items:center; justify-content:center; gap:.4rem;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--brand-orange, #e8630a);"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          <span>Encerrando Período</span>
+        </h3>
         <p style="font-size:.875rem; color:var(--slate-500); line-height:1.45; margin:0;">
           Baixando comprovantes e gerando relatórios PDF assinados digitalmente.<br>
           <span style="color:var(--brand-orange, #e8630a); font-weight:600; font-size:.8rem; margin-top:.5rem; display:block;">Este processo pode levar até 2 minutos. Por favor, não feche a página.</span>
@@ -779,13 +832,13 @@
 
       // Badge de status
       if (currentPeriod.is_closed) {
-        document.getElementById('period-status-badge').textContent = 'Encerrado'
+        document.getElementById('period-status-badge').innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg><span>Encerrado</span>'
         document.getElementById('period-status-badge').className = 'badge badge-slate'
       } else if (currentPeriod.ready_to_close) {
-        document.getElementById('period-status-badge').textContent = '📋 Aguardando Encerramento'
+        document.getElementById('period-status-badge').innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg><span>Aguardando Encerramento</span>'
         document.getElementById('period-status-badge').className = 'badge badge-amber'
       } else {
-        document.getElementById('period-status-badge').textContent = 'Aberto'
+        document.getElementById('period-status-badge').innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 10"></polyline></svg><span>Aberto</span>'
         document.getElementById('period-status-badge').className = 'badge badge-green'
       }
 
@@ -800,9 +853,10 @@
         // Botão de observação
         const btnObs = document.createElement('button')
         btnObs.className = 'btn btn-ghost btn-sm'
-        btnObs.style.cssText = 'font-size:.8rem;color:var(--slate-500);padding:.35rem .6rem'
+        btnObs.style.cssText = 'font-size:.8rem;color:var(--slate-500);padding:.35rem .6rem;display:inline-flex;align-items:center;gap:.35rem;'
         btnObs.title = currentPeriod.observations ? 'Editar observação' : 'Adicionar observação'
-        btnObs.innerHTML = currentPeriod.observations ? '📝 Obs.' : '📝'
+        const obsIconSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>'
+        btnObs.innerHTML = currentPeriod.observations ? `${obsIconSvg}<span>Obs.</span>` : obsIconSvg
         if (currentPeriod.observations) btnObs.style.color = 'var(--brand-orange,#e8630a)'
         btnObs.onclick = () => {
           const text = currentPeriod.observations || ''
@@ -816,10 +870,12 @@
         // Botão marcar como pronto (tesoureiro/vice)
         if (canMarkReady) {
           const btnReady = document.createElement('button')
+          const checkIconSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>'
+          const clipIconSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><line x1="9" y1="12" x2="15" y2="12"></line><line x1="9" y1="16" x2="13" y2="16"></line></svg>'
           if (currentPeriod.ready_to_close) {
             btnReady.className = 'btn btn-sm'
-            btnReady.style.cssText = 'background:#f0fdf4;color:var(--green-700);border:1.5px solid var(--green-300);font-size:.78rem'
-            btnReady.innerHTML = '✓ Pronto'
+            btnReady.style.cssText = 'background:#f0fdf4;color:var(--green-700);border:1.5px solid var(--green-300);font-size:.78rem;display:inline-flex;align-items:center;gap:.35rem;'
+            btnReady.innerHTML = `${checkIconSvg}<span>Pronto</span>`
             btnReady.title = 'Clique para desfazer'
             btnReady.onclick = async () => {
               if (!confirm('Desfazer marcação de pronto?')) return
@@ -830,13 +886,13 @@
             }
           } else {
             btnReady.className = 'btn btn-secondary btn-sm'
-            btnReady.style.cssText = 'font-size:.78rem'
-            btnReady.innerHTML = '📋 Marcar Pronto'
+            btnReady.style.cssText = 'font-size:.78rem;display:inline-flex;align-items:center;gap:.35rem;'
+            btnReady.innerHTML = `${clipIconSvg}<span>Marcar Pronto</span>`
             btnReady.onclick = async () => {
               if (!confirm(`Marcar período ${currentYear} como pronto para encerramento?`)) return
               try {
                 await api.post(`/api/finances/periods/${currentPeriod.id}/mark-ready`)
-                showAlert('screen-months-alert', '📋 Marcado como pronto! O Presidente pode encerrar.', 'success')
+                showAlert('screen-months-alert', 'Marcado como pronto! O Presidente pode encerrar.', 'success')
                 await loadPage()
               } catch(err) { showAlert('screen-months-alert', err.message, 'error') }
             }
@@ -847,20 +903,22 @@
         // Botão encerrar (presidente/vice/sec.presbiterial/conselheiro)
         if (canClose) {
           const btnClose = document.createElement('button')
+          const lockIconSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>'
           if (currentPeriod.ready_to_close) {
-            btnClose.className = 'btn btn-sm'
-            btnClose.style.cssText = 'background:linear-gradient(135deg,#1a5c2a,#2d8a40);color:#fff;font-size:.78rem'
-            btnClose.innerHTML = '🔒 Encerrar'
+            btnClose.className = 'btn btn-sm finances-btn'
+            btnClose.style.cssText = 'background:linear-gradient(135deg,#1a5c2a,#2d8a40);color:#fff;font-size:.78rem;display:inline-flex;align-items:center;'
+            btnClose.innerHTML = `<span class="btn-icon-only" style="display:inline-flex;align-items:center;">${lockIconSvg}</span><span class="btn-label" style="display:inline-flex;align-items:center;gap:.35rem;">${lockIconSvg}Encerrar</span>`
           } else {
             btnClose.className = 'btn-encerrar'
-            btnClose.innerHTML = '<span>🔒 Encerrar</span>'
+            btnClose.style.cssText = 'display:inline-flex;align-items:center;'
+            btnClose.innerHTML = `<span class="btn-icon-only" style="display:inline-flex;align-items:center;">${lockIconSvg}</span><span class="btn-label" style="display:inline-flex;align-items:center;gap:.35rem;">${lockIconSvg}Encerrar</span>`
           }
           btnClose.onclick = async () => {
             if (!confirm(
               `Encerrar definitivamente o período ${currentYear}?\n\n` +
-              `✓ Relatório financeiro assinado digitalmente\n` +
-              `✓ Relatório de comprovantes gerado\n` +
-              `✓ Ação irreversível`
+              `- Relatório financeiro assinado digitalmente\n` +
+              `- Relatório de comprovantes gerado\n` +
+              `- Ação irreversível`
             )) return
             
             // Abre o modal de carregamento animado de encerramento
@@ -872,7 +930,7 @@
               await api.post(`/api/finances/periods/${currentPeriod.id}/close`, null, 300000)
               closeModal('modal-closing-progress')
               clearAlert('screen-months-alert')
-              showAlert('screen-months-alert', '✅ Período encerrado! Relatórios assinados gerados.', 'success')
+              showAlert('screen-months-alert', 'Período encerrado! Relatórios assinados gerados.', 'success')
               await loadPage()
             } catch(err) {
               closeModal('modal-closing-progress')
@@ -890,8 +948,9 @@
         if (currentPeriod.report_url || currentPeriod.receipts_report_url) {
           const btnReports = document.createElement('button')
           btnReports.className = 'btn btn-sm'
-          btnReports.style.cssText = 'background:linear-gradient(135deg,#1a2a6c,#2a3f9f);color:#fff;font-size:.78rem'
-          btnReports.innerHTML = '📄 Relatórios'
+          btnReports.style.cssText = 'background:linear-gradient(135deg,#1a2a6c,#2a3f9f);color:#fff;font-size:.78rem;display:inline-flex;align-items:center;gap:.35rem;'
+          const reportIconSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>'
+          btnReports.innerHTML = `${reportIconSvg}<span>Relatórios</span>`
           btnReports.onclick = async () => {
             try {
               const data = await api.get(`/api/finances/periods/${currentPeriod.id}/report-urls`)
@@ -909,8 +968,9 @@
         if (currentPeriod.is_locked && currentPeriod.signature_id) {
           const btnSigned = document.createElement('button')
           btnSigned.className = 'btn btn-sm'
-          btnSigned.style.cssText = 'background:linear-gradient(135deg,#1a5c2a,#2d8a40);color:#fff;font-size:.78rem'
-          btnSigned.innerHTML = '✅ Assinado'
+          btnSigned.style.cssText = 'background:linear-gradient(135deg,#1a5c2a,#2d8a40);color:#fff;font-size:.78rem;display:inline-flex;align-items:center;gap:.35rem;'
+          const checkCircleSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>'
+          btnSigned.innerHTML = `${checkCircleSvg}<span>Assinado</span>`
           btnSigned.onclick = async () => {
             try {
               const data = await api.get(`/api/signatures/${currentPeriod.signature_id}/report-url`)
@@ -923,8 +983,9 @@
         if (currentPeriod.validation_code) {
           const btnClean = document.createElement('button')
           btnClean.className = 'btn btn-sm'
-          btnClean.style.cssText = 'background:linear-gradient(135deg,#7b1fa2,#9c27b0);color:#fff;font-size:.78rem'
-          btnClean.innerHTML = '🗑️ Comprovantes'
+          btnClean.style.cssText = 'background:linear-gradient(135deg,#7b1fa2,#9c27b0);color:#fff;font-size:.78rem;display:inline-flex;align-items:center;gap:.35rem;'
+          const trashSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>'
+          btnClean.innerHTML = `${trashSvg}<span>Comprovantes</span>`
           btnClean.onclick = () => {
             const select = document.getElementById('clean-year-select')
             select.innerHTML = ''
@@ -1052,13 +1113,14 @@
                   class="receipt-eye-btn"
                   style="flex-shrink:0;background:none;border:none;cursor:pointer;
                          color:var(--blue-500);font-size:.9rem;padding:.1rem .2rem;
-                         line-height:1;border-radius:4px;transition:background .15s"
+                         line-height:1;border-radius:4px;transition:background .15s;
+                         display:inline-flex;align-items:center;justify-content:center;"
                   title="Ver comprovante"
                   data-action="receipt"
                   data-id="${t.id}"
                   onmouseover="this.style.background='var(--blue-50)'"
                   onmouseout="this.style.background='none'"
-                >👁️</button>
+                ><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
               ` : ''}
             </div>
           </td>
@@ -1073,8 +1135,12 @@
           <td>
             ${canEdit ? `
               <div class="row-actions">
-                <button class="btn btn-ghost btn-icon" data-action="edit" data-id="${t.id}" title="Editar">✎</button>
-                <button class="btn btn-ghost btn-icon danger" data-action="delete" data-id="${t.id}" title="Excluir">✕</button>
+                <button class="btn btn-ghost btn-icon" data-action="edit" data-id="${t.id}" title="Editar" style="display:inline-flex;align-items:center;justify-content:center;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                </button>
+                <button class="btn btn-ghost btn-icon danger" data-action="delete" data-id="${t.id}" title="Excluir" style="display:inline-flex;align-items:center;justify-content:center;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
               </div>` : ''}
           </td>
         </tr>`
@@ -1154,7 +1220,7 @@
       await api.put(`/api/finances/periods/${currentPeriod.id}/observations`, { observations: '' })
       currentPeriod.observations = ''
       closeModal('modal-observations')
-      showAlert('screen-months-alert', '📝 Observação removida.', 'success')
+      showAlert('screen-months-alert', 'Observação removida.', 'success')
       await loadPage()
     } catch(err) { showAlert('obs-alert', err.message, 'error') }
   })
@@ -1167,7 +1233,7 @@
       await api.put(`/api/finances/periods/${currentPeriod.id}/observations`, { observations: text })
       currentPeriod.observations = text
       closeModal('modal-observations')
-      showAlert('screen-months-alert', text ? '📝 Observação salva!' : '📝 Observação removida.', 'success')
+      showAlert('screen-months-alert', text ? 'Observação salva!' : 'Observação removida.', 'success')
       await loadPage()
     } catch(err) {
       showAlert('obs-alert', err.message, 'error')
@@ -1258,7 +1324,7 @@
     setLoading(btn, true, 'Excluir Comprovantes')
     try {
       const data = await api.delete(`/api/finances/receipts/year/${year}`)
-      document.getElementById('clean-success').innerHTML = `<div class="alert alert-success">✅ ${data.message}</div>`
+      document.getElementById('clean-success').innerHTML = `<div class="alert alert-success" style="display:flex;align-items:center;gap:.5rem;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="20 6 9 17 4 12"></polyline></svg><span>${data.message}</span></div>`
       document.getElementById('clean-success').classList.remove('hidden')
       btn.disabled = true
       btn.textContent = 'Concluído'
@@ -1271,15 +1337,17 @@
   })
 
   // ── Relatório PDF ──
+  const REPORT_BTN_CONTENT = `<span class="btn-icon-only" style="display:inline-flex;align-items:center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></span><span class="btn-label" style="display:inline-flex;align-items:center;gap:.4rem;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>Relatório PDF</span>`
+
   document.getElementById('btn-report').addEventListener('click', async () => {
     const btn = document.getElementById('btn-report')
-    setLoading(btn, true, '📄 Relatório PDF')
+    setLoading(btn, true, REPORT_BTN_CONTENT)
     try {
       await generatePDF()
     } catch(err) {
       showAlert('screen-months-alert', 'Erro ao gerar relatório: ' + err.message, 'error')
     } finally {
-      setLoading(btn, false, '📄 Relatório PDF')
+      setLoading(btn, false, REPORT_BTN_CONTENT)
     }
   })
 
