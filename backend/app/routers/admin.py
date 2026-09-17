@@ -11,6 +11,8 @@ from app.models.user import User, UserRole
 from app.models.federation import Federation
 from app.models.local_ump import LocalUmp
 from app.models.enums import OrgType
+from app.models.finance import FinancialPeriod
+from app.models.activity_report import ActivityReport
 from app.core.admin import require_admin
 from app.core.security import hash_password
 
@@ -319,3 +321,138 @@ def list_all_local_umps(
             "user_count":      user_count,
         })
     return result
+
+
+# ── Gerenciamento e Reabertura de Períodos e Relatórios ────────
+
+@router.get("/organizations/{org_id}/periods")
+def get_organization_periods(
+    org_id: UUID,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    # Identifica a organização (Federação ou UMP Local)
+    fed = db.query(Federation).filter(Federation.id == org_id).first()
+    loc = db.query(LocalUmp).filter(LocalUmp.id == org_id).first() if not fed else None
+
+    if not fed and not loc:
+        raise HTTPException(status_code=404, detail="Organização não encontrada")
+
+    org_name = fed.name if fed else loc.name
+    org_type = "federation" if fed else "local_ump"
+
+    # Busca períodos financeiros
+    fin_periods = db.query(FinancialPeriod).filter(
+        FinancialPeriod.organization_id == org_id
+    ).order_by(FinancialPeriod.fiscal_year.desc()).all()
+
+    # Busca relatórios de atividades
+    act_reports = db.query(ActivityReport).filter(
+        ActivityReport.organization_id == org_id
+    ).order_by(ActivityReport.fiscal_year.desc()).all()
+
+    fin_out = [
+        {
+            "id": str(p.id),
+            "fiscal_year": p.fiscal_year,
+            "initial_balance": float(p.initial_balance or 0),
+            "is_closed": bool(p.is_closed),
+            "closed_at": p.closed_at.isoformat() if p.closed_at else None,
+            "validation_code": p.validation_code,
+            "is_locked": bool(p.is_locked),
+            "has_report_url": bool(p.report_url),
+            "has_receipts_url": bool(p.receipts_report_url),
+        }
+        for p in fin_periods
+    ]
+
+    act_out = [
+        {
+            "id": str(r.id),
+            "fiscal_year": r.fiscal_year,
+            "status": r.status,
+            "updated_at": r.updated_at.isoformat() if r.updated_at else None,
+            "has_report_url": bool(r.report_url),
+        }
+        for r in act_reports
+    ]
+
+    return {
+        "org_id": str(org_id),
+        "org_name": org_name,
+        "org_type": org_type,
+        "financial_periods": fin_out,
+        "activity_reports": act_out,
+    }
+
+
+@router.post("/financial-periods/{period_id}/reopen")
+def reopen_financial_period(
+    period_id: UUID,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    period = db.query(FinancialPeriod).filter(FinancialPeriod.id == period_id).first()
+    if not period:
+        raise HTTPException(status_code=404, detail="Período financeiro não encontrado")
+
+    if not period.is_closed:
+        raise HTTPException(status_code=400, detail=f"O período financeiro de {period.fiscal_year} já se encontra aberto.")
+
+    # Regra LIFO: verificar se há ano posterior fechado para a mesma organização
+    later_closed = db.query(FinancialPeriod).filter(
+        FinancialPeriod.organization_id == period.organization_id,
+        FinancialPeriod.fiscal_year > period.fiscal_year,
+        FinancialPeriod.is_closed == True
+    ).order_by(FinancialPeriod.fiscal_year.asc()).first()
+
+    if later_closed:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Não é possível reabrir o ano {period.fiscal_year} porque o ano posterior ({later_closed.fiscal_year}) também está encerrado. Reabra primeiro o ano mais recente para preservar a integridade contábil dos saldos."
+        )
+
+    # Reabre o período financeiro e invalida autenticações e relatórios antigos
+    period.is_closed = False
+    period.closed_at = None
+    period.is_locked = False
+    period.ready_to_close = False
+    period.validation_code = None
+    period.data_hash = None
+    period.report_url = None
+    period.receipts_report_url = None
+    db.commit()
+
+    return {
+        "detail": f"Período financeiro de {period.fiscal_year} reaberto com sucesso.",
+        "fiscal_year": period.fiscal_year,
+        "period_id": str(period.id),
+    }
+
+
+@router.post("/activity-reports/{report_id}/reopen")
+def reopen_activity_report(
+    report_id: UUID,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    report = db.query(ActivityReport).filter(ActivityReport.id == report_id).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="Relatório de atividades não encontrado")
+
+    if report.status != 'published':
+        raise HTTPException(
+            status_code=400,
+            detail=f"O relatório de atividades de {report.fiscal_year} não está com status 'Publicado' (status atual: {report.status})."
+        )
+
+    # Reabre o relatório para rascunho
+    report.status = 'draft'
+    report.report_url = None
+    db.commit()
+
+    return {
+        "detail": f"Relatório de atividades de {report.fiscal_year} reaberto para rascunho com sucesso.",
+        "fiscal_year": report.fiscal_year,
+        "report_id": str(report.id),
+    }
