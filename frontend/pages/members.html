@@ -87,7 +87,7 @@
   <div class="main-area">
     <header class="header">
       <div class="header-left">
-        <button class="btn-menu" id="btn-menu">☰</button>
+        <button class="btn-menu" id="btn-menu" aria-label="Menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg></button>
         <div class="header-org">
           <span class="header-org-name" id="header-org-name"></span>
         </div>
@@ -126,18 +126,23 @@
         </div>
         <div style="display:flex;gap:.5rem;flex-wrap:wrap">
           <button class="btn btn-secondary local-only-field" id="btn-show-map" style="display:inline-flex;align-items:center;gap:.35rem">
-            🗺️ Ver Mapa
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
+            <span>Ver Mapa</span>
           </button>
           <button class="btn btn-secondary local-only-field" id="btn-open-config" style="display:inline-flex;align-items:center;gap:.35rem">
-            ⚙️ Ajustes
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            <span>Ajustes</span>
           </button>
-          <button class="btn btn-primary" id="btn-new-member">
-            <script>
-              try {
-                const user = JSON.parse(localStorage.getItem('user') || '{}');
-                document.write(user.organization_type === 'federation' ? '+ Novo Delegado' : '+ Novo Sócio');
-              } catch (e) { document.write('+ Novo sócio'); }
-            </script>
+          <button class="btn btn-primary" id="btn-new-member" style="display:inline-flex;align-items:center;gap:.4rem">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span id="btn-new-member-label">
+              <script>
+                try {
+                  const user = JSON.parse(localStorage.getItem('user') || '{}');
+                  document.write(user.organization_type === 'federation' ? 'Novo Delegado' : 'Novo Sócio');
+                } catch (e) { document.write('Novo Sócio'); }
+              </script>
+            </span>
           </button>
         </div>
       </div>
@@ -159,8 +164,9 @@
       <div class="filter-bar mb-4" style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
         <button class="filter-btn active" id="filter-active" onclick="setFilter(true)">Ativos</button>
         <button class="filter-btn" id="filter-all" onclick="setFilter(false)">Todos</button>
-        <div style="flex:1;min-width:200px;max-width:300px;margin-left:auto">
-          <input class="input" type="text" id="search-members" placeholder="🔍 Buscar por nome..." style="padding:.35rem .75rem;font-size:.825rem;height:auto" />
+        <div style="flex:1;min-width:200px;max-width:300px;margin-left:auto;position:relative">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--slate-400);pointer-events:none"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input class="input" type="text" id="search-members" placeholder="Buscar por nome..." style="padding:.35rem .75rem .35rem 2rem;font-size:.825rem;height:auto;width:100%" />
         </div>
         <span class="filter-count" id="member-count"></span>
       </div>
@@ -193,21 +199,24 @@
   <div class="modal" style="max-height:90vh;overflow-y:auto;max-width:580px;width:100%">
     <div class="modal-header">
       <h2 id="modal-member-title">Novo Sócio</h2>
-      <button class="modal-close">✕</button>
+      <button class="modal-close" aria-label="Fechar" style="display:inline-flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
 
     <!-- Campo de Foto do Sócio -->
     <div class="field mb-4 local-only-field" style="display:flex;align-items:center;gap:1rem;background:var(--slate-50);padding:.75rem 1rem;border-radius:var(--radius);border:1px solid var(--slate-200)">
       <div id="m-avatar-container" style="width:56px;height:56px;border-radius:50%;overflow:hidden;background:var(--slate-200);display:flex;align-items:center;justify-content:center;flex-shrink:0;border:2px solid var(--slate-300)">
-        <span id="m-avatar-placeholder" style="font-size:1.4rem">📷</span>
+        <span id="m-avatar-placeholder" style="display:flex;align-items:center;justify-content:center;color:var(--slate-400)">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        </span>
         <img id="m-avatar-preview" style="width:100%;height:100%;object-fit:cover;display:none" />
       </div>
       <div style="flex:1">
         <label style="font-weight:600;font-size:.82rem;color:var(--slate-700)">Foto do Sócio <span class="text-slate-400" style="font-weight:400">(opcional)</span></label>
         <input type="file" id="m-photo-file" accept="image/png,image/jpeg,image/webp" style="display:none" />
         <div style="display:flex;gap:.5rem;margin-top:.35rem">
-          <button type="button" class="btn btn-secondary btn-sm" id="btn-choose-photo" style="font-size:.78rem;padding:3px 10px">
-            📷 Escolher Foto
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-choose-photo" style="font-size:.78rem;padding:3px 10px;display:inline-flex;align-items:center;gap:.35rem">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+            <span>Escolher Foto</span>
           </button>
           <button type="button" class="btn btn-ghost btn-sm" id="btn-remove-photo" style="display:none;font-size:.78rem;color:var(--red-500);padding:3px 8px">
             Remover
@@ -264,8 +273,9 @@
     </div>
     
     <!-- Campos de Endereço -->
-    <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--slate-400);margin-bottom:.6rem" class="local-only-field">
-      📌 Endereço Residencial
+    <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--slate-500);margin-bottom:.6rem;display:flex;align-items:center;gap:.35rem" class="local-only-field">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+      <span>Endereço Residencial</span>
     </div>
     <div class="grid-3 mb-4 local-only-field">
       <div class="field">
@@ -298,15 +308,20 @@
     <!-- Mini-Mapa de Geolocalização -->
     <div class="field mb-4 local-only-field" style="margin-top: 1rem;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">
-        <label style="font-weight:600;font-size:.82rem;color:var(--slate-700)">🗺️ Localização no Mapa</label>
-        <button class="btn btn-secondary btn-sm" type="button" id="btn-locate-m-map" style="font-size:.78rem;padding: 3px 10px;">
-          🔍 Localizar no Mapa
+        <label style="font-weight:600;font-size:.82rem;color:var(--slate-700);display:inline-flex;align-items:center;gap:.35rem">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
+          <span>Localização no Mapa</span>
+        </label>
+        <button class="btn btn-secondary btn-sm" type="button" id="btn-locate-m-map" style="font-size:.78rem;padding: 3px 10px;display:inline-flex;align-items:center;gap:.35rem">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <span>Localizar no Mapa</span>
         </button>
       </div>
       <div id="m-precision-badge" class="alert mb-2" style="display:none;font-size:.78rem;padding:.4rem .65rem;border-radius:6px"></div>
       <div id="m-form-map" style="width:100%;height:180px;border-radius:10px;border:1.5px solid var(--slate-200);position:relative;overflow:hidden"></div>
-      <p style="font-size:.72rem;color:var(--slate-400);margin-top:.3rem">
-        📍 Clique no mapa ou arraste o pino para ajustar a posição exata da residência.
+      <p style="font-size:.72rem;color:var(--slate-400);margin-top:.3rem;display:flex;align-items:center;gap:.35rem">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+        <span>Clique no mapa ou arraste o pino para ajustar a posição exata da residência.</span>
       </p>
       <input type="hidden" id="m-latitude" />
       <input type="hidden" id="m-longitude" />
@@ -315,7 +330,10 @@
     <div id="member-alert" class="hidden mb-4"></div>
     <div class="modal-footer">
       <button class="btn btn-secondary modal-close">Cancelar</button>
-      <button class="btn btn-primary" id="btn-save-member">Salvar</button>
+      <button class="btn btn-primary" id="btn-save-member" style="display:inline-flex;align-items:center;gap:.4rem">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+        <span>Salvar</span>
+      </button>
     </div>
   </div>
 </div>
@@ -328,13 +346,19 @@
         <h2 id="modal-contrib-title">Contribuições</h2>
         <p class="text-sm text-slate-500" id="modal-contrib-subtitle"></p>
       </div>
-      <button class="modal-close">✕</button>
+      <button class="modal-close" aria-label="Fechar" style="display:inline-flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
 
     <!-- Abas -->
     <div style="display:flex;gap:.5rem;margin-bottom:1.25rem;border-bottom:2px solid var(--slate-100);padding-bottom:.5rem">
-      <button class="contrib-tab active" data-tab="monthly" onclick="switchContribTab('monthly')">💰 Mensalidades</button>
-      <button class="contrib-tab" data-tab="aci" onclick="switchContribTab('aci')">📋 ACI</button>
+      <button class="contrib-tab active" data-tab="monthly" onclick="switchContribTab('monthly')" style="display:inline-flex;align-items:center;gap:.4rem">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+        <span>Mensalidades</span>
+      </button>
+      <button class="contrib-tab" data-tab="aci" onclick="switchContribTab('aci')" style="display:inline-flex;align-items:center;gap:.4rem">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        <span>ACI</span>
+      </button>
     </div>
 
     <!-- Aba Mensalidades -->
@@ -365,7 +389,10 @@
         </div>
       </div>
       <div id="aci-list"></div>
-      <button class="btn btn-primary btn-sm mt-4" id="btn-new-aci">+ Registrar Contribuição ACI</button>
+      <button class="btn btn-primary btn-sm mt-4" id="btn-new-aci" style="display:inline-flex;align-items:center;gap:.35rem">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        <span>Registrar Contribuição ACI</span>
+      </button>
     </div>
   </div>
 </div>
@@ -375,7 +402,7 @@
   <div class="modal modal-sm">
     <div class="modal-header">
       <h2 id="modal-monthly-title">Registrar Mensalidade</h2>
-      <button class="modal-close">✕</button>
+      <button class="modal-close" aria-label="Fechar" style="display:inline-flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     <div class="field mb-3">
       <label>Data do pagamento</label>
@@ -392,7 +419,10 @@
     <div id="fee-alert" class="hidden mb-3"></div>
     <div class="modal-footer">
       <button class="btn btn-secondary modal-close">Cancelar</button>
-      <button class="btn btn-primary" id="btn-save-monthly-fee">Registrar</button>
+      <button class="btn btn-primary" id="btn-save-monthly-fee" style="display:inline-flex;align-items:center;gap:.35rem">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <span>Registrar</span>
+      </button>
     </div>
   </div>
 </div>
@@ -402,7 +432,7 @@
   <div class="modal modal-sm">
     <div class="modal-header">
       <h2>Registrar Contribuição ACI</h2>
-      <button class="modal-close">✕</button>
+      <button class="modal-close" aria-label="Fechar" style="display:inline-flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     <div class="field mb-3">
       <label>Data do pagamento</label>
@@ -419,7 +449,10 @@
     <div id="aci-alert" class="hidden mb-3"></div>
     <div class="modal-footer">
       <button class="btn btn-secondary modal-close">Cancelar</button>
-      <button class="btn btn-primary" id="btn-save-aci">Registrar</button>
+      <button class="btn btn-primary" id="btn-save-aci" style="display:inline-flex;align-items:center;gap:.35rem">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <span>Registrar</span>
+      </button>
     </div>
   </div>
 </div>
@@ -428,8 +461,11 @@
 <div class="modal-overlay" id="modal-map">
   <div class="modal modal-lg" style="max-width:95vw;width:900px;height:650px;max-height:92vh;display:flex;flex-direction:column">
     <div class="modal-header" style="flex-shrink:0">
-      <h2>🗺️ Mapa de Sócios</h2>
-      <button class="modal-close">✕</button>
+      <h2 style="display:inline-flex;align-items:center;gap:.45rem">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--brand-blue, #1a2a6c)"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
+        <span>Mapa de Sócios</span>
+      </h2>
+      <button class="modal-close" aria-label="Fechar" style="display:inline-flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     <div style="flex:1;min-height:0;position:relative;border-radius:var(--radius-lg);overflow:hidden;border:1.5px solid var(--slate-200);margin-bottom:1rem">
       <div id="leaflet-map" style="width:100%;height:100%;z-index:1"></div>
@@ -444,8 +480,11 @@
 <div class="modal-overlay" id="modal-fees-config">
   <div class="modal" style="max-height:90vh;overflow-y:auto">
     <div class="modal-header">
-      <h2>⚙️ Configurações Gerais do Sócio</h2>
-      <button class="modal-close">✕</button>
+      <h2 style="display:inline-flex;align-items:center;gap:.45rem">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--brand-blue, #1a2a6c)"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        <span>Configurações Gerais do Sócio</span>
+      </h2>
+      <button class="modal-close" aria-label="Fechar" style="display:inline-flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     
     <!-- Valores das Contribuições -->
@@ -478,7 +517,10 @@
         <label>Link do Portal dos Sócios</label>
         <div style="display:flex;gap:.4rem;align-items:center">
           <input class="input" type="text" id="p-portal-url" readonly style="font-size:.78rem;color:var(--slate-500);background:var(--slate-50);flex:1" />
-          <button class="btn btn-secondary btn-sm" id="btn-copy-portal" onclick="copyPortalUrl()">📋 Copiar</button>
+          <button class="btn btn-secondary btn-sm" id="btn-copy-portal" onclick="copyPortalUrl()" style="display:inline-flex;align-items:center;gap:.35rem">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            <span>Copiar</span>
+          </button>
         </div>
         <p style="font-size:.72rem;color:var(--slate-400);margin-top:.25rem">Compartilhe este link com os sócios.</p>
       </div>
@@ -504,11 +546,15 @@
         <label>QR Code PIX</label>
         <div style="display:flex;align-items:flex-start;gap:1rem;flex-wrap:wrap">
           <div id="pix-qr-preview" style="width:120px;height:120px;border:2px dashed var(--slate-200);border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--slate-50);flex-shrink:0;">
-            <span style="font-size:2rem">💳</span>
+            <div style="color:var(--slate-400);display:flex;flex-direction:column;align-items:center;gap:.25rem">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+              <span style="font-size:.65rem;font-weight:600;text-transform:uppercase">PIX QR</span>
+            </div>
           </div>
           <div style="flex:1;min-width:160px">
-            <label class="btn btn-ghost btn-sm" style="cursor:pointer;display:block;text-align:center;border:1.5px dashed var(--slate-300)">
-              📁 Upload do QR Code
+            <label class="btn btn-ghost btn-sm" style="cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:.35rem;border:1.5px dashed var(--slate-300);width:100%">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+              <span>Upload do QR Code</span>
               <input type="file" accept="image/png,image/jpeg" id="pix-qr-upload" style="display:none" onchange="uploadPixQr(this)" />
             </label>
             <p style="font-size:.7rem;color:var(--slate-400);margin-top:.4rem;text-align:center">PNG ou JPG · máx 5MB</p>
@@ -520,7 +566,10 @@
     <div id="config-alert" class="hidden mb-3"></div>
     <div class="modal-footer">
       <button class="btn btn-secondary modal-close">Cancelar</button>
-      <button class="btn btn-primary" id="btn-save-config">Salvar</button>
+      <button class="btn btn-primary" id="btn-save-config" style="display:inline-flex;align-items:center;gap:.4rem">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+        <span>Salvar</span>
+      </button>
     </div>
   </div>
 </div>
@@ -563,7 +612,12 @@
 
     // Nomenclatura dinâmica
     document.getElementById('page-title').textContent = isFed ? 'Delegados' : getSocietyLabel('membros')
-    document.getElementById('btn-new-member').textContent = isFed ? '+ Novo Delegado' : '+ Novo ' + getSocietyLabel('membro')
+    const btnMemberLabel = document.getElementById('btn-new-member-label')
+    if (btnMemberLabel) {
+      btnMemberLabel.textContent = isFed ? 'Novo Delegado' : 'Novo ' + getSocietyLabel('membro')
+    } else {
+      document.getElementById('btn-new-member').textContent = isFed ? '+ Novo Delegado' : '+ Novo ' + getSocietyLabel('membro')
+    }
     if (!isFed) {
       const labelMembros = getSocietyLabel('membros')
       const suffixAtivos = labelMembros === 'Associadas' ? 'Ativas' : 'Ativos'
@@ -743,9 +797,9 @@
             ${cells}
             <td>
               <div class="row-actions">
-                ${!isFed ? `<button class="btn btn-ghost btn-icon" title="Contribuições" onclick="openContributions('${m.id}','${m.full_name.replace(/'/g, "\\'")}')">📋</button>` : ''}
-                <button class="btn btn-ghost btn-icon" title="Editar" onclick="editMember('${m.id}')">✎</button>
-                ${m.is_active ? `<button class="btn btn-ghost btn-icon danger" title="Desativar" onclick="deactivate('${m.id}','${m.full_name.replace(/'/g, "\\'")}')">✕</button>` : ''}
+                ${!isFed ? `<button class="btn btn-ghost btn-icon" title="Contribuições" onclick="openContributions('${m.id}','${m.full_name.replace(/'/g, "\\'")}')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg></button>` : ''}
+                <button class="btn btn-ghost btn-icon" title="Editar" onclick="editMember('${m.id}')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+                ${m.is_active ? `<button class="btn btn-ghost btn-icon danger" title="Desativar" onclick="deactivate('${m.id}','${m.full_name.replace(/'/g, "\\'")}')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>` : ''}
               </div>
             </td>
           </tr>
@@ -991,16 +1045,16 @@
 
       if (precision === 'manual' || precision === 'exato') {
         badge.className = 'alert alert-success mb-2'
-        badge.innerHTML = '🟢 <strong>Localização Exata:</strong> Posição confirmada no mapa.'
+        badge.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#16a34a;margin-right:6px"></span><strong>Localização Exata:</strong> Posição confirmada no mapa.'
       } else if (precision === 'aproximado_rua') {
         badge.className = 'alert alert-amber mb-2'
-        badge.innerHTML = '🟡 <strong>Localização Aproximada (Rua):</strong> Arraste o pino no mapa para marcar o ponto exato.'
+        badge.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#d97706;margin-right:6px"></span><strong>Localização Aproximada (Rua):</strong> Arraste o pino no mapa para marcar o ponto exato.'
       } else if (precision === 'bairro' || precision === 'cidade') {
         badge.className = 'alert alert-amber mb-2'
-        badge.innerHTML = '🟠 <strong>Localização Aproximada (Bairro/Cidade):</strong> Clique no mapa para marcar a residência.'
+        badge.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ea580c;margin-right:6px"></span><strong>Localização Aproximada (Bairro/Cidade):</strong> Clique no mapa para marcar a residência.'
       } else {
         badge.className = 'alert alert-error mb-2'
-        badge.innerHTML = '⚪ <strong>Sem coordenadas:</strong> Preencha o endereço e clique em "Localizar no Mapa" ou clique no mapa.'
+        badge.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#94a3b8;margin-right:6px"></span><strong>Sem coordenadas:</strong> Preencha o endereço e clique em "Localizar no Mapa" ou clique no mapa.'
       }
     }
 
@@ -1031,7 +1085,7 @@
       } catch (err) {
         alert('Erro ao buscar localização: ' + err.message)
       } finally {
-        setLoading(btn, false, '🔍 Localizar no Mapa')
+        setLoading(btn, false, '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> <span>Localizar no Mapa</span>')
       }
     }
 
@@ -1107,7 +1161,11 @@
             ? `viewMonthlyFee('${m.id}','${m.month_label}','${m.reference_month}')`
             : `openRegisterMonthly('${m.reference_month}','${m.month_label}')`}">
           <div class="fee-month">${m.month_label.substring(0, 3)}</div>
-          <div class="fee-status">${m.is_paid ? '✓ Pago' : '○ Pendente'}</div>
+          <div class="fee-status" style="display:inline-flex;align-items:center;justify-content:center;gap:3px">
+            ${m.is_paid 
+              ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Pago' 
+              : '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle></svg> Pendente'}
+          </div>
           ${m.is_paid ? `<div class="fee-amount">${formatCurrency(m.amount)}</div>` : ''}
           ${m.paid_at ? `<div class="fee-date">${formatDate(m.paid_at)}</div>` : ''}
         </div>
@@ -1182,7 +1240,9 @@
         document.getElementById('aci-progress-bar').style.width     = `${Math.min(100, aciData.progress_percent)}%`
 
         const badge = document.getElementById('aci-status-badge')
-        badge.textContent = aciData.is_complete ? '✓ Completa' : `${aciData.progress_percent}%`
+        badge.innerHTML   = aciData.is_complete 
+          ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:2px"><polyline points="20 6 9 17 4 12"></polyline></svg> Completa' 
+          : `${aciData.progress_percent}%`
         badge.className   = `badge ${aciData.is_complete ? 'badge-green' : 'badge-amber'}`
 
         const list = document.getElementById('aci-list')
@@ -1203,7 +1263,7 @@
                           ? `<button class="btn btn-ghost btn-sm" style="font-size:.75rem" onclick="viewAciReceipt('${c.transaction_id}')">Ver</button>`
                           : '—'}
                       </td>
-                      <td><button class="btn btn-ghost btn-icon danger" onclick="deleteAci('${c.id}')">✕</button></td>
+                      <td><button class="btn btn-ghost btn-icon danger" title="Excluir" onclick="deleteAci('${c.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></td>
                     </tr>
                   `).join('')}
                 </tbody>
@@ -1402,8 +1462,10 @@
             iconAnchor: [20, 40]
           });
           
-          const phoneText = m.phone ? `<br><span style="font-size:11px;color:#1e293b;">📞 ${m.phone}</span>` : '';
-          const addressText = m.logradouro ? `<br><span style="font-size:11px;color:#64748b;margin-top:4px;display:block;">📍 ${m.logradouro}, ${m.numero || 'S/N'} - ${m.bairro || ''}</span>` : '';
+          const phoneIcon = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:3px;color:#1a2a6c"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>'
+          const pinIcon = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:3px;color:#64748b"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>'
+          const phoneText = m.phone ? `<br><span style="font-size:11px;color:#1e293b;display:inline-flex;align-items:center;margin-top:2px;">${phoneIcon}${m.phone}</span>` : '';
+          const addressText = m.logradouro ? `<br><span style="font-size:11px;color:#64748b;margin-top:4px;display:inline-flex;align-items:flex-start;">${pinIcon}<span>${m.logradouro}, ${m.numero || 'S/N'} - ${m.bairro || ''}</span></span>` : '';
 
           L.marker([m.latitude, m.longitude], { icon: icon })
             .addTo(markersLayer)
@@ -1445,7 +1507,7 @@
         const result = await api.upload('/api/local-umps/me/pix-qr', fd)
         document.getElementById('pix-qr-preview').innerHTML =
           `<img src="${result.base64}" style="width:100%;height:100%;object-fit:contain"/>`
-        showAlert('config-alert', '✅ QR Code salvo!', 'success')
+        showAlert('config-alert', 'QR Code salvo com sucesso!', 'success')
       } catch(err) {
         alert(err.message)
       } finally {
@@ -1457,8 +1519,10 @@
       const url = document.getElementById('p-portal-url').value
       navigator.clipboard.writeText(url).then(() => {
         const btn = document.getElementById('btn-copy-portal')
-        btn.textContent = '✓ Copiado!'
-        setTimeout(() => btn.textContent = '📋 Copiar', 2000)
+        btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> <span>Copiado!</span>'
+        setTimeout(() => {
+          btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> <span>Copiar</span>'
+        }, 2000)
       })
     }
 
