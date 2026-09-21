@@ -380,6 +380,308 @@
         max-height: 95vh;
       }
     }
+
+    /* ── Estilos: Sub-abas de Congressos ── */
+    .subtabs-bar {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      border-bottom: 2px solid var(--slate-200);
+      margin-bottom: 1.5rem;
+      background: #fff;
+      padding: .25rem .75rem 0;
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    }
+
+    .subtab-btn {
+      padding: .75rem 1.25rem;
+      font-size: .92rem;
+      font-weight: 700;
+      color: var(--slate-500);
+      background: none;
+      border: none;
+      border-bottom: 2.5px solid transparent;
+      margin-bottom: -2px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      transition: all .15s ease;
+    }
+
+    .subtab-btn:hover {
+      color: var(--brand-blue, #1a2a6c);
+    }
+
+    .subtab-btn.active {
+      color: var(--brand-blue, #1a2a6c);
+      border-bottom-color: var(--brand-blue, #1a2a6c);
+    }
+
+    /* ── Estilos: Credenciais (Visão Federação) ── */
+    .cred-config-card {
+      background: #fff;
+      border: 1.5px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+      box-shadow: 0 1px 3px rgba(0,0,0,.03);
+    }
+
+    .cred-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .cred-stat-card {
+      background: #fff;
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.25rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,.02);
+    }
+
+    .cred-stat-title {
+      font-size: .78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--slate-500);
+      margin-bottom: .25rem;
+    }
+
+    .cred-stat-val {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--slate-900);
+    }
+
+    .cred-table-wrap {
+      background: #fff;
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      overflow-x: auto;
+      box-shadow: 0 1px 3px rgba(0,0,0,.03);
+    }
+
+    .cred-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: .88rem;
+    }
+
+    .cred-table th {
+      background: var(--slate-50);
+      padding: .75rem 1rem;
+      font-weight: 700;
+      color: var(--slate-600);
+      border-bottom: 1px solid var(--slate-200);
+      font-size: .8rem;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+
+    .cred-table td {
+      padding: .85rem 1rem;
+      border-bottom: 1px solid var(--slate-100);
+      color: var(--slate-700);
+      vertical-align: middle;
+    }
+
+    .cred-table tr:hover td {
+      background: #f8fafc;
+    }
+
+    .avatar-selfie-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .2rem .5rem .2rem .2rem;
+      background: #f1f5f9;
+      border: 1px solid var(--slate-200);
+      border-radius: 99px;
+      font-size: .75rem;
+      font-weight: 600;
+      color: var(--slate-700);
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .avatar-selfie-btn:hover {
+      background: #e2e8f0;
+      border-color: var(--slate-300);
+    }
+
+    .avatar-selfie-thumb {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    /* ── Estilos: Formulário de Credencial (Visão UMP Local) ── */
+    .cred-builder-card {
+      background: #fff;
+      border: 1.5px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,.03);
+      margin-bottom: 1.5rem;
+    }
+
+    .status-tracker {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+      padding: 1rem 1.25rem;
+      background: #fff;
+      border: 1.5px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+    }
+
+    .tracker-step {
+      display: flex;
+      align-items: center;
+      gap: .45rem;
+      font-size: .82rem;
+      font-weight: 700;
+      color: var(--slate-400);
+    }
+
+    .tracker-step.active {
+      color: var(--blue-600, #2563eb);
+    }
+
+    .tracker-step.completed {
+      color: var(--green-600, #16a34a);
+    }
+
+    .tracker-step-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #e2e8f0;
+      color: #64748b;
+      font-size: .75rem;
+      font-weight: 800;
+    }
+
+    .tracker-step.active .tracker-step-icon {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .tracker-step.completed .tracker-step-icon {
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    .tracker-arrow {
+      color: var(--slate-300);
+      margin: 0 .25rem;
+    }
+
+    .cred-delegate-item {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      padding: .65rem .85rem;
+      background: var(--slate-50);
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius);
+      margin-bottom: .6rem;
+      flex-wrap: wrap;
+    }
+
+    .cred-delegate-order {
+      font-size: .75rem;
+      font-weight: 700;
+      padding: .25rem .6rem;
+      border-radius: 6px;
+      background: #e2e8f0;
+      color: #334155;
+      white-space: nowrap;
+    }
+
+    .cred-delegate-order.req {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .cred-delegate-order.opt {
+      background: #f1f5f9;
+      color: #64748b;
+    }
+
+    /* ── Estilos: Modal Documento Oficial ── */
+    .official-doc-modal-body {
+      background: #f8fafc;
+      padding: 1.5rem;
+      overflow-y: auto;
+    }
+
+    .official-paper-preview {
+      background: #fff;
+      border: 1px solid var(--slate-300);
+      border-radius: 4px;
+      padding: 2.5rem 2rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,.08);
+      max-width: 640px;
+      margin: 0 auto;
+      color: #0f172a;
+    }
+
+    @media print {
+      body * {
+        visibility: hidden !important;
+      }
+      #modal-view-credential,
+      #modal-view-credential * {
+        visibility: visible !important;
+      }
+      #modal-view-credential {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100vw;
+        height: 100vh;
+        background: #fff;
+        padding: 0;
+        display: block !important;
+      }
+      .modal-box {
+        max-width: 100% !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+      .modal-box-header,
+      .modal-box-footer {
+        display: none !important;
+      }
+      .official-doc-modal-body {
+        padding: 0 !important;
+        background: #fff !important;
+      }
+      .official-paper-preview {
+        box-shadow: none !important;
+        border: none !important;
+        max-width: 100% !important;
+        padding: 1cm !important;
+      }
+    }
   </style>
 </head>
 
@@ -494,12 +796,207 @@
             </div>
           </div>
 
-          <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--slate-800); margin-bottom: 1rem;">
-            Comissões de Trabalho
-          </h3>
+          <!-- Sub-abas do Congresso: Comissões e Credenciais -->
+          <div class="subtabs-bar">
+            <button type="button" class="subtab-btn active" id="btn-subtab-commissions" onclick="switchCongressSubtab('commissions')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+              <span>Comissões de Trabalho</span>
+            </button>
+            <button type="button" class="subtab-btn" id="btn-subtab-credentials" onclick="switchCongressSubtab('credentials')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+              <span>Credenciais dos Delegados</span>
+            </button>
+          </div>
 
-          <div id="commissions-container" class="commission-grid">
+          <!-- CONTEÚDO SUB-ABA 1: COMISSÕES -->
+          <div id="tab-content-commissions">
+            <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--slate-800); margin-bottom: 1rem;">
+              Comissões de Trabalho
+            </h3>
+            <div id="commissions-container" class="commission-grid">
+              <!-- Renderizado via JS -->
+            </div>
+          </div>
+
+          <!-- CONTEÚDO SUB-ABA 2: CREDENCIAIS DOS DELEGADOS -->
+          <div id="tab-content-credentials" style="display:none;">
+            <!-- Card de Configuração de Limites -->
+            <div class="cred-config-card">
+              <div>
+                <h3 style="font-size:1.05rem; font-weight:700; color:var(--slate-800); margin-bottom:.25rem;">
+                  Limites de Delegados por UMP Local
+                </h3>
+                <p style="font-size:.84rem; color:var(--slate-500);">
+                  Defina a quantidade mínima e máxima de delegados que cada UMP Local pode credenciar para este congresso.
+                </p>
+              </div>
+              <div style="display:flex; align-items:center; gap:.75rem; flex-wrap:wrap;">
+                <div style="display:flex; align-items:center; gap:.4rem;">
+                  <label style="font-size:.82rem; font-weight:700; color:var(--slate-700);">Mínimo:</label>
+                  <input type="number" id="fed-input-min-del" class="input" style="width:75px; text-align:center;" min="1" max="50" value="1" />
+                </div>
+                <div style="display:flex; align-items:center; gap:.4rem;">
+                  <label style="font-size:.82rem; font-weight:700; color:var(--slate-700);">Máximo:</label>
+                  <input type="number" id="fed-input-max-del" class="input" style="width:75px; text-align:center;" min="1" max="50" value="5" />
+                </div>
+                <button type="button" class="btn btn-primary btn-sm" onclick="saveCongressDelegateLimits()" style="display:inline-flex; align-items:center; gap:4px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                  <span>Salvar Limites</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Métricas de Credenciamento -->
+            <div class="cred-stats-grid">
+              <div class="cred-stat-card">
+                <div class="cred-stat-title">UMPs Locais</div>
+                <div class="cred-stat-val" id="stat-total-locals">0</div>
+              </div>
+              <div class="cred-stat-card">
+                <div class="cred-stat-title" style="color:var(--green-700)">Credenciais Enviadas</div>
+                <div class="cred-stat-val" style="color:var(--green-700)" id="stat-submitted">0</div>
+              </div>
+              <div class="cred-stat-card">
+                <div class="cred-stat-title" style="color:#2563eb">Aprovadas pelo Pastor</div>
+                <div class="cred-stat-val" style="color:#2563eb" id="stat-pastor-approved">0</div>
+              </div>
+              <div class="cred-stat-card">
+                <div class="cred-stat-title" style="color:#b45309">Pendentes / Rascunho</div>
+                <div class="cred-stat-val" style="color:#b45309" id="stat-pending">0</div>
+              </div>
+              <div class="cred-stat-card">
+                <div class="cred-stat-title">Total de Delegados</div>
+                <div class="cred-stat-val" id="stat-total-delegates">0</div>
+              </div>
+            </div>
+
+            <!-- Tabela de UMPs Locais e Credenciais -->
+            <div class="cred-table-wrap">
+              <table class="cred-table">
+                <thead>
+                  <tr>
+                    <th>UMP Local / Igreja</th>
+                    <th>Delegados</th>
+                    <th>Status</th>
+                    <th>Pastor & Selfie</th>
+                    <th>Presidência Local</th>
+                    <th style="text-align:right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="fed-credentials-tbody">
+                  <!-- Renderizado via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── VISÃO 3: CREDENCIAL DA UMP LOCAL (PRESIDENTE & VICE) ── -->
+        <div id="view-local-credential" style="display:none;">
+          <!-- Banner do Congresso Ativo -->
+          <div class="congress-header-banner" id="local-congress-banner">
+            <div class="congress-banner-info">
+              <h2 id="local-cong-title">Congresso da Federação</h2>
+              <p id="local-cong-desc">Credenciamento de delegados da sociedade local</p>
+              <div class="congress-banner-badges">
+                <span class="badge badge-blue" id="local-cong-year">2026</span>
+                <span class="badge badge-green" id="local-cong-limits-badge">Mínimo 1 e Máximo 5 delegados</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Barra de Rastreamento de Status -->
+          <div class="status-tracker" id="local-status-tracker">
             <!-- Renderizado via JS -->
+          </div>
+
+          <!-- Alerta de Bloqueio se Enviada -->
+          <div id="local-submitted-notice" style="display:none;" class="alert alert-success">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <div style="flex:1">
+              <strong>Credencial Enviada à Federação!</strong>
+              <div style="font-size:.84rem; margin-top:.15rem;" id="local-submitted-date-meta">
+                Os dados foram enviados e homologados pela Presidência. As edições estão bloqueadas.
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 1: Lista de Delegados -->
+          <div class="cred-builder-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:.75rem;">
+              <div>
+                <h3 style="font-size:1.1rem; font-weight:700; color:var(--slate-800);">1. Delegados da Sociedade</h3>
+                <p style="font-size:.84rem; color:var(--slate-500);" id="local-limits-helper">
+                  Adicione os nomes dos delegados conforme o limite estabelecido pela federação.
+                </p>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-add-del-row" onclick="addDelegateRow()" style="display:inline-flex; align-items:center; gap:4px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <span>Adicionar Delegado</span>
+              </button>
+            </div>
+
+            <div id="local-delegates-builder-container">
+              <!-- Lista de linhas de delegados gerada via JS -->
+            </div>
+          </div>
+
+          <!-- Card 2: Pastor da Igreja & Link de Aprovação -->
+          <div class="cred-builder-card">
+            <h3 style="font-size:1.1rem; font-weight:700; color:var(--slate-800); margin-bottom:.35rem;">
+              2. Validação e Aprovação Pastoral
+            </h3>
+            <p style="font-size:.84rem; color:var(--slate-500); margin-bottom:1.25rem;">
+              O Pastor da igreja deve acessar o link público e registrar uma foto selfie para aprovar digitalmente a credencial antes do envio.
+            </p>
+
+            <div class="field" style="margin-bottom:1.25rem;">
+              <label style="font-weight:700; font-size:.84rem; color:var(--slate-700);">Nome do Pastor da Igreja *</label>
+              <input type="text" id="local-input-pastor" class="input" placeholder="Ex: Rev. João Silva" />
+            </div>
+
+            <div id="local-pastor-status-area">
+              <!-- Renderizado via JS (Link público ou Badge de Aprovado com Selfie) -->
+            </div>
+          </div>
+
+          <!-- Card 3: Assinatura da Presidência da UMP & Envio -->
+          <div class="cred-builder-card">
+            <h3 style="font-size:1.1rem; font-weight:700; color:var(--slate-800); margin-bottom:.35rem;">
+              3. Assinatura da Presidência e Envio à Federação
+            </h3>
+            <p style="font-size:.84rem; color:var(--slate-500); margin-bottom:1rem;">
+              A credencial é assinada automaticamente com a sua conta ativa no momento do envio à federação.
+            </p>
+
+            <div style="background:var(--slate-50); border:1px solid var(--slate-200); border-radius:var(--radius); padding:1rem 1.25rem; margin-bottom:1.5rem; display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+              <div style="width:40px; height:40px; border-radius:50%; background:#dbeafe; color:#1d4ed8; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              </div>
+              <div style="flex:1">
+                <div style="font-weight:700; font-size:.95rem; color:var(--slate-900);" id="local-signer-name">Nome do Usuário</div>
+                <div style="font-size:.8rem; color:var(--slate-500);" id="local-signer-role">Presidente / Vice-Presidente da UMP Local</div>
+              </div>
+              <div id="local-signature-badge">
+                <!-- Badge de status -->
+              </div>
+            </div>
+
+            <!-- Barra de Ações -->
+            <div style="display:flex; justify-content:flex-end; gap:.75rem; flex-wrap:wrap;">
+              <button type="button" class="btn btn-secondary" onclick="openCredentialDocPreview()" style="display:inline-flex; align-items:center; gap:6px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                <span>Visualizar Documento</span>
+              </button>
+              <button type="button" class="btn btn-secondary" id="btn-save-local-draft" onclick="handleSaveLocalCredentialDraft()" style="display:inline-flex; align-items:center; gap:6px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                <span>Salvar Rascunho</span>
+              </button>
+              <button type="button" class="btn btn-primary" id="btn-submit-local-cred" onclick="handleSubmitLocalCredential()" style="display:inline-flex; align-items:center; gap:6px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                <span>Enviar Credencial à Federação</span>
+              </button>
+            </div>
           </div>
         </div>
       </main>
@@ -678,6 +1175,61 @@
         <button type="button" class="btn btn-primary" onclick="saveSelectedDocuments()">Vincular Selecionados</button>
       </div>
     </div>
+  <!-- ── MODAL: VISUALIZAR DOCUMENTO OFICIAL DA CREDENCIAL ── -->
+  <div class="modal-overlay" id="modal-view-credential">
+    <div class="modal-box" style="max-width: 760px;">
+      <div class="modal-box-header">
+        <div style="display:flex; align-items:center; gap:.5rem;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--brand-blue, #1a2a6c)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          <h3 style="font-weight:700; font-size:1.1rem; color:var(--slate-800)">Documento Oficial da Credencial</h3>
+        </div>
+        <button type="button" class="modal-close" onclick="closeModal('modal-view-credential')" aria-label="Fechar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="official-doc-modal-body" id="modal-doc-body">
+        <div class="official-paper-preview" id="printable-credential-area">
+          <!-- Renderizado dinamicamente com layout fiel ao modelo -->
+        </div>
+      </div>
+      <div class="modal-box-footer">
+        <a id="btn-modal-download-pdf" href="#" target="_blank" class="btn btn-secondary btn-sm" style="display:inline-flex; align-items:center; gap:6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          <span>Baixar PDF</span>
+        </a>
+        <button type="button" class="btn btn-primary btn-sm" onclick="printCredentialDoc()" style="display:inline-flex; align-items:center; gap:6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+          <span>Imprimir</span>
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('modal-view-credential')">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODAL: VISUALIZAR SELFIE DO PASTOR ── -->
+  <div class="modal-overlay" id="modal-view-selfie">
+    <div class="modal-box" style="max-width: 440px;">
+      <div class="modal-box-header">
+        <h3 style="font-weight:700; font-size:1.1rem; color:var(--slate-800)">Aprovação Pastoral com Selfie</h3>
+        <button type="button" class="modal-close" onclick="closeModal('modal-view-selfie')" aria-label="Fechar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="modal-box-body" style="text-align:center; padding:1.5rem;">
+        <div style="width:180px; height:180px; border-radius:50%; overflow:hidden; margin:0 auto 1.25rem; border:4px solid var(--green-600); box-shadow:0 8px 24px rgba(0,0,0,.15); background:#000;">
+          <img id="modal-selfie-img" src="" alt="Selfie do Pastor" style="width:100%; height:100%; object-fit:cover;" />
+        </div>
+        <h4 style="font-size:1.1rem; font-weight:800; color:var(--slate-900);" id="modal-selfie-pastor-name">Nome do Pastor</h4>
+        <p style="font-size:.84rem; color:var(--slate-600); margin-top:.25rem;" id="modal-selfie-church-name">Igreja</p>
+        <div style="display:inline-flex; align-items:center; gap:6px; background:#f0fdf4; color:var(--green-700); border:1px solid #bbf7d0; padding:.35rem .75rem; border-radius:99px; font-size:.78rem; font-weight:700; margin-top:.75rem;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <span id="modal-selfie-timestamp">Aprovado em</span>
+        </div>
+      </div>
+      <div class="modal-box-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-view-selfie')">Fechar</button>
+      </div>
+    </div>
   </div>
 
   <!-- Toast para cópia de link -->
@@ -688,7 +1240,7 @@
 
   <script type="module">
     import { api } from '../assets/js/api.js'
-    import { getUser, requireAuth, isFederation } from '../assets/js/auth.js'
+    import { getUser, requireAuth, isFederation, isLocalUmp } from '../assets/js/auth.js'
     import { renderShell, canAccessPage, renderBottomNav } from '../assets/js/router.v3.js?v=11'
 
     let currentUser = null
@@ -697,6 +1249,13 @@
     let activeCommission = null
     let allDelegates = []
     let availableDocs = []
+
+    // ── VARIÁVEIS DE CREDENCIAIS ──
+    let localCredentialData = null
+    let localDelegatesList = []
+    let localMembersList = []
+    let federationCredentialsData = null
+    let activeCongressSubtab = 'commissions'
 
       // ── INICIALIZAÇÃO ──
       ; (async () => {
@@ -711,11 +1270,14 @@
         document.querySelector('[data-page="congressos"]')?.classList.add('active')
         currentUser = getUser()
 
-        // Carrega delegados da federação para os selects e composições
-        await loadDelegates()
-
-        // Carrega lista inicial de congressos
-        await loadCongresses()
+        if (isLocalUmp()) {
+          // UMP Local (Presidente e Vice)
+          await initLocalUmpCredentialView()
+        } else {
+          // Federação: carrega delegados e congressos
+          await loadDelegates()
+          await loadCongresses()
+        }
       })()
 
     // ── CARREGAMENTO DE DADOS ──
@@ -1522,6 +2084,703 @@
       } catch (err) {
         alert('Erro ao aprovar parecer: ' + (err.message || err))
       }
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // ── ROTINA DE CREDENCIAIS (FEDERAÇÃO & UMP LOCAL) ──
+    // ════════════════════════════════════════════════════════════
+
+    // ── SUB-ABAS DO CONGRESSO (FEDERAÇÃO) ──
+    window.switchCongressSubtab = function (tabName) {
+      activeCongressSubtab = tabName
+      const btnComms = document.getElementById('btn-subtab-commissions')
+      const btnCreds = document.getElementById('btn-subtab-credentials')
+      const tabComms = document.getElementById('tab-content-commissions')
+      const tabCreds = document.getElementById('tab-content-credentials')
+      const btnNewComm = document.getElementById('btn-new-commission')
+
+      if (tabName === 'commissions') {
+        btnComms?.classList.add('active')
+        btnCreds?.classList.remove('active')
+        if (tabComms) tabComms.style.display = 'block'
+        if (tabCreds) tabCreds.style.display = 'none'
+        if (btnNewComm && activeCongress && activeCongress.status !== 'encerrado') {
+          btnNewComm.style.display = 'inline-flex'
+        }
+      } else {
+        btnComms?.classList.remove('active')
+        btnCreds?.classList.add('active')
+        if (tabComms) tabComms.style.display = 'none'
+        if (tabCreds) tabCreds.style.display = 'block'
+        if (btnNewComm) btnNewComm.style.display = 'none'
+        if (activeCongress) {
+          loadFederationCredentials(activeCongress.id)
+        }
+      }
+    }
+
+    async function loadFederationCredentials(congressId) {
+      const tbody = document.getElementById('fed-credentials-tbody')
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--slate-500)">Carregando credenciais das UMPs Locais...</td></tr>`
+
+      try {
+        federationCredentialsData = await api.get(`/api/congresses/${congressId}/credentials`)
+        renderFederationCredentials()
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--red-600)">Erro ao carregar credenciais: ${err.message || err}</td></tr>`
+      }
+    }
+
+    function renderFederationCredentials() {
+      if (!federationCredentialsData) return
+      const d = federationCredentialsData
+
+      // Preenche limites
+      document.getElementById('fed-input-min-del').value = d.min_delegates || 1
+      document.getElementById('fed-input-max-del').value = d.max_delegates || 5
+
+      // Preenche KPIs
+      document.getElementById('stat-total-locals').textContent = d.summary.total_local_umps
+      document.getElementById('stat-submitted').textContent = d.summary.total_submitted
+      document.getElementById('stat-pastor-approved').textContent = d.summary.total_pastor_approved
+      document.getElementById('stat-pending').textContent = d.summary.total_pending
+      document.getElementById('stat-total-delegates').textContent = d.summary.total_delegates
+
+      const tbody = document.getElementById('fed-credentials-tbody')
+      if (!d.credentials || d.credentials.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--slate-500)">Nenhuma UMP Local cadastrada nesta Federação.</td></tr>`
+        return
+      }
+
+      tbody.innerHTML = d.credentials.map(c => {
+        let statusBadge = ''
+        if (c.status === 'homologada') {
+          statusBadge = '<span class="badge badge-green">Homologada</span>'
+        } else if (c.status === 'enviada') {
+          statusBadge = '<span class="badge badge-green">Enviada</span>'
+        } else if (c.status === 'aprovado_pastor') {
+          statusBadge = '<span class="badge badge-blue">Aprovado Pastor</span>'
+        } else if (c.status === 'aguardando_pastor') {
+          statusBadge = '<span class="badge badge-amber">Aguardando Pastor</span>'
+        } else if (c.status === 'rascunho') {
+          statusBadge = '<span class="badge badge-gray">Rascunho</span>'
+        } else {
+          statusBadge = '<span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca">Não Iniciada</span>'
+        }
+
+        // Selfie e Pastor
+        let pastorCell = '—'
+        if (c.pastor_name) {
+          if (c.pastor_selfie_url) {
+            const escapedUrl = c.pastor_selfie_url.replace(/'/g, "\\'")
+            const escapedPastor = (c.pastor_name || '').replace(/'/g, "\\'")
+            const escapedChurch = (c.church_name || c.local_ump_name || '').replace(/'/g, "\\'")
+            const approvedDateStr = c.pastor_approved_at ? new Date(c.pastor_approved_at).toLocaleString('pt-BR') : ''
+            pastorCell = `
+              <div style="display:flex; align-items:center; gap:.5rem;">
+                <button type="button" class="avatar-selfie-btn" onclick="openSelfieModal('${escapedUrl}', '${escapedPastor}', '${approvedDateStr}', '${escapedChurch}')" title="Ver foto selfie do pastor">
+                  <img src="${c.pastor_selfie_url}" class="avatar-selfie-thumb" alt="" />
+                  <span>Ver Foto</span>
+                </button>
+                <span style="font-size:.84rem; font-weight:600; color:var(--slate-800)">${c.pastor_name}</span>
+              </div>
+            `
+          } else {
+            pastorCell = `<span style="font-size:.84rem; color:var(--slate-600)">${c.pastor_name}</span>`
+          }
+        }
+
+        // Presidência
+        let presCell = '—'
+        if (c.president_name && (c.submitted_at || c.president_signed_at)) {
+          const sDate = new Date(c.submitted_at || c.president_signed_at).toLocaleDateString('pt-BR')
+          presCell = `
+            <div>
+              <div style="font-weight:600; font-size:.84rem; color:var(--slate-800)">${c.president_name}</div>
+              <div style="font-size:.74rem; color:var(--slate-500)">Enviado em ${sDate}</div>
+            </div>
+          `
+        }
+
+        // Ações
+        let actionsHtml = ''
+        if (c.id) {
+          actionsHtml += `
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openCredentialDocPreview('${c.id}')" title="Visualizar documento da credencial" style="padding:.35rem .65rem; font-size:.78rem; display:inline-flex; align-items:center; gap:4px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              <span>Ver Doc</span>
+            </button>
+          `
+          if (c.status === 'enviada') {
+            const escapedLump = (c.local_ump_name || '').replace(/'/g, "\\'")
+            actionsHtml += `
+              <button type="button" class="btn btn-primary btn-sm" onclick="homologateCredential('${c.id}', '${escapedLump}')" title="Homologar credencial" style="padding:.35rem .65rem; font-size:.78rem; margin-left:.35rem; display:inline-flex; align-items:center; gap:4px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>Homologar</span>
+              </button>
+            `
+          }
+          actionsHtml += `
+            <a href="/api/congresses/credentials/${c.id}/pdf" target="_blank" class="btn btn-secondary btn-sm" title="Baixar PDF Oficial" style="padding:.35rem .55rem; font-size:.78rem; margin-left:.35rem; display:inline-flex; align-items:center;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            </a>
+          `
+        } else {
+          actionsHtml = `<span style="font-size:.78rem; color:var(--slate-400)">Aguardando preenchimento</span>`
+        }
+
+        return `
+          <tr>
+            <td>
+              <div style="font-weight:700; color:var(--slate-900); font-size:.9rem;">${c.local_ump_name}</div>
+              <div style="font-size:.78rem; color:var(--slate-500);">${c.church_name || ''}</div>
+            </td>
+            <td>
+              <strong style="color:var(--slate-900)">${c.delegates_count}</strong> delegado(s)
+            </td>
+            <td>${statusBadge}</td>
+            <td>${pastorCell}</td>
+            <td>${presCell}</td>
+            <td style="text-align:right; white-space:nowrap;">${actionsHtml}</td>
+          </tr>
+        `
+      }).join('')
+    }
+
+    window.saveCongressDelegateLimits = async function () {
+      if (!activeCongress) return
+      const min = parseInt(document.getElementById('fed-input-min-del').value) || 1
+      const max = parseInt(document.getElementById('fed-input-max-del').value) || 5
+
+      if (min < 1) {
+        alert('A quantidade mínima de delegados deve ser pelo menos 1.')
+        return
+      }
+      if (max < min) {
+        alert('A quantidade máxima não pode ser menor que a quantidade mínima.')
+        return
+      }
+
+      try {
+        const res = await api.put(`/api/congresses/${activeCongress.id}/delegate-limits`, {
+          min_delegates: min,
+          max_delegates: max
+        })
+        activeCongress.min_delegates = min
+        activeCongress.max_delegates = max
+        showToast('Limites de delegados atualizados com sucesso!')
+        if (federationCredentialsData) {
+          federationCredentialsData.min_delegates = min
+          federationCredentialsData.max_delegates = max
+        }
+      } catch (err) {
+        alert('Erro ao salvar limites: ' + (err.message || err))
+      }
+    }
+
+    window.homologateCredential = async function (credId, lumpName) {
+      if (!confirm(`Deseja homologar oficialmente a credencial da UMP ${lumpName}?`)) return
+      try {
+        await api.post(`/api/congresses/credentials/${credId}/homologate`)
+        showToast('Credencial homologada com sucesso!')
+        if (activeCongress) {
+          await loadFederationCredentials(activeCongress.id)
+        }
+      } catch (err) {
+        alert('Erro ao homologar credencial: ' + (err.message || err))
+      }
+    }
+
+
+    // ── VISÃO DA UMP LOCAL (PRESIDENTE & VICE) ──
+    async function initLocalUmpCredentialView() {
+      // Ajusta cabeçalho
+      document.getElementById('page-title').textContent = 'Credencial do Congresso'
+      document.getElementById('page-subtitle').textContent = 'Preenchimento, aprovação pastoral por selfie e envio de delegados'
+      document.getElementById('breadcrumb-area').innerHTML = '<span>Congressos</span> &gt; <span>Credencial</span>'
+
+      const pageActions = document.getElementById('page-actions-area')
+      if (pageActions) pageActions.style.display = 'none'
+
+      document.getElementById('view-congress-list').style.display = 'none'
+      document.getElementById('view-congress-detail').style.display = 'none'
+
+      try {
+        const data = await api.get('/api/congresses/active-for-local')
+        localCredentialData = data
+
+        if (!data.has_active_congress) {
+          document.getElementById('view-local-credential').innerHTML = `
+            <div class="empty-state-box">
+              <div class="ei" style="display:flex;justify-content:center;margin-bottom:.5rem;color:var(--slate-400)">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+              </div>
+              <h3>Nenhum congresso aberto no momento</h3>
+              <p>Sua Federação não possui nenhum congresso ativo com credenciamento aberto para envio de delegados no momento.</p>
+            </div>
+          `
+          document.getElementById('view-local-credential').style.display = 'block'
+          return
+        }
+
+        localMembersList = data.members || []
+        localDelegatesList = (data.credential.delegates || []).map(d => ({
+          delegate_name: d.delegate_name,
+          member_id: d.member_id
+        }))
+
+        // Preenche banner
+        document.getElementById('local-cong-title').textContent = data.congress.title
+        document.getElementById('local-cong-desc').textContent = data.congress.description || `Congresso Anual da ${data.federation.name || 'Federação'}`
+        document.getElementById('local-cong-year').textContent = `Ano ${data.congress.fiscal_year}`
+
+        const minD = data.congress.min_delegates || 1
+        const maxD = data.congress.max_delegates || 5
+        document.getElementById('local-cong-limits-badge').textContent = `Mínimo de ${minD} e Máximo de ${maxD} delegados`
+        document.getElementById('local-limits-helper').textContent = `Sua UMP deve enviar entre ${minD} e ${maxD} delegados. Os primeiros ${minD} são obrigatórios e os demais são opcionais.`
+
+        // Preenche campos
+        document.getElementById('local-input-pastor').value = data.credential.pastor_name || data.local_ump.pastor_name || ''
+        document.getElementById('local-signer-name').textContent = data.current_user_name
+        document.getElementById('local-signer-role').textContent = `${data.current_user_role} da ${data.local_ump.name}`
+
+        // Renderiza seções
+        renderLocalStatusTracker()
+        renderLocalDelegatesBuilder()
+        renderLocalPastorSection()
+        updateLocalActionButtons()
+
+        document.getElementById('view-local-credential').style.display = 'block'
+      } catch (err) {
+        showAlert('Erro ao carregar dados do congresso: ' + (err.message || err))
+      }
+    }
+
+    function renderLocalStatusTracker() {
+      const c = localCredentialData.credential
+      const tracker = document.getElementById('local-status-tracker')
+      const isSent = c.status === 'enviada' || c.status === 'homologada'
+      const isPastorApp = c.status === 'aprovado_pastor' || isSent
+      const isWaitingPastor = c.status === 'aguardando_pastor' || isPastorApp
+      const isDraft = true
+
+      tracker.innerHTML = `
+        <div class="tracker-step ${isDraft ? 'completed' : ''}">
+          <div class="tracker-step-icon">1</div>
+          <span>Rascunho dos Delegados</span>
+        </div>
+        <div class="tracker-arrow">→</div>
+        <div class="tracker-step ${isPastorApp ? 'completed' : (isWaitingPastor ? 'active' : '')}">
+          <div class="tracker-step-icon">2</div>
+          <span>Aprovação do Pastor</span>
+        </div>
+        <div class="tracker-arrow">→</div>
+        <div class="tracker-step ${isSent ? 'completed' : ''}">
+          <div class="tracker-step-icon">3</div>
+          <span>Enviada à Federação</span>
+        </div>
+      `
+
+      // Alerta de enviado
+      const submittedNotice = document.getElementById('local-submitted-notice')
+      if (isSent) {
+        submittedNotice.style.display = 'flex'
+        const sDate = c.submitted_at ? new Date(c.submitted_at).toLocaleString('pt-BR') : ''
+        document.getElementById('local-submitted-date-meta').textContent = `Credencial enviada e assinada por ${c.president_name || 'Presidente'} em ${sDate}. As edições estão bloqueadas.`
+        document.getElementById('local-input-pastor').disabled = true
+      } else {
+        submittedNotice.style.display = 'none'
+        document.getElementById('local-input-pastor').disabled = false
+      }
+    }
+
+    function renderLocalDelegatesBuilder() {
+      const container = document.getElementById('local-delegates-builder-container')
+      const c = localCredentialData.credential
+      const isSent = c.status === 'enviada' || c.status === 'homologada'
+      const minD = localCredentialData.congress.min_delegates || 1
+      const maxD = localCredentialData.congress.max_delegates || 5
+
+      // Botão adicionar
+      const btnAdd = document.getElementById('btn-add-del-row')
+      if (btnAdd) {
+        btnAdd.style.display = (isSent || localDelegatesList.length >= maxD) ? 'none' : 'inline-flex'
+      }
+
+      if (localDelegatesList.length === 0) {
+        container.innerHTML = `
+          <div style="text-align:center; padding:1.5rem; color:var(--slate-400); border:1.5px dashed var(--slate-200); border-radius:var(--radius);">
+            Nenhum delegado adicionado ainda. Clique no botão acima para adicionar.
+          </div>
+        `
+        return
+      }
+
+      container.innerHTML = localDelegatesList.map((del, idx) => {
+        const isOpt = idx >= minD
+        const badgeClass = isOpt ? 'cred-delegate-order opt' : 'cred-delegate-order req'
+        const badgeLabel = isOpt ? `Delegado ${idx + 1} (opcional)` : `Delegado ${idx + 1} *`
+
+        // Opções do select de sócios
+        let memberOptions = '<option value="">Selecione um sócio ou digite o nome...</option>'
+        localMembersList.forEach(m => {
+          const sel = (del.member_id === m.id || del.delegate_name === m.full_name) ? 'selected' : ''
+          memberOptions += `<option value="${m.id}" data-name="${m.full_name.replace(/"/g, '&quot;')}" ${sel}>${m.full_name}</option>`
+        })
+
+        return `
+          <div class="cred-delegate-item">
+            <span class="${badgeClass}">${badgeLabel}</span>
+            <div style="flex:1; min-width:200px; display:flex; gap:.5rem;">
+              <select class="select" style="font-size:.88rem;" onchange="handleSelectMemberForDelegate(${idx}, this)" ${isSent ? 'disabled' : ''}>
+                ${memberOptions}
+              </select>
+              <input type="text" class="input" style="flex:1; font-size:.88rem;" placeholder="Nome do delegado..." value="${(del.delegate_name || '').replace(/"/g, '&quot;')}" oninput="handleDelegateNameInput(${idx}, this.value)" ${isSent ? 'disabled' : ''} />
+            </div>
+            ${!isSent ? `
+              <button type="button" class="btn btn-secondary btn-sm" onclick="removeDelegateRow(${idx})" title="Remover delegado" style="padding:.4rem .6rem; color:#ef4444; border-color:#fca5a5;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              </button>
+            ` : ''}
+          </div>
+        `
+      }).join('')
+    }
+
+    window.handleSelectMemberForDelegate = function (idx, selectEl) {
+      const selectedOption = selectEl.options[selectEl.selectedIndex]
+      const memberId = selectEl.value || null
+      const memberName = selectedOption.getAttribute('data-name') || ''
+      if (memberName) {
+        localDelegatesList[idx].member_id = memberId
+        localDelegatesList[idx].delegate_name = memberName
+        renderLocalDelegatesBuilder()
+      }
+    }
+
+    window.handleDelegateNameInput = function (idx, value) {
+      localDelegatesList[idx].delegate_name = value
+    }
+
+    window.addDelegateRow = function (name = '', memberId = null) {
+      const maxD = localCredentialData.congress.max_delegates || 5
+      if (localDelegatesList.length >= maxD) {
+        alert(`Você já atingiu a quantidade máxima de ${maxD} delegados permitida para este congresso.`)
+        return
+      }
+      localDelegatesList.push({ delegate_name: name, member_id: memberId })
+      renderLocalDelegatesBuilder()
+    }
+
+    window.removeDelegateRow = function (idx) {
+      localDelegatesList.splice(idx, 1)
+      renderLocalDelegatesBuilder()
+    }
+
+    function renderLocalPastorSection() {
+      const c = localCredentialData.credential
+      const area = document.getElementById('local-pastor-status-area')
+      const isApproved = (c.status === 'aprovado_pastor' || c.status === 'enviada' || c.status === 'homologada') && c.pastor_selfie_url
+
+      if (isApproved) {
+        const pDate = c.pastor_approved_at ? new Date(c.pastor_approved_at).toLocaleString('pt-BR') : ''
+        const escapedUrl = (c.pastor_selfie_url || '').replace(/'/g, "\\'")
+        const escapedPastor = (c.pastor_name || '').replace(/'/g, "\\'")
+        const escapedChurch = (localCredentialData.local_ump.church_name || '').replace(/'/g, "\\'")
+
+        area.innerHTML = `
+          <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:var(--radius); padding:1rem 1.25rem; display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+            <img src="${c.pastor_selfie_url}" class="selfie-thumb" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2.5px solid var(--green-600);cursor:pointer;" onclick="openSelfieModal('${escapedUrl}', '${escapedPastor}', '${pDate}', '${escapedChurch}')" title="Clique para ampliar foto" alt="Selfie do Pastor" />
+            <div style="flex:1">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-weight:700; color:var(--green-700); font-size:.95rem;">Aprovado pelo Pastor via Foto Selfie!</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--green-600)"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </div>
+              <div style="font-size:.82rem; color:var(--slate-600); margin-top:.2rem;">
+                ${c.pastor_name || 'Pastor'} confirmou a delegação em ${pDate}.
+              </div>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openSelfieModal('${escapedUrl}', '${escapedPastor}', '${pDate}', '${escapedChurch}')" style="display:inline-flex; align-items:center; gap:4px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+              <span>Ver Selfie</span>
+            </button>
+          </div>
+        `
+      } else {
+        const publicLink = `${window.location.origin}/credencial.html?token=${c.pastor_token}`
+        const pastorName = document.getElementById('local-input-pastor').value || 'Pastor'
+
+        area.innerHTML = `
+          <div style="background:var(--slate-50); border:1px solid var(--slate-200); border-radius:var(--radius); padding:1rem 1.25rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.6rem; flex-wrap:wrap; gap:.5rem;">
+              <span style="font-size:.82rem; font-weight:700; color:var(--slate-700);">Link Público de Aprovação do Pastor:</span>
+              <span class="badge badge-amber" style="font-size:.75rem;">Aguardando Foto do Pastor</span>
+            </div>
+            <div style="display:flex; gap:.5rem; align-items:center; flex-wrap:wrap;">
+              <input type="text" class="input" style="flex:1; font-size:.84rem; background:#fff;" readonly value="${publicLink}" id="input-pastor-link-copy" />
+              <button type="button" class="btn btn-secondary btn-sm" onclick="copyPastorLink('${publicLink}')" style="display:inline-flex; align-items:center; gap:4px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span>Copiar</span>
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="sharePastorWhatsApp('${pastorName.replace(/'/g, "\\'")}', '${publicLink}')" style="display:inline-flex; align-items:center; gap:4px; color:#15803d; border-color:#86efac;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                <span>WhatsApp</span>
+              </button>
+            </div>
+            <p style="font-size:.76rem; color:var(--slate-500); margin-top:.5rem;">
+              Salve o rascunho com os delegados e envie este link para o pastor abrir no celular e tirar a selfie de aprovação.
+            </p>
+          </div>
+        `
+      }
+    }
+
+    function updateLocalActionButtons() {
+      const c = localCredentialData.credential
+      const isSent = c.status === 'enviada' || c.status === 'homologada'
+      const isPastorApp = (c.status === 'aprovado_pastor' || isSent) && c.pastor_selfie_url
+
+      const minD = localCredentialData.congress.min_delegates || 1
+      const maxD = localCredentialData.congress.max_delegates || 5
+      const count = localDelegatesList.filter(d => d.delegate_name && d.delegate_name.trim()).length
+
+      const btnSave = document.getElementById('btn-save-local-draft')
+      const btnSubmit = document.getElementById('btn-submit-local-cred')
+
+      if (btnSave) btnSave.style.display = isSent ? 'none' : 'inline-flex'
+      if (btnSubmit) {
+        btnSubmit.style.display = isSent ? 'none' : 'inline-flex'
+        btnSubmit.disabled = !(isPastorApp && count >= minD && count <= maxD)
+      }
+
+      // Badge de assinatura da presidência
+      const signBadge = document.getElementById('local-signature-badge')
+      if (signBadge) {
+        if (isSent) {
+          signBadge.innerHTML = `<span class="badge badge-green">Assinada & Enviada</span>`
+        } else {
+          signBadge.innerHTML = `<span class="badge badge-amber">Será assinada no envio</span>`
+        }
+      }
+    }
+
+    window.copyPastorLink = function (link) {
+      navigator.clipboard.writeText(link).then(() => {
+        showToast('Link público copiado para a área de transferência!')
+      }).catch(() => {
+        showToast('Erro ao copiar link.')
+      })
+    }
+
+    window.sharePastorWhatsApp = function (pastorName, link) {
+      const congTitle = localCredentialData.congress.title || 'Congresso'
+      const church = localCredentialData.local_ump.church_name || localCredentialData.local_ump.name || 'nossa igreja'
+      const msg = encodeURIComponent(
+        `Olá, ${pastorName}! Segue o link para conferência e assinatura da Credencial de Delegados da UMP da ${church} para o ${congTitle}:\n\n${link}\n\nPor favor, abra o link no seu celular e conclua a aprovação com uma foto selfie.`
+      )
+      window.open(`https://api.whatsapp.com/send?text=${msg}`, '_blank')
+    }
+
+    window.handleSaveLocalCredentialDraft = async function () {
+      if (!localCredentialData) return
+      const pastor = document.getElementById('local-input-pastor').value.trim()
+
+      const cleanedDelegates = localDelegatesList
+        .filter(d => d.delegate_name && d.delegate_name.trim())
+        .map(d => ({
+          delegate_name: d.delegate_name.trim(),
+          member_id: d.member_id || null,
+          is_optional: false
+        }))
+
+      try {
+        const res = await api.post(`/api/congresses/${localCredentialData.congress.id}/my-credential`, {
+          delegates: cleanedDelegates,
+          pastor_name: pastor
+        })
+        localCredentialData.credential = res.credential
+        showToast('Rascunho da credencial salvo com sucesso!')
+        renderLocalStatusTracker()
+        renderLocalPastorSection()
+        updateLocalActionButtons()
+      } catch (err) {
+        alert('Erro ao salvar rascunho: ' + (err.message || err))
+      }
+    }
+
+    window.handleSubmitLocalCredential = async function () {
+      if (!localCredentialData) return
+      const c = localCredentialData.credential
+      const minD = localCredentialData.congress.min_delegates || 1
+      const maxD = localCredentialData.congress.max_delegates || 5
+      const count = localDelegatesList.filter(d => d.delegate_name && d.delegate_name.trim()).length
+
+      if (count < minD) {
+        alert(`A credencial precisa conter pelo menos ${minD} delegado(s). Atualmente você adicionou ${count}.`)
+        return
+      }
+      if (count > maxD) {
+        alert(`A credencial permite no máximo ${maxD} delegados. Atualmente você adicionou ${count}.`)
+        return
+      }
+
+      if (!confirm('Confirma o envio oficial da Credencial de Delegados à Federação?\n\nSua assinatura eletrônica de Presidente/Vice será registrada e o documento ficará bloqueado para alterações.')) {
+        return
+      }
+
+      try {
+        const res = await api.post(`/api/congresses/credentials/${c.id}/submit`)
+        localCredentialData.credential = res.credential
+        alert('Credencial enviada com sucesso à Federação!')
+        renderLocalStatusTracker()
+        renderLocalDelegatesBuilder()
+        renderLocalPastorSection()
+        updateLocalActionButtons()
+      } catch (err) {
+        alert('Erro ao enviar credencial: ' + (err.message || err))
+      }
+    }
+
+
+    // ── MODAL: DOCUMENTO OFICIAL & IMPRESSÃO ──
+    window.openCredentialDocPreview = async function (credId = null) {
+      let targetCred = null
+      let targetCongress = null
+      let targetFed = null
+      let targetLump = null
+
+      if (credId && federationCredentialsData) {
+        targetCred = (federationCredentialsData.credentials || []).find(x => x.id === credId)
+        targetCongress = activeCongress
+        targetFed = { name: 'Federação de UMPs', presbytery_name: 'POPB', synodal_name: 'Sínodo Paraíba' }
+        targetLump = { church_name: targetCred?.church_name || targetCred?.local_ump_name, cidade: targetCred?.city }
+      } else if (localCredentialData) {
+        targetCred = localCredentialData.credential
+        targetCongress = localCredentialData.congress
+        targetFed = localCredentialData.federation
+        targetLump = localCredentialData.local_ump
+      }
+
+      if (!targetCred) {
+        alert('Dados da credencial não encontrados para visualização.')
+        return
+      }
+
+      const area = document.getElementById('printable-credential-area')
+      const syn = targetFed?.synodal_name || 'SÍNODO PARAÍBA'
+      const presb = targetFed?.presbytery_name || targetFed?.name || 'POPB'
+      const cTitle = (targetCongress?.title || 'CONGRESSO ANUAL DE MOCIDADE').toUpperCase()
+      const year = targetCongress?.fiscal_year || new Date().getFullYear()
+
+      const meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
+      const today = targetCred.document_date ? new Date(targetCred.document_date + 'T12:00:00') : new Date()
+      const cidade = targetCred.city || targetLump?.cidade || 'Patos'
+      const dateStr = `${cidade}, ${today.getDate()} de ${meses[today.getMonth()]} de ${today.getFullYear()}.`
+
+      const church = targetLump?.church_name || targetLump?.name || 'IGREJA PRESBITERIANA'
+
+      // Lista de delegados formatada
+      const dels = targetCred.delegates || localDelegatesList || []
+      let delsHtml = ''
+      if (dels.length === 0) {
+        delsHtml = '<div style="text-align:center;color:#64748b;font-style:italic">Nenhum delegado inserido.</div>'
+      } else {
+        dels.forEach((d, i) => {
+          const dName = (d.delegate_name || '').toUpperCase()
+          delsHtml += `
+            <div style="margin-bottom:1.15rem; text-align:center;">
+              <div style="font-weight:700; font-size:.95rem; text-transform:uppercase; letter-spacing:.4px;">${dName}</div>
+              <div style="height:1px; background:#0f172a; width:75%; margin:.25rem auto .3rem;"></div>
+              <div style="font-size:.78rem; font-weight:600; color:#475569; text-transform:uppercase;">
+                DELEGADO ${i + 1} ${d.is_optional ? '<span style="color:#64748b;font-size:.72rem">(opcional)</span>' : ''}
+              </div>
+            </div>
+          `
+        })
+      }
+
+      // Assinatura do Presidente
+      const presName = targetCred.president_name || 'Presidente da UMP'
+      let presMeta = ''
+      if (targetCred.submitted_at || targetCred.president_signed_at) {
+        const dStr = new Date(targetCred.president_signed_at || targetCred.submitted_at).toLocaleDateString('pt-BR')
+        presMeta = `<div style="font-size:.7rem; color:var(--green-700); font-style:italic; margin-top:.2rem;">Assinado em ${dStr}</div>`
+      }
+
+      // Assinatura do Pastor
+      const pastName = targetCred.pastor_name || 'Pastor da Igreja'
+      let pastMeta = ''
+      if (targetCred.pastor_approved_at && targetCred.pastor_selfie_url) {
+        const dStr = new Date(targetCred.pastor_approved_at).toLocaleDateString('pt-BR')
+        pastMeta = `<div style="font-size:.7rem; color:var(--green-700); font-style:italic; margin-top:.2rem;">Aprovado via foto em ${dStr}</div>`
+      }
+
+      area.innerHTML = `
+        <div style="text-align:center; margin-bottom:1.5rem;">
+          <img src="/assets/img/logo_parecer.png" style="height:65px; object-fit:contain; margin-bottom:.5rem;" onerror="this.src='/assets/img/logo_icone.png'" />
+          <h2 style="font-size:.95rem; font-weight:800; color:#0f172a; letter-spacing:.4px;">IGREJA PRESBITERIANA DO BRASIL</h2>
+          <h3 style="font-size:.86rem; font-weight:700; color:#1e293b; margin-top:.15rem;">UMP | ${syn.toUpperCase()} | ${presb.toUpperCase()}</h3>
+          <p style="font-size:.82rem; font-weight:700; color:#334155; margin-top:.1rem;">${cTitle}</p>
+          <p style="font-size:.82rem; font-weight:700; color:#334155;">GESTÃO ${year}</p>
+        </div>
+
+        <div style="text-align:center; font-size:.84rem; font-style:italic; color:#334155; margin-bottom:1.25rem;">
+          “Ninguém despreze a tua mocidade; pelo contrário, torna-te padrão dos fiéis, na palavra, no procedimento, no amor, na fé, na pureza.” (I Tm. 4.12).
+        </div>
+
+        <div style="text-align:right; font-size:.88rem; font-weight:500; margin-bottom:1.5rem;">
+          ${dateStr}
+        </div>
+
+        <h1 style="text-align:center; font-size:1.35rem; font-weight:800; letter-spacing:1.5px; margin-bottom:1.5rem;">
+          CREDENCIAL
+        </h1>
+
+        <div style="font-size:.95rem; line-height:1.65; text-align:justify; text-indent:1.8rem; margin-bottom:1.75rem;">
+          Sr. (a) Presidente, a UMP da <b>${church.toUpperCase()}</b> tem o prazer de apresentar os seguintes delegados ao <b>${cTitle}</b> da Federação de UMPs do ${presb}:
+        </div>
+
+        <div style="margin-bottom:2rem;">
+          ${delsHtml}
+        </div>
+
+        <div style="font-size:.92rem; line-height:1.6; margin-bottom:2.5rem;">
+          Na certeza de que nossa Delegação desempenhará satisfatoriamente as funções representativas desta Federação,<br/><br/>
+          Subscrevemo-nos.<br/>
+          Fraternalmente, em Cristo Jesus,
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:2rem; text-align:center; margin-top:2rem;">
+          <div>
+            <div style="font-weight:700; font-size:.88rem; text-transform:uppercase;">${presName}</div>
+            <div style="height:1px; background:#0f172a; width:85%; margin:.3rem auto .35rem;"></div>
+            <div style="font-size:.8rem; color:#475569;">Presidente da UMP</div>
+            ${presMeta}
+          </div>
+          <div>
+            <div style="font-weight:700; font-size:.88rem; text-transform:uppercase;">${pastName}</div>
+            <div style="height:1px; background:#0f172a; width:85%; margin:.3rem auto .35rem;"></div>
+            <div style="font-size:.8rem; color:#475569;">Pastor da Igreja</div>
+            ${pastMeta}
+          </div>
+        </div>
+      `
+
+      document.getElementById('btn-modal-download-pdf').href = `/api/congresses/credentials/${targetCred.id}/pdf`
+      openModal('modal-view-credential')
+    }
+
+    window.printCredentialDoc = function () {
+      window.print()
+    }
+
+    // ── MODAL: SELFIE DO PASTOR ──
+    window.openSelfieModal = function (url, pastorName, approvedAt, churchName) {
+      document.getElementById('modal-selfie-img').src = url
+      document.getElementById('modal-selfie-pastor-name').textContent = pastorName || 'Pastor da Igreja'
+      document.getElementById('modal-selfie-church-name').textContent = churchName || 'Igreja Presbiteriana'
+      document.getElementById('modal-selfie-timestamp').textContent = approvedAt ? `Aprovado em ${approvedAt}` : 'Aprovado digitalmente'
+      openModal('modal-view-selfie')
     }
 
     function showAlert(msg) {

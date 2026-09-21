@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Aprovação de Credencial — Congresso UMP</title>
+  <link rel="icon" href="/assets/img/logo_icone.png" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --brand: #1a2a6c;
+      --brand-accent: #2563eb;
+      --slate-50: #f8fafc;
+      --slate-100: #f1f5f9;
+      --slate-200: #e2e8f0;
+      --slate-300: #cbd5e1;
+      --slate-400: #94a3b8;
+      --slate-500: #64748b;
+      --slate-600: #475569;
+      --slate-700: #334155;
+      --slate-800: #1e293b;
+      --slate-900: #0f172a;
+      --green-600: #16a34a;
+      --green-700: #15803d;
+      --radius: 8px;
+      --radius-lg: 12px;
+      --radius-xl: 16px;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: #f1f5f9;
+      color: var(--slate-800);
+      line-height: 1.5;
+      padding: 1.5rem 1rem 3.5rem;
+    }
+
+    .container {
+      max-width: 820px;
+      margin: 0 auto;
+    }
+
+    /* ── Barra Superior Informativa ── */
+    .top-notice-bar {
+      background: #fff;
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+    }
+
+    .top-notice-info {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+    }
+
+    .top-notice-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #eff6ff;
+      color: var(--brand-accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .top-notice-text h4 {
+      font-size: .92rem;
+      font-weight: 700;
+      color: var(--slate-900);
+    }
+
+    .top-notice-text p {
+      font-size: .8rem;
+      color: var(--slate-500);
+    }
+
+    /* ── Cartão do Documento Oficial ── */
+    .document-card {
+      background: #fff;
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius-xl);
+      padding: 3rem 2.5rem;
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.06);
+      margin-bottom: 1.75rem;
+      position: relative;
+    }
+
+    @media (max-width: 640px) {
+      .document-card {
+        padding: 1.75rem 1.25rem;
+      }
+    }
+
+    .doc-header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .doc-logo {
+      height: 70px;
+      width: auto;
+      object-fit: contain;
+      margin-bottom: .85rem;
+    }
+
+    .doc-header h2 {
+      font-size: .95rem;
+      font-weight: 800;
+      color: var(--slate-900);
+      letter-spacing: .4px;
+      line-height: 1.35;
+    }
+
+    .doc-header h3 {
+      font-size: .86rem;
+      font-weight: 700;
+      color: var(--slate-700);
+      margin-top: .15rem;
+    }
+
+    .doc-header p.gestao {
+      font-size: .82rem;
+      font-weight: 700;
+      color: var(--slate-600);
+      margin-top: .1rem;
+    }
+
+    .doc-verse {
+      text-align: center;
+      font-size: .85rem;
+      font-style: italic;
+      color: var(--slate-600);
+      max-width: 580px;
+      margin: 1rem auto 1.25rem;
+      line-height: 1.45;
+    }
+
+    .doc-date-line {
+      text-align: right;
+      font-size: .9rem;
+      color: var(--slate-800);
+      margin-bottom: 1.5rem;
+      font-weight: 500;
+    }
+
+    .doc-main-title {
+      text-align: center;
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: var(--slate-900);
+      margin-bottom: 1.5rem;
+    }
+
+    .doc-intro-text {
+      font-size: 1rem;
+      line-height: 1.65;
+      color: var(--slate-800);
+      text-align: justify;
+      text-indent: 2rem;
+      margin-bottom: 1.75rem;
+    }
+
+    /* Lista de delegados */
+    .delegates-list {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.35rem;
+      margin-bottom: 2rem;
+      width: 100%;
+    }
+
+    .delegate-row {
+      width: 100%;
+      max-width: 480px;
+      text-align: center;
+    }
+
+    .delegate-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--slate-900);
+      margin-bottom: .25rem;
+      text-transform: uppercase;
+      letter-spacing: .3px;
+    }
+
+    .delegate-line {
+      height: 1px;
+      background: var(--slate-800);
+      width: 100%;
+      margin: .25rem auto .35rem;
+    }
+
+    .delegate-label {
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--slate-500);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+
+    .delegate-label .opt {
+      font-size: .72rem;
+      color: var(--slate-400);
+      display: block;
+      font-style: italic;
+    }
+
+    .doc-closing-text {
+      font-size: .95rem;
+      line-height: 1.6;
+      color: var(--slate-800);
+      margin-bottom: 2.5rem;
+    }
+
+    /* Bloco de Assinaturas */
+    .signatures-block {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+    }
+
+    @media (max-width: 540px) {
+      .signatures-block {
+        grid-template-columns: 1fr;
+        gap: 1.75rem;
+      }
+    }
+
+    .signature-item {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .signature-person {
+      font-size: .92rem;
+      font-weight: 700;
+      color: var(--slate-900);
+      margin-bottom: .3rem;
+      text-transform: uppercase;
+    }
+
+    .signature-line {
+      height: 1px;
+      background: var(--slate-800);
+      width: 100%;
+      max-width: 260px;
+      margin-bottom: .4rem;
+    }
+
+    .signature-role {
+      font-size: .82rem;
+      font-weight: 600;
+      color: var(--slate-600);
+    }
+
+    .signature-status-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      font-size: .72rem;
+      font-weight: 600;
+      margin-top: .4rem;
+      padding: .25rem .6rem;
+      border-radius: 99px;
+    }
+
+    .tag-signed {
+      background: #f0fdf4;
+      color: var(--green-700);
+      border: 1px solid #bbf7d0;
+    }
+
+    .tag-pending {
+      background: #fffbeb;
+      color: #b45309;
+      border: 1px solid #fde68a;
+    }
+
+    /* ── Bloco de Ação: Aprovação Pastoral ── */
+    .pastor-action-card {
+      background: #fff;
+      border: 2px solid #bfdbfe;
+      border-radius: var(--radius-xl);
+      padding: 1.75rem;
+      box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.08);
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pastor-action-card.approved-mode {
+      border-color: #bbf7d0;
+      background: #f0fdf4;
+      box-shadow: 0 10px 25px -5px rgba(22, 163, 74, 0.08);
+    }
+
+    .action-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .action-badge-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .action-header h3 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--slate-900);
+      margin-bottom: .25rem;
+    }
+
+    .action-header p {
+      font-size: .86rem;
+      color: var(--slate-600);
+      line-height: 1.45;
+    }
+
+    .field-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .field-group label {
+      display: block;
+      font-size: .82rem;
+      font-weight: 700;
+      color: var(--slate-700);
+      margin-bottom: .4rem;
+    }
+
+    .text-input {
+      width: 100%;
+      padding: .65rem .85rem;
+      border: 1.5px solid var(--slate-200);
+      border-radius: var(--radius);
+      font-size: .95rem;
+      font-family: inherit;
+      color: var(--slate-900);
+      transition: border-color .15s;
+    }
+
+    .text-input:focus {
+      outline: none;
+      border-color: var(--brand-accent);
+    }
+
+    /* Câmera & Selfie */
+    .camera-section {
+      background: var(--slate-50);
+      border: 1.5px dashed var(--slate-300);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem 1rem;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .video-viewport {
+      width: 100%;
+      max-width: 320px;
+      height: 240px;
+      background: #000;
+      border-radius: var(--radius);
+      overflow: hidden;
+      display: none;
+      position: relative;
+    }
+
+    .video-viewport video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+
+    .photo-preview-box {
+      width: 100%;
+      max-width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 4px solid #fff;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+      display: none;
+      margin: 0 auto;
+      background: #000;
+    }
+
+    .photo-preview-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .camera-controls {
+      display: flex;
+      gap: .75rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .5rem;
+      padding: .65rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: .88rem;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all .15s ease;
+      text-decoration: none;
+      border: 1.5px solid transparent;
+    }
+
+    .btn-primary {
+      background: var(--brand-accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #1d4ed8;
+      transform: translateY(-1px);
+    }
+
+    .btn-success {
+      background: var(--green-600);
+      color: #fff;
+    }
+
+    .btn-success:hover:not(:disabled) {
+      background: var(--green-700);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: #fff;
+      border-color: var(--slate-300);
+      color: var(--slate-700);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: var(--slate-50);
+      border-color: var(--slate-400);
+    }
+
+    .btn:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .terms-check {
+      display: flex;
+      align-items: flex-start;
+      gap: .65rem;
+      margin: 1.1rem 0 1.25rem;
+      font-size: .86rem;
+      color: var(--slate-700);
+      line-height: 1.4;
+      cursor: pointer;
+    }
+
+    .terms-check input {
+      margin-top: .2rem;
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .alert {
+      padding: .85rem 1.15rem;
+      border-radius: var(--radius);
+      font-size: .88rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+    }
+
+    .alert-error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #b91c1c;
+    }
+
+    .alert-success {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: var(--green-700);
+    }
+
+    /* Estado de carregamento */
+    .loading-state {
+      text-align: center;
+      padding: 3rem 1rem;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3.5px solid var(--slate-200);
+      border-top-color: var(--brand-accent);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Modal ampliação de selfie */
+    .selfie-badge-view {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: #fff;
+      border: 1px solid #bbf7d0;
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.25rem;
+    }
+
+    .selfie-thumb {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--green-600);
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+
+    <!-- Loading Inicial -->
+    <div id="loading-box" class="loading-state">
+      <div class="spinner"></div>
+      <p style="font-weight:600; color:var(--slate-600)">Carregando informações da credencial...</p>
+    </div>
+
+    <!-- Mensagem de Erro Geral -->
+    <div id="error-box" style="display:none;" class="alert alert-error">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+      <div id="error-message">Link de credencial inválido ou não encontrado.</div>
+    </div>
+
+    <div id="main-content" style="display:none;">
+
+      <!-- Barra de Instruções Pastoral -->
+      <div class="top-notice-bar">
+        <div class="top-notice-info">
+          <div class="top-notice-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          </div>
+          <div class="top-notice-text">
+            <h4>Validação da Credencial de Delegados</h4>
+            <p>Revise a lista de delegados abaixo e confirme sua assinatura pastoral com uma foto selfie.</p>
+          </div>
+        </div>
+        <div id="top-status-badge">
+          <!-- Preenchido via JS -->
+        </div>
+      </div>
+
+      <!-- ── CARD: DOCUMENTO OFICIAL DA CREDENCIAL ── -->
+      <div class="document-card" id="document-card">
+        <div class="doc-header">
+          <img src="/assets/img/logo_parecer.png" class="doc-logo" alt="Logo UMP IPB" onerror="this.src='/assets/img/logo_icone.png'" />
+          <h2>IGREJA PRESBITERIANA DO BRASIL</h2>
+          <h3 id="doc-meta-sub">UMP | SÍNODO PARAÍBA | FEDERAÇÃO POPB</h3>
+          <p class="gestao" id="doc-cong-name">CONGRESSO ANUAL DE MOCIDADE</p>
+          <p class="gestao" id="doc-gestao-year">GESTÃO 2024</p>
+        </div>
+
+        <div class="doc-verse">
+          “Ninguém despreze a tua mocidade; pelo contrário, torna-te padrão dos fiéis, na palavra, no procedimento, no amor, na fé, na pureza.” (I Tm. 4.12).
+        </div>
+
+        <div class="doc-date-line" id="doc-date-text">
+          Patos, 8 de outubro de 2024.
+        </div>
+
+        <h1 class="doc-main-title">CREDENCIAL</h1>
+
+        <div class="doc-intro-text" id="doc-intro">
+          <!-- Renderizado via JS -->
+        </div>
+
+        <!-- Lista de Delegados -->
+        <div class="delegates-list" id="delegates-container">
+          <!-- Renderizado via JS -->
+        </div>
+
+        <div class="doc-closing-text">
+          Na certeza de que nossa Delegação desempenhará satisfatoriamente as funções representativas desta Federação,<br/><br/>
+          Subscrevemo-nos.<br/>
+          Fraternalmente, em Cristo Jesus,
+        </div>
+
+        <!-- Assinaturas -->
+        <div class="signatures-block">
+          <!-- Presidente da Local -->
+          <div class="signature-item">
+            <div class="signature-person" id="sign-pres-name">Presidente da UMP</div>
+            <div class="signature-line"></div>
+            <div class="signature-role">Presidente da UMP</div>
+            <div id="sign-pres-tag" class="signature-status-tag tag-pending">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              <span>Assinatura no envio</span>
+            </div>
+          </div>
+
+          <!-- Pastor da Igreja -->
+          <div class="signature-item">
+            <div class="signature-person" id="sign-pastor-name">Pastor da Igreja</div>
+            <div class="signature-line"></div>
+            <div class="signature-role">Pastor da Igreja</div>
+            <div id="sign-pastor-tag" class="signature-status-tag tag-pending">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+              <span>Aguardando Selfie</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── BLOCO: APROVAÇÃO PASTORAL COM SELFIE ── -->
+      <div id="pastor-approval-box" class="pastor-action-card">
+        <div class="action-header">
+          <div class="action-badge-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+          </div>
+          <div>
+            <h3>Aprovação Pastoral com Foto (Selfie)</h3>
+            <p>Pastor, para confirmar a validade desta credencial perante a mesa do congresso, confirme seu nome e registre uma foto selfie como assinatura digital.</p>
+          </div>
+        </div>
+
+        <div id="alert-action" class="alert alert-error" style="display:none;"></div>
+
+        <div class="field-group">
+          <label for="input-pastor-name">Nome do Pastor da Igreja *</label>
+          <input type="text" id="input-pastor-name" class="text-input" placeholder="Seu nome completo..." />
+        </div>
+
+        <!-- Seção de Câmera -->
+        <div class="camera-section">
+          <!-- Viewport do Stream de Vídeo -->
+          <div class="video-viewport" id="video-container">
+            <video id="camera-video" autoplay playsinline></video>
+          </div>
+          <canvas id="camera-canvas" style="display:none;"></canvas>
+
+          <!-- Preview da Foto Capturada -->
+          <div class="photo-preview-box" id="preview-container">
+            <img id="preview-image" alt="Sua selfie capturada" />
+          </div>
+
+          <div id="camera-placeholder-text">
+            <p style="font-size:.88rem; font-weight:600; color:var(--slate-700); margin-bottom:.35rem;">
+              Capture uma foto do seu rosto em ambiente iluminado
+            </p>
+            <p style="font-size:.78rem; color:var(--slate-500);">
+              Não é reconhecimento biométrico, apenas a comprovação da sua aprovação pastoral.
+            </p>
+          </div>
+
+          <div class="camera-controls">
+            <!-- Botão de Câmera ao Vivo -->
+            <button type="button" class="btn btn-secondary" id="btn-open-camera" onclick="startCamera()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+              <span>Abrir Câmera</span>
+            </button>
+
+            <!-- Botão de Captura quando câmera está aberta -->
+            <button type="button" class="btn btn-primary" id="btn-capture-photo" style="display:none;" onclick="capturePhoto()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
+              <span>Tirar Foto</span>
+            </button>
+
+            <!-- Botão para tirar novamente -->
+            <button type="button" class="btn btn-secondary" id="btn-retake-photo" style="display:none;" onclick="retakePhoto()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+              <span>Tirar Outra Foto</span>
+            </button>
+
+            <!-- Botão de Fallback para celulares / arquivo direto com câmera frontal -->
+            <label class="btn btn-secondary" style="cursor:pointer;" id="lbl-file-capture">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+              <span>Tirar foto pelo Celular</span>
+              <input type="file" id="file-input-selfie" accept="image/*" capture="user" style="display:none;" onchange="handleFileSelected(event)" />
+            </label>
+          </div>
+        </div>
+
+        <!-- Termo de Declaração -->
+        <label class="terms-check">
+          <input type="checkbox" id="check-declaration" onchange="validateForm()" />
+          <span>
+            <b>Declaro sob minha responsabilidade pastoral</b> que examinei os nomes dos delegados listados nesta credencial e aprovo a delegação da nossa mocidade para este congresso.
+          </span>
+        </label>
+
+        <!-- Botão Final de Submissão -->
+        <button type="button" class="btn btn-success" id="btn-submit-approval" style="width:100%; font-size:1rem; padding:.85rem 1.5rem;" disabled onclick="submitPastorApproval()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <span>Aprovar e Assinar Credencial</span>
+        </button>
+      </div>
+
+      <!-- ── BLOCO QUANDO JÁ APROVADO PELO PASTOR ── -->
+      <div id="pastor-already-approved-box" class="pastor-action-card approved-mode" style="display:none;">
+        <div class="action-header">
+          <div class="action-badge-icon" style="background:#dcfce7; color:var(--green-700);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+          <div>
+            <h3 style="color:var(--green-700);">Credencial Aprovada pelo Pastor com Sucesso!</h3>
+            <p id="approval-success-meta">Aprovação pastoral registrada com selfie.</p>
+          </div>
+        </div>
+
+        <div class="selfie-badge-view">
+          <img id="approved-selfie-img" class="selfie-thumb" alt="Foto do Pastor" />
+          <div>
+            <div style="font-weight:700; font-size:.95rem; color:var(--slate-900);" id="approved-pastor-title">Pastor da Igreja</div>
+            <div style="font-size:.82rem; color:var(--slate-500); margin-top:.2rem;" id="approved-timestamp-text">Aprovado digitalmente</div>
+            <div style="font-size:.78rem; color:var(--green-700); font-weight:600; margin-top:.35rem; display:flex; align-items:center; gap:4px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              Autenticação visual confirmada
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:1.5rem; text-align:center;">
+          <p style="font-size:.86rem; color:var(--slate-600); margin-bottom:1rem;">
+            O Presidente ou Vice-Presidente da sua UMP Local já pode realizar o envio oficial da credencial para a Federação.
+          </p>
+          <a id="btn-download-pdf" href="#" class="btn btn-secondary btn-sm" target="_blank" style="display:inline-flex;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            <span>Visualizar / Baixar PDF da Credencial</span>
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    let token = new URLSearchParams(window.location.search).get('token')
+    let credData = null
+    let activeStream = null
+    let capturedBlob = null
+    let capturedBase64 = null
+
+    // ── INICIALIZAÇÃO ──
+    window.addEventListener('DOMContentLoaded', async () => {
+      if (!token) {
+        showError('Token de acesso à credencial não fornecido na URL.')
+        return
+      }
+      await loadCredential()
+    })
+
+    async function loadCredential() {
+      try {
+        const resp = await fetch(`/api/congresses/public/credential/${token}`)
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}))
+          throw new Error(err.detail || 'Não foi possível carregar a credencial.')
+        }
+        credData = await resp.json()
+        renderCredential()
+      } catch (err) {
+        showError(err.message)
+      }
+    }
+
+    function showError(msg) {
+      document.getElementById('loading-box').style.display = 'none'
+      document.getElementById('main-content').style.display = 'none'
+      document.getElementById('error-message').textContent = msg
+      document.getElementById('error-box').style.display = 'flex'
+    }
+
+    function renderCredential() {
+      document.getElementById('loading-box').style.display = 'none'
+      document.getElementById('error-box').style.display = 'none'
+      document.getElementById('main-content').style.display = 'block'
+
+      const c = credData.credential
+      const cong = credData.congress
+      const fed = credData.federation
+      const lump = credData.local_ump
+
+      // 1. Cabeçalho Oficial
+      const syn = fed.synodal_name || 'SÍNODO PARAÍBA'
+      const presb = fed.presbytery_name || fed.name || 'POPB'
+      document.getElementById('doc-meta-sub').textContent = `UMP | ${syn.toUpperCase()} | ${presb.toUpperCase()}`
+      document.getElementById('doc-cong-name').textContent = (cong.title || 'CONGRESSO ANUAL DE MOCIDADE').toUpperCase()
+      document.getElementById('doc-gestao-year').textContent = `GESTÃO ${cong.fiscal_year || new Date().getFullYear()}`
+
+      // 2. Data
+      const meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
+      const today = c.document_date ? new Date(c.document_date + 'T12:00:00') : new Date()
+      const cidade = c.city || lump.cidade || 'Patos'
+      document.getElementById('doc-date-text').textContent = `${cidade}, ${today.getDate()} de ${meses[today.getMonth()]} de ${today.getFullYear()}.`
+
+      // 3. Texto Introdutório
+      const church = lump.church_name || lump.name || 'IGREJA PRESBITERIANA'
+      document.getElementById('doc-intro').innerHTML = `
+        Sr. (a) Presidente, a UMP da <b>${church.toUpperCase()}</b> tem o prazer de apresentar os seguintes delegados ao <b>${cong.title || 'CONGRESSO'}</b> da Federação de UMPs do ${presb}:
+      `
+
+      // 4. Lista de Delegados
+      const container = document.getElementById('delegates-container')
+      container.innerHTML = ''
+      if (!c.delegates || c.delegates.length === 0) {
+        container.innerHTML = `<div style="color:var(--slate-400);font-style:italic">Nenhum delegado inserido no momento.</div>`
+      } else {
+        c.delegates.forEach((d, idx) => {
+          const row = document.createElement('div')
+          row.className = 'delegate-row'
+          row.innerHTML = `
+            <div class="delegate-name">${d.delegate_name}</div>
+            <div class="delegate-line"></div>
+            <div class="delegate-label">
+              DELEGADO ${idx + 1}
+              ${d.is_optional ? '<span class="opt">(opcional)</span>' : ''}
+            </div>
+          `
+          container.appendChild(row)
+        })
+      }
+
+      // 5. Bloco de Assinaturas
+      const presName = c.president_name || 'Presidente da UMP'
+      document.getElementById('sign-pres-name').textContent = presName
+
+      if (c.submitted_at || c.president_signed_at) {
+        const dStr = new Date(c.president_signed_at || c.submitted_at).toLocaleDateString('pt-BR')
+        document.getElementById('sign-pres-tag').className = 'signature-status-tag tag-signed'
+        document.getElementById('sign-pres-tag').innerHTML = `
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <span>Assinado em ${dStr}</span>
+        `
+      }
+
+      const pastName = c.pastor_name || lump.pastor_name || 'Pastor da Igreja'
+      document.getElementById('sign-pastor-name').textContent = pastName
+      document.getElementById('input-pastor-name').value = c.pastor_name || lump.pastor_name || ''
+
+      // 6. Estado de Aprovação
+      const isApproved = (c.status === 'aprovado_pastor' || c.status === 'enviada' || c.status === 'homologada') && c.pastor_selfie_url
+
+      if (isApproved) {
+        // Tag no documento
+        const pastDateStr = c.pastor_approved_at ? new Date(c.pastor_approved_at).toLocaleDateString('pt-BR') : ''
+        document.getElementById('sign-pastor-tag').className = 'signature-status-tag tag-signed'
+        document.getElementById('sign-pastor-tag').innerHTML = `
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <span>Aprovado via selfie ${pastDateStr}</span>
+        `
+
+        // Badge superior
+        document.getElementById('top-status-badge').innerHTML = `
+          <span style="background:#f0fdf4; color:var(--green-700); border:1px solid #bbf7d0; font-size:.82rem; font-weight:700; padding:.35rem .75rem; border-radius:99px; display:inline-flex; align-items:center; gap:4px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Aprovado pelo Pastor
+          </span>
+        `
+
+        // Esconde formulário de ação e mostra o card de já aprovado
+        document.getElementById('pastor-approval-box').style.display = 'none'
+        document.getElementById('pastor-already-approved-box').style.display = 'block'
+        document.getElementById('approved-selfie-img').src = c.pastor_selfie_url
+        document.getElementById('approved-pastor-title').textContent = pastName
+
+        const fullApprovalDate = c.pastor_approved_at ? new Date(c.pastor_approved_at).toLocaleString('pt-BR') : ''
+        document.getElementById('approval-success-meta').textContent = `Documento autenticado digitalmente em ${fullApprovalDate}.`
+        document.getElementById('approved-timestamp-text').textContent = `Aprovado em ${fullApprovalDate}`
+        document.getElementById('btn-download-pdf').href = `/api/congresses/credentials/${c.id}/pdf`
+      } else {
+        // Tag no documento
+        document.getElementById('sign-pastor-tag').className = 'signature-status-tag tag-pending'
+        document.getElementById('sign-pastor-tag').innerHTML = `
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <span>Pendente de Foto</span>
+        `
+
+        document.getElementById('top-status-badge').innerHTML = `
+          <span style="background:#fffbeb; color:#b45309; border:1px solid #fde68a; font-size:.82rem; font-weight:700; padding:.35rem .75rem; border-radius:99px; display:inline-flex; align-items:center; gap:4px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            Aguardando Sua Aprovação
+          </span>
+        `
+
+        document.getElementById('pastor-approval-box').style.display = 'block'
+        document.getElementById('pastor-already-approved-box').style.display = 'none'
+      }
+    }
+
+    // ── CÂMERA & CAPTURA DE SELFIE ──
+    async function startCamera() {
+      const video = document.getElementById('camera-video')
+      const videoContainer = document.getElementById('video-container')
+      const previewContainer = document.getElementById('preview-container')
+      const btnOpen = document.getElementById('btn-open-camera')
+      const btnCapture = document.getElementById('btn-capture-photo')
+      const btnRetake = document.getElementById('btn-retake-photo')
+      const placeholderText = document.getElementById('camera-placeholder-text')
+
+      try {
+        if (activeStream) {
+          activeStream.getTracks().forEach(t => t.stop())
+        }
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 640 } },
+          audio: false
+        })
+        activeStream = stream
+        video.srcObject = stream
+        videoContainer.style.display = 'block'
+        previewContainer.style.display = 'none'
+        btnOpen.style.display = 'none'
+        btnCapture.style.display = 'inline-flex'
+        btnRetake.style.display = 'none'
+        placeholderText.style.display = 'none'
+      } catch (err) {
+        console.warn('Erro ao abrir câmera ao vivo:', err)
+        alert('Não foi possível acessar a câmera diretamente. Por favor, utilize a opção "Tirar foto pelo Celular".')
+      }
+    }
+
+    function capturePhoto() {
+      const video = document.getElementById('camera-video')
+      const canvas = document.getElementById('camera-canvas')
+      const videoContainer = document.getElementById('video-container')
+      const previewContainer = document.getElementById('preview-container')
+      const previewImage = document.getElementById('preview-image')
+      const btnCapture = document.getElementById('btn-capture-photo')
+      const btnRetake = document.getElementById('btn-retake-photo')
+
+      const width = video.videoWidth || 640
+      const height = video.videoHeight || 640
+      canvas.width = width
+      canvas.height = height
+
+      const ctx = canvas.getContext('2d')
+      // Espelha imagem para efeito selfie natural
+      ctx.translate(width, 0)
+      ctx.scale(-1, 1)
+      ctx.drawImage(video, 0, 0, width, height)
+
+      capturedBase64 = canvas.toDataURL('image/jpeg', 0.88)
+      previewImage.src = capturedBase64
+
+      // Para a câmera
+      if (activeStream) {
+        activeStream.getTracks().forEach(t => t.stop())
+        activeStream = null
+      }
+
+      videoContainer.style.display = 'none'
+      previewContainer.style.display = 'block'
+      btnCapture.style.display = 'none'
+      btnRetake.style.display = 'inline-flex'
+
+      validateForm()
+    }
+
+    function retakePhoto() {
+      capturedBlob = null
+      capturedBase64 = null
+      document.getElementById('preview-container').style.display = 'none'
+      document.getElementById('btn-retake-photo').style.display = 'none'
+      document.getElementById('btn-open-camera').style.display = 'inline-flex'
+      document.getElementById('camera-placeholder-text').style.display = 'block'
+      validateForm()
+      startCamera()
+    }
+
+    function handleFileSelected(event) {
+      const file = event.target.files[0]
+      if (!file) return
+
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        capturedBase64 = e.target.result
+        capturedBlob = file
+
+        // Para stream se estiver aberto
+        if (activeStream) {
+          activeStream.getTracks().forEach(t => t.stop())
+          activeStream = null
+        }
+
+        document.getElementById('video-container').style.display = 'none'
+        document.getElementById('preview-container').style.display = 'block'
+        document.getElementById('preview-image').src = capturedBase64
+        document.getElementById('btn-open-camera').style.display = 'none'
+        document.getElementById('btn-capture-photo').style.display = 'none'
+        document.getElementById('btn-retake-photo').style.display = 'inline-flex'
+        document.getElementById('camera-placeholder-text').style.display = 'none'
+
+        validateForm()
+      }
+      reader.readAsDataURL(file)
+    }
+
+    function validateForm() {
+      const pastorName = document.getElementById('input-pastor-name').value.trim()
+      const hasPhoto = !!capturedBase64 || !!capturedBlob
+      const isChecked = document.getElementById('check-declaration').checked
+      const btn = document.getElementById('btn-submit-approval')
+
+      btn.disabled = !(pastorName && hasPhoto && isChecked)
+    }
+
+    // Listener para o input de nome
+    document.getElementById('input-pastor-name').addEventListener('input', validateForm)
+
+    // ── SUBMISSÃO DA APROVAÇÃO ──
+    async function submitPastorApproval() {
+      const alertBox = document.getElementById('alert-action')
+      alertBox.style.display = 'none'
+
+      const pastorName = document.getElementById('input-pastor-name').value.trim()
+      if (!pastorName) {
+        alertBox.textContent = 'Por favor, informe seu nome completo.'
+        alertBox.style.display = 'flex'
+        return
+      }
+
+      if (!capturedBase64 && !capturedBlob) {
+        alertBox.textContent = 'Por favor, tire uma selfie antes de aprovar.'
+        alertBox.style.display = 'flex'
+        return
+      }
+
+      const btn = document.getElementById('btn-submit-approval')
+      btn.disabled = true
+      btn.innerHTML = `
+        <div class="spinner" style="width:16px;height:16px;border-width:2px;margin:0;display:inline-block"></div>
+        <span>Enviando aprovação...</span>
+      `
+
+      try {
+        const formData = new FormData()
+        formData.append('pastor_name', pastorName)
+        if (capturedBlob) {
+          formData.append('selfie_file', capturedBlob, 'selfie.jpg')
+        } else if (capturedBase64) {
+          formData.append('selfie_base64', capturedBase64)
+        }
+
+        const resp = await fetch(`/api/congresses/public/credential/${token}/approve`, {
+          method: 'POST',
+          body: formData
+        })
+
+        if (!resp.ok) {
+          const err = await resp.json().catch(() => ({}))
+          throw new Error(err.detail || 'Erro ao processar a aprovação.')
+        }
+
+        const resData = await resp.json()
+        credData.credential = resData.credential
+        renderCredential()
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      } catch (err) {
+        alertBox.textContent = err.message
+        alertBox.style.display = 'flex'
+        btn.disabled = false
+        btn.innerHTML = `
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <span>Aprovar e Assinar Credencial</span>
+        `
+      }
+    }
+  </script>
+</body>
+
+</html>

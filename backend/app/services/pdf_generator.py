@@ -3371,4 +3371,275 @@ def generate_commission_report(
         canvas_obj.restoreState()
 
     doc.build(story, onFirstPage=_commission_page_footer, onLaterPages=_commission_page_footer)
-    return buf.getvalue()
+    return buf.getvalue()
+
+
+def generate_credential_pdf(
+    congress_title: str,
+    fiscal_year: int,
+    church_name: str,
+    delegates: list,
+    president_name: str,
+    pastor_name: str,
+    city: str = None,
+    document_date: datetime.date = None,
+    federation_name: str = None,
+    presbytery_name: str = None,
+    synodal_name: str = None,
+    pastor_approved_at: datetime.datetime = None,
+    president_signed_at: datetime.datetime = None,
+    validation_code: str = None,
+    is_preview: bool = False
+) -> bytes:
+    """Gera o PDF oficial da Credencial de Delegados conforme layout padrão do modelo."""
+    buf = io.BytesIO()
+    ML, MR, MT, MB = 22*mm, 22*mm, 20*mm, 20*mm
+    doc = SimpleDocTemplate(
+        buf,
+        pagesize=A4,
+        leftMargin=ML,
+        rightMargin=MR,
+        topMargin=MT,
+        bottomMargin=MB
+    )
+    W = A4[0] - ML - MR
+    story = []
+
+    # 1. Logo da UMP / IPB no topo centralizado
+    logo_img = _get_commission_logo_flowable()
+    logo_table = Table([[logo_img]], colWidths=[W])
+    logo_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 2*mm),
+    ]))
+    story.append(logo_table)
+
+    # 2. Cabeçalho Oficial
+    p_hdr = ParagraphStyle(
+        'CredHdr',
+        fontName='Helvetica-Bold',
+        fontSize=10,
+        leading=14,
+        textColor=colors.HexColor('#0f172a'),
+        alignment=TA_CENTER
+    )
+    ipb_line = "IGREJA PRESBITERIANA DO BRASIL"
+    syn_str = synodal_name or "SÍNODO PARAÍBA"
+    presb_str = presbytery_name or federation_name or "POPB"
+    sub_line = f"UMP | {syn_str.upper()} | {presb_str.upper()}"
+    cong_line = "CONGRESSO ANUAL DE MOCIDADE"
+    year_line = f"GESTÃO {fiscal_year or datetime.datetime.now().year}"
+
+    story.append(Paragraph(f"{ipb_line}<br/>{sub_line}<br/>{cong_line}<br/>{year_line}", p_hdr))
+    story.append(Spacer(1, 4*mm))
+
+    # 3. Versículo Bíblico em itálico
+    p_verse = ParagraphStyle(
+        'CredVerse',
+        fontName='Helvetica-Oblique',
+        fontSize=9,
+        leading=13,
+        textColor=colors.HexColor('#334155'),
+        alignment=TA_CENTER
+    )
+    verse_text = '“Ninguém despreze a tua mocidade; pelo contrário, torna-te padrão dos fiéis, na palavra, no procedimento, no amor, na fé, na pureza.” (I Tm. 4.12).'
+    story.append(Paragraph(verse_text, p_verse))
+    story.append(Spacer(1, 5*mm))
+
+    # 4. Data à direita
+    doc_dt = document_date or datetime.date.today()
+    meses = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
+    mes_str = meses[doc_dt.month - 1]
+    cidade_str = city or "Patos"
+    data_formatada = f"{cidade_str}, {doc_dt.day} de {mes_str} de {doc_dt.year}."
+
+    p_dt = ParagraphStyle(
+        'CredDate',
+        fontName='Helvetica',
+        fontSize=10,
+        leading=14,
+        textColor=colors.HexColor('#0f172a'),
+        alignment=TA_RIGHT
+    )
+    story.append(Paragraph(data_formatada, p_dt))
+    story.append(Spacer(1, 6*mm))
+
+    # 5. Título: CREDENCIAL
+    p_title = ParagraphStyle(
+        'CredTitle',
+        fontName='Helvetica-Bold',
+        fontSize=14,
+        leading=18,
+        textColor=colors.HexColor('#0f172a'),
+        alignment=TA_CENTER,
+        spaceAfter=5*mm
+    )
+    story.append(Paragraph("CREDENCIAL", p_title))
+
+    # 6. Parágrafo de Apresentação
+    p_body = ParagraphStyle(
+        'CredBody',
+        fontName='Helvetica',
+        fontSize=10.5,
+        leading=16,
+        textColor=colors.HexColor('#0f172a'),
+        alignment=TA_JUSTIFY,
+        firstLineIndent=20
+    )
+    igreja = (church_name or "Igreja Local").strip().upper()
+    c_title = (congress_title or "CONGRESSO").strip()
+    fed_label = (presbytery_name or federation_name or "POPB").strip()
+
+    intro_text = (
+        f"Sr. (a) Presidente, a UMP da <b>{igreja}</b> tem o prazer de apresentar "
+        f"os seguintes delegados ao <b>{c_title}</b> da Federação de UMPs do {fed_label}:"
+    )
+    story.append(Paragraph(intro_text, p_body))
+    story.append(Spacer(1, 4*mm))
+
+    # 7. Lista de Delegados com linhas e numeração
+    p_del_name = ParagraphStyle(
+        'DelName',
+        fontName='Helvetica-Bold',
+        fontSize=10,
+        leading=14,
+        textColor=colors.HexColor('#0f172a'),
+        alignment=TA_CENTER
+    )
+    p_del_lbl = ParagraphStyle(
+        'DelLbl',
+        fontName='Helvetica',
+        fontSize=8.5,
+        leading=11,
+        textColor=colors.HexColor('#334155'),
+        alignment=TA_CENTER
+    )
+
+    if not delegates:
+        story.append(Paragraph("<i>Nenhum delegado informado.</i>", p_del_name))
+        story.append(Spacer(1, 4*mm))
+    else:
+        for idx, d in enumerate(delegates, start=1):
+            if isinstance(d, dict):
+                d_name = d.get('delegate_name') or d.get('name') or ""
+                is_opt = d.get('is_optional', False)
+            else:
+                d_name = str(d)
+                is_opt = False
+
+            d_name = d_name.strip().upper()
+            lbl = f"DELEGADO {idx}"
+            if is_opt:
+                lbl += "<br/><font size=7.5 color='#64748b'>(opcional)</font>"
+
+            del_flowables = [
+                Paragraph(d_name, p_del_name),
+                Spacer(1, 1*mm),
+                HRFlowable(width=W * 0.72, thickness=0.75, color=colors.HexColor('#0f172a'), spaceBefore=1, spaceAfter=2),
+                Paragraph(lbl, p_del_lbl),
+                Spacer(1, 3*mm)
+            ]
+            story.append(KeepTogether(del_flowables))
+
+    # 8. Fechamento
+    p_close = ParagraphStyle(
+        'CredClose',
+        fontName='Helvetica',
+        fontSize=10,
+        leading=15,
+        textColor=colors.HexColor('#0f172a'),
+        alignment=TA_LEFT
+    )
+    closing_text = (
+        "Na certeza de que nossa Delegação desempenhará satisfatoriamente as funções representativas desta Federação,<br/><br/>"
+        "Subscrevemo-nos.<br/>"
+        "Fraternalmente, em Cristo Jesus,"
+    )
+    story.append(Paragraph(closing_text, p_close))
+    story.append(Spacer(1, 8*mm))
+
+    # 9. Assinaturas lado a lado
+    p_sign_name = ParagraphStyle(
+        'SignName',
+        fontName='Helvetica-Bold',
+        fontSize=9.5,
+        leading=13,
+        textColor=colors.HexColor('#0f172a'),
+        alignment=TA_CENTER
+    )
+    p_sign_role = ParagraphStyle(
+        'SignRole',
+        fontName='Helvetica',
+        fontSize=8.5,
+        leading=12,
+        textColor=colors.HexColor('#334155'),
+        alignment=TA_CENTER
+    )
+    p_sign_meta = ParagraphStyle(
+        'SignMeta',
+        fontName='Helvetica-Oblique',
+        fontSize=7.5,
+        leading=10,
+        textColor=colors.HexColor('#15803d'),
+        alignment=TA_CENTER
+    )
+
+    pres_name = (president_name or "Presidente da UMP").strip().upper()
+    past_name = (pastor_name or "Pastor da Igreja").strip().upper()
+
+    pres_meta = ""
+    if president_signed_at:
+        pres_meta = f"<br/><font color='#15803d'>Assinado digitalmente em {president_signed_at.strftime('%d/%m/%Y às %H:%M')}</font>"
+
+    past_meta = ""
+    if pastor_approved_at:
+        past_meta = f"<br/><font color='#15803d'>Aprovado via foto/selfie em {pastor_approved_at.strftime('%d/%m/%Y às %H:%M')}</font>"
+
+    pres_cell = [
+        Paragraph(pres_name, p_sign_name),
+        Spacer(1, 1*mm),
+        HRFlowable(width=W * 0.42, thickness=0.75, color=colors.HexColor('#0f172a'), spaceBefore=1, spaceAfter=2),
+        Paragraph(f"Presidente da UMP{pres_meta}", p_sign_role)
+    ]
+    past_cell = [
+        Paragraph(past_name, p_sign_name),
+        Spacer(1, 1*mm),
+        HRFlowable(width=W * 0.42, thickness=0.75, color=colors.HexColor('#0f172a'), spaceBefore=1, spaceAfter=2),
+        Paragraph(f"Pastor da Igreja{past_meta}", p_sign_role)
+    ]
+
+    col_w = W / 2.0
+    sign_table = Table([[pres_cell, past_cell]], colWidths=[col_w, col_w])
+    sign_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 4*mm),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 4*mm),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+    ]))
+    story.append(KeepTogether([sign_table]))
+
+    # Rodapé da página
+    def _credential_footer(canvas_obj, doc_obj):
+        canvas_obj.saveState()
+        canvas_obj.setStrokeColor(colors.HexColor('#cbd5e1'))
+        canvas_obj.setLineWidth(0.5)
+        canvas_obj.line(ML, 12*mm, A4[0]-MR, 12*mm)
+        canvas_obj.setFont("Helvetica", 7.5)
+        canvas_obj.setFillColor(colors.HexColor('#64748b'))
+        foot_str = f"Credencial Oficial — Gerado em {datetime.datetime.now().strftime('%d/%m/%Y às %H:%M')}"
+        if validation_code:
+            foot_str += f" · Autenticidade: {validation_code}"
+        elif is_preview:
+            foot_str += " · Prévia para Conferência"
+        canvas_obj.drawString(ML, 7*mm, foot_str)
+        canvas_obj.drawRightString(A4[0]-MR, 7*mm, f"Página {doc_obj.page}")
+        canvas_obj.restoreState()
+
+    doc.build(story, onFirstPage=_credential_footer, onLaterPages=_credential_footer)
+    return buf.getvalue()
+

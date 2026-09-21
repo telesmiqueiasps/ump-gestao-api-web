@@ -1,7 +1,9 @@
 import re
 import secrets
 import logging
-from datetime import datetime
+import base64
+import uuid as _uuid
+from datetime import datetime, date
 from typing import List, Optional
 from uuid import UUID
 
@@ -11,17 +13,22 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
 from app.db.session import get_db
-from app.core.dependencies import get_current_user, require_federation
-from app.models.user import User
+from app.core.dependencies import get_current_user, require_federation, require_local_ump, require_local_or_federation
+from app.models.user import User, UserRole
 from app.models.federation import Federation
 from app.models.local_ump import LocalUmp
 from app.models.member import Member
 from app.models.finance import FinancialPeriod
 from app.models.activity_report import ActivityReport
 from app.models.ump_statistic import UmpStatisticCollector
-from app.models.congress import Congress, CongressCommission, CongressCommissionMember, CongressCommissionDocument
-from app.services.storage import get_presigned_url, upload_file, delete_file, delete_folder, extract_key_from_url
-from app.services.pdf_generator import generate_commission_report
+from app.models.congress import (
+    Congress, CongressCommission, CongressCommissionMember, CongressCommissionDocument,
+    CongressCredential, CongressCredentialDelegate
+)
+from app.services.storage import (
+    get_presigned_url, upload_file, delete_file, delete_folder, extract_key_from_url, resize_image_max_size
+)
+from app.services.pdf_generator import generate_commission_report, generate_credential_pdf
 from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -70,6 +77,25 @@ class DocumentAttachItem(BaseModel):
 class OpinionPayload(BaseModel):
     opinion_report: str
     approval_date: Optional[str] = None
+
+class DelegateLimitsPayload(BaseModel):
+    min_delegates: int = 1
+    max_delegates: int = 5
+
+class CredentialDelegateItem(BaseModel):
+    member_id: Optional[UUID] = None
+    delegate_name: str
+    is_optional: bool = False
+
+class CredentialSavePayload(BaseModel):
+    delegates: List[CredentialDelegateItem] = []
+    pastor_name: Optional[str] = None
+    city: Optional[str] = None
+    notes: Optional[str] = None
+
+class PastorApprovalPayload(BaseModel):
+    pastor_name: Optional[str] = None
+    selfie_base64: Optional[str] = None
 
 
 # ── HELPERS ──
@@ -146,6 +172,41 @@ def _serialize_commission(comm: CongressCommission) -> dict:
     }
 
 
+def _serialize_credential(cred: CongressCredential, include_token: bool = True) -> dict:
+    return {
+        "id": str(cred.id),
+        "congress_id": str(cred.congress_id),
+        "local_ump_id": str(cred.local_ump_id),
+        "local_ump_name": cred.local_ump.name if cred.local_ump else None,
+        "church_name": cred.local_ump.church_name if cred.local_ump else None,
+        "status": cred.status,
+        "city": cred.city or (cred.local_ump.cidade if cred.local_ump else None),
+        "document_date": cred.document_date.isoformat() if cred.document_date else None,
+        "pastor_name": cred.pastor_name or (cred.local_ump.pastor_name if cred.local_ump else None),
+        "pastor_token": cred.pastor_token if include_token else None,
+        "pastor_selfie_url": _presign_url_if_needed(cred.pastor_selfie_url),
+        "pastor_approved_at": cred.pastor_approved_at.isoformat() if cred.pastor_approved_at else None,
+        "president_name": cred.president_name,
+        "president_signed_at": cred.president_signed_at.isoformat() if cred.president_signed_at else None,
+        "submitted_at": cred.submitted_at.isoformat() if cred.submitted_at else None,
+        "submitted_by": str(cred.submitted_by) if cred.submitted_by else None,
+        "validation_code": cred.validation_code,
+        "homologated_at": cred.homologated_at.isoformat() if cred.homologated_at else None,
+        "notes": cred.notes,
+        "delegates_count": len(cred.delegates) if cred.delegates else 0,
+        "delegates": [
+            {
+                "id": str(d.id),
+                "member_id": str(d.member_id) if d.member_id else None,
+                "delegate_name": d.delegate_name,
+                "order_index": d.order_index,
+                "is_optional": d.is_optional,
+            }
+            for d in cred.delegates
+        ] if cred.delegates else []
+    }
+
+
 def _serialize_congress(c: Congress, include_commissions: bool = True) -> dict:
     data = {
         "id": str(c.id),
@@ -154,10 +215,13 @@ def _serialize_congress(c: Congress, include_commissions: bool = True) -> dict:
         "fiscal_year": c.fiscal_year,
         "description": c.description,
         "status": c.status,
+        "min_delegates": c.min_delegates if c.min_delegates is not None else 1,
+        "max_delegates": c.max_delegates if c.max_delegates is not None else 5,
         "created_by": str(c.created_by) if c.created_by else None,
         "created_at": c.created_at.isoformat() if c.created_at else None,
         "updated_at": c.updated_at.isoformat() if c.updated_at else None,
         "commissions_count": len(c.commissions) if c.commissions else 0,
+        "credentials_count": len(c.credentials) if c.credentials else 0,
         "total_documents_count": sum(len(comm.documents) for comm in c.commissions) if c.commissions else 0
     }
     if include_commissions and c.commissions:
@@ -1067,3 +1131,538 @@ def preview_public_commission_pdf(
         media_type="application/pdf",
         headers={"Content-Disposition": f"inline; filename=previa_parecer_{comm.id}.pdf"}
     )
+
+
+# ── ROTAS DE CREDENCIAIS (FEDERAÇÃO, UMP LOCAL E PÚBLICO) ──
+
+@router.get("/active-for-local")
+def get_active_congress_for_local(
+    current_user: User = Depends(require_local_ump),
+    db: Session = Depends(get_db)
+):
+    """
+    Retorna o congresso ativo da federação para a UMP Local do usuário,
+    junto aos limites de delegados e a credencial atual.
+    Acesso restrito a Presidente e Vice-Presidente da UMP Local.
+    """
+    user_roles = [r.role.value if hasattr(r.role, 'value') else str(r.role) for r in current_user.roles if r.is_active]
+    if not ("presidente" in user_roles or "vice_presidente" in user_roles):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas o Presidente e o Vice-Presidente da UMP Local têm acesso à Credencial do Congresso."
+        )
+
+    local_ump = db.query(LocalUmp).filter(LocalUmp.id == current_user.organization_id).first()
+    if not local_ump:
+        raise HTTPException(status_code=404, detail="UMP Local não encontrada.")
+
+    # Busca congresso aberto da federação vinculada
+    congress = db.query(Congress).filter(
+        Congress.federation_id == local_ump.federation_id,
+        Congress.status == "aberto"
+    ).order_by(desc(Congress.fiscal_year), desc(Congress.created_at)).first()
+
+    if not congress:
+        return {
+            "has_active_congress": False,
+            "message": "Nenhum congresso aberto no momento pela sua Federação."
+        }
+
+    # Busca ou cria a credencial da UMP local para este congresso
+    cred = db.query(CongressCredential).filter(
+        CongressCredential.congress_id == congress.id,
+        CongressCredential.local_ump_id == local_ump.id
+    ).first()
+
+    if not cred:
+        cred = CongressCredential(
+            congress_id=congress.id,
+            local_ump_id=local_ump.id,
+            status="rascunho",
+            city=local_ump.cidade or "Patos",
+            pastor_name=local_ump.pastor_name,
+            document_date=date.today()
+        )
+        db.add(cred)
+        db.commit()
+        db.refresh(cred)
+
+    fed = db.query(Federation).filter(Federation.id == local_ump.federation_id).first()
+    active_members = db.query(Member).filter(
+        Member.local_ump_id == local_ump.id,
+        Member.is_active == True
+    ).order_by(Member.full_name).all()
+
+    return {
+        "has_active_congress": True,
+        "congress": _serialize_congress(congress, include_commissions=False),
+        "credential": _serialize_credential(cred, include_token=True),
+        "federation": {
+            "name": fed.name if fed else "",
+            "presbytery_name": fed.presbytery_name if fed else "",
+            "synodal_name": fed.synodal_name if fed else "",
+        },
+        "local_ump": {
+            "id": str(local_ump.id),
+            "name": local_ump.name,
+            "church_name": local_ump.church_name,
+            "pastor_name": local_ump.pastor_name,
+            "cidade": local_ump.cidade,
+        },
+        "members": [
+            {"id": str(m.id), "full_name": m.full_name}
+            for m in active_members
+        ],
+        "current_user_name": current_user.full_name,
+        "current_user_role": "Presidente" if "presidente" in user_roles else "Vice-Presidente"
+    }
+
+
+@router.post("/{congress_id}/my-credential")
+def save_my_credential(
+    congress_id: UUID,
+    payload: CredentialSavePayload,
+    current_user: User = Depends(require_local_ump),
+    db: Session = Depends(get_db)
+):
+    """Salva os dados do rascunho da credencial e a lista de delegados pela UMP Local."""
+    user_roles = [r.role.value if hasattr(r.role, 'value') else str(r.role) for r in current_user.roles if r.is_active]
+    if not ("presidente" in user_roles or "vice_presidente" in user_roles):
+        raise HTTPException(status_code=403, detail="Apenas Presidente e Vice-Presidente podem preencher a credencial.")
+
+    local_ump = db.query(LocalUmp).filter(LocalUmp.id == current_user.organization_id).first()
+    if not local_ump:
+        raise HTTPException(status_code=404, detail="UMP Local não encontrada.")
+
+    congress = db.query(Congress).filter(Congress.id == congress_id).first()
+    if not congress:
+        raise HTTPException(status_code=404, detail="Congresso não encontrado.")
+
+    cred = db.query(CongressCredential).filter(
+        CongressCredential.congress_id == congress.id,
+        CongressCredential.local_ump_id == local_ump.id
+    ).first()
+
+    if not cred:
+        cred = CongressCredential(
+            congress_id=congress.id,
+            local_ump_id=local_ump.id,
+            status="rascunho",
+            document_date=date.today()
+        )
+        db.add(cred)
+        db.flush()
+
+    if cred.status in ("enviada", "homologada"):
+        raise HTTPException(status_code=400, detail="Esta credencial já foi enviada à Federação e não pode mais ser alterada.")
+
+    # Se o pastor já havia aprovado, mas a lista de delegados mudou, o status volta para aguardando pastor
+    existing_del_names = [d.delegate_name.strip().upper() for d in cred.delegates]
+    new_del_names = [d.delegate_name.strip().upper() for d in payload.delegates if d.delegate_name.strip()]
+    if cred.status == "aprovado_pastor" and existing_del_names != new_del_names:
+        cred.status = "aguardando_pastor"
+        cred.pastor_approved_at = None
+        cred.pastor_selfie_url = None
+
+    if payload.pastor_name is not None:
+        cred.pastor_name = payload.pastor_name.strip()
+    if payload.city is not None:
+        cred.city = payload.city.strip()
+    if payload.notes is not None:
+        cred.notes = payload.notes.strip()
+
+    # Atualiza lista de delegados
+    db.query(CongressCredentialDelegate).filter(CongressCredentialDelegate.credential_id == cred.id).delete()
+
+    min_d = congress.min_delegates or 1
+    for idx, d_item in enumerate(payload.delegates, start=1):
+        d_name = d_item.delegate_name.strip()
+        if not d_name:
+            continue
+        is_opt = idx > min_d
+        delegate_obj = CongressCredentialDelegate(
+            credential_id=cred.id,
+            member_id=d_item.member_id,
+            delegate_name=d_name,
+            order_index=idx,
+            is_optional=is_opt
+        )
+        db.add(delegate_obj)
+
+    if cred.status == "rascunho" and new_del_names:
+        cred.status = "aguardando_pastor"
+
+    db.commit()
+    db.refresh(cred)
+    return {
+        "message": "Credencial salva com sucesso.",
+        "credential": _serialize_credential(cred, include_token=True)
+    }
+
+
+@router.post("/credentials/{credential_id}/submit")
+def submit_credential_to_federation(
+    credential_id: UUID,
+    current_user: User = Depends(require_local_ump),
+    db: Session = Depends(get_db)
+):
+    """
+    Submete a credencial à Federação:
+    1. Valida se a quantidade de delegados respeita o mínimo e o máximo estipulados pela federação.
+    2. Valida se o pastor aprovou via foto selfie.
+    3. Registra a assinatura automática do Presidente logado.
+    4. Atualiza o status para 'enviada'.
+    """
+    user_roles = [r.role.value if hasattr(r.role, 'value') else str(r.role) for r in current_user.roles if r.is_active]
+    if not ("presidente" in user_roles or "vice_presidente" in user_roles):
+        raise HTTPException(status_code=403, detail="Apenas Presidente e Vice-Presidente podem enviar a credencial.")
+
+    cred = db.query(CongressCredential).filter(
+        CongressCredential.id == credential_id,
+        CongressCredential.local_ump_id == current_user.organization_id
+    ).first()
+
+    if not cred:
+        raise HTTPException(status_code=404, detail="Credencial não encontrada.")
+
+    congress = cred.congress
+    if not congress:
+        raise HTTPException(status_code=404, detail="Congresso vinculado não encontrado.")
+
+    if congress.status == "encerrado":
+        raise HTTPException(status_code=400, detail="Este congresso já foi encerrado pela Federação.")
+
+    del_count = len(cred.delegates)
+    min_d = congress.min_delegates or 1
+    max_d = congress.max_delegates or 5
+
+    if del_count < min_d:
+        raise HTTPException(status_code=400, detail=f"A credencial precisa de pelo menos {min_d} delegado(s). Atualmente possui {del_count}.")
+    if del_count > max_d:
+        raise HTTPException(status_code=400, detail=f"A credencial permite no máximo {max_d} delegados. Atualmente possui {del_count}.")
+
+    if cred.status != "aprovado_pastor" or not cred.pastor_approved_at:
+        raise HTTPException(
+            status_code=400,
+            detail="A credencial precisa ser aprovada pelo Pastor da igreja via foto/selfie antes do envio à Federação."
+        )
+
+    # Assinatura automática da Presidência da UMP
+    cred.president_name = current_user.full_name
+    cred.president_signed_at = datetime.utcnow()
+    cred.submitted_at = datetime.utcnow()
+    cred.submitted_by = current_user.id
+    cred.validation_code = cred.validation_code or f"VAL-CRED-{congress.fiscal_year}-{_uuid.uuid4().hex[:8].upper()}"
+    cred.status = "enviada"
+
+    db.commit()
+    db.refresh(cred)
+
+    return {
+        "message": "Credencial enviada com sucesso à Federação!",
+        "credential": _serialize_credential(cred, include_token=True)
+    }
+
+
+# ── ROTAS DA FEDERAÇÃO PARA CREDENCIAIS ──
+
+@router.put("/{congress_id}/delegate-limits")
+def update_congress_delegate_limits(
+    congress_id: UUID,
+    payload: DelegateLimitsPayload,
+    current_user: User = Depends(require_federation),
+    db: Session = Depends(get_db)
+):
+    """Atualiza a quantidade mínima e máxima de delegados permitida por UMP Local no congresso."""
+    congress = db.query(Congress).filter(
+        Congress.id == congress_id,
+        Congress.federation_id == current_user.organization_id
+    ).first()
+    if not congress:
+        raise HTTPException(status_code=404, detail="Congresso não encontrado.")
+
+    if payload.min_delegates < 1:
+        raise HTTPException(status_code=400, detail="A quantidade mínima de delegados deve ser de pelo menos 1.")
+    if payload.max_delegates < payload.min_delegates:
+        raise HTTPException(status_code=400, detail="A quantidade máxima não pode ser menor que a quantidade mínima.")
+
+    congress.min_delegates = payload.min_delegates
+    congress.max_delegates = payload.max_delegates
+    db.commit()
+
+    return {
+        "message": "Limites de delegados atualizados com sucesso.",
+        "min_delegates": congress.min_delegates,
+        "max_delegates": congress.max_delegates
+    }
+
+
+@router.get("/{congress_id}/credentials")
+def list_congress_credentials(
+    congress_id: UUID,
+    current_user: User = Depends(require_federation),
+    db: Session = Depends(get_db)
+):
+    """Lista todas as UMPs Locais e o status da sua respectiva credencial para este congresso."""
+    congress = db.query(Congress).filter(
+        Congress.id == congress_id,
+        Congress.federation_id == current_user.organization_id
+    ).first()
+    if not congress:
+        raise HTTPException(status_code=404, detail="Congresso não encontrado.")
+
+    # Todas as UMPs locais ativas da federação
+    local_umps = db.query(LocalUmp).filter(
+        LocalUmp.federation_id == current_user.organization_id,
+        LocalUmp.is_active == True
+    ).order_by(LocalUmp.name).all()
+
+    # Todas as credenciais já cadastradas para este congresso
+    credentials_map = {
+        cred.local_ump_id: cred
+        for cred in congress.credentials
+    }
+
+    results = []
+    total_delegates = 0
+    total_submitted = 0
+    total_pastor_approved = 0
+    total_pending = 0
+
+    for lump in local_umps:
+        cred = credentials_map.get(lump.id)
+        if cred:
+            serialized = _serialize_credential(cred, include_token=True)
+            delegates_count = len(cred.delegates)
+            total_delegates += delegates_count
+            if cred.status in ("enviada", "homologada"):
+                total_submitted += 1
+            elif cred.status == "aprovado_pastor":
+                total_pastor_approved += 1
+            else:
+                total_pending += 1
+        else:
+            serialized = {
+                "id": None,
+                "congress_id": str(congress.id),
+                "local_ump_id": str(lump.id),
+                "local_ump_name": lump.name,
+                "church_name": lump.church_name,
+                "status": "nao_iniciada",
+                "city": lump.cidade,
+                "document_date": None,
+                "pastor_name": lump.pastor_name,
+                "pastor_token": None,
+                "pastor_selfie_url": None,
+                "pastor_approved_at": None,
+                "president_name": None,
+                "president_signed_at": None,
+                "submitted_at": None,
+                "validation_code": None,
+                "homologated_at": None,
+                "notes": None,
+                "delegates_count": 0,
+                "delegates": []
+            }
+            total_pending += 1
+
+        results.append(serialized)
+
+    return {
+        "congress_id": str(congress.id),
+        "congress_title": congress.title,
+        "fiscal_year": congress.fiscal_year,
+        "min_delegates": congress.min_delegates or 1,
+        "max_delegates": congress.max_delegates or 5,
+        "summary": {
+            "total_local_umps": len(local_umps),
+            "total_submitted": total_submitted,
+            "total_pastor_approved": total_pastor_approved,
+            "total_pending": total_pending,
+            "total_delegates": total_delegates
+        },
+        "credentials": results
+    }
+
+
+@router.post("/credentials/{credential_id}/homologate")
+def homologate_credential(
+    credential_id: UUID,
+    current_user: User = Depends(require_federation),
+    db: Session = Depends(get_db)
+):
+    """Homologa oficialmente a credencial de uma UMP Local pela diretoria da federação."""
+    cred = db.query(CongressCredential).join(Congress).filter(
+        CongressCredential.id == credential_id,
+        Congress.federation_id == current_user.organization_id
+    ).first()
+
+    if not cred:
+        raise HTTPException(status_code=404, detail="Credencial não encontrada.")
+
+    cred.status = "homologada"
+    cred.homologated_at = datetime.utcnow()
+    cred.homologated_by = current_user.id
+    db.commit()
+    db.refresh(cred)
+
+    return {
+        "message": "Credencial homologada com sucesso!",
+        "credential": _serialize_credential(cred, include_token=True)
+    }
+
+
+# ── ROTAS PÚBLICAS (ACESSO PASTORAL POR TOKEN - SEM LOGIN) ──
+
+@router.get("/public/credential/{token}")
+def get_public_credential(
+    token: str,
+    db: Session = Depends(get_db)
+):
+    """Retorna os dados da credencial para conferência pública do pastor."""
+    cred = db.query(CongressCredential).filter(
+        CongressCredential.pastor_token == token
+    ).first()
+
+    if not cred:
+        raise HTTPException(status_code=404, detail="Link de credencial inválido ou não encontrado.")
+
+    congress = cred.congress
+    local_ump = cred.local_ump
+    fed = db.query(Federation).filter(Federation.id == congress.federation_id).first() if congress else None
+
+    return {
+        "credential": _serialize_credential(cred, include_token=False),
+        "congress": {
+            "id": str(congress.id) if congress else None,
+            "title": congress.title if congress else "Congresso",
+            "fiscal_year": congress.fiscal_year if congress else None,
+            "status": congress.status if congress else "aberto",
+            "min_delegates": congress.min_delegates or 1,
+            "max_delegates": congress.max_delegates or 5
+        },
+        "federation": {
+            "name": fed.name if fed else "Federação",
+            "presbytery_name": fed.presbytery_name if fed else "",
+            "synodal_name": fed.synodal_name if fed else "",
+        },
+        "local_ump": {
+            "name": local_ump.name if local_ump else "",
+            "church_name": local_ump.church_name if local_ump else "",
+            "cidade": local_ump.cidade if local_ump else "",
+        }
+    }
+
+
+@router.post("/public/credential/{token}/approve")
+async def approve_public_credential(
+    token: str,
+    pastor_name: Optional[str] = Form(None),
+    selfie_file: Optional[UploadFile] = File(None),
+    selfie_base64: Optional[str] = Form(None),
+    db: Session = Depends(get_db)
+):
+    """
+    Recebe a aprovação do pastor com a selfie (via arquivo multipart ou base64).
+    Faz o upload da foto para o Cloudflare R2 e marca a credencial como 'aprovado_pastor'.
+    """
+    cred = db.query(CongressCredential).filter(
+        CongressCredential.pastor_token == token
+    ).first()
+
+    if not cred:
+        raise HTTPException(status_code=404, detail="Link de credencial inválido.")
+
+    if cred.status in ("enviada", "homologada"):
+        return {
+            "message": "Esta credencial já foi homologada e enviada.",
+            "credential": _serialize_credential(cred, include_token=False)
+        }
+
+    # Obter os bytes da imagem
+    image_bytes = None
+    if selfie_file and selfie_file.filename:
+        image_bytes = await selfie_file.read()
+    elif selfie_base64 and selfie_base64.strip():
+        raw_b64 = selfie_base64.split(",")[-1]
+        try:
+            image_bytes = base64.b64decode(raw_b64)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail="Formato de imagem base64 inválido.")
+
+    if not image_bytes or len(image_bytes) < 100:
+        raise HTTPException(status_code=400, detail="A foto selfie é obrigatória para aprovar a credencial.")
+
+    # Redimensiona imagem se necessário
+    resized_bytes = resize_image_max_size(image_bytes, max_size=1000)
+
+    # Upload para o Cloudflare R2
+    file_key = f"congresses/{cred.congress_id}/credentials/{cred.id}/pastor_selfie_{_uuid.uuid4().hex[:6]}.jpg"
+    selfie_url = upload_file(resized_bytes, file_key, "image/jpeg")
+
+    cred.pastor_selfie_url = selfie_url
+    cred.pastor_approved_at = datetime.utcnow()
+    if pastor_name and pastor_name.strip():
+        cred.pastor_name = pastor_name.strip()
+    cred.status = "aprovado_pastor"
+
+    db.commit()
+    db.refresh(cred)
+
+    return {
+        "message": "Credencial aprovada com sucesso pelo Pastor!",
+        "credential": _serialize_credential(cred, include_token=False)
+    }
+
+
+# ── ROTA DE PDF DA CREDENCIAL ──
+
+@router.get("/credentials/{credential_id}/pdf")
+def get_credential_pdf(
+    credential_id: UUID,
+    db: Session = Depends(get_db)
+):
+    """Gera e retorna o PDF oficial formatado da Credencial de Delegados."""
+    cred = db.query(CongressCredential).filter(
+        CongressCredential.id == credential_id
+    ).first()
+
+    if not cred:
+        raise HTTPException(status_code=404, detail="Credencial não encontrada.")
+
+    congress = cred.congress
+    local_ump = cred.local_ump
+    fed = db.query(Federation).filter(Federation.id == congress.federation_id).first() if congress else None
+
+    delegates_list = [
+        {
+            "delegate_name": d.delegate_name,
+            "is_optional": d.is_optional
+        }
+        for d in cred.delegates
+    ]
+
+    pdf_bytes = generate_credential_pdf(
+        congress_title=congress.title if congress else "Congresso Ordinário",
+        fiscal_year=congress.fiscal_year if congress else datetime.utcnow().year,
+        church_name=local_ump.church_name or local_ump.name if local_ump else "Igreja Local",
+        delegates=delegates_list,
+        president_name=cred.president_name or (local_ump.name if local_ump else "Presidente"),
+        pastor_name=cred.pastor_name or (local_ump.pastor_name if local_ump else "Pastor"),
+        city=cred.city or (local_ump.cidade if local_ump else "Patos"),
+        document_date=cred.document_date or date.today(),
+        federation_name=fed.name if fed else "Federação de UMPs",
+        presbytery_name=fed.presbytery_name if fed else "Presbitério",
+        synodal_name=fed.synodal_name if fed else "Sínodo Paraíba",
+        pastor_approved_at=cred.pastor_approved_at,
+        president_signed_at=cred.president_signed_at,
+        validation_code=cred.validation_code,
+        is_preview=(cred.status not in ("enviada", "homologada"))
+    )
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"inline; filename=credencial_{cred.id}.pdf"}
+    )
+

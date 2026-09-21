@@ -97,7 +97,6 @@ const NAV_ITEMS = [
     label: 'Congressos',
     icon: '/assets/img/congressos.png',
     path: '/pages/congressos.html',
-    fedOnly: true,
     roles: ['presidente', 'vice_presidente', 'tesoureiro',
       '1_secretario', '2_secretario', 'secretario_executivo',
       'secretario_presbiterial', 'conselheiro'],
@@ -113,6 +112,16 @@ window.navigate = function (page) {
 export function canAccessPage(page) {
   const item = NAV_ITEMS.find(n => n.page === page)
   if (!item) return false
+  if (page === 'congressos') {
+    const userRoles = getUser()?.roles ?? []
+    if (isFederation()) {
+      return item.roles.some(r => userRoles.includes(r))
+    }
+    if (isLocalUmp()) {
+      return userRoles.includes('presidente') || userRoles.includes('vice_presidente')
+    }
+    return false
+  }
   if (item.fedOnly && !isFederation()) return false
   if (item.localOnly && !isLocalUmp()) return false
   const currentSociety = localStorage.getItem('society_type') || 'UMP'
@@ -135,6 +144,15 @@ function buildNavHTML(user, societyType) {
 
   return NAV_ITEMS
     .filter(item => {
+      if (item.page === 'congressos') {
+        if (isFederation()) {
+          return item.roles.some(r => userRoles.includes(r))
+        }
+        if (isLocalUmp()) {
+          return userRoles.includes('presidente') || userRoles.includes('vice_presidente')
+        }
+        return false
+      }
       if (item.fedOnly && !isFederation()) return false
       if (item.localOnly && !isLocalUmp()) return false
       if (item.uphOnly && societyType !== 'UPH') return false
@@ -147,6 +165,7 @@ function buildNavHTML(user, societyType) {
         return '<hr style="border:none;border-top:1px solid rgba(255,255,255,.1);margin:.5rem .85rem"/>'
       }
       let label = item.label
+      if (item.page === 'congressos' && isLocalUmp()) label = 'Credencial'
       if (item.page === 'local-umps') label = `${societyType}s Locais`
       if (item.page === 'members') label = memberLabel
       if (item.page === 'notices') {

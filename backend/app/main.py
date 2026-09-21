@@ -48,6 +48,8 @@ try:
         conn.execute(text("ALTER TABLE congress_commissions ADD COLUMN IF NOT EXISTS final_report_url TEXT;"))
         conn.execute(text("ALTER TABLE congress_commissions ADD COLUMN IF NOT EXISTS approved_at TIMESTAMP WITH TIME ZONE;"))
         conn.execute(text("ALTER TABLE congress_commissions ADD COLUMN IF NOT EXISTS approved_by UUID;"))
+        conn.execute(text("ALTER TABLE congresses ADD COLUMN IF NOT EXISTS min_delegates INTEGER DEFAULT 1;"))
+        conn.execute(text("ALTER TABLE congresses ADD COLUMN IF NOT EXISTS max_delegates INTEGER DEFAULT 5;"))
 except Exception as e:
     import logging
     logging.getLogger("uvicorn").error(f"Error creating database tables or migrating columns: {e}")

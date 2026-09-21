@@ -19,10 +19,14 @@ class Congress(Base):
     status = Column(String(30), nullable=False, default="aberto")  # aberto, encerrado
     created_by = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
 
+    min_delegates = Column(Integer, default=1, nullable=False)
+    max_delegates = Column(Integer, default=5, nullable=False)
+
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     commissions = relationship("CongressCommission", back_populates="congress", cascade="all, delete-orphan", order_by="CongressCommission.name")
+    credentials = relationship("CongressCredential", back_populates="congress", cascade="all, delete-orphan")
 
 
 class CongressCommission(Base):
@@ -90,3 +94,64 @@ class CongressCommissionDocument(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     commission = relationship("CongressCommission", back_populates="documents")
+
+
+class CongressCredential(Base):
+    """Representa a Credencial de Delegados enviada por uma UMP Local para o Congresso."""
+    __tablename__ = "congress_credentials"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    congress_id = Column(UUID(as_uuid=True), ForeignKey("congresses.id", ondelete="CASCADE"), nullable=False, index=True)
+    local_ump_id = Column(UUID(as_uuid=True), ForeignKey("local_umps.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    # Status: rascunho, aguardando_pastor, aprovado_pastor, enviada, homologada
+    status = Column(String(30), nullable=False, default="rascunho")
+
+    city = Column(String(100), nullable=True)
+    document_date = Column(Date, nullable=True)
+
+    # Dados e validação pastoral (Link público e foto selfie)
+    pastor_name = Column(String(200), nullable=True)
+    pastor_token = Column(String(64), unique=True, nullable=False, index=True, default=lambda: secrets.token_urlsafe(24))
+    pastor_selfie_url = Column(Text, nullable=True)
+    pastor_approved_at = Column(DateTime, nullable=True)
+
+    # Assinatura automática da Presidência da UMP
+    president_name = Column(String(200), nullable=True)
+    president_signed_at = Column(DateTime, nullable=True)
+
+    # Envio e Homologação
+    submitted_at = Column(DateTime, nullable=True)
+    submitted_by = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    validation_code = Column(String(64), nullable=True)
+    homologated_at = Column(DateTime, nullable=True)
+    homologated_by = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    notes = Column(Text, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    congress = relationship("Congress", back_populates="credentials")
+    local_ump = relationship("LocalUmp", lazy="joined")
+    delegates = relationship(
+        "CongressCredentialDelegate",
+        back_populates="credential",
+        cascade="all, delete-orphan",
+        order_by="CongressCredentialDelegate.order_index"
+    )
+
+
+class CongressCredentialDelegate(Base):
+    """Representa um delegado listado na Credencial de uma UMP Local."""
+    __tablename__ = "congress_credential_delegates"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    credential_id = Column(UUID(as_uuid=True), ForeignKey("congress_credentials.id", ondelete="CASCADE"), nullable=False, index=True)
+    member_id = Column(UUID(as_uuid=True), ForeignKey("members.id", ondelete="SET NULL"), nullable=True)
+    delegate_name = Column(String(200), nullable=False)
+    order_index = Column(Integer, default=1, nullable=False)
+    is_optional = Column(Boolean, default=False, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    credential = relationship("CongressCredential", back_populates="delegates")
+    member = relationship("Member", foreign_keys=[member_id], lazy="joined")
