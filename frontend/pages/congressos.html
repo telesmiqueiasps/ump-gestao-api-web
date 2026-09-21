@@ -1175,6 +1175,8 @@
         <button type="button" class="btn btn-primary" onclick="saveSelectedDocuments()">Vincular Selecionados</button>
       </div>
     </div>
+  </div>
+
   <!-- ── MODAL: VISUALIZAR DOCUMENTO OFICIAL DA CREDENCIAL ── -->
   <div class="modal-overlay" id="modal-view-credential">
     <div class="modal-box" style="max-width: 760px;">
@@ -1372,6 +1374,7 @@
     let localDelegatesList = []
     let localMembersList = []
     let federationCredentialsData = null
+    let currentFedCredentialsList = []
     let activeCongressSubtab = 'commissions'
     let pendingHomologateCredId = null
     let pendingHomologateLumpName = ''
@@ -2279,10 +2282,11 @@
       document.getElementById('fed-input-min-del').value = d.min_delegates || 1
       document.getElementById('fed-input-max-del').value = d.max_delegates || 5
 
-      const credentialsList = (d.credentials || []).filter(c => {
+      currentFedCredentialsList = (d.credentials || []).filter(c => {
         const name = (c.local_ump_name || '').toLowerCase()
         return !name.includes('eleiç') && !name.includes('eleic')
       })
+      const credentialsList = currentFedCredentialsList
 
       // Preenche KPIs
       document.getElementById('stat-total-locals').textContent = credentialsList.length
@@ -2297,7 +2301,7 @@
         return
       }
 
-      tbody.innerHTML = credentialsList.map(c => {
+      tbody.innerHTML = credentialsList.map((c, idx) => {
         let statusBadge = ''
         if (c.status === 'homologada') {
           statusBadge = '<span class="badge badge-green">Homologada</span>'
@@ -2317,13 +2321,9 @@
         let pastorCell = '—'
         if (c.pastor_name) {
           if (c.pastor_selfie_url) {
-            const escapedUrl = c.pastor_selfie_url.replace(/'/g, "\\'")
-            const escapedPastor = (c.pastor_name || '').replace(/'/g, "\\'")
-            const escapedChurch = (c.church_name || c.local_ump_name || '').replace(/'/g, "\\'")
-            const approvedDateStr = c.pastor_approved_at ? new Date(c.pastor_approved_at).toLocaleString('pt-BR') : ''
             pastorCell = `
               <div style="display:flex; align-items:center; gap:.5rem;">
-                <button type="button" class="avatar-selfie-btn" onclick="openSelfieModal('${escapedUrl}', '${escapedPastor}', '${approvedDateStr}', '${escapedChurch}')" title="Ver foto selfie do pastor">
+                <button type="button" class="avatar-selfie-btn" onclick="openFedSelfieByIndex(${idx})" title="Ver foto selfie do pastor">
                   <img src="${c.pastor_selfie_url}" class="avatar-selfie-thumb" alt="" />
                   <span>Ver Foto</span>
                 </button>
@@ -2352,14 +2352,13 @@
         if (c.id) {
           actionsHtml += `
             <button type="button" class="btn btn-secondary btn-sm" onclick="openCredentialDocPreview('${c.id}')" title="Visualizar documento da credencial" style="padding:.35rem .65rem; font-size:.78rem; display:inline-flex; align-items:center; gap:4px;">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="3"></circle></svg>
               <span>Ver Doc</span>
             </button>
           `
           if (c.status === 'enviada') {
-            const escapedLump = (c.local_ump_name || '').replace(/'/g, "\\'")
             actionsHtml += `
-              <button type="button" class="btn btn-primary btn-sm" onclick="homologateCredential('${c.id}', '${escapedLump}')" title="Homologar credencial" style="padding:.35rem .65rem; font-size:.78rem; margin-left:.35rem; display:inline-flex; align-items:center; gap:4px;">
+              <button type="button" class="btn btn-primary btn-sm" onclick="homologateCredentialByIndex(${idx})" title="Homologar credencial" style="padding:.35rem .65rem; font-size:.78rem; margin-left:.35rem; display:inline-flex; align-items:center; gap:4px;">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 <span>Homologar</span>
               </button>
@@ -2390,6 +2389,22 @@
           </tr>
         `
       }).join('')
+    }
+
+    window.openFedSelfieByIndex = function (idx) {
+      const c = currentFedCredentialsList[idx]
+      if (!c || !c.pastor_selfie_url) {
+        showCredentialAlert('Foto Não Disponível', 'A foto selfie do pastor ainda não foi enviada para esta credencial.')
+        return
+      }
+      const approvedDateStr = c.pastor_approved_at ? new Date(c.pastor_approved_at).toLocaleString('pt-BR') : ''
+      openSelfieModal(c.pastor_selfie_url, c.pastor_name, approvedDateStr, c.church_name || c.local_ump_name)
+    }
+
+    window.homologateCredentialByIndex = function (idx) {
+      const c = currentFedCredentialsList[idx]
+      if (!c) return
+      homologateCredential(c.id, c.local_ump_name || 'UMP Local')
     }
 
     window.saveCongressDelegateLimits = async function () {
@@ -2461,7 +2476,6 @@
         pendingHomologateCredId = null
       }
     }
-
 
     // ── VISÃO DA UMP LOCAL (PRESIDENTE & VICE) ──
     async function initLocalUmpCredentialView() {
@@ -2648,6 +2662,18 @@
       renderLocalDelegatesBuilder()
     }
 
+    window.openLocalPastorSelfie = function () {
+      if (!localCredentialData || !localCredentialData.credential) return
+      const c = localCredentialData.credential
+      if (!c.pastor_selfie_url) {
+        showCredentialAlert('Selfie Não Disponível', 'O pastor da igreja ainda não realizou a aprovação com foto selfie.')
+        return
+      }
+      const pDate = c.pastor_approved_at ? new Date(c.pastor_approved_at).toLocaleString('pt-BR') : ''
+      const church = localCredentialData.local_ump?.church_name || localCredentialData.local_ump?.name || 'Igreja Presbiteriana'
+      openSelfieModal(c.pastor_selfie_url, c.pastor_name, pDate, church)
+    }
+
     function renderLocalPastorSection() {
       const c = localCredentialData.credential
       const area = document.getElementById('local-pastor-status-area')
@@ -2655,13 +2681,10 @@
 
       if (isApproved) {
         const pDate = c.pastor_approved_at ? new Date(c.pastor_approved_at).toLocaleString('pt-BR') : ''
-        const escapedUrl = (c.pastor_selfie_url || '').replace(/'/g, "\\'")
-        const escapedPastor = (c.pastor_name || '').replace(/'/g, "\\'")
-        const escapedChurch = (localCredentialData.local_ump.church_name || '').replace(/'/g, "\\'")
 
         area.innerHTML = `
           <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:var(--radius); padding:1rem 1.25rem; display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
-            <img src="${c.pastor_selfie_url}" class="selfie-thumb" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2.5px solid var(--green-600);cursor:pointer;" onclick="openSelfieModal('${escapedUrl}', '${escapedPastor}', '${pDate}', '${escapedChurch}')" title="Clique para ampliar foto" alt="Selfie do Pastor" />
+            <img src="${c.pastor_selfie_url}" class="selfie-thumb" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2.5px solid var(--green-600);cursor:pointer;" onclick="openLocalPastorSelfie()" title="Clique para ampliar foto" alt="Selfie do Pastor" />
             <div style="flex:1">
               <div style="display:flex; align-items:center; gap:6px;">
                 <span style="font-weight:700; color:var(--green-700); font-size:.95rem;">Aprovado pelo Pastor via Foto Selfie!</span>
@@ -2671,7 +2694,7 @@
                 ${c.pastor_name || 'Pastor'} confirmou a delegação em ${pDate}.
               </div>
             </div>
-            <button type="button" class="btn btn-secondary btn-sm" onclick="openSelfieModal('${escapedUrl}', '${escapedPastor}', '${pDate}', '${escapedChurch}')" style="display:inline-flex; align-items:center; gap:4px;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openLocalPastorSelfie()" style="display:inline-flex; align-items:center; gap:4px;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
               <span>Ver Selfie</span>
             </button>
@@ -2709,11 +2732,6 @@
     function updateLocalActionButtons() {
       const c = localCredentialData.credential
       const isSent = c.status === 'enviada' || c.status === 'homologada'
-      const isPastorApp = (c.status === 'aprovado_pastor' || isSent) && c.pastor_selfie_url
-
-      const minD = localCredentialData.congress.min_delegates || 1
-      const maxD = localCredentialData.congress.max_delegates || 5
-      const count = localDelegatesList.filter(d => d.delegate_name && d.delegate_name.trim()).length
 
       const btnSave = document.getElementById('btn-save-local-draft')
       const btnSubmit = document.getElementById('btn-submit-local-cred')
@@ -2721,7 +2739,7 @@
       if (btnSave) btnSave.style.display = isSent ? 'none' : 'inline-flex'
       if (btnSubmit) {
         btnSubmit.style.display = isSent ? 'none' : 'inline-flex'
-        btnSubmit.disabled = !(isPastorApp && count >= minD && count <= maxD)
+        // Botão permanece clicável para que ao clicar o usuário receba avisos orientativos se algo faltar
       }
 
       // Badge de assinatura da presidência
@@ -2834,6 +2852,20 @@
       btn.innerHTML = `<span style="width:13px;height:13px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;display:inline-block;animation:spin .8s linear infinite;"></span> <span>Enviando à Federação...</span>`
 
       try {
+        const pastor = document.getElementById('local-input-pastor')?.value.trim() || c.pastor_name
+        const cleanedDelegates = localDelegatesList
+          .filter(d => d.delegate_name && d.delegate_name.trim())
+          .map(d => ({
+            delegate_name: d.delegate_name.trim(),
+            member_id: d.member_id || null,
+            is_optional: false
+          }))
+
+        await api.post(`/api/congresses/${localCredentialData.congress.id}/my-credential`, {
+          delegates: cleanedDelegates,
+          pastor_name: pastor
+        })
+
         const res = await api.post(`/api/congresses/credentials/${c.id}/submit`)
         localCredentialData.credential = res.credential
         closeModal('modal-confirm-submit-cred')
@@ -2926,10 +2958,18 @@
       }
 
       // Lista de delegados formatada
-      const dels = targetCred.delegates || localDelegatesList || []
+      let dels = []
+      if (!credId && localDelegatesList && localDelegatesList.length > 0) {
+        dels = localDelegatesList.filter(d => d.delegate_name && d.delegate_name.trim())
+      } else if (targetCred.delegates && targetCred.delegates.length > 0) {
+        dels = targetCred.delegates
+      } else if (localDelegatesList && localDelegatesList.length > 0) {
+        dels = localDelegatesList.filter(d => d.delegate_name && d.delegate_name.trim())
+      }
+
       let delsHtml = ''
       if (dels.length === 0) {
-        delsHtml = '<div style="text-align:center;color:#64748b;font-style:italic">Nenhum delegado inserido.</div>'
+        delsHtml = '<div style="text-align:center;color:#64748b;font-style:italic">Nenhum delegado inserido no momento.</div>'
       } else {
         dels.forEach((d, i) => {
           const dName = (d.delegate_name || '').toUpperCase()
@@ -2946,7 +2986,7 @@
       }
 
       // Assinatura do Presidente
-      const presName = targetCred.president_name || 'Presidente da UMP'
+      const presName = targetCred.president_name || (!credId ? (localCredentialData?.current_user_name || 'Presidente da UMP') : 'Presidente da UMP')
       let presMeta = ''
       if (targetCred.submitted_at || targetCred.president_signed_at) {
         const dStr = new Date(targetCred.president_signed_at || targetCred.submitted_at).toLocaleDateString('pt-BR')
@@ -2954,7 +2994,8 @@
       }
 
       // Assinatura do Pastor
-      const pastName = targetCred.pastor_name || 'Pastor da Igreja'
+      const inputPast = !credId ? document.getElementById('local-input-pastor')?.value.trim() : null
+      const pastName = inputPast || targetCred.pastor_name || 'Pastor da Igreja'
       let pastMeta = ''
       if (targetCred.pastor_approved_at && targetCred.pastor_selfie_url) {
         const dStr = new Date(targetCred.pastor_approved_at).toLocaleDateString('pt-BR')
@@ -3013,7 +3054,13 @@
         </div>
       `
 
-      document.getElementById('btn-modal-download-pdf').href = `${API_BASE}/api/congresses/credentials/${targetCred.id}/pdf`
+      const btnDl = document.getElementById('btn-modal-download-pdf')
+      if (targetCred.id) {
+        btnDl.href = `${API_BASE}/api/congresses/credentials/${targetCred.id}/pdf`
+        btnDl.style.display = 'inline-flex'
+      } else {
+        btnDl.style.display = 'none'
+      }
       openModal('modal-view-credential')
     }
 
@@ -3023,6 +3070,10 @@
 
     // ── MODAL: SELFIE DO PASTOR ──
     window.openSelfieModal = function (url, pastorName, approvedAt, churchName) {
+      if (!url) {
+        showCredentialAlert('Foto Não Encontrada', 'A selfie de aprovação pastoral ainda não foi anexada a esta credencial.')
+        return
+      }
       document.getElementById('modal-selfie-img').src = url
       document.getElementById('modal-selfie-pastor-name').textContent = pastorName || 'Pastor da Igreja'
       document.getElementById('modal-selfie-church-name').textContent = churchName || 'Igreja Presbiteriana'
