@@ -1232,6 +1232,119 @@
     </div>
   </div>
 
+  <!-- ── MODAL: CONFIRMAR HOMOLOGAÇÃO (FEDERAÇÃO) ── -->
+  <div class="modal-overlay" id="modal-confirm-homologate">
+    <div class="modal-box" style="max-width: 480px;">
+      <div class="modal-box-header">
+        <div style="display:flex; align-items:center; gap:.5rem;">
+          <div style="width:34px; height:34px; border-radius:50%; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><polyline points="9 12 11 14 15 10"></polyline></svg>
+          </div>
+          <h3 style="font-weight:700; font-size:1.05rem; color:var(--slate-800)">Homologar Credencial</h3>
+        </div>
+        <button type="button" class="modal-close" onclick="closeModal('modal-confirm-homologate')" aria-label="Fechar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="modal-box-body">
+        <p style="font-size:.92rem; color:var(--slate-700); line-height:1.5;">
+          Confirma a homologação oficial da credencial enviada pela <b id="homologate-modal-lump-name" style="color:var(--slate-900)"></b>?
+        </p>
+        <div style="background:#f8fafc; border:1px solid var(--slate-200); border-radius:var(--radius); padding:.75rem 1rem; margin-top:.85rem; font-size:.82rem; color:var(--slate-600); line-height:1.45;">
+          <div style="font-weight:600; color:var(--slate-800); margin-bottom:.2rem;">Efeito da Homologação:</div>
+          Esta ação valida oficialmente a delegação da UMP Local para o credenciamento e votação no congresso. O status passará para <b>Homologada</b>.
+        </div>
+      </div>
+      <div class="modal-box-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-confirm-homologate')">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-do-homologate" onclick="executeHomologateAction()" style="display:inline-flex; align-items:center; gap:6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <span>Confirmar Homologação</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODAL: CONFIRMAR ENVIO DA CREDENCIAL (UMP LOCAL) ── -->
+  <div class="modal-overlay" id="modal-confirm-submit-cred">
+    <div class="modal-box" style="max-width: 520px;">
+      <div class="modal-box-header">
+        <div style="display:flex; align-items:center; gap:.5rem;">
+          <div style="width:34px; height:34px; border-radius:50%; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+          </div>
+          <h3 style="font-weight:700; font-size:1.05rem; color:var(--slate-800)">Confirmar Envio Oficial</h3>
+        </div>
+        <button type="button" class="modal-close" onclick="closeModal('modal-confirm-submit-cred')" aria-label="Fechar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="modal-box-body">
+        <p style="font-size:.9rem; color:var(--slate-700); line-height:1.5; margin-bottom:.85rem;">
+          Você está prestes a assinar e enviar a credencial de delegados para a <b>Federação</b>:
+        </p>
+
+        <div style="background:#f8fafc; border:1px solid var(--slate-200); border-radius:var(--radius); padding:.85rem 1rem; font-size:.84rem; display:flex; flex-direction:column; gap:.45rem;">
+          <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--slate-200); padding-bottom:.35rem;">
+            <span style="color:var(--slate-500)">UMP Local:</span>
+            <strong id="modal-submit-summary-ump" style="color:var(--slate-800)"></strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--slate-200); padding-bottom:.35rem;">
+            <span style="color:var(--slate-500)">Delegação:</span>
+            <strong id="modal-submit-summary-dels" style="color:var(--slate-800)"></strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--slate-200); padding-bottom:.35rem;">
+            <span style="color:var(--slate-500)">Aprovação do Pastor:</span>
+            <span style="color:var(--green-700); font-weight:600; display:inline-flex; align-items:center; gap:4px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              Aprovado com Foto Selfie
+            </span>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="color:var(--slate-500)">Assinatura Presidencial:</span>
+            <strong id="modal-submit-summary-pres" style="color:var(--slate-800)"></strong>
+          </div>
+        </div>
+
+        <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:var(--radius); padding:.75rem 1rem; margin-top:.85rem; font-size:.8rem; color:#92400e; display:flex; align-items:flex-start; gap:8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:2px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <div>
+            <b>Importante:</b> Após a confirmação, o documento será transmitido à diretoria da Federação e ficará <b>bloqueado contra novas alterações</b>.
+          </div>
+        </div>
+      </div>
+      <div class="modal-box-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-confirm-submit-cred')">Revisar Dados</button>
+        <button type="button" class="btn btn-primary" id="btn-do-submit-cred" onclick="executeSubmitCredentialAction()" style="display:inline-flex; align-items:center; gap:6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <span>Confirmar e Enviar</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODAL: ALERTA / ERRO / INFORMATIVO ── -->
+  <div class="modal-overlay" id="modal-credential-alert">
+    <div class="modal-box" style="max-width: 460px;">
+      <div class="modal-box-header">
+        <div style="display:flex; align-items:center; gap:.5rem;">
+          <div id="cred-alert-icon-wrap" style="width:34px; height:34px; border-radius:50%; background:#fffbeb; color:#d97706; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          </div>
+          <h3 style="font-weight:700; font-size:1.05rem; color:var(--slate-800)" id="modal-cred-alert-title">Atenção</h3>
+        </div>
+        <button type="button" class="modal-close" onclick="closeModal('modal-credential-alert')" aria-label="Fechar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="modal-box-body" style="font-size:.9rem; color:var(--slate-700); line-height:1.5;" id="modal-cred-alert-body">
+      </div>
+      <div class="modal-box-footer">
+        <button type="button" class="btn btn-primary" onclick="closeModal('modal-credential-alert')">Entendido</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast para cópia de link -->
   <div id="toast-copy" class="toast-copy" style="display:none;align-items:center;gap:6px">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -1242,6 +1355,10 @@
     import { api } from '../assets/js/api.js'
     import { getUser, requireAuth, isFederation, isLocalUmp } from '../assets/js/auth.js'
     import { renderShell, canAccessPage, renderBottomNav } from '../assets/js/router.v3.js?v=11'
+
+    const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? ''
+      : 'https://umpgestaopopb-825585682536.us-west1.run.app'
 
     let currentUser = null
     let congressesList = []
@@ -1256,6 +1373,29 @@
     let localMembersList = []
     let federationCredentialsData = null
     let activeCongressSubtab = 'commissions'
+    let pendingHomologateCredId = null
+    let pendingHomologateLumpName = ''
+
+    // Helper para modais de aviso/erro com estilo moderno
+    window.showCredentialAlert = function (title, message, type = 'warning') {
+      document.getElementById('modal-cred-alert-title').textContent = title
+      document.getElementById('modal-cred-alert-body').innerHTML = message
+      const wrap = document.getElementById('cred-alert-icon-wrap')
+      if (type === 'error') {
+        wrap.style.background = '#fef2f2'
+        wrap.style.color = '#dc2626'
+        wrap.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`
+      } else if (type === 'success') {
+        wrap.style.background = '#f0fdf4'
+        wrap.style.color = '#16a34a'
+        wrap.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`
+      } else {
+        wrap.style.background = '#fffbeb'
+        wrap.style.color = '#d97706'
+        wrap.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`
+      }
+      openModal('modal-credential-alert')
+    }
 
       // ── INICIALIZAÇÃO ──
       ; (async () => {
@@ -2226,7 +2366,7 @@
             `
           }
           actionsHtml += `
-            <a href="/api/congresses/credentials/${c.id}/pdf" target="_blank" class="btn btn-secondary btn-sm" title="Baixar PDF Oficial" style="padding:.35rem .55rem; font-size:.78rem; margin-left:.35rem; display:inline-flex; align-items:center;">
+            <a href="${API_BASE}/api/congresses/credentials/${c.id}/pdf" target="_blank" class="btn btn-secondary btn-sm" title="Baixar PDF Oficial" style="padding:.35rem .55rem; font-size:.78rem; margin-left:.35rem; display:inline-flex; align-items:center;">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
             </a>
           `
@@ -2258,13 +2398,18 @@
       const max = parseInt(document.getElementById('fed-input-max-del').value) || 5
 
       if (min < 1) {
-        alert('A quantidade mínima de delegados deve ser pelo menos 1.')
+        showCredentialAlert('Limites Inválidos', 'A quantidade mínima de delegados deve ser de pelo menos 1.')
         return
       }
       if (max < min) {
-        alert('A quantidade máxima não pode ser menor que a quantidade mínima.')
+        showCredentialAlert('Limites Inválidos', 'A quantidade máxima não pode ser menor que a quantidade mínima de delegados.')
         return
       }
+
+      const btn = document.getElementById('btn-save-del-limits')
+      const origHtml = btn.innerHTML
+      btn.disabled = true
+      btn.innerHTML = `<span style="width:13px;height:13px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;display:inline-block;animation:spin .8s linear infinite;"></span> <span>Salvando...</span>`
 
       try {
         const res = await api.put(`/api/congresses/${activeCongress.id}/delegate-limits`, {
@@ -2279,20 +2424,41 @@
           federationCredentialsData.max_delegates = max
         }
       } catch (err) {
-        alert('Erro ao salvar limites: ' + (err.message || err))
+        showCredentialAlert('Erro ao Salvar Limites', err.message || 'Falha ao atualizar limites de delegados.', 'error')
+      } finally {
+        btn.disabled = false
+        btn.innerHTML = origHtml
       }
     }
 
-    window.homologateCredential = async function (credId, lumpName) {
-      if (!confirm(`Deseja homologar oficialmente a credencial da UMP ${lumpName}?`)) return
+    window.homologateCredential = function (credId, lumpName) {
+      pendingHomologateCredId = credId
+      pendingHomologateLumpName = lumpName
+      document.getElementById('homologate-modal-lump-name').textContent = lumpName
+      openModal('modal-confirm-homologate')
+    }
+
+    window.executeHomologateAction = async function () {
+      if (!pendingHomologateCredId) return
+      const btn = document.getElementById('btn-do-homologate')
+      const origHtml = btn.innerHTML
+      btn.disabled = true
+      btn.innerHTML = `<span style="width:13px;height:13px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;display:inline-block;animation:spin .8s linear infinite;"></span> <span>Homologando...</span>`
+
       try {
-        await api.post(`/api/congresses/credentials/${credId}/homologate`)
-        showToast('Credencial homologada com sucesso!')
+        await api.post(`/api/congresses/credentials/${pendingHomologateCredId}/homologate`)
+        closeModal('modal-confirm-homologate')
+        showToast(`Credencial da UMP ${pendingHomologateLumpName} homologada com sucesso!`)
         if (activeCongress) {
           await loadFederationCredentials(activeCongress.id)
         }
       } catch (err) {
-        alert('Erro ao homologar credencial: ' + (err.message || err))
+        closeModal('modal-confirm-homologate')
+        showCredentialAlert('Erro na Homologação', err.message || 'Falha ao homologar a credencial.', 'error')
+      } finally {
+        btn.disabled = false
+        btn.innerHTML = origHtml
+        pendingHomologateCredId = null
       }
     }
 
@@ -2598,6 +2764,11 @@
           is_optional: false
         }))
 
+      const btn = document.getElementById('btn-save-local-draft')
+      const origHtml = btn.innerHTML
+      btn.disabled = true
+      btn.innerHTML = `<span style="width:13px;height:13px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;display:inline-block;animation:spin .8s linear infinite;"></span> <span>Salvando rascunho...</span>`
+
       try {
         const res = await api.post(`/api/congresses/${localCredentialData.congress.id}/my-credential`, {
           delegates: cleanedDelegates,
@@ -2609,11 +2780,14 @@
         renderLocalPastorSection()
         updateLocalActionButtons()
       } catch (err) {
-        alert('Erro ao salvar rascunho: ' + (err.message || err))
+        showCredentialAlert('Erro ao Salvar Rascunho', err.message || 'Falha ao salvar rascunho.', 'error')
+      } finally {
+        btn.disabled = false
+        btn.innerHTML = origHtml
       }
     }
 
-    window.handleSubmitLocalCredential = async function () {
+    window.handleSubmitLocalCredential = function () {
       if (!localCredentialData) return
       const c = localCredentialData.credential
       const minD = localCredentialData.congress.min_delegates || 1
@@ -2621,28 +2795,63 @@
       const count = localDelegatesList.filter(d => d.delegate_name && d.delegate_name.trim()).length
 
       if (count < minD) {
-        alert(`A credencial precisa conter pelo menos ${minD} delegado(s). Atualmente você adicionou ${count}.`)
+        showCredentialAlert(
+          'Delegados Insuficientes',
+          `Sua credencial precisa conter pelo menos <b>${minD} delegado(s)</b>.<br/><br/>Atualmente foram adicionados <b>${count}</b>. Por favor, adicione os delegados obrigatórios antes de enviar.`
+        )
         return
       }
       if (count > maxD) {
-        alert(`A credencial permite no máximo ${maxD} delegados. Atualmente você adicionou ${count}.`)
+        showCredentialAlert(
+          'Limite de Delegados Excedido',
+          `O limite máximo permitido pela Federação é de <b>${maxD} delegados</b>.<br/><br/>Atualmente foram adicionados <b>${count}</b>.`
+        )
         return
       }
 
-      if (!confirm('Confirma o envio oficial da Credencial de Delegados à Federação?\n\nSua assinatura eletrônica de Presidente/Vice será registrada e o documento ficará bloqueado para alterações.')) {
+      if (!c.pastor_selfie_url || c.status !== 'aprovado_pastor') {
+        showCredentialAlert(
+          'Aprovação Pastoral Obrigatória',
+          'O Pastor da igreja precisa conferir e aprovar a credencial com uma <b>foto selfie</b> antes do envio oficial à Federação.<br/><br/>Envie o link seguro para o pastor via <b>WhatsApp</b> ou copie o link e aguarde a selfie de confirmação.'
+        )
         return
       }
+
+      // Preenche os dados no modal de confirmação
+      document.getElementById('modal-submit-summary-ump').textContent = localCredentialData.local_ump.name || 'UMP Local'
+      document.getElementById('modal-submit-summary-dels').textContent = `${count} delegado(s) (${Math.min(count, minD)} titular(es))`
+      document.getElementById('modal-submit-summary-pres').textContent = `${localCredentialData.current_user_name} (${localCredentialData.current_user_role})`
+
+      openModal('modal-confirm-submit-cred')
+    }
+
+    window.executeSubmitCredentialAction = async function () {
+      if (!localCredentialData) return
+      const c = localCredentialData.credential
+      const btn = document.getElementById('btn-do-submit-cred')
+      const origHtml = btn.innerHTML
+      btn.disabled = true
+      btn.innerHTML = `<span style="width:13px;height:13px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;display:inline-block;animation:spin .8s linear infinite;"></span> <span>Enviando à Federação...</span>`
 
       try {
         const res = await api.post(`/api/congresses/credentials/${c.id}/submit`)
         localCredentialData.credential = res.credential
-        alert('Credencial enviada com sucesso à Federação!')
+        closeModal('modal-confirm-submit-cred')
+        showCredentialAlert(
+          'Credencial Enviada!',
+          'A credencial de delegados foi assinada e <b>enviada com sucesso à Federação</b>!<br/><br/>O documento oficial já pode ser visualizado ou impresso em PDF.',
+          'success'
+        )
         renderLocalStatusTracker()
         renderLocalDelegatesBuilder()
         renderLocalPastorSection()
         updateLocalActionButtons()
       } catch (err) {
-        alert('Erro ao enviar credencial: ' + (err.message || err))
+        closeModal('modal-confirm-submit-cred')
+        showCredentialAlert('Erro no Envio', err.message || 'Falha ao enviar a credencial.', 'error')
+      } finally {
+        btn.disabled = false
+        btn.innerHTML = origHtml
       }
     }
 
@@ -2667,7 +2876,7 @@
       }
 
       if (!targetCred) {
-        alert('Dados da credencial não encontrados para visualização.')
+        showCredentialAlert('Documento Não Encontrado', 'Não foi possível localizar os dados desta credencial para visualização.', 'error')
         return
       }
 
@@ -2683,6 +2892,38 @@
       const dateStr = `${cidade}, ${today.getDate()} de ${meses[today.getMonth()]} de ${today.getFullYear()}.`
 
       const church = targetLump?.church_name || targetLump?.name || 'IGREJA PRESBITERIANA'
+
+      // Faixa de status do documento
+      let statusNoticeHtml = ''
+      if (targetCred.status === 'homologada') {
+        statusNoticeHtml = `
+          <div style="background:#f0fdf4; border:1px solid #bbf7d0; color:#166534; border-radius:6px; padding:.5rem .85rem; margin-bottom:1.25rem; font-size:.82rem; display:flex; align-items:center; gap:6px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span><b>Documento Oficial Homologado:</b> Credencial validada pela diretoria da Federação.</span>
+          </div>
+        `
+      } else if (targetCred.status === 'enviada') {
+        statusNoticeHtml = `
+          <div style="background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af; border-radius:6px; padding:.5rem .85rem; margin-bottom:1.25rem; font-size:.82rem; display:flex; align-items:center; gap:6px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+            <span><b>Enviada à Federação:</b> Assinada pelo Presidente da UMP Local. Aguardando homologação da diretoria.</span>
+          </div>
+        `
+      } else if (targetCred.status === 'aprovado_pastor') {
+        statusNoticeHtml = `
+          <div style="background:#fefce8; border:1px solid #fef08a; color:#854d0e; border-radius:6px; padding:.5rem .85rem; margin-bottom:1.25rem; font-size:.82rem; display:flex; align-items:center; gap:6px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            <span><b>Aprovada pelo Pastor com Selfie:</b> Pendente de envio oficial pelo Presidente da UMP Local.</span>
+          </div>
+        `
+      } else {
+        statusNoticeHtml = `
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; color:#475569; border-radius:6px; padding:.5rem .85rem; margin-bottom:1.25rem; font-size:.82rem; display:flex; align-items:center; gap:6px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            <span><b>Prévia do Documento:</b> Rascunho em elaboração. As assinaturas oficiais serão ativadas após aprovação pastoral e envio.</span>
+          </div>
+        `
+      }
 
       // Lista de delegados formatada
       const dels = targetCred.delegates || localDelegatesList || []
@@ -2721,6 +2962,7 @@
       }
 
       area.innerHTML = `
+        ${statusNoticeHtml}
         <div style="text-align:center; margin-bottom:1.5rem;">
           <img src="/assets/img/logo_parecer.png" style="height:65px; object-fit:contain; margin-bottom:.5rem;" onerror="this.src='/assets/img/logo_icone.png'" />
           <h2 style="font-size:.95rem; font-weight:800; color:#0f172a; letter-spacing:.4px;">IGREJA PRESBITERIANA DO BRASIL</h2>
@@ -2771,7 +3013,7 @@
         </div>
       `
 
-      document.getElementById('btn-modal-download-pdf').href = `/api/congresses/credentials/${targetCred.id}/pdf`
+      document.getElementById('btn-modal-download-pdf').href = `${API_BASE}/api/congresses/credentials/${targetCred.id}/pdf`
       openModal('modal-view-credential')
     }
 

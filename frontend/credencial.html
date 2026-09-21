@@ -798,6 +798,10 @@
   </div>
 
   <script>
+    const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:8000'
+      : 'https://umpgestaopopb-825585682536.us-west1.run.app'
+
     let token = new URLSearchParams(window.location.search).get('token')
     let credData = null
     let activeStream = null
@@ -815,10 +819,18 @@
 
     async function loadCredential() {
       try {
-        const resp = await fetch(`/api/congresses/public/credential/${token}`)
+        const resp = await fetch(`${API_BASE}/api/congresses/public/credential/${token}`)
+        const contentType = resp.headers.get('content-type') || ''
         if (!resp.ok) {
-          const err = await resp.json().catch(() => ({}))
-          throw new Error(err.detail || 'Não foi possível carregar a credencial.')
+          let errMsg = 'Não foi possível carregar a credencial.'
+          if (contentType.includes('application/json')) {
+            const err = await resp.json().catch(() => ({}))
+            errMsg = err.detail || errMsg
+          }
+          throw new Error(errMsg)
+        }
+        if (!contentType.includes('application/json')) {
+          throw new Error('Resposta do servidor em formato inválido. Verifique o link e tente novamente.')
         }
         credData = await resp.json()
         renderCredential()
@@ -930,7 +942,7 @@
         const fullApprovalDate = c.pastor_approved_at ? new Date(c.pastor_approved_at).toLocaleString('pt-BR') : ''
         document.getElementById('approval-success-meta').textContent = `Documento autenticado digitalmente em ${fullApprovalDate}.`
         document.getElementById('approved-timestamp-text').textContent = `Aprovado em ${fullApprovalDate}`
-        document.getElementById('btn-download-pdf').href = `/api/congresses/credentials/${c.id}/pdf`
+        document.getElementById('btn-download-pdf').href = `${API_BASE}/api/congresses/credentials/${c.id}/pdf`
       } else {
         // Tag no documento
         document.getElementById('sign-pastor-tag').className = 'signature-status-tag tag-pending'
@@ -1106,7 +1118,7 @@
           formData.append('selfie_base64', capturedBase64)
         }
 
-        const resp = await fetch(`/api/congresses/public/credential/${token}/approve`, {
+        const resp = await fetch(`${API_BASE}/api/congresses/public/credential/${token}/approve`, {
           method: 'POST',
           body: formData
         })
