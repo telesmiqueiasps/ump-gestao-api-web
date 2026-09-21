@@ -2139,20 +2139,25 @@
       document.getElementById('fed-input-min-del').value = d.min_delegates || 1
       document.getElementById('fed-input-max-del').value = d.max_delegates || 5
 
+      const credentialsList = (d.credentials || []).filter(c => {
+        const name = (c.local_ump_name || '').toLowerCase()
+        return !name.includes('eleiç') && !name.includes('eleic')
+      })
+
       // Preenche KPIs
-      document.getElementById('stat-total-locals').textContent = d.summary.total_local_umps
-      document.getElementById('stat-submitted').textContent = d.summary.total_submitted
-      document.getElementById('stat-pastor-approved').textContent = d.summary.total_pastor_approved
-      document.getElementById('stat-pending').textContent = d.summary.total_pending
-      document.getElementById('stat-total-delegates').textContent = d.summary.total_delegates
+      document.getElementById('stat-total-locals').textContent = credentialsList.length
+      document.getElementById('stat-submitted').textContent = credentialsList.filter(c => c.status === 'enviada' || c.status === 'homologada').length
+      document.getElementById('stat-pastor-approved').textContent = credentialsList.filter(c => c.status === 'aprovado_pastor').length
+      document.getElementById('stat-pending').textContent = credentialsList.filter(c => c.status !== 'enviada' && c.status !== 'homologada' && c.status !== 'aprovado_pastor').length
+      document.getElementById('stat-total-delegates').textContent = credentialsList.reduce((acc, c) => acc + (c.delegates_count || 0), 0)
 
       const tbody = document.getElementById('fed-credentials-tbody')
-      if (!d.credentials || d.credentials.length === 0) {
+      if (credentialsList.length === 0) {
         tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:2rem; color:var(--slate-500)">Nenhuma UMP Local cadastrada nesta Federação.</td></tr>`
         return
       }
 
-      tbody.innerHTML = d.credentials.map(c => {
+      tbody.innerHTML = credentialsList.map(c => {
         let statusBadge = ''
         if (c.status === 'homologada') {
           statusBadge = '<span class="badge badge-green">Homologada</span>'
@@ -2297,7 +2302,7 @@
       // Ajusta cabeçalho
       document.getElementById('page-title').textContent = 'Credencial do Congresso'
       document.getElementById('page-subtitle').textContent = 'Preenchimento, aprovação pastoral por selfie e envio de delegados'
-      document.getElementById('breadcrumb-area').innerHTML = '<span>Congressos</span> &gt; <span>Credencial</span>'
+      document.getElementById('breadcrumb-area').innerHTML = '<span>Credencial</span> &gt; <span>Enviar Delegados</span>'
 
       const pageActions = document.getElementById('page-actions-area')
       if (pageActions) pageActions.style.display = 'none'

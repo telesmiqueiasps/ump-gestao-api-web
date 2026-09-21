@@ -286,6 +286,103 @@ def create_congress(
     return _serialize_congress(congress, include_commissions=True)
 
 
+def _is_local_leader(user_id: UUID, db: Session) -> tuple[bool, str]:
+    """Verifica se o usuário possui cargo ativo de Presidente ou Vice-Presidente da UMP Local."""
+    roles = db.query(UserRole).filter(
+        UserRole.user_id == user_id,
+        UserRole.is_active == True
+    ).all()
+    role_names = [r.role.value if hasattr(r.role, 'value') else str(r.role) for r in roles]
+    if "presidente" in role_names:
+        return True, "Presidente"
+    if "vice_presidente" in role_names:
+        return True, "Vice-Presidente"
+    return False, ""
+
+
+@router.get("/active-for-local")
+def get_active_congress_for_local(
+    current_user: User = Depends(require_local_ump),
+    db: Session = Depends(get_db)
+):
+    """
+    Retorna o congresso ativo da federação para a UMP Local do usuário,
+    junto aos limites de delegados e a credencial atual.
+    Acesso restrito a Presidente e Vice-Presidente da UMP Local.
+    """
+    is_leader, role_label = _is_local_leader(current_user.id, db)
+    if not is_leader:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas o Presidente e o Vice-Presidente da UMP Local têm acesso à Credencial do Congresso."
+        )
+
+    local_ump = db.query(LocalUmp).filter(LocalUmp.id == current_user.organization_id).first()
+    if not local_ump:
+        raise HTTPException(status_code=404, detail="UMP Local não encontrada.")
+
+    # Busca congresso aberto da federação vinculada
+    congress = db.query(Congress).filter(
+        Congress.federation_id == local_ump.federation_id,
+        Congress.status == "aberto"
+    ).order_by(desc(Congress.fiscal_year), desc(Congress.created_at)).first()
+
+    if not congress:
+        return {
+            "has_active_congress": False,
+            "message": "Nenhum congresso aberto no momento pela sua Federação."
+        }
+
+    # Busca ou cria a credencial da UMP local para este congresso
+    cred = db.query(CongressCredential).filter(
+        CongressCredential.congress_id == congress.id,
+        CongressCredential.local_ump_id == local_ump.id
+    ).first()
+
+    if not cred:
+        cred = CongressCredential(
+            congress_id=congress.id,
+            local_ump_id=local_ump.id,
+            status="rascunho",
+            city=local_ump.cidade or "Patos",
+            pastor_name=local_ump.pastor_name,
+            document_date=date.today()
+        )
+        db.add(cred)
+        db.commit()
+        db.refresh(cred)
+
+    fed = db.query(Federation).filter(Federation.id == local_ump.federation_id).first()
+    active_members = db.query(Member).filter(
+        Member.local_ump_id == local_ump.id,
+        Member.is_active == True
+    ).order_by(Member.full_name).all()
+
+    return {
+        "has_active_congress": True,
+        "congress": _serialize_congress(congress, include_commissions=False),
+        "credential": _serialize_credential(cred, include_token=True),
+        "federation": {
+            "name": fed.name if fed else "",
+            "presbytery_name": fed.presbytery_name if fed else "",
+            "synodal_name": fed.synodal_name if fed else "",
+        },
+        "local_ump": {
+            "id": str(local_ump.id),
+            "name": local_ump.name,
+            "church_name": local_ump.church_name,
+            "pastor_name": local_ump.pastor_name,
+            "cidade": local_ump.cidade,
+        },
+        "members": [
+            {"id": str(m.id), "full_name": m.full_name}
+            for m in active_members
+        ],
+        "current_user_name": current_user.full_name,
+        "current_user_role": role_label
+    }
+
+
 @router.get("/{congress_id}")
 def get_congress(
     congress_id: UUID,
@@ -556,7 +653,10 @@ def get_available_documents(
 
     locals_in_fed = db.query(LocalUmp).filter(
         LocalUmp.federation_id == fed_id,
-        LocalUmp.id != fed_id
+        LocalUmp.id != fed_id,
+        ~LocalUmp.name.ilike('%eleiç%'),
+        ~LocalUmp.name.ilike('%eleic%'),
+        LocalUmp.is_active == True
     ).order_by(LocalUmp.name.asc()).all()
 
     documents = []
@@ -1135,89 +1235,6 @@ def preview_public_commission_pdf(
 
 # ── ROTAS DE CREDENCIAIS (FEDERAÇÃO, UMP LOCAL E PÚBLICO) ──
 
-@router.get("/active-for-local")
-def get_active_congress_for_local(
-    current_user: User = Depends(require_local_ump),
-    db: Session = Depends(get_db)
-):
-    """
-    Retorna o congresso ativo da federação para a UMP Local do usuário,
-    junto aos limites de delegados e a credencial atual.
-    Acesso restrito a Presidente e Vice-Presidente da UMP Local.
-    """
-    user_roles = [r.role.value if hasattr(r.role, 'value') else str(r.role) for r in current_user.roles if r.is_active]
-    if not ("presidente" in user_roles or "vice_presidente" in user_roles):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Apenas o Presidente e o Vice-Presidente da UMP Local têm acesso à Credencial do Congresso."
-        )
-
-    local_ump = db.query(LocalUmp).filter(LocalUmp.id == current_user.organization_id).first()
-    if not local_ump:
-        raise HTTPException(status_code=404, detail="UMP Local não encontrada.")
-
-    # Busca congresso aberto da federação vinculada
-    congress = db.query(Congress).filter(
-        Congress.federation_id == local_ump.federation_id,
-        Congress.status == "aberto"
-    ).order_by(desc(Congress.fiscal_year), desc(Congress.created_at)).first()
-
-    if not congress:
-        return {
-            "has_active_congress": False,
-            "message": "Nenhum congresso aberto no momento pela sua Federação."
-        }
-
-    # Busca ou cria a credencial da UMP local para este congresso
-    cred = db.query(CongressCredential).filter(
-        CongressCredential.congress_id == congress.id,
-        CongressCredential.local_ump_id == local_ump.id
-    ).first()
-
-    if not cred:
-        cred = CongressCredential(
-            congress_id=congress.id,
-            local_ump_id=local_ump.id,
-            status="rascunho",
-            city=local_ump.cidade or "Patos",
-            pastor_name=local_ump.pastor_name,
-            document_date=date.today()
-        )
-        db.add(cred)
-        db.commit()
-        db.refresh(cred)
-
-    fed = db.query(Federation).filter(Federation.id == local_ump.federation_id).first()
-    active_members = db.query(Member).filter(
-        Member.local_ump_id == local_ump.id,
-        Member.is_active == True
-    ).order_by(Member.full_name).all()
-
-    return {
-        "has_active_congress": True,
-        "congress": _serialize_congress(congress, include_commissions=False),
-        "credential": _serialize_credential(cred, include_token=True),
-        "federation": {
-            "name": fed.name if fed else "",
-            "presbytery_name": fed.presbytery_name if fed else "",
-            "synodal_name": fed.synodal_name if fed else "",
-        },
-        "local_ump": {
-            "id": str(local_ump.id),
-            "name": local_ump.name,
-            "church_name": local_ump.church_name,
-            "pastor_name": local_ump.pastor_name,
-            "cidade": local_ump.cidade,
-        },
-        "members": [
-            {"id": str(m.id), "full_name": m.full_name}
-            for m in active_members
-        ],
-        "current_user_name": current_user.full_name,
-        "current_user_role": "Presidente" if "presidente" in user_roles else "Vice-Presidente"
-    }
-
-
 @router.post("/{congress_id}/my-credential")
 def save_my_credential(
     congress_id: UUID,
@@ -1226,9 +1243,12 @@ def save_my_credential(
     db: Session = Depends(get_db)
 ):
     """Salva os dados do rascunho da credencial e a lista de delegados pela UMP Local."""
-    user_roles = [r.role.value if hasattr(r.role, 'value') else str(r.role) for r in current_user.roles if r.is_active]
-    if not ("presidente" in user_roles or "vice_presidente" in user_roles):
-        raise HTTPException(status_code=403, detail="Apenas Presidente e Vice-Presidente podem preencher a credencial.")
+    is_leader, _ = _is_local_leader(current_user.id, db)
+    if not is_leader:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas o Presidente e o Vice-Presidente da UMP Local têm permissão para preencher a credencial."
+        )
 
     local_ump = db.query(LocalUmp).filter(LocalUmp.id == current_user.organization_id).first()
     if not local_ump:
@@ -1313,9 +1333,12 @@ def submit_credential_to_federation(
     3. Registra a assinatura automática do Presidente logado.
     4. Atualiza o status para 'enviada'.
     """
-    user_roles = [r.role.value if hasattr(r.role, 'value') else str(r.role) for r in current_user.roles if r.is_active]
-    if not ("presidente" in user_roles or "vice_presidente" in user_roles):
-        raise HTTPException(status_code=403, detail="Apenas Presidente e Vice-Presidente podem enviar a credencial.")
+    is_leader, _ = _is_local_leader(current_user.id, db)
+    if not is_leader:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas o Presidente e o Vice-Presidente da UMP Local têm permissão para assinar e enviar a credencial."
+        )
 
     cred = db.query(CongressCredential).filter(
         CongressCredential.id == credential_id,
@@ -1411,9 +1434,12 @@ def list_congress_credentials(
     if not congress:
         raise HTTPException(status_code=404, detail="Congresso não encontrado.")
 
-    # Todas as UMPs locais ativas da federação
+    # Todas as UMPs locais ativas da federação (exclui a própria federação e sombras de eleições)
     local_umps = db.query(LocalUmp).filter(
         LocalUmp.federation_id == current_user.organization_id,
+        LocalUmp.id != current_user.organization_id,
+        ~LocalUmp.name.ilike('%eleiç%'),
+        ~LocalUmp.name.ilike('%eleic%'),
         LocalUmp.is_active == True
     ).order_by(LocalUmp.name).all()
 
