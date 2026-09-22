@@ -1254,7 +1254,7 @@
         </p>
         <div style="background:#f8fafc; border:1px solid var(--slate-200); border-radius:var(--radius); padding:.75rem 1rem; margin-top:.85rem; font-size:.82rem; color:var(--slate-600); line-height:1.45;">
           <div style="font-weight:600; color:var(--slate-800); margin-bottom:.2rem;">Efeito da Homologação:</div>
-          Esta ação valida oficialmente a delegação da UMP Local para o credenciamento e votação no congresso. O status passará para <b>Homologada</b>.
+          Esta ação valida oficialmente a delegação da UMP Local para o congresso. Os nomes desses delegados serão <b>automaticamente cadastrados na aba Delegados</b> da Federação e o status passará para <b>Homologada</b>.
         </div>
       </div>
       <div class="modal-box-footer">
@@ -2302,6 +2302,8 @@
       }
 
       tbody.innerHTML = credentialsList.map((c, idx) => {
+        const isSubmitted = c.status === 'enviada' || c.status === 'homologada'
+
         let statusBadge = ''
         if (c.status === 'homologada') {
           statusBadge = '<span class="badge badge-green">Homologada</span>'
@@ -2317,9 +2319,17 @@
           statusBadge = '<span class="badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca">Não Iniciada</span>'
         }
 
+        // Delegados
+        let delegatesCell = ''
+        if (isSubmitted) {
+          delegatesCell = `<strong style="color:var(--slate-900)">${c.delegates_count || 0}</strong> delegado(s)`
+        } else {
+          delegatesCell = `<span style="font-size:.82rem; color:var(--slate-400); font-style:italic;">Aguardando envio</span>`
+        }
+
         // Selfie e Pastor
         let pastorCell = '—'
-        if (c.pastor_name) {
+        if (isSubmitted) {
           if (c.pastor_selfie_url) {
             pastorCell = `
               <div style="display:flex; align-items:center; gap:.5rem;">
@@ -2327,29 +2337,35 @@
                   <img src="${c.pastor_selfie_url}" class="avatar-selfie-thumb" alt="" />
                   <span>Ver Foto</span>
                 </button>
-                <span style="font-size:.84rem; font-weight:600; color:var(--slate-800)">${c.pastor_name}</span>
+                <span style="font-size:.84rem; font-weight:600; color:var(--slate-800)">${c.pastor_name || 'Pastor da Igreja'}</span>
               </div>
             `
-          } else {
-            pastorCell = `<span style="font-size:.84rem; color:var(--slate-600)">${c.pastor_name}</span>`
+          } else if (c.pastor_name) {
+            pastorCell = `<span style="font-size:.84rem; color:var(--slate-700)">${c.pastor_name}</span>`
           }
+        } else {
+          pastorCell = `<span style="font-size:.82rem; color:var(--slate-400); font-style:italic;">Aguardando envio</span>`
         }
 
         // Presidência
         let presCell = '—'
-        if (c.president_name && (c.submitted_at || c.president_signed_at)) {
-          const sDate = new Date(c.submitted_at || c.president_signed_at).toLocaleDateString('pt-BR')
+        if (isSubmitted && c.president_name) {
+          const sDate = (c.submitted_at || c.president_signed_at)
+            ? new Date(c.submitted_at || c.president_signed_at).toLocaleDateString('pt-BR')
+            : ''
           presCell = `
             <div>
               <div style="font-weight:600; font-size:.84rem; color:var(--slate-800)">${c.president_name}</div>
-              <div style="font-size:.74rem; color:var(--slate-500)">Enviado em ${sDate}</div>
+              ${sDate ? `<div style="font-size:.74rem; color:var(--slate-500)">Enviado em ${sDate}</div>` : ''}
             </div>
           `
+        } else {
+          presCell = `<span style="font-size:.82rem; color:var(--slate-400); font-style:italic;">Pendente</span>`
         }
 
         // Ações
         let actionsHtml = ''
-        if (c.id) {
+        if (isSubmitted && c.id) {
           actionsHtml += `
             <button type="button" class="btn btn-secondary btn-sm" onclick="openCredentialDocPreview('${c.id}')" title="Visualizar documento da credencial" style="padding:.35rem .65rem; font-size:.78rem; display:inline-flex; align-items:center; gap:4px;">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="3"></circle></svg>
@@ -2370,7 +2386,7 @@
             </a>
           `
         } else {
-          actionsHtml = `<span style="font-size:.78rem; color:var(--slate-400)">Aguardando preenchimento</span>`
+          actionsHtml = `<span style="font-size:.78rem; color:var(--slate-400); font-style:italic;">Aguardando envio local</span>`
         }
 
         return `
@@ -2379,9 +2395,7 @@
               <div style="font-weight:700; color:var(--slate-900); font-size:.9rem;">${c.local_ump_name}</div>
               <div style="font-size:.78rem; color:var(--slate-500);">${c.church_name || ''}</div>
             </td>
-            <td>
-              <strong style="color:var(--slate-900)">${c.delegates_count}</strong> delegado(s)
-            </td>
+            <td>${delegatesCell}</td>
             <td>${statusBadge}</td>
             <td>${pastorCell}</td>
             <td>${presCell}</td>
@@ -2393,7 +2407,13 @@
 
     window.openFedSelfieByIndex = function (idx) {
       const c = currentFedCredentialsList[idx]
-      if (!c || !c.pastor_selfie_url) {
+      if (!c) return
+      const isSubmitted = c.status === 'enviada' || c.status === 'homologada'
+      if (!isSubmitted) {
+        showCredentialAlert('Envio Pendente', 'A foto selfie do pastor só estará disponível para a Federação após o envio definitivo da credencial pela UMP Local.', 'warning')
+        return
+      }
+      if (!c.pastor_selfie_url) {
         showCredentialAlert('Foto Não Disponível', 'A foto selfie do pastor ainda não foi enviada para esta credencial.')
         return
       }
@@ -2463,9 +2483,12 @@
       try {
         await api.post(`/api/congresses/credentials/${pendingHomologateCredId}/homologate`)
         closeModal('modal-confirm-homologate')
-        showToast(`Credencial da UMP ${pendingHomologateLumpName} homologada com sucesso!`)
+        showToast(`Credencial da UMP ${pendingHomologateLumpName} homologada com sucesso! Delegados cadastrados na aba Delegados.`)
         if (activeCongress) {
           await loadFederationCredentials(activeCongress.id)
+        }
+        if (typeof loadDelegates === 'function') {
+          await loadDelegates()
         }
       } catch (err) {
         closeModal('modal-confirm-homologate')
@@ -2900,6 +2923,14 @@
         targetCongress = activeCongress
         targetFed = { name: 'Federação de UMPs', presbytery_name: 'POPB', synodal_name: 'Sínodo Paraíba' }
         targetLump = { church_name: targetCred?.church_name || targetCred?.local_ump_name, cidade: targetCred?.city }
+
+        if (targetCred) {
+          const isSubmitted = targetCred.status === 'enviada' || targetCred.status === 'homologada'
+          if (!isSubmitted) {
+            showCredentialAlert('Credencial Não Enviada', 'As informações e o documento desta credencial só estarão disponíveis para a Federação após o envio definitivo pela UMP Local.', 'warning')
+            return
+          }
+        }
       } else if (localCredentialData) {
         targetCred = localCredentialData.credential
         targetCongress = localCredentialData.congress

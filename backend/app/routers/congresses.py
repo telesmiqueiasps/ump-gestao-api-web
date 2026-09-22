@@ -10,7 +10,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Form, status, Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from sqlalchemy import desc, func
 
 from app.db.session import get_db
 from app.core.dependencies import get_current_user, require_federation, require_local_ump, require_local_or_federation
@@ -18,6 +18,7 @@ from app.models.user import User, UserRole
 from app.models.federation import Federation
 from app.models.local_ump import LocalUmp
 from app.models.member import Member
+from app.models.enums import MemberType
 from app.models.finance import FinancialPeriod
 from app.models.activity_report import ActivityReport
 from app.models.ump_statistic import UmpStatisticCollector
@@ -1458,15 +1459,41 @@ def list_congress_credentials(
     for lump in local_umps:
         cred = credentials_map.get(lump.id)
         if cred:
-            serialized = _serialize_credential(cred, include_token=True)
-            delegates_count = len(cred.delegates)
-            total_delegates += delegates_count
-            if cred.status in ("enviada", "homologada"):
+            is_submitted = cred.status in ("enviada", "homologada")
+            if is_submitted:
+                serialized = _serialize_credential(cred, include_token=False)
+                delegates_count = len(cred.delegates)
+                total_delegates += delegates_count
                 total_submitted += 1
-            elif cred.status == "aprovado_pastor":
-                total_pastor_approved += 1
             else:
-                total_pending += 1
+                # Informações da credencial (inclusive foto do pastor e lista de delegados)
+                # só devem aparecer para a federação quando a credencial for definitivamente enviada pela local.
+                serialized = {
+                    "id": str(cred.id),
+                    "congress_id": str(congress.id),
+                    "local_ump_id": str(lump.id),
+                    "local_ump_name": lump.name,
+                    "church_name": lump.church_name,
+                    "status": cred.status,
+                    "city": lump.cidade,
+                    "document_date": None,
+                    "pastor_name": lump.pastor_name or cred.pastor_name,
+                    "pastor_token": None,
+                    "pastor_selfie_url": None,
+                    "pastor_approved_at": None,
+                    "president_name": None,
+                    "president_signed_at": None,
+                    "submitted_at": None,
+                    "validation_code": None,
+                    "homologated_at": None,
+                    "notes": None,
+                    "delegates_count": 0,
+                    "delegates": []
+                }
+                if cred.status == "aprovado_pastor":
+                    total_pastor_approved += 1
+                else:
+                    total_pending += 1
         else:
             serialized = {
                 "id": None,
@@ -1517,7 +1544,7 @@ def homologate_credential(
     current_user: User = Depends(require_federation),
     db: Session = Depends(get_db)
 ):
-    """Homologa oficialmente a credencial de uma UMP Local pela diretoria da federação."""
+    """Homologa oficialmente a credencial de uma UMP Local pela diretoria da federação e cadastra os delegados na aba Delegados."""
     cred = db.query(CongressCredential).join(Congress).filter(
         CongressCredential.id == credential_id,
         Congress.federation_id == current_user.organization_id
@@ -1526,15 +1553,77 @@ def homologate_credential(
     if not cred:
         raise HTTPException(status_code=404, detail="Credencial não encontrada.")
 
+    if cred.status != "enviada" and cred.status != "homologada":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Apenas credenciais que foram definitivamente enviadas pela UMP Local podem ser homologadas."
+        )
+
     cred.status = "homologada"
     cred.homologated_at = datetime.utcnow()
     cred.homologated_by = current_user.id
+
+    # Cadastra automaticamente os delegados na aba Delegados (Member) da Federação
+    shadow_ump = db.query(LocalUmp).filter(LocalUmp.id == current_user.organization_id).first()
+    if not shadow_ump:
+        shadow_ump = LocalUmp(
+            id=current_user.organization_id,
+            federation_id=current_user.organization_id,
+            name="Eleições da Federação",
+            fiscal_year=datetime.utcnow().year,
+            is_active=True
+        )
+        db.add(shadow_ump)
+        db.flush()
+
+    lump_name = cred.local_ump.name if cred.local_ump else "UMP Local"
+
+    for d in cred.delegates:
+        del_name = (d.delegate_name or "").strip()
+        if not del_name:
+            continue
+
+        source_member = db.query(Member).filter(Member.id == d.member_id).first() if d.member_id else None
+
+        existing_del = db.query(Member).filter(
+            Member.local_ump_id == current_user.organization_id,
+            func.lower(Member.full_name) == del_name.lower()
+        ).first()
+
+        if existing_del:
+            existing_del.local_society = lump_name
+            existing_del.is_active = True
+            existing_del.member_type = MemberType.ativo
+            if source_member:
+                if not existing_del.email and source_member.email:
+                    existing_del.email = source_member.email
+                if not existing_del.phone and source_member.phone:
+                    existing_del.phone = source_member.phone
+                if not existing_del.birth_date and source_member.birth_date:
+                    existing_del.birth_date = source_member.birth_date
+                if not existing_del.avatar_url and source_member.avatar_url:
+                    existing_del.avatar_url = source_member.avatar_url
+        else:
+            new_delegate = Member(
+                local_ump_id=current_user.organization_id,
+                full_name=del_name,
+                local_society=lump_name,
+                member_type=MemberType.ativo,
+                is_active=True,
+                email=source_member.email if source_member else None,
+                phone=source_member.phone if source_member else None,
+                birth_date=source_member.birth_date if source_member else None,
+                avatar_url=source_member.avatar_url if source_member else None,
+                join_date=datetime.utcnow().date()
+            )
+            db.add(new_delegate)
+
     db.commit()
     db.refresh(cred)
 
     return {
-        "message": "Credencial homologada com sucesso!",
-        "credential": _serialize_credential(cred, include_token=True)
+        "message": "Credencial homologada com sucesso e delegados cadastrados na aba Delegados!",
+        "credential": _serialize_credential(cred, include_token=False)
     }
 
 
