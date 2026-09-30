@@ -1486,7 +1486,6 @@ def send_congress_convocation(
 @router.get("/{congress_id}/convocation/pdf")
 def get_congress_convocation_pdf(
     congress_id: UUID,
-    current_user: User = Depends(require_local_or_federation),
     db: Session = Depends(get_db)
 ):
     """Gera e retorna o PDF oficial da Convocação do Congresso."""
