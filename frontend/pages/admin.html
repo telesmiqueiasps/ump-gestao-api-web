@@ -580,7 +580,11 @@
     const list = document.getElementById('locals-list')
     list.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>'
     try {
-      const locals = await api.get('/api/admin/local-umps')
+      const fetched = await api.get('/api/admin/local-umps')
+      const locals = (fetched || []).filter(l => {
+        const n = (l.name || '').toLowerCase()
+        return !n.includes('eleiç') && !n.includes('eleic')
+      })
       if (!locals.length) {
         list.innerHTML = `<div style="text-align:center;padding:2rem;
           color:var(--slate-400)">Nenhuma UMP local cadastrada.</div>`

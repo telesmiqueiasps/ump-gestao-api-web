@@ -387,12 +387,17 @@
       const data = await api.get(`/api/uph-statistics/${currentYear}/locals`)
       const list = document.getElementById('locals-list')
 
-      if (!data.length) {
+      const filteredLocals = (data || []).filter(({ local_name }) => {
+        const n = (local_name || '').toLowerCase()
+        return !n.includes('eleiç') && !n.includes('eleic')
+      })
+
+      if (!filteredLocals.length) {
         list.innerHTML = '<p style="color:var(--slate-400);font-size:.875rem">Nenhuma local cadastrada.</p>'
         return
       }
 
-      list.innerHTML = data.map(({ local_name, stat }) => {
+      list.innerHTML = filteredLocals.map(({ local_name, stat }) => {
         if (!stat) return `
           <div class="card" style="padding:.75rem 1rem;opacity:.6">
             <div style="font-weight:600;font-size:.875rem">${local_name}</div>

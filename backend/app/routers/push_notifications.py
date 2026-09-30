@@ -241,7 +241,10 @@ def send_reminders(
             else:
                 # Evento da federação: notifica todas as locais pertencentes à federação
                 locals_in_fed = db.query(LocalUmp.id).filter(
-                    LocalUmp.federation_id == ev.federation_id
+                    LocalUmp.federation_id == ev.federation_id,
+                    LocalUmp.id != ev.federation_id,
+                    ~LocalUmp.name.ilike('%eleiç%'),
+                    ~LocalUmp.name.ilike('%eleic%'),
                 ).all()
                 local_ids = [l[0] for l in locals_in_fed]
                 event_subs = db.query(PushSubscription).filter(

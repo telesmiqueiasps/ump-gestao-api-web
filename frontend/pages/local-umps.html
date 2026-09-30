@@ -466,7 +466,11 @@
     document.getElementById('local-grid').innerHTML =
       '<div class="loading-center"><div class="spinner"></div></div>'
     try {
-      allLocals = await api.get('/api/federations/me/local-umps')
+      const fetched = await api.get('/api/federations/me/local-umps')
+      allLocals = (fetched || []).filter(l => {
+        const n = (l.name || '').toLowerCase()
+        return !n.includes('eleiç') && !n.includes('eleic')
+      })
       filterLocals()
     } catch(err) {
       showAlert('page-alert', err.message, 'error')

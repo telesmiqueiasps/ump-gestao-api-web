@@ -92,7 +92,10 @@ def _resolve_local_ump_id(
     if requested_local_id:
         local = db.query(LocalUmp).filter(
             LocalUmp.id == requested_local_id,
-            LocalUmp.federation_id == current_user.organization_id
+            LocalUmp.federation_id == current_user.organization_id,
+            LocalUmp.id != current_user.organization_id,
+            ~LocalUmp.name.ilike('%eleiç%'),
+            ~LocalUmp.name.ilike('%eleic%')
         ).first()
         if not local:
             raise HTTPException(status_code=404, detail="UMP Local não encontrada nesta Federação")
@@ -100,7 +103,10 @@ def _resolve_local_ump_id(
     
     if fallback_first:
         first_local = db.query(LocalUmp).filter(
-            LocalUmp.federation_id == current_user.organization_id
+            LocalUmp.federation_id == current_user.organization_id,
+            LocalUmp.id != current_user.organization_id,
+            ~LocalUmp.name.ilike('%eleiç%'),
+            ~LocalUmp.name.ilike('%eleic%')
         ).order_by(LocalUmp.name.asc()).first()
         
         if not first_local:
@@ -246,7 +252,10 @@ def get_collector_status(
     available_locals = []
     if current_user.organization_type == OrgType.federation:
         locals_in_fed = db.query(LocalUmp).filter(
-            LocalUmp.federation_id == current_user.organization_id
+            LocalUmp.federation_id == current_user.organization_id,
+            LocalUmp.id != current_user.organization_id,
+            ~LocalUmp.name.ilike('%eleiç%'),
+            ~LocalUmp.name.ilike('%eleic%')
         ).order_by(LocalUmp.name.asc()).all()
         available_locals = [{"id": str(l.id), "name": l.name} for l in locals_in_fed]
 
@@ -303,7 +312,9 @@ def get_ump_statistics_metrics(
     if is_federation:
         all_locals = db.query(LocalUmp).filter(
             LocalUmp.federation_id == current_user.organization_id,
-            LocalUmp.id != current_user.organization_id
+            LocalUmp.id != current_user.organization_id,
+            ~LocalUmp.name.ilike('%eleiç%'),
+            ~LocalUmp.name.ilike('%eleic%')
         ).order_by(LocalUmp.name.asc()).all()
 
     total_locals = len(all_locals)

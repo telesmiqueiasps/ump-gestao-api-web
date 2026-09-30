@@ -717,11 +717,22 @@ def get_election_pdf(
     
     election_data = _get_session_report_data(db, session)
     
-    local_ump = db.query(LocalUmp).filter(LocalUmp.id == current_user.organization_id).first()
-    org_data = {
-        "name": local_ump.name if local_ump else "UMP Local",
-        "theme_color": local_ump.theme_color if local_ump and local_ump.theme_color else "#1a2a6c"
-    }
+    org_type = current_user.organization_type.value \
+        if hasattr(current_user.organization_type, 'value') \
+        else str(current_user.organization_type)
+    if org_type == 'federation':
+        from app.models.federation import Federation
+        fed = db.query(Federation).filter(Federation.id == current_user.organization_id).first()
+        org_data = {
+            "name": fed.name if fed else "Federação",
+            "theme_color": getattr(fed, 'theme_color', '#1a2a6c') or "#1a2a6c"
+        }
+    else:
+        local_ump = db.query(LocalUmp).filter(LocalUmp.id == current_user.organization_id).first()
+        org_data = {
+            "name": local_ump.name if local_ump else "UMP Local",
+            "theme_color": local_ump.theme_color if local_ump and local_ump.theme_color else "#1a2a6c"
+        }
     
     ipb_logo_bytes = None
     try:

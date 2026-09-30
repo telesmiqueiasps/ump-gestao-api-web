@@ -307,7 +307,11 @@ def list_all_local_umps(
     current_user: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
-    locals = db.query(LocalUmp).order_by(LocalUmp.name).all()
+    locals = db.query(LocalUmp).filter(
+        LocalUmp.id != LocalUmp.federation_id,
+        ~LocalUmp.name.ilike('%eleiç%'),
+        ~LocalUmp.name.ilike('%eleic%'),
+    ).order_by(LocalUmp.name).all()
     result = []
     for l in locals:
         user_count = db.query(User).filter(

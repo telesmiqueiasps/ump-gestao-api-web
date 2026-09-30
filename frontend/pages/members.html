@@ -593,7 +593,11 @@
     let federationLocalUmps = []
     async function loadFederationLocalUmps() {
       try {
-        federationLocalUmps = await api.get('/api/federations/me/local-umps')
+        const fetched = await api.get('/api/federations/me/local-umps')
+        federationLocalUmps = (fetched || []).filter(l => {
+          const n = (l.name || '').toLowerCase()
+          return !n.includes('eleiç') && !n.includes('eleic')
+        })
         const select = document.getElementById('m-society')
         select.innerHTML = '<option value="">Selecione a Sociedade Local...</option>' + 
           federationLocalUmps.map(l => `<option value="${l.name}">${l.name}</option>`).join('')

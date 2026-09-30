@@ -239,6 +239,9 @@ def consolidate_federation_stats(
 
     locals_ = db.query(LocalUmp).filter(
         LocalUmp.federation_id == current_user.organization_id,
+        LocalUmp.id != current_user.organization_id,
+        ~LocalUmp.name.ilike('%eleiç%'),
+        ~LocalUmp.name.ilike('%eleic%'),
         LocalUmp.is_active == True,
     ).all()
 
@@ -300,6 +303,9 @@ def list_locals_stats(
 
     locals_ = db.query(LocalUmp).filter(
         LocalUmp.federation_id == current_user.organization_id,
+        LocalUmp.id != current_user.organization_id,
+        ~LocalUmp.name.ilike('%eleiç%'),
+        ~LocalUmp.name.ilike('%eleic%'),
         LocalUmp.is_active == True,
     ).all()
 

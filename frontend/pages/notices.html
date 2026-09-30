@@ -339,7 +339,10 @@
     if (noticesRes.status === 'fulfilled') renderSentNotices(noticesRes.value)
     try {
       if (localsRes.status === 'fulfilled') {
-        localsList = localsRes.value
+        localsList = (localsRes.value || []).filter(l => {
+          const n = (l.name || '').toLowerCase()
+          return !n.includes('eleiç') && !n.includes('eleic')
+        })
         const select = document.getElementById('notice-target-local')
         localsList.forEach(l => {
           const opt = document.createElement('option')
