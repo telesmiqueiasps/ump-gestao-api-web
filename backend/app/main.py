@@ -53,6 +53,7 @@ try:
         conn.execute(text("ALTER TABLE congresses ADD COLUMN IF NOT EXISTS convocation_text TEXT;"))
         conn.execute(text("ALTER TABLE congresses ADD COLUMN IF NOT EXISTS convocation_status VARCHAR(30) DEFAULT 'rascunho';"))
         conn.execute(text("ALTER TABLE congresses ADD COLUMN IF NOT EXISTS convocation_date DATE;"))
+        conn.execute(text("ALTER TABLE congresses ADD COLUMN IF NOT EXISTS convocation_city VARCHAR(100);"))
         conn.execute(text("ALTER TABLE congresses ADD COLUMN IF NOT EXISTS convocation_sent_at TIMESTAMP WITH TIME ZONE;"))
         conn.execute(text("ALTER TABLE congresses ADD COLUMN IF NOT EXISTS convocation_president_name VARCHAR(200);"))
         conn.execute(text("ALTER TABLE congresses ADD COLUMN IF NOT EXISTS convocation_secretary_name VARCHAR(200);"))

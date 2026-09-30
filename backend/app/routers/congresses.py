@@ -43,6 +43,7 @@ router = APIRouter()
 class ConvocationSavePayload(BaseModel):
     convocation_text: Optional[str] = None
     convocation_date: Optional[date] = None
+    convocation_city: Optional[str] = None
 
 class CongressCreate(BaseModel):
     title: str
@@ -227,6 +228,7 @@ def _serialize_congress(c: Congress, include_commissions: bool = True) -> dict:
         "convocation_status": getattr(c, "convocation_status", "rascunho") or "rascunho",
         "has_convocation": bool(getattr(c, "convocation_text", None)),
         "convocation_date": c.convocation_date.isoformat() if getattr(c, "convocation_date", None) else None,
+        "convocation_city": getattr(c, "convocation_city", None),
         "convocation_sent_at": c.convocation_sent_at.isoformat() if getattr(c, "convocation_sent_at", None) else None,
         "convocation_president_name": getattr(c, "convocation_president_name", None),
         "convocation_secretary_name": getattr(c, "convocation_secretary_name", None),
@@ -1375,6 +1377,7 @@ def get_congress_convocation(
         "convocation_text": text,
         "convocation_status": congress.convocation_status or "rascunho",
         "convocation_date": congress.convocation_date.isoformat() if congress.convocation_date else date.today().isoformat(),
+        "convocation_city": congress.convocation_city or "",
         "convocation_sent_at": congress.convocation_sent_at.isoformat() if congress.convocation_sent_at else None,
         "president_name": pres_name,
         "secretary_name": sec_name,
@@ -1389,6 +1392,7 @@ def get_congress_convocation(
             "text": text,
             "status": congress.convocation_status or "rascunho",
             "date": congress.convocation_date.isoformat() if congress.convocation_date else date.today().isoformat(),
+            "city": congress.convocation_city or "",
             "sent_at": congress.convocation_sent_at.isoformat() if congress.convocation_sent_at else None,
             "president_name": pres_name,
             "secretary_name": sec_name
@@ -1429,6 +1433,8 @@ def save_congress_convocation(
         congress.convocation_text = payload.convocation_text
     if payload.convocation_date is not None:
         congress.convocation_date = payload.convocation_date
+    if payload.convocation_city is not None:
+        congress.convocation_city = payload.convocation_city
 
     db.commit()
     db.refresh(congress)
@@ -1466,6 +1472,8 @@ def send_congress_convocation(
         congress.convocation_text = _get_default_convocation_text(congress, fed)
 
     congress.convocation_date = (payload.convocation_date if payload else None) or congress.convocation_date or date.today()
+    if payload and payload.convocation_city is not None:
+        congress.convocation_city = payload.convocation_city
     congress.convocation_president_name = live_pres
     congress.convocation_secretary_name = live_sec
     congress.convocation_sent_at = datetime.utcnow()
@@ -1512,6 +1520,7 @@ def get_congress_convocation_pdf(
         synodal_name=fed.synodal_name if fed else "",
         convocation_html=text,
         convocation_date=congress.convocation_date or date.today(),
+        city=congress.convocation_city or "",
         president_name=pres_name,
         secretary_name=sec_name,
         society_type=society_type,

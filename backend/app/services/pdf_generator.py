@@ -3688,6 +3688,7 @@ def generate_convocation_pdf(
     synodal_name: str = None,
     convocation_html: str = "",
     convocation_date: datetime.date = None,
+    city: str = None,
     president_name: str = "Presidente da Federação",
     secretary_name: str = "Secretário Executivo",
     society_type: str = "UMP",
@@ -3827,7 +3828,9 @@ def generate_convocation_pdf(
     )
     meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
     doc_d = convocation_date or datetime.date.today()
-    date_str = f"{doc_d.day} de {meses[doc_d.month - 1]} de {doc_d.year}."
+    cidade_str = (city or "").strip()
+    prefix = f"{cidade_str}, " if cidade_str else ""
+    date_str = f"{prefix}{doc_d.day} de {meses[doc_d.month - 1]} de {doc_d.year}."
     story.append(Paragraph(date_str, p_date))
     story.append(Spacer(1, 10 * mm))
 

@@ -1188,12 +1188,21 @@
             <!-- Data do Documento & Assinaturas Oficiais -->
             <div style="background:#f8fafc; border-top:1px solid var(--slate-200); padding:1.25rem 1.5rem;">
               <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:.75rem;">
-                <div style="display:flex; align-items:center; gap:.5rem;">
-                  <label style="font-size:.85rem; font-weight:700; color:var(--slate-700); display:inline-flex; align-items:center; gap:5px;">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                    <span>Data da Convocação:</span>
-                  </label>
-                  <input type="date" id="convocation-date-input" class="input" style="width:auto; padding:.35rem .6rem;" onchange="triggerConvocationSave()" />
+                <div style="display:flex; align-items:center; flex-wrap:wrap; gap:1.25rem;">
+                  <div style="display:flex; align-items:center; gap:.5rem;">
+                    <label style="font-size:.85rem; font-weight:700; color:var(--slate-700); display:inline-flex; align-items:center; gap:5px;">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                      <span>Cidade:</span>
+                    </label>
+                    <input type="text" id="convocation-city-input" class="input" style="width:170px; padding:.35rem .6rem;" placeholder="Ex: Patos - PB" oninput="triggerConvocationAutoSave()" />
+                  </div>
+                  <div style="display:flex; align-items:center; gap:.5rem;">
+                    <label style="font-size:.85rem; font-weight:700; color:var(--slate-700); display:inline-flex; align-items:center; gap:5px;">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                      <span>Data da Convocação:</span>
+                    </label>
+                    <input type="date" id="convocation-date-input" class="input" style="width:auto; padding:.35rem .6rem;" onchange="triggerConvocationSave()" />
+                  </div>
                 </div>
                 <div style="font-size:.8rem; color:var(--slate-500); font-style:italic;" id="convocation-last-saved-meta">
                   Salvamento automático em tempo real ativado.
@@ -1739,9 +1748,7 @@
           </div>
 
           <!-- Data -->
-          <div style="text-align:right; font-size:.88rem; font-weight:600; color:#334155; margin-bottom:2rem;" id="read-conv-date-line">
-            Patos, 30 de setembro de 2026.
-          </div>
+          <div style="text-align:right; font-size:.88rem; font-weight:600; color:#334155; margin-bottom:2rem;" id="read-conv-date-line"></div>
 
           <!-- Assinaturas da Diretoria -->
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:2rem; text-align:center; margin-top:2.5rem; padding-top:1.5rem; border-top:1px dashed #cbd5e1;">
@@ -3729,15 +3736,18 @@
         const rawContent = data.convocation?.text || data.default_text || '<p>Nenhum texto de convocação cadastrado ainda.</p>'
         if (bodyEl) bodyEl.innerHTML = rawContent
 
-        // Data
+        // Data e Cidade
         const meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
         let dateVal = new Date()
         if (data.convocation?.date) {
           const parsed = new Date(data.convocation.date.includes('T') ? data.convocation.date : data.convocation.date + 'T12:00:00')
           if (!isNaN(parsed.getTime())) dateVal = parsed
         }
-        const city = data.federation?.city || 'Patos - PB'
-        setText('read-conv-date-line', `${city}, ${dateVal.getDate()} de ${meses[dateVal.getMonth()]} de ${dateVal.getFullYear()}.`)
+        const city = (data.convocation?.city || data.convocation_city || '').trim()
+        const datelineText = city
+          ? `${city}, ${dateVal.getDate()} de ${meses[dateVal.getMonth()]} de ${dateVal.getFullYear()}.`
+          : `${dateVal.getDate()} de ${meses[dateVal.getMonth()]} de ${dateVal.getFullYear()}.`
+        setText('read-conv-date-line', datelineText)
 
         // Assinaturas
         const secName = data.convocation?.secretary_name || data.signers?.secretario_executivo?.name || 'Secretário(a) Executivo(a)'
@@ -3848,6 +3858,11 @@
           dateInput.value = data.convocation?.date || data.convocation_date || new Date().toISOString().split('T')[0]
         }
 
+        const cityInput = document.getElementById('convocation-city-input')
+        if (cityInput) {
+          cityInput.value = data.convocation?.city || data.convocation_city || ''
+        }
+
         // Assinaturas na prévia
         const secName = data.convocation?.secretary_name || data.secretary_name || data.signers?.secretario_executivo?.name || 'Secretário(a) Executivo(a)'
         const presName = data.convocation?.president_name || data.president_name || data.signers?.presidente?.name || 'Presidente da Federação'
@@ -3923,9 +3938,11 @@
       try {
         const text = document.getElementById('convocation-editor')?.innerHTML || ''
         const date = document.getElementById('convocation-date-input')?.value || ''
+        const city = document.getElementById('convocation-city-input')?.value || ''
         await api.put(`/api/congresses/${convocationCongressId}/convocation`, {
           convocation_text: text,
-          convocation_date: date
+          convocation_date: date,
+          convocation_city: city
         })
         const nowStr = new Date().toLocaleTimeString('pt-BR')
         if (meta) {

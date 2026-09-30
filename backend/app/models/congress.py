@@ -26,6 +26,7 @@ class Congress(Base):
     convocation_text = Column(Text, nullable=True)
     convocation_status = Column(String(30), nullable=False, default="rascunho")  # rascunho, enviada
     convocation_date = Column(Date, nullable=True)
+    convocation_city = Column(String(100), nullable=True)
     convocation_sent_at = Column(DateTime, nullable=True)
     convocation_president_name = Column(String(200), nullable=True)
     convocation_secretary_name = Column(String(200), nullable=True)
