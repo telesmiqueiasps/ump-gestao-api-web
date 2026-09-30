@@ -1689,6 +1689,8 @@
         <button type="button" class="btn btn-primary" onclick="closeModal('modal-credential-alert')">Entendido</button>
       </div>
     </div>
+  </div>
+
   <!-- ── MODAL: LER EDITAL OFICIAL DE CONVOCAÇÃO ── -->
   <div class="modal-overlay" id="modal-read-convocation">
     <div class="modal-box" style="max-width: 780px;">
@@ -3729,7 +3731,11 @@
 
         // Data
         const meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
-        const dateVal = data.convocation?.date ? new Date(data.convocation.date + 'T12:00:00') : new Date()
+        let dateVal = new Date()
+        if (data.convocation?.date) {
+          const parsed = new Date(data.convocation.date.includes('T') ? data.convocation.date : data.convocation.date + 'T12:00:00')
+          if (!isNaN(parsed.getTime())) dateVal = parsed
+        }
         const city = data.federation?.city || 'Patos - PB'
         setText('read-conv-date-line', `${city}, ${dateVal.getDate()} de ${meses[dateVal.getMonth()]} de ${dateVal.getFullYear()}.`)
 
@@ -3753,6 +3759,15 @@
         openModal('modal-read-convocation')
       } catch (err) {
         showCredentialAlert('Erro', 'Erro ao carregar o edital de convocação: ' + (err.message || err), 'error')
+      }
+    }
+
+    window.readCurrentCongressConvocation = function () {
+      const congId = localCredentialData?.congress?.id || localCredentialData?.congress_id
+      if (congId) {
+        readCongressConvocation(congId)
+      } else {
+        showCredentialAlert('Aviso', 'Nenhum congresso selecionado para leitura de convocação.')
       }
     }
 
