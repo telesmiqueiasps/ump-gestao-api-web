@@ -3684,8 +3684,13 @@
         const logoEl = document.getElementById('read-conv-logo')
         if (logoEl) logoEl.src = logoSrc
 
-        document.getElementById('read-conv-presbytery-header').textContent = (data.federation?.presbytery_name || 'PRESBITÉRIO OESTE DA PARAÍBA').toUpperCase()
-        document.getElementById('read-conv-fed-header').textContent = (data.federation?.name || (isUph ? 'FEDERAÇÃO DE UPHs' : 'FEDERAÇÃO DE MOCIDADES PRESBITERIANAS')).toUpperCase()
+        const setText = (id, val) => {
+          const el = document.getElementById(id)
+          if (el) el.textContent = val
+        }
+
+        setText('read-conv-presbytery-header', (data.federation?.presbytery_name || 'PRESBITÉRIO OESTE DA PARAÍBA').toUpperCase())
+        setText('read-conv-fed-header', (data.federation?.name || (isUph ? 'FEDERAÇÃO DE UPHs' : 'FEDERAÇÃO DE MOCIDADES PRESBITERIANAS')).toUpperCase())
 
         const verseEl = document.getElementById('read-conv-verse')
         if (verseEl) {
@@ -3694,8 +3699,8 @@
             : '“Ninguém despreze a tua mocidade; pelo contrário, torna-te padrão dos fiéis, na palavra, no procedimento, no amor, na fé, na pureza.” (I Tm. 4.12).'
         }
 
-        document.getElementById('read-conv-center-title').textContent = (data.congress?.title || 'CONGRESSO ORDINÁRIO').toUpperCase()
-        document.getElementById('read-conv-center-year').textContent = `GESTÃO ${data.congress?.fiscal_year || 2026}`
+        setText('read-conv-center-title', (data.congress?.title || 'CONGRESSO ORDINÁRIO').toUpperCase())
+        setText('read-conv-center-year', `GESTÃO ${data.congress?.fiscal_year || 2026}`)
 
         const isPublished = data.convocation?.status === 'enviada'
         const bannerEl = document.getElementById('read-conv-status-banner')
@@ -3720,24 +3725,24 @@
 
         const bodyEl = document.getElementById('read-conv-body-text')
         const rawContent = data.convocation?.text || data.default_text || '<p>Nenhum texto de convocação cadastrado ainda.</p>'
-        bodyEl.innerHTML = rawContent
+        if (bodyEl) bodyEl.innerHTML = rawContent
 
         // Data
         const meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
         const dateVal = data.convocation?.date ? new Date(data.convocation.date + 'T12:00:00') : new Date()
         const city = data.federation?.city || 'Patos - PB'
-        document.getElementById('read-conv-date-line').textContent = `${city}, ${dateVal.getDate()} de ${meses[dateVal.getMonth()]} de ${dateVal.getFullYear()}.`
+        setText('read-conv-date-line', `${city}, ${dateVal.getDate()} de ${meses[dateVal.getMonth()]} de ${dateVal.getFullYear()}.`)
 
         // Assinaturas
         const secName = data.convocation?.secretary_name || data.signers?.secretario_executivo?.name || 'Secretário(a) Executivo(a)'
         const presName = data.convocation?.president_name || data.signers?.presidente?.name || 'Presidente da Federação'
         const fedLabel = data.federation?.name || 'Federação'
 
-        document.getElementById('read-conv-sec-name').textContent = secName
-        document.getElementById('read-conv-sec-fed').textContent = fedLabel
-        document.getElementById('read-conv-pres-name').textContent = presName
-        document.getElementById('read-conv-pres-role').textContent = `Presidente da ${isUph ? 'Federação de UPHs' : 'Federação de UMPs'}`
-        document.getElementById('read-conv-pres-fed').textContent = fedLabel
+        setText('read-conv-sec-name', secName)
+        setText('read-conv-sec-fed', fedLabel)
+        setText('read-conv-pres-name', presName)
+        setText('read-conv-pres-role', `Presidente da ${isUph ? 'Federação de UPHs' : 'Federação de UMPs'}`)
+        setText('read-conv-pres-fed', fedLabel)
 
         // Link PDF
         const btnDl = document.getElementById('btn-modal-download-convocation-pdf')
@@ -3761,14 +3766,21 @@
 
     window.openCongressConvocation = async function (congressId) {
       convocationCongressId = congressId
-      document.getElementById('view-congress-list').style.display = 'none'
-      document.getElementById('view-congress-detail').style.display = 'none'
-      document.getElementById('view-local-congresses').style.display = 'none'
-      document.getElementById('view-local-credential').style.display = 'none'
-      const pageActions = document.getElementById('page-actions-area')
-      if (pageActions) pageActions.style.display = 'none'
+      const setDisplay = (id, val) => {
+        const el = document.getElementById(id)
+        if (el) el.style.display = val
+      }
+      const setText = (id, text) => {
+        const el = document.getElementById(id)
+        if (el) el.textContent = text
+      }
 
-      document.getElementById('view-congress-convocation').style.display = 'block'
+      setDisplay('view-congress-list', 'none')
+      setDisplay('view-congress-detail', 'none')
+      setDisplay('view-local-congresses', 'none')
+      setDisplay('view-local-credential', 'none')
+      setDisplay('page-actions-area', 'none')
+      setDisplay('view-congress-convocation', 'block')
 
       try {
         const data = await api.get(`/api/congresses/${congressId}/convocation`)
@@ -3780,66 +3792,88 @@
                       (sessionStorage.getItem('society_type') === 'UPH') ||
                       (window.CURRENT_USER?.society_type === 'UPH')
 
+        const congTitle = data.congress?.title || data.congress_title || 'Congresso'
+        const fiscalYear = data.congress?.fiscal_year || data.fiscal_year || 2026
+        const presbytery = (data.federation?.presbytery_name || 'PRESBITÉRIO OESTE DA PARAÍBA').toUpperCase()
+        const fedName = (data.federation?.name || (isUph ? 'FEDERAÇÃO DE UPHs' : 'FEDERAÇÃO DE MOCIDADES PRESBITERIANAS')).toUpperCase()
+
         // Timbre e Cabeçalho
-        document.getElementById('conv-timbre-logo').src = isUph ? '/assets/img/logo_parecer_uph.png' : '/assets/img/logo_parecer.png'
-        document.getElementById('conv-presbytery-label').textContent = (data.federation?.presbytery_name || 'PRESBITÉRIO OESTE DA PARAÍBA').toUpperCase()
-        document.getElementById('conv-fed-label').textContent = (data.federation?.name || (isUph ? 'FEDERAÇÃO DE UPHs' : 'FEDERAÇÃO DE MOCIDADES PRESBITERIANAS')).toUpperCase()
-        document.getElementById('conv-center-cong-title').textContent = (data.congress?.title || 'CONGRESSO ORDINÁRIO').toUpperCase()
-        document.getElementById('conv-center-year-sub').textContent = `GESTÃO ${data.congress?.fiscal_year || 2026}`
+        const logoEl = document.getElementById('conv-timbre-logo')
+        if (logoEl) logoEl.src = isUph ? '/assets/img/logo_parecer_uph.png' : '/assets/img/logo_parecer.png'
+
+        setText('conv-presbytery-label', presbytery)
+        setText('conv-fed-label', fedName)
+        setText('conv-center-cong-title', congTitle.toUpperCase())
+        setText('conv-center-year-sub', `GESTÃO ${fiscalYear}`)
 
         // Banner e Breadcrumbs
-        document.getElementById('page-title').textContent = `Edital de Convocação - ${data.congress.title}`
-        document.getElementById('page-subtitle').textContent = 'Elaboração e expedição oficial do edital de convocação'
-        document.getElementById('breadcrumb-area').innerHTML = `
-          <a href="javascript:void(0)" onclick="closeConvocationView()" style="color:var(--blue-600); text-decoration:none; font-weight:600;">Congressos</a>
-          <span> / ${data.congress.title} / Edital de Convocação</span>
-        `
+        setText('page-title', `Edital de Convocação - ${congTitle}`)
+        setText('page-subtitle', 'Elaboração e expedição oficial do edital de convocação')
 
-        document.getElementById('convocation-cong-title').textContent = `Edital de Convocação - ${data.congress.title}`
-        document.getElementById('convocation-badge-year').textContent = `Ano ${data.congress.fiscal_year}`
+        const breadcrumb = document.getElementById('breadcrumb-area')
+        if (breadcrumb) {
+          breadcrumb.innerHTML = `
+            <a href="javascript:void(0)" onclick="closeConvocationView()" style="color:var(--blue-600); text-decoration:none; font-weight:600;">Congressos</a>
+            <span> / ${congTitle} / Edital de Convocação</span>
+          `
+        }
+
+        setText('convocation-cong-title', `Edital de Convocação - ${congTitle}`)
+        setText('convocation-badge-year', `Ano ${fiscalYear}`)
 
         // Editor e Data
         const editor = document.getElementById('convocation-editor')
-        editor.innerHTML = data.convocation?.text || data.default_text || ''
+        if (editor) {
+          editor.innerHTML = data.convocation?.text || data.convocation_text || data.default_text || ''
+          editor.oninput = () => triggerConvocationAutoSave()
+        }
 
         const dateInput = document.getElementById('convocation-date-input')
-        dateInput.value = data.convocation?.date || new Date().toISOString().split('T')[0]
+        if (dateInput) {
+          dateInput.value = data.convocation?.date || data.convocation_date || new Date().toISOString().split('T')[0]
+        }
 
         // Assinaturas na prévia
-        const secName = data.convocation?.secretary_name || data.signers?.secretario_executivo?.name || 'Secretário(a) Executivo(a)'
-        const presName = data.convocation?.president_name || data.signers?.presidente?.name || 'Presidente da Federação'
+        const secName = data.convocation?.secretary_name || data.secretary_name || data.signers?.secretario_executivo?.name || 'Secretário(a) Executivo(a)'
+        const presName = data.convocation?.president_name || data.president_name || data.signers?.presidente?.name || 'Presidente da Federação'
         const fedLabel = data.federation?.name || 'Federação'
 
-        document.getElementById('conv-sign-sec-name').textContent = secName
-        document.getElementById('conv-sign-sec-fed').textContent = fedLabel
-        document.getElementById('conv-sign-pres-name').textContent = presName
-        document.getElementById('conv-sign-pres-role').textContent = `Presidente da ${isUph ? 'Federação de UPHs' : 'Federação de UMPs'}`
-        document.getElementById('conv-sign-pres-fed').textContent = fedLabel
+        setText('conv-sign-sec-name', secName)
+        setText('conv-sign-sec-fed', fedLabel)
+        setText('conv-sign-pres-name', presName)
+        setText('conv-sign-pres-role', `Presidente da ${isUph ? 'Federação de UPHs' : 'Federação de UMPs'}`)
+        setText('conv-sign-pres-fed', fedLabel)
 
         // Status
+        const convStatus = data.convocation?.status || data.convocation_status || 'rascunho'
         const statusBadge = document.getElementById('convocation-badge-status')
-        const publishLabel = document.getElementById('btn-publish-convocation-label')
         const lastSavedMeta = document.getElementById('convocation-last-saved-meta')
         const saveStatus = document.getElementById('convocation-save-status')
 
-        if (data.convocation?.status === 'enviada') {
-          statusBadge.textContent = 'Enviada e Publicada'
-          statusBadge.className = 'badge badge-green'
-          publishLabel.textContent = 'Reenviar / Atualizar Convocação'
-          const sDate = data.convocation.sent_at ? new Date(data.convocation.sent_at).toLocaleString('pt-BR') : ''
-          lastSavedMeta.innerHTML = `<span style="color:var(--green-700); font-weight:600;">Publicada e assinada digitalmente em ${sDate}.</span>`
-          if (saveStatus) saveStatus.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> <span>Convocação Publicada</span>'
+        if (convStatus === 'enviada') {
+          if (statusBadge) {
+            statusBadge.textContent = 'Enviada e Publicada'
+            statusBadge.className = 'badge badge-green'
+          }
+          setText('btn-publish-convocation-label', 'Reenviar / Atualizar Convocação')
+          const rawDate = data.convocation?.sent_at || data.convocation_sent_at
+          const sDate = rawDate ? new Date(rawDate).toLocaleString('pt-BR') : ''
+          if (lastSavedMeta) {
+            lastSavedMeta.innerHTML = `<span style="color:var(--green-700); font-weight:600;">Publicada e assinada digitalmente em ${sDate}.</span>`
+          }
+          if (saveStatus) {
+            saveStatus.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> <span>Convocação Publicada</span>'
+          }
         } else {
-          statusBadge.textContent = 'Rascunho'
-          statusBadge.className = 'badge badge-amber'
-          publishLabel.textContent = 'Enviar Convocação Oficial'
-          lastSavedMeta.textContent = 'Salvamento automático ativado.'
-          if (saveStatus) saveStatus.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> <span>Rascunho Salvo</span>'
-        }
-
-        // Listener de input para auto-save
-        editor.oninput = () => {
-          triggerConvocationAutoSave()
+          if (statusBadge) {
+            statusBadge.textContent = 'Rascunho'
+            statusBadge.className = 'badge badge-amber'
+          }
+          setText('btn-publish-convocation-label', 'Enviar Convocação Oficial')
+          if (lastSavedMeta) lastSavedMeta.textContent = 'Salvamento automático ativado.'
+          if (saveStatus) {
+            saveStatus.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> <span>Rascunho Salvo</span>'
+          }
         }
       } catch (err) {
         showAlert('Erro ao abrir convocação: ' + (err.message || err))
@@ -3872,8 +3906,8 @@
       if (meta) meta.innerHTML = '<span style="color:var(--blue-600)">Salvando rascunho da convocação...</span>'
 
       try {
-        const text = document.getElementById('convocation-editor').innerHTML
-        const date = document.getElementById('convocation-date-input').value
+        const text = document.getElementById('convocation-editor')?.innerHTML || ''
+        const date = document.getElementById('convocation-date-input')?.value || ''
         await api.put(`/api/congresses/${convocationCongressId}/convocation`, {
           convocation_text: text,
           convocation_date: date
@@ -3904,7 +3938,7 @@
 
     window.confirmPublishConvocation = async function () {
       if (!convocationCongressId) return
-      const isAlreadySent = convocationData?.convocation?.status === 'enviada'
+      const isAlreadySent = (convocationData?.convocation?.status === 'enviada') || (convocationData?.convocation_status === 'enviada')
       const promptMsg = isAlreadySent
         ? 'Deseja REENVIAR e atualizar oficialmente o Edital de Convocação deste congresso?\n\nO documento atualizado continuará disponível para todas as sociedades locais.'
         : 'Deseja ENVIAR e PUBLICAR OFICIALMENTE o Edital de Convocação deste congresso?\n\nO documento será assinado eletronicamente pelo Secretário Executivo e Presidente da Federação e ficará imediatamente disponível para leitura e credenciamento de todas as organizações locais.'
@@ -3912,9 +3946,9 @@
       if (!confirm(promptMsg)) return
 
       const btn = document.getElementById('btn-publish-convocation')
-      const origHtml = btn.innerHTML
-      btn.disabled = true
-      btn.innerHTML = `<span style="width:13px;height:13px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;display:inline-block;animation:spin .8s linear infinite;"></span> <span>Publicando...</span>`
+      const label = document.getElementById('btn-publish-convocation-label')
+      if (btn) btn.disabled = true
+      if (label) label.textContent = 'Publicando...'
 
       try {
         await saveConvocationDraft(false)
@@ -3925,8 +3959,10 @@
       } catch (err) {
         showCredentialAlert('Erro ao Publicar', err.message || 'Falha ao publicar a convocação.', 'error')
       } finally {
-        btn.disabled = false
-        btn.innerHTML = origHtml
+        if (btn) btn.disabled = false
+        if (label && label.textContent === 'Publicando...') {
+          label.textContent = isAlreadySent ? 'Reenviar / Atualizar Convocação' : 'Enviar Convocação Oficial'
+        }
       }
     }
 
@@ -3940,17 +3976,23 @@
         clearTimeout(convocationAutoSaveTimer)
         await saveConvocationDraft(false)
       }
-      document.getElementById('view-congress-convocation').style.display = 'none'
+      const convView = document.getElementById('view-congress-convocation')
+      if (convView) convView.style.display = 'none'
 
       if (activeCongress && activeCongress.id === convocationCongressId) {
-        document.getElementById('view-congress-detail').style.display = 'block'
+        const detailView = document.getElementById('view-congress-detail')
+        if (detailView) detailView.style.display = 'block'
       } else {
-        document.getElementById('view-congress-list').style.display = 'block'
+        const listView = document.getElementById('view-congress-list')
+        if (listView) listView.style.display = 'block'
         const pageActions = document.getElementById('page-actions-area')
         if (pageActions) pageActions.style.display = 'flex'
-        document.getElementById('page-title').textContent = 'Congressos da Federação'
-        document.getElementById('page-subtitle').textContent = 'Gestão de congressos, comissões de trabalho e elaboração de pareceres'
-        document.getElementById('breadcrumb-area').innerHTML = '<span>Congressos</span>'
+        const pageTitle = document.getElementById('page-title')
+        if (pageTitle) pageTitle.textContent = 'Congressos da Federação'
+        const pageSub = document.getElementById('page-subtitle')
+        if (pageSub) pageSub.textContent = 'Gestão de congressos, comissões de trabalho e elaboração de pareceres'
+        const breadcrumb = document.getElementById('breadcrumb-area')
+        if (breadcrumb) breadcrumb.innerHTML = '<span>Congressos</span>'
         await loadCongresses()
       }
     }
