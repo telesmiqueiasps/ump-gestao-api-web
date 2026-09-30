@@ -25,6 +25,7 @@ class TokenResponse(BaseModel):
     organization_id: str
     organization_type: str
     roles: list[str]
+    custom_permissions: Optional[dict] = None
 
 
 class RefreshRequest(BaseModel):
@@ -80,6 +81,7 @@ def _build_token_response(db, user: User, org_id, org_type: str, roles: list[str
         "organization_type": org_type,
         "roles":           roles,
         "society_type":    society_type,
+        "custom_permissions": user.custom_permissions,
     }
 
 

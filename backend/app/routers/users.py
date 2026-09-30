@@ -417,3 +417,29 @@ def _to_out(u: User) -> dict:
         "is_active": u.is_active,
         "role": latest_role.role.value if latest_role else None,
     }
+
+
+@router.get("/me/permissions")
+def get_my_permissions(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from app.models.user import RolePermission
+    year = datetime.date.today().year
+
+    role_perms = db.query(RolePermission).all()
+    role_perms_map = {rp.role: rp.allowed_pages for rp in role_perms}
+
+    roles = db.query(UserRole).filter(
+        UserRole.user_id == current_user.id,
+        UserRole.is_active == True,
+        UserRole.fiscal_year == year,
+    ).all()
+    user_roles = [r.role.value if hasattr(r.role, 'value') else str(r.role) for r in roles]
+
+    return {
+        "user_id": str(current_user.id),
+        "custom_permissions": current_user.custom_permissions or {},
+        "role_permissions": role_perms_map,
+        "user_roles": user_roles,
+    }

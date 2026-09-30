@@ -112,8 +112,47 @@ window.navigate = function (page) {
 export function canAccessPage(page) {
   const item = NAV_ITEMS.find(n => n.page === page)
   if (!item) return false
+
+  const currentSociety = localStorage.getItem('society_type') || 'UMP'
+  if (item.uphOnly && currentSociety !== 'UPH') return false
+  if (item.umpOnly && currentSociety !== 'UMP') return false
+
+  const user = getUser()
+  const customPerms = user?.custom_permissions
+
+  // 1. Verificação individual explícita do usuário
+  if (customPerms && typeof customPerms[page] === 'boolean') {
+    return customPerms[page]
+  }
+
+  // 2. Verificação de regras customizadas por cargo no banco
+  const rolePermsRaw = localStorage.getItem('role_permissions')
+  let rolePerms = null
+  if (rolePermsRaw) {
+    try { rolePerms = JSON.parse(rolePermsRaw) } catch {}
+  }
+
+  const userRoles = user?.roles ?? []
+
+  if (rolePerms && userRoles.length > 0) {
+    let roleFound = false
+    let hasAccessViaRole = false
+    for (const r of userRoles) {
+      if (rolePerms[r] && Array.isArray(rolePerms[r])) {
+        roleFound = true
+        if (rolePerms[r].includes(page)) {
+          hasAccessViaRole = true
+          break
+        }
+      }
+    }
+    if (roleFound) {
+      return hasAccessViaRole
+    }
+  }
+
+  // 3. Regras padrão do sistema (fallback padrão transparente)
   if (page === 'congressos') {
-    const userRoles = getUser()?.roles ?? []
     if (isFederation()) {
       return item.roles.some(r => userRoles.includes(r))
     }
@@ -124,11 +163,7 @@ export function canAccessPage(page) {
   }
   if (item.fedOnly && !isFederation()) return false
   if (item.localOnly && !isLocalUmp()) return false
-  const currentSociety = localStorage.getItem('society_type') || 'UMP'
-  if (item.uphOnly && currentSociety !== 'UPH') return false
-  if (item.umpOnly && currentSociety !== 'UMP') return false
   if (item.roles === null) return true
-  const userRoles = getUser()?.roles ?? []
   return item.roles.some(r => userRoles.includes(r))
 }
 
@@ -139,27 +174,10 @@ const ADMIN_FEDERATION_ID = 'cf5aaa60-0fd1-4ee5-a0cd-a37849b87a09'
 
 function buildNavHTML(user, societyType) {
   societyType = societyType || localStorage.getItem('society_type') || 'UMP'
-  const userRoles = user?.roles ?? []
   const memberLabel = isFederation() ? 'Delegados' : (MEMBER_LABELS[societyType] || 'Sócios')
 
   return NAV_ITEMS
-    .filter(item => {
-      if (item.page === 'congressos') {
-        if (isFederation()) {
-          return item.roles.some(r => userRoles.includes(r))
-        }
-        if (isLocalUmp()) {
-          return userRoles.includes('presidente') || userRoles.includes('vice_presidente')
-        }
-        return false
-      }
-      if (item.fedOnly && !isFederation()) return false
-      if (item.localOnly && !isLocalUmp()) return false
-      if (item.uphOnly && societyType !== 'UPH') return false
-      if (item.umpOnly && societyType !== 'UMP') return false
-      if (item.roles === null) return true
-      return item.roles.some(r => userRoles.includes(r))
-    })
+    .filter(item => canAccessPage(item.page))
     .map(item => {
       if (item.type === 'divider') {
         return '<hr style="border:none;border-top:1px solid rgba(255,255,255,.1);margin:.5rem .85rem"/>'
@@ -191,8 +209,7 @@ function buildNavHTML(user, societyType) {
       ? `<button class="nav-item" data-page="admin"
            onclick="window.location.href='/pages/admin.html'"
            style="color:#f97316">
-           <span style="width:24px;height:24px;display:inline-flex;
-                        align-items:center;justify-content:center;font-size:1rem">⚙️</span>
+           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
            Admin
          </button>`
       : '')
@@ -265,6 +282,30 @@ export async function renderShell() {
 
   // Agora renderiza a sidebar com o societyType correto
   document.getElementById('sidebar-nav').innerHTML = buildNavHTML(user, societyType)
+
+  // Sincroniza permissões personalizadas em segundo plano e atualiza se necessário
+  try {
+    const { api } = await import('./api.js')
+    api.get('/api/users/me/permissions').then(permData => {
+      if (permData) {
+        if (permData.role_permissions) {
+          localStorage.setItem('role_permissions', JSON.stringify(permData.role_permissions))
+        }
+        const currentUser = getUser()
+        if (currentUser) {
+          const newCustom = (permData.custom_permissions && Object.keys(permData.custom_permissions).length > 0)
+            ? permData.custom_permissions
+            : null
+          if (JSON.stringify(currentUser.custom_permissions) !== JSON.stringify(newCustom)) {
+            currentUser.custom_permissions = newCustom
+            localStorage.setItem('user', JSON.stringify(currentUser))
+            const navEl = document.getElementById('sidebar-nav')
+            if (navEl) navEl.innerHTML = buildNavHTML(currentUser, localStorage.getItem('society_type') || 'UMP')
+          }
+        }
+      }
+    }).catch(() => {})
+  } catch {}
 
   // Formata o nome para cabeçalho (Primeiro e Último nome se tiver 3+ partes)
   const formatHeaderName = (fullName) => {
@@ -576,14 +617,11 @@ export function renderBottomNav(currentPage, societyType) {
     { page: 'finances', label: 'Financeiro', icon: '◈', roles: ['presidente', 'vice_presidente', 'tesoureiro', 'conselheiro', 'secretario_presbiterial'] },
     { page: 'members', label: bottomMemberLabel, icon: '◉', localOnly: true, roles: ['presidente', 'vice_presidente', 'tesoureiro', 'conselheiro', 'secretario_presbiterial'] },
     { page: 'board', label: 'Diretoria', icon: '❖', roles: ['presidente', 'vice_presidente', 'conselheiro', 'secretario_presbiterial'] },
-    { page: 'notices', label: 'Avisos', icon: '📢', roles: null },
+    { page: 'notices', label: 'Avisos', icon: '◎', roles: null },
   ]
 
   const visibleItems = BOTTOM_ITEMS.filter(item => {
-    if (item.fedOnly && !isFederation()) return false
-    if (item.localOnly && !isLocalUmp()) return false
-    if (item.roles === null) return true
-    return item.roles.some(r => userRoles.includes(r))
+    return canAccessPage(item.page)
   })
 
   let bottomNav = document.getElementById('bottom-nav')

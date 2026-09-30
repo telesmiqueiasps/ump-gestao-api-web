@@ -7,7 +7,7 @@ from uuid import UUID
 import secrets, string, datetime
 
 from app.db.session import get_db
-from app.models.user import User, UserRole
+from app.models.user import User, UserRole, RolePermission
 from app.models.federation import Federation
 from app.models.local_ump import LocalUmp
 from app.models.enums import OrgType
@@ -84,6 +84,8 @@ def _user_out(u: User, db: Session) -> dict:
         "is_active":         u.is_active,
         "roles":             role_list,
         "all_orgs":          orgs,
+        "custom_permissions": u.custom_permissions or None,
+        "has_custom_permissions": bool(u.custom_permissions is not None and len(u.custom_permissions) > 0),
         "created_at":        u.created_at.isoformat() if u.created_at else None,
     }
 
@@ -459,4 +461,301 @@ def reopen_activity_report(
         "detail": f"Relatório de atividades de {report.fiscal_year} reaberto para rascunho com sucesso.",
         "fiscal_year": report.fiscal_year,
         "report_id": str(report.id),
+    }
+
+
+# ── Metadados de Abas e Permissões de Acesso ──────────────────
+
+AVAILABLE_TABS = [
+    {
+        "id": "finances",
+        "name": "Financeiro",
+        "description": "Livro caixa, lançamentos de receitas e despesas, relatórios financeiros",
+        "icon": "financeiro",
+        "scope": "both",
+    },
+    {
+        "id": "members",
+        "name": "Sócios / Delegados",
+        "description": "Cadastro e gerenciamento de sócios locais ou delegados de federação",
+        "icon": "socios",
+        "scope": "both",
+    },
+    {
+        "id": "board",
+        "name": "Diretoria",
+        "description": "Composição e cargos da diretoria em exercício",
+        "icon": "diretoria",
+        "scope": "both",
+    },
+    {
+        "id": "local-umps",
+        "name": "Sociedades Locais",
+        "description": "Gestão das sociedades locais vinculadas (exclusivo Federação)",
+        "icon": "umps_locais",
+        "scope": "federation",
+    },
+    {
+        "id": "secretary",
+        "name": "Secretaria",
+        "description": "Livro de atas, reuniões, pautas e documentos oficiais",
+        "icon": "secretaria",
+        "scope": "both",
+    },
+    {
+        "id": "president",
+        "name": "Presidência",
+        "description": "Manual da liderança, modelos de documentos e resoluções",
+        "icon": "presidente",
+        "scope": "both",
+    },
+    {
+        "id": "statistics",
+        "name": "Estatísticas UPH",
+        "description": "Relatório e formulário anual de estatísticas (exclusivo UPH)",
+        "icon": "estatistica",
+        "scope": "uph",
+    },
+    {
+        "id": "ump-statistics",
+        "name": "Estatísticas UMP",
+        "description": "Coletor individual e painel estatístico consolidado (exclusivo UMP)",
+        "icon": "estatistica",
+        "scope": "ump",
+    },
+    {
+        "id": "notices",
+        "name": "Avisos e Comunicados",
+        "description": "Mural de avisos internos e comunicados da liderança",
+        "icon": "aviso",
+        "scope": "both",
+    },
+    {
+        "id": "calendar",
+        "name": "Calendário",
+        "description": "Agenda de programações, reuniões e eventos",
+        "icon": "calendario",
+        "scope": "both",
+    },
+    {
+        "id": "eleicoes",
+        "name": "Eleições",
+        "description": "Módulo de votação eletrônica secreta para eleições",
+        "icon": "eleicao",
+        "scope": "both",
+    },
+    {
+        "id": "congressos",
+        "name": "Congressos / Credencial",
+        "description": "Organização do congresso, homologação e credenciamento de delegados",
+        "icon": "congressos",
+        "scope": "both",
+    },
+]
+
+DEFAULT_ROLE_PERMISSIONS = {
+    'presidente': [
+        'finances', 'members', 'board', 'local-umps', 'secretary',
+        'president', 'statistics', 'ump-statistics', 'notices',
+        'calendar', 'eleicoes', 'congressos'
+    ],
+    'vice_presidente': [
+        'finances', 'members', 'board', 'local-umps', 'secretary',
+        'president', 'statistics', 'ump-statistics', 'notices',
+        'calendar', 'eleicoes', 'congressos'
+    ],
+    'tesoureiro': [
+        'finances', 'members', 'statistics', 'ump-statistics',
+        'notices', 'calendar', 'eleicoes', 'congressos'
+    ],
+    '1_secretario': [
+        'secretary', 'statistics', 'ump-statistics',
+        'notices', 'calendar', 'eleicoes', 'congressos'
+    ],
+    '2_secretario': [
+        'secretary', 'statistics', 'ump-statistics',
+        'notices', 'calendar', 'eleicoes', 'congressos'
+    ],
+    'secretario_executivo': [
+        'secretary', 'statistics', 'ump-statistics',
+        'notices', 'calendar', 'eleicoes', 'congressos'
+    ],
+    'secretario_presbiterial': [
+        'finances', 'members', 'board', 'local-umps', 'secretary',
+        'president', 'statistics', 'ump-statistics', 'notices',
+        'calendar', 'eleicoes', 'congressos'
+    ],
+    'conselheiro': [
+        'finances', 'members', 'board', 'local-umps', 'secretary',
+        'president', 'statistics', 'ump-statistics', 'notices',
+        'calendar', 'eleicoes', 'congressos'
+    ],
+}
+
+
+class UserPermissionsPayload(BaseModel):
+    custom_permissions: Optional[dict] = None
+
+
+class RolePermissionsPayload(BaseModel):
+    allowed_pages: Optional[List[str]] = None
+
+
+@router.get("/permissions/metadata")
+def get_permissions_metadata(
+    current_user: User = Depends(require_admin),
+):
+    roles_list = [{"role": k, "role_label": v} for k, v in ROLE_LABELS.items()]
+    return {
+        "available_tabs": AVAILABLE_TABS,
+        "default_role_permissions": DEFAULT_ROLE_PERMISSIONS,
+        "roles": roles_list,
+    }
+
+
+@router.get("/users/{user_id}/permissions")
+def get_user_permissions(
+    user_id: UUID,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    target = db.query(User).filter(User.id == user_id).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    year = datetime.date.today().year
+    roles = db.query(UserRole).filter(
+        UserRole.user_id == target.id,
+        UserRole.is_active == True,
+        UserRole.fiscal_year == year,
+    ).all()
+    user_roles = [r.role.value if hasattr(r.role, 'value') else str(r.role) for r in roles]
+
+    role_perms = db.query(RolePermission).all()
+    custom_roles_map = {rp.role: rp.allowed_pages for rp in role_perms}
+
+    role_default_pages = set()
+    for r in user_roles:
+        if r in custom_roles_map:
+            role_default_pages.update(custom_roles_map[r])
+        elif r in DEFAULT_ROLE_PERMISSIONS:
+            role_default_pages.update(DEFAULT_ROLE_PERMISSIONS[r])
+
+    if not user_roles:
+        role_default_pages.update(['notices', 'calendar'])
+
+    user_custom = target.custom_permissions or {}
+    has_custom = bool(target.custom_permissions is not None and len(target.custom_permissions) > 0)
+
+    effective_permissions = {}
+    for tab in AVAILABLE_TABS:
+        tab_id = tab["id"]
+        if tab_id in user_custom:
+            effective_permissions[tab_id] = bool(user_custom[tab_id])
+        else:
+            effective_permissions[tab_id] = (tab_id in role_default_pages)
+
+    return {
+        "user_id": str(target.id),
+        "full_name": target.full_name,
+        "email": target.email,
+        "organization_id": str(target.organization_id),
+        "organization_type": target.organization_type.value if hasattr(target.organization_type, 'value') else str(target.organization_type),
+        "user_roles": user_roles,
+        "has_custom_permissions": has_custom,
+        "custom_permissions": target.custom_permissions or None,
+        "role_defaults": list(role_default_pages),
+        "effective_permissions": effective_permissions,
+        "available_tabs": AVAILABLE_TABS,
+    }
+
+
+@router.put("/users/{user_id}/permissions")
+def update_user_permissions(
+    user_id: UUID,
+    payload: UserPermissionsPayload,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    target = db.query(User).filter(User.id == user_id).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    if payload.custom_permissions is None or len(payload.custom_permissions) == 0:
+        target.custom_permissions = None
+        detail = "Permissões personalizadas removidas. O usuário voltou ao padrão do cargo."
+    else:
+        target.custom_permissions = payload.custom_permissions
+        detail = "Permissões personalizadas salvas com sucesso para o usuário."
+
+    db.commit()
+    db.refresh(target)
+    return {
+        "detail": detail,
+        "user_id": str(target.id),
+        "has_custom_permissions": target.custom_permissions is not None,
+        "custom_permissions": target.custom_permissions,
+    }
+
+
+@router.get("/roles/permissions")
+def list_role_permissions(
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    role_perms = db.query(RolePermission).all()
+    custom_map = {rp.role: rp.allowed_pages for rp in role_perms}
+
+    result = []
+    for r_key, r_label in ROLE_LABELS.items():
+        is_custom = r_key in custom_map
+        allowed = custom_map[r_key] if is_custom else DEFAULT_ROLE_PERMISSIONS.get(r_key, ['notices', 'calendar'])
+        result.append({
+            "role": r_key,
+            "role_label": r_label,
+            "is_custom": is_custom,
+            "allowed_pages": allowed,
+            "default_pages": DEFAULT_ROLE_PERMISSIONS.get(r_key, ['notices', 'calendar']),
+        })
+    return {
+        "roles": result,
+        "available_tabs": AVAILABLE_TABS,
+    }
+
+
+@router.put("/roles/{role_name}/permissions")
+def update_role_permissions(
+    role_name: str,
+    payload: RolePermissionsPayload,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    if role_name not in ROLE_LABELS:
+        raise HTTPException(status_code=400, detail=f"Cargo inválido: {role_name}")
+
+    existing = db.query(RolePermission).filter(RolePermission.role == role_name).first()
+
+    if payload.allowed_pages is None:
+        if existing:
+            db.delete(existing)
+            db.commit()
+        return {
+            "detail": f"Permissões do cargo {ROLE_LABELS[role_name]} restauradas para o padrão do sistema.",
+            "role": role_name,
+            "is_custom": False,
+            "allowed_pages": DEFAULT_ROLE_PERMISSIONS.get(role_name, ['notices', 'calendar']),
+        }
+
+    if existing:
+        existing.allowed_pages = payload.allowed_pages
+    else:
+        new_rp = RolePermission(role=role_name, allowed_pages=payload.allowed_pages)
+        db.add(new_rp)
+
+    db.commit()
+    return {
+        "detail": f"Permissões do cargo {ROLE_LABELS[role_name]} atualizadas com sucesso.",
+        "role": role_name,
+        "is_custom": True,
+        "allowed_pages": payload.allowed_pages,
     }

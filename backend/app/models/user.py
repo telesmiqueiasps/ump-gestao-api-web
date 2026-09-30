@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean, Enum as SAEnum, ForeignKey, Integer, DateTime
+from sqlalchemy import Column, String, Boolean, Enum as SAEnum, ForeignKey, Integer, DateTime, JSON
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func, text
 from sqlalchemy.orm import relationship
@@ -15,6 +15,7 @@ class User(Base):
     full_name = Column(String(200), nullable=False)
     email = Column(String(255), nullable=False)
     password_hash = Column(String, nullable=False)
+    custom_permissions = Column(JSON, nullable=True)
     is_active = Column(Boolean, default=True)
     deactivated_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -32,3 +33,13 @@ class UserRole(Base):
     is_active = Column(Boolean, default=True)
 
     user = relationship("User", back_populates="roles")
+
+
+class RolePermission(Base):
+    __tablename__ = "role_permissions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    role = Column(String(50), nullable=False, unique=True)
+    allowed_pages = Column(JSON, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

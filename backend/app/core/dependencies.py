@@ -63,6 +63,15 @@ def require_local_or_federation(current_user: User = Depends(get_current_user)) 
 
 def require_roles(*roles: BoardRole):
     def checker(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> User:
+        if current_user.custom_permissions and isinstance(current_user.custom_permissions, dict):
+            if current_user.custom_permissions.get("calendar") is True:
+                return current_user
+            if current_user.custom_permissions.get("calendar") is False:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Permissão negada para esta operação",
+                )
+
         from app.models.user import UserRole
         import datetime
         active_role = db.query(UserRole).filter(

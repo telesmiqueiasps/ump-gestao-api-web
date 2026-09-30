@@ -32,6 +32,7 @@ export async function login(email, password) {
     organization_id: data.organization_id,
     organization_type: data.organization_type,
     roles: data.roles,
+    custom_permissions: data.custom_permissions || null,
   }))
 
   // Busca e salva o tipo de sociedade

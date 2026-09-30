@@ -112,6 +112,11 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
             <span>UMPs Locais</span>
           </button>
+          <button class="admin-tab" data-tab="roles"
+            onclick="switchAdminTab('roles')" style="display:inline-flex;align-items:center;gap:.35rem;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            <span>Permissões por Cargo</span>
+          </button>
         </div>
       </div>
 
@@ -152,6 +157,27 @@
           <button class="btn btn-primary">+ Nova UMP Local</button>
         </div>
         <div id="locals-list" style="display:flex;flex-direction:column;gap:.6rem">
+          <div class="loading-center"><div class="spinner"></div></div>
+        </div>
+      </div>
+
+      <!-- ABA: Permissões por Cargo -->
+      <div id="admin-tab-roles" style="display:none">
+        <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:var(--radius-lg);padding:.9rem 1.1rem;margin-bottom:1.25rem;display:flex;align-items:flex-start;gap:.75rem;">
+          <div style="color:#2563eb;flex-shrink:0;margin-top:.1rem;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          </div>
+          <div>
+            <div style="font-size:.88rem;font-weight:700;color:#1e40af;">Regras Padrão de Abas por Cargo</div>
+            <div style="font-size:.78rem;color:#3b82f6;margin-top:.15rem;line-height:1.4;">
+              Defina quais abas ficam liberadas por padrão para cada cargo da diretoria. Caso deseje abrir ou restringir abas para um usuário específico, use o botão <strong>Permissões</strong> no cartão do usuário na aba <strong>Usuários</strong>.
+            </div>
+          </div>
+        </div>
+
+        <div id="roles-alert" class="hidden" style="margin-bottom:1rem"></div>
+
+        <div id="roles-list" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(360px, 1fr));gap:1rem;">
           <div class="loading-center"><div class="spinner"></div></div>
         </div>
       </div>
@@ -333,6 +359,116 @@
   </div>
 </div>
 
+<!-- Modal Permissões do Usuário -->
+<div class="modal-overlay" id="modal-user-permissions">
+  <div class="modal modal-lg" style="max-width: 820px; width: 95%;">
+    <div class="modal-header">
+      <div>
+        <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+          <h2 style="margin:0;font-size:1.15rem;font-weight:700;">Permissões de Abas do Usuário</h2>
+          <span id="user-perms-status-badge" class="badge badge-blue"></span>
+        </div>
+        <p style="font-size:.78rem;color:var(--slate-500);margin-top:.2rem;margin-bottom:0;" id="user-perms-subtitle">
+          Carregando dados do usuário...
+        </p>
+      </div>
+      <button class="modal-close">✕</button>
+    </div>
+
+    <div style="padding:.5rem 0;">
+      <div id="user-perms-alert" class="hidden" style="margin-bottom:.75rem"></div>
+
+      <div id="user-perms-info-banner" style="margin-bottom:1rem;padding:.75rem 1rem;border-radius:var(--radius);font-size:.8rem;line-height:1.45;"></div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;flex-wrap:wrap;gap:.5rem;">
+        <span style="font-size:.75rem;font-weight:700;color:var(--slate-500);text-transform:uppercase;letter-spacing:.5px;">
+          Abas e Recursos do Sistema
+        </span>
+        <div style="display:flex;gap:.5rem;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="selectAllUserPerms(true)" style="font-size:.75rem;padding:.25rem .55rem;">
+            Marcar Todas
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="selectAllUserPerms(false)" style="font-size:.75rem;padding:.25rem .55rem;">
+            Desmarcar Todas
+          </button>
+        </div>
+      </div>
+
+      <div id="user-perms-tabs-grid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(340px, 1fr));gap:.65rem;max-height:52vh;overflow-y:auto;padding-right:.25rem;">
+        <div class="loading-center"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;">
+      <button class="btn btn-ghost btn-sm" id="btn-reset-user-perms" onclick="resetUserPermsToDefault()" style="color:var(--red-600);border:1px solid var(--red-200);display:none;align-items:center;gap:.35rem;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M8 16H3v5"></path></svg>
+        <span>Restaurar Padrão do Cargo</span>
+      </button>
+      <div style="display:flex;gap:.5rem;margin-left:auto;">
+        <button class="btn btn-secondary modal-close">Cancelar</button>
+        <button class="btn btn-primary" id="btn-save-user-perms" onclick="saveUserPermissions()" style="display:inline-flex;align-items:center;gap:.35rem;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <span>Salvar Permissões</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Permissões do Cargo -->
+<div class="modal-overlay" id="modal-role-permissions">
+  <div class="modal modal-lg" style="max-width: 820px; width: 95%;">
+    <div class="modal-header">
+      <div>
+        <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+          <h2 style="margin:0;font-size:1.15rem;font-weight:700;">Configurar Permissões do Cargo</h2>
+          <span id="role-perms-title-badge" class="badge badge-blue"></span>
+        </div>
+        <p style="font-size:.78rem;color:var(--slate-500);margin-top:.2rem;margin-bottom:0;" id="role-perms-subtitle">
+          Configure quais abas este cargo terá acesso por padrão em todo o sistema
+        </p>
+      </div>
+      <button class="modal-close">✕</button>
+    </div>
+
+    <div style="padding:.5rem 0;">
+      <div id="role-perms-alert" class="hidden" style="margin-bottom:.75rem"></div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;flex-wrap:wrap;gap:.5rem;">
+        <span style="font-size:.75rem;font-weight:700;color:var(--slate-500);text-transform:uppercase;letter-spacing:.5px;">
+          Abas Permitidas para o Cargo
+        </span>
+        <div style="display:flex;gap:.5rem;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="selectAllRolePerms(true)" style="font-size:.75rem;padding:.25rem .55rem;">
+            Marcar Todas
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="selectAllRolePerms(false)" style="font-size:.75rem;padding:.25rem .55rem;">
+            Desmarcar Todas
+          </button>
+        </div>
+      </div>
+
+      <div id="role-perms-tabs-grid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(340px, 1fr));gap:.65rem;max-height:52vh;overflow-y:auto;padding-right:.25rem;">
+        <div class="loading-center"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;">
+      <button class="btn btn-ghost btn-sm" id="btn-reset-role-perms" onclick="resetRolePermsToDefault()" style="color:var(--red-600);border:1px solid var(--red-200);display:none;align-items:center;gap:.35rem;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M8 16H3v5"></path></svg>
+        <span>Restaurar Padrão do Sistema</span>
+      </button>
+      <div style="display:flex;gap:.5rem;margin-left:auto;">
+        <button class="btn btn-secondary modal-close">Cancelar</button>
+        <button class="btn btn-primary" id="btn-save-role-perms" onclick="saveRolePermissions()" style="display:inline-flex;align-items:center;gap:.35rem;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <span>Salvar Permissões do Cargo</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script type="module">
   import { requireAuth } from '../assets/js/auth.js'
   import { renderShell } from '../assets/js/router.v3.js'
@@ -367,6 +503,27 @@
   let resetUserId = null
   let fedUserCount = 0
   let searchTimer = null
+  let currentUserPermsId = null
+  let currentRolePermsKey = null
+  let cachedTabsMetadata = null
+  let rolesDataCache = null
+
+  const TAB_SVGS = {
+    dashboard: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>',
+    profile: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>',
+    finances: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>',
+    members: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>',
+    board: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>',
+    'local-umps': '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>',
+    secretary: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>',
+    president: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>',
+    statistics: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>',
+    'ump-statistics': '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>',
+    notices: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>',
+    calendar: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>',
+    eleicoes: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>',
+    congressos: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>',
+  }
 
   const ROLES = [
     {v:'presidente',             l:'Presidente'},
@@ -389,9 +546,12 @@
       tab === 'federations' ? 'block' : 'none'
     document.getElementById('admin-tab-local-umps').style.display =
       tab === 'local-umps' ? 'block' : 'none'
+    document.getElementById('admin-tab-roles').style.display =
+      tab === 'roles' ? 'block' : 'none'
       
     if (tab === 'federations') loadFederations()
     if (tab === 'local-umps') loadLocalUmps()
+    if (tab === 'roles') loadRolePermissions()
   }
 
   // ── Usuários ──────────────────────────────────────────────────
@@ -432,6 +592,11 @@
                 ${u.full_name}
               </span>
               ${!u.is_active ? '<span class="badge badge-red">Inativo</span>' : ''}
+              ${u.has_custom_permissions ? `
+                <span class="badge" style="background:#fef3c7;color:#92400e;display:inline-flex;align-items:center;gap:.25rem;font-size:.7rem;" title="Este usuário possui abas personalizadas que substituem o cargo">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                  <span>Abas Personalizadas</span>
+                </span>` : ''}
             </div>
             <div style="font-size:.78rem;color:var(--slate-500);margin-top:.1rem">
               ${u.email}
@@ -455,6 +620,11 @@
               </div>` : ''}
           </div>
           <div style="display:flex;gap:.35rem;flex-shrink:0;flex-wrap:wrap">
+            <button class="btn btn-secondary btn-sm"
+              onclick="openUserPermissions('${u.id}')" style="display:inline-flex;align-items:center;gap:.3rem;" title="Definir quais abas este usuário pode acessar">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+              <span>Permissões</span>
+            </button>
             <button class="btn btn-secondary btn-sm"
               onclick="openResetPw('${u.id}','${u.email}')" style="display:inline-flex;align-items:center;gap:.3rem;">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-1.5 1.5L14 9l-1.5-1.5-3 3 1.5 1.5L9 14l-1.5-1.5-3 3 1.5 1.5L4 19l-2 2 2 2 2-2 1.5-1.5 1.5 1.5 3-3-1.5-1.5 2-2 1.5 1.5 3-3-1.5-1.5 3.5-3.5a5 5 0 1 0-7.07-7.07l-3.5 3.5"></path></svg>
@@ -902,6 +1072,355 @@
       await loadOrgPeriods(currentPeriodsOrg.id)
     } catch (err) {
       showAlert('manage-periods-alert', err.message || 'Erro ao reabrir relatório.', 'error')
+    }
+  }
+
+  // ── Permissões de Usuário ────────────────────────────────────
+  window.openUserPermissions = async (userId) => {
+    currentUserPermsId = userId
+    clearAlert('user-perms-alert')
+    document.getElementById('btn-reset-user-perms').style.display = 'none'
+    document.getElementById('user-perms-status-badge').textContent = 'Carregando...'
+    document.getElementById('user-perms-subtitle').textContent = 'Consultando perfil e permissões...'
+    const banner = document.getElementById('user-perms-info-banner')
+    banner.innerHTML = ''
+    banner.style.display = 'none'
+    
+    const grid = document.getElementById('user-perms-tabs-grid')
+    grid.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>'
+    openModal('modal-user-permissions')
+
+    try {
+      const data = await api.get(`/api/admin/users/${userId}/permissions`)
+      cachedTabsMetadata = data.available_tabs
+
+      const rolesLabel = data.user_roles && data.user_roles.length
+        ? data.user_roles.map(r => ROLES.find(item => item.v === r)?.l || r).join(', ')
+        : 'Sem cargo ativo'
+
+      document.getElementById('user-perms-subtitle').textContent =
+        `${data.full_name} (${data.email}) · Cargo: ${rolesLabel}`
+
+      const badge = document.getElementById('user-perms-status-badge')
+      const btnReset = document.getElementById('btn-reset-user-perms')
+
+      if (data.has_custom_permissions) {
+        badge.className = 'badge'
+        badge.style.cssText = 'background:#fef3c7;color:#92400e;display:inline-flex;align-items:center;gap:.25rem;'
+        badge.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg> <span>Personalizado</span>'
+
+        banner.style.display = 'flex'
+        banner.style.alignItems = 'flex-start'
+        banner.style.gap = '.5rem'
+        banner.style.background = '#fffbeb'
+        banner.style.border = '1px solid #fde68a'
+        banner.style.color = '#92400e'
+        banner.innerHTML = `
+          <div style="flex-shrink:0;margin-top:.1rem;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></div>
+          <div>Este usuário possui <strong>permissões personalizadas</strong> que substituem o padrão do cargo. Marque ou desmarque abas conforme necessário, ou use o botão à esquerda para restaurar o padrão do cargo.</div>
+        `
+        btnReset.style.display = 'inline-flex'
+      } else {
+        badge.className = 'badge badge-blue'
+        badge.style.cssText = ''
+        badge.textContent = 'Padrão do Cargo'
+
+        banner.style.display = 'flex'
+        banner.style.alignItems = 'flex-start'
+        banner.style.gap = '.5rem'
+        banner.style.background = '#f0fdf4'
+        banner.style.border = '1px solid #bbf7d0'
+        banner.style.color = '#166534'
+        banner.innerHTML = `
+          <div style="flex-shrink:0;margin-top:.1rem;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+          <div>Este usuário está utilizando as permissões padrão herdadas do cargo (<strong>${rolesLabel}</strong>). Se você alterar e salvar, elas serão salvas como personalizadas para este usuário.</div>
+        `
+        btnReset.style.display = 'none'
+      }
+
+      // Renderiza abas
+      grid.innerHTML = data.available_tabs.map(tab => {
+        const isChecked = Boolean(data.effective_permissions[tab.id])
+        const isDefault = data.role_defaults && data.role_defaults.includes(tab.id)
+
+        let scopeBadge = ''
+        if (tab.scope === 'federation') {
+          scopeBadge = '<span class="org-chip federation" style="font-size:.65rem;padding:.1rem .4rem;">Federação</span>'
+        } else if (tab.scope === 'local') {
+          scopeBadge = '<span class="org-chip local_ump" style="font-size:.65rem;padding:.1rem .4rem;">Local</span>'
+        }
+
+        return `
+          <label style="display:flex;align-items:flex-start;gap:.65rem;background:#fff;border:1.5px solid var(--slate-200);border-radius:var(--radius);padding:.65rem .85rem;cursor:pointer;transition:border-color .15s, background .15s;user-select:none;" class="perm-tab-item">
+            <input type="checkbox" class="user-perm-checkbox" data-tab-id="${tab.id}" ${isChecked ? 'checked' : ''} style="margin-top:.2rem;cursor:pointer;width:16px;height:16px;accent-color:#1d4ed8;">
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:.35rem;font-weight:600;font-size:.85rem;color:var(--slate-800);flex-wrap:wrap">
+                <span style="color:var(--slate-600);display:inline-flex;">${TAB_SVGS[tab.id] || ''}</span>
+                <span>${tab.name}</span>
+                ${scopeBadge}
+                ${isDefault ? '<span style="font-size:.65rem;color:var(--slate-400);font-weight:normal;" title="Presente no cargo do usuário">(Padrão do cargo)</span>' : ''}
+              </div>
+              <div style="font-size:.73rem;color:var(--slate-500);margin-top:.15rem;line-height:1.3;">
+                ${tab.description}
+              </div>
+            </div>
+          </label>
+        `
+      }).join('')
+
+    } catch(err) {
+      showAlert('user-perms-alert', err.message || 'Erro ao carregar permissões do usuário.', 'error')
+      grid.innerHTML = '<div class="alert alert-error">Falha ao carregar permissões.</div>'
+    }
+  }
+
+  window.selectAllUserPerms = (check) => {
+    document.querySelectorAll('.user-perm-checkbox').forEach(cb => {
+      cb.checked = Boolean(check)
+    })
+  }
+
+  window.saveUserPermissions = async () => {
+    if (!currentUserPermsId) return
+    const btn = document.getElementById('btn-save-user-perms')
+    setLoading(btn, true, 'Salvando...')
+    clearAlert('user-perms-alert')
+
+    try {
+      const custom_perms = {}
+      document.querySelectorAll('.user-perm-checkbox').forEach(cb => {
+        custom_perms[cb.dataset.tabId] = cb.checked
+      })
+
+      const res = await api.put(`/api/admin/users/${currentUserPermsId}/permissions`, {
+        custom_permissions: custom_perms,
+      })
+
+      showAlert('user-perms-alert', res.detail || 'Permissões atualizadas com sucesso!', 'success')
+      loadUsers(document.getElementById('search-users').value.trim())
+      setTimeout(() => {
+        openUserPermissions(currentUserPermsId)
+      }, 700)
+    } catch(err) {
+      showAlert('user-perms-alert', err.message || 'Erro ao salvar permissões.', 'error')
+    } finally {
+      setLoading(btn, false, 'Salvar Permissões')
+    }
+  }
+
+  window.resetUserPermsToDefault = async () => {
+    if (!currentUserPermsId) return
+    const confirmed = confirm('Deseja realmente remover as permissões personalizadas deste usuário e restaurar o padrão do cargo?')
+    if (!confirmed) return
+
+    clearAlert('user-perms-alert')
+    try {
+      const res = await api.put(`/api/admin/users/${currentUserPermsId}/permissions`, {
+        custom_permissions: null,
+      })
+      showAlert('user-perms-alert', res.detail || 'Padrão do cargo restaurado com sucesso!', 'success')
+      loadUsers(document.getElementById('search-users').value.trim())
+      setTimeout(() => {
+        openUserPermissions(currentUserPermsId)
+      }, 700)
+    } catch(err) {
+      showAlert('user-perms-alert', err.message || 'Erro ao restaurar permissões.', 'error')
+    }
+  }
+
+  // ── Permissões por Cargo ─────────────────────────────────────
+  async function loadRolePermissions() {
+    const list = document.getElementById('roles-list')
+    list.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>'
+    clearAlert('roles-alert')
+
+    try {
+      const data = await api.get('/api/admin/roles/permissions')
+      rolesDataCache = data
+      cachedTabsMetadata = data.available_tabs
+
+      const tabsMap = {}
+      data.available_tabs.forEach(t => { tabsMap[t.id] = t })
+
+      list.innerHTML = data.roles.map(r => {
+        const allowedTabs = r.allowed_pages || []
+        const tabsChips = allowedTabs.map(tabId => {
+          const tab = tabsMap[tabId]
+          const tabName = tab ? tab.name : tabId
+          const svg = TAB_SVGS[tabId] || ''
+          return `
+            <span style="display:inline-flex;align-items:center;gap:.25rem;background:var(--slate-100);color:var(--slate-700);padding:.15rem .45rem;border-radius:6px;font-size:.72rem;font-weight:500;">
+              ${svg}
+              <span>${tabName}</span>
+            </span>
+          `
+        }).join('')
+
+        const badgeHtml = r.is_custom
+          ? `<span class="badge" style="background:#fef3c7;color:#92400e;display:inline-flex;align-items:center;gap:.25rem;font-size:.7rem;">
+               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+               <span>Personalizado</span>
+             </span>`
+          : `<span class="badge badge-slate" style="font-size:.7rem;">Padrão do Sistema</span>`
+
+        return `
+          <div class="user-card" style="display:flex;flex-direction:column;justify-content:space-between;gap:1rem;">
+            <div>
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;">
+                <div style="font-weight:700;font-size:.95rem;color:var(--slate-800);">
+                  ${r.role_label}
+                </div>
+                ${badgeHtml}
+              </div>
+
+              <div style="font-size:.75rem;color:var(--slate-500);margin-top:.4rem;margin-bottom:.5rem;">
+                Abas permitidas por padrão (${allowedTabs.length}):
+              </div>
+
+              <div style="display:flex;flex-wrap:wrap;gap:.35rem;">
+                ${tabsChips || '<span style="font-size:.75rem;color:var(--slate-400);font-style:italic">Nenhuma aba liberada</span>'}
+              </div>
+            </div>
+
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding-top:.75rem;border-top:1px solid var(--slate-100);flex-wrap:wrap;">
+              ${r.is_custom ? `
+                <button class="btn btn-ghost btn-sm" onclick="resetRolePermsDirectly('${r.role}')" style="color:var(--red-600);border:1px solid var(--red-200);display:inline-flex;align-items:center;gap:.3rem;padding:.25rem .55rem;font-size:.75rem;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M8 16H3v5"></path></svg>
+                  <span>Restaurar Padrão</span>
+                </button>
+              ` : '<span></span>'}
+
+              <button class="btn btn-secondary btn-sm" onclick="openRolePermissionsModal('${r.role}')" style="display:inline-flex;align-items:center;gap:.3rem;padding:.25rem .55rem;font-size:.78rem;margin-left:auto;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                <span>Configurar Abas</span>
+              </button>
+            </div>
+          </div>
+        `
+      }).join('')
+
+    } catch(err) {
+      showAlert('roles-alert', err.message || 'Erro ao carregar permissões por cargo.', 'error')
+      list.innerHTML = '<div class="alert alert-error">Falha ao carregar permissões por cargo.</div>'
+    }
+  }
+
+  window.openRolePermissionsModal = async (roleKey) => {
+    currentRolePermsKey = roleKey
+    clearAlert('role-perms-alert')
+    const roleObj = rolesDataCache?.roles?.find(r => r.role === roleKey)
+    const roleLabel = roleObj ? roleObj.role_label : roleKey
+
+    document.getElementById('role-perms-title-badge').textContent = roleLabel
+    document.getElementById('role-perms-subtitle').textContent =
+      `Selecione as abas que usuários com cargo ${roleLabel} poderão visualizar por padrão`
+
+    const btnReset = document.getElementById('btn-reset-role-perms')
+    if (roleObj && roleObj.is_custom) {
+      btnReset.style.display = 'inline-flex'
+    } else {
+      btnReset.style.display = 'none'
+    }
+
+    const grid = document.getElementById('role-perms-tabs-grid')
+    const allowedTabs = roleObj?.allowed_pages || []
+
+    grid.innerHTML = (cachedTabsMetadata || []).map(tab => {
+      const isChecked = allowedTabs.includes(tab.id)
+      const isSystemDefault = roleObj?.default_pages?.includes(tab.id)
+
+      let scopeBadge = ''
+      if (tab.scope === 'federation') {
+        scopeBadge = '<span class="org-chip federation" style="font-size:.65rem;padding:.1rem .4rem;">Federação</span>'
+      } else if (tab.scope === 'local') {
+        scopeBadge = '<span class="org-chip local_ump" style="font-size:.65rem;padding:.1rem .4rem;">Local</span>'
+      }
+
+      return `
+        <label style="display:flex;align-items:flex-start;gap:.65rem;background:#fff;border:1.5px solid var(--slate-200);border-radius:var(--radius);padding:.65rem .85rem;cursor:pointer;transition:border-color .15s, background .15s;user-select:none;" class="perm-tab-item">
+          <input type="checkbox" class="role-perm-checkbox" data-tab-id="${tab.id}" ${isChecked ? 'checked' : ''} style="margin-top:.2rem;cursor:pointer;width:16px;height:16px;accent-color:#1d4ed8;">
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:.35rem;font-weight:600;font-size:.85rem;color:var(--slate-800);flex-wrap:wrap">
+              <span style="color:var(--slate-600);display:inline-flex;">${TAB_SVGS[tab.id] || ''}</span>
+              <span>${tab.name}</span>
+              ${scopeBadge}
+              ${isSystemDefault ? '<span style="font-size:.65rem;color:var(--slate-400);font-weight:normal;" title="Presente no padrão original do sistema">(Padrão de fábrica)</span>' : ''}
+            </div>
+            <div style="font-size:.73rem;color:var(--slate-500);margin-top:.15rem;line-height:1.3;">
+              ${tab.description}
+            </div>
+          </div>
+        </label>
+      `
+    }).join('')
+
+    openModal('modal-role-permissions')
+  }
+
+  window.selectAllRolePerms = (check) => {
+    document.querySelectorAll('.role-perm-checkbox').forEach(cb => {
+      cb.checked = Boolean(check)
+    })
+  }
+
+  window.saveRolePermissions = async () => {
+    if (!currentRolePermsKey) return
+    const btn = document.getElementById('btn-save-role-perms')
+    setLoading(btn, true, 'Salvando...')
+    clearAlert('role-perms-alert')
+
+    try {
+      const allowed = []
+      document.querySelectorAll('.role-perm-checkbox').forEach(cb => {
+        if (cb.checked) allowed.push(cb.dataset.tabId)
+      })
+
+      const res = await api.put(`/api/admin/roles/${currentRolePermsKey}/permissions`, {
+        allowed_pages: allowed,
+      })
+
+      showAlert('roles-alert', res.detail || 'Permissões do cargo salvas com sucesso!', 'success')
+      closeModal('modal-role-permissions')
+      await loadRolePermissions()
+    } catch(err) {
+      showAlert('role-perms-alert', err.message || 'Erro ao salvar permissões do cargo.', 'error')
+    } finally {
+      setLoading(btn, false, 'Salvar Permissões do Cargo')
+    }
+  }
+
+  window.resetRolePermsToDefault = async () => {
+    if (!currentRolePermsKey) return
+    const confirmed = confirm('Deseja realmente restaurar as permissões deste cargo para o padrão original do sistema?')
+    if (!confirmed) return
+
+    clearAlert('role-perms-alert')
+    try {
+      const res = await api.put(`/api/admin/roles/${currentRolePermsKey}/permissions`, {
+        allowed_pages: null,
+      })
+      showAlert('roles-alert', res.detail || 'Padrão original do cargo restaurado com sucesso!', 'success')
+      closeModal('modal-role-permissions')
+      await loadRolePermissions()
+    } catch(err) {
+      showAlert('role-perms-alert', err.message || 'Erro ao restaurar permissões do cargo.', 'error')
+    }
+  }
+
+  window.resetRolePermsDirectly = async (roleKey) => {
+    const roleObj = rolesDataCache?.roles?.find(r => r.role === roleKey)
+    const roleLabel = roleObj ? roleObj.role_label : roleKey
+    const confirmed = confirm(`Deseja realmente restaurar as permissões do cargo "${roleLabel}" para o padrão original do sistema?`)
+    if (!confirmed) return
+
+    try {
+      const res = await api.put(`/api/admin/roles/${roleKey}/permissions`, {
+        allowed_pages: null,
+      })
+      showAlert('roles-alert', res.detail || 'Padrão original do cargo restaurado com sucesso!', 'success')
+      await loadRolePermissions()
+    } catch(err) {
+      showAlert('roles-alert', err.message || 'Erro ao restaurar permissões do cargo.', 'error')
     }
   }
 
