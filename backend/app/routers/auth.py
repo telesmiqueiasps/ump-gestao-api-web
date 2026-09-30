@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from pydantic import BaseModel, EmailStr
 from uuid import UUID
+from typing import Optional
 from app.db.session import get_db
 from app.models.user import User, UserRole
 from app.core.security import verify_password, create_access_token, create_refresh_token, decode_token
