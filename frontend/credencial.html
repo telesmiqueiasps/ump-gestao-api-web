@@ -624,7 +624,7 @@
           <p class="gestao" id="doc-gestao-year">GESTÃO 2024</p>
         </div>
 
-        <div class="doc-verse">
+        <div class="doc-verse" id="doc-verse-text">
           “Ninguém despreze a tua mocidade; pelo contrário, torna-te padrão dos fiéis, na palavra, no procedimento, no amor, na fé, na pureza.” (I Tm. 4.12).
         </div>
 
@@ -655,7 +655,7 @@
           <div class="signature-item">
             <div class="signature-person" id="sign-pres-name">Presidente da UMP</div>
             <div class="signature-line"></div>
-            <div class="signature-role">Presidente da UMP</div>
+            <div class="signature-role" id="sign-pres-role">Presidente da UMP</div>
             <div id="sign-pres-tag" class="signature-status-tag tag-pending">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
               <span>Assinatura no envio</span>
@@ -856,12 +856,35 @@
       const fed = credData.federation
       const lump = credData.local_ump
 
+      const isUph = (credData.society_type === 'UPH') ||
+                    (credData.federation?.society_type === 'UPH') ||
+                    (credData.credential?.society_type === 'UPH') ||
+                    (credData.local_ump?.society_type === 'UPH') ||
+                    (credData.federation?.name && credData.federation.name.includes('UPH'))
+      const socType = isUph ? 'UPH' : 'UMP'
+      const fedName = isUph ? 'Federação de UPHs' : 'Federação de UMPs'
+
+      // 0. Logo Institucional Dinâmica
+      const logoEl = document.querySelector('.doc-logo')
+      if (logoEl) {
+        logoEl.src = isUph ? '/assets/img/logo_parecer_uph.png' : '/assets/img/logo_parecer.png'
+        logoEl.alt = isUph ? 'Logo UPH IPB' : 'Logo UMP IPB'
+      }
+
       // 1. Cabeçalho Oficial
       const syn = fed.synodal_name || 'SÍNODO PARAÍBA'
       const presb = fed.presbytery_name || fed.name || 'POPB'
-      document.getElementById('doc-meta-sub').textContent = `UMP | ${syn.toUpperCase()} | ${presb.toUpperCase()}`
-      document.getElementById('doc-cong-name').textContent = (cong.title || 'CONGRESSO ANUAL DE MOCIDADE').toUpperCase()
+      document.getElementById('doc-meta-sub').textContent = `${socType} | ${syn.toUpperCase()} | ${presb.toUpperCase()}`
+      document.getElementById('doc-cong-name').textContent = (cong.title || (isUph ? 'CONGRESSO ANUAL DE HOMENS' : 'CONGRESSO ANUAL DE MOCIDADE')).toUpperCase()
       document.getElementById('doc-gestao-year').textContent = `GESTÃO ${cong.fiscal_year || new Date().getFullYear()}`
+
+      // Versículo Bíblico Temático
+      const verseEl = document.getElementById('doc-verse-text')
+      if (verseEl) {
+        verseEl.textContent = isUph
+          ? '“Vigiai, estai firmes na fé, portai-vos varonilmente, fortalecei-vos. Todas as vossas ações sejam feitas com amor.” (I Co. 16.13-14).'
+          : '“Ninguém despreze a tua mocidade; pelo contrário, torna-te padrão dos fiéis, na palavra, no procedimento, no amor, na fé, na pureza.” (I Tm. 4.12).'
+      }
 
       // 2. Data
       const meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
@@ -872,7 +895,7 @@
       // 3. Texto Introdutório
       const church = lump.church_name || lump.name || 'IGREJA PRESBITERIANA'
       document.getElementById('doc-intro').innerHTML = `
-        Sr. (a) Presidente, a UMP da <b>${church.toUpperCase()}</b> tem o prazer de apresentar os seguintes delegados ao <b>${cong.title || 'CONGRESSO'}</b> da Federação de UMPs do ${presb}:
+        Sr. (a) Presidente, a ${socType} da <b>${church.toUpperCase()}</b> tem o prazer de apresentar os seguintes delegados ao <b>${cong.title || 'CONGRESSO'}</b> da ${fedName} do ${presb}:
       `
 
       // 4. Lista de Delegados
@@ -897,8 +920,11 @@
       }
 
       // 5. Bloco de Assinaturas
-      const presName = c.president_name || 'Presidente da UMP'
+      const defaultPresRole = `Presidente da ${socType}`
+      const presName = c.president_name || defaultPresRole
       document.getElementById('sign-pres-name').textContent = presName
+      const presRoleEl = document.getElementById('sign-pres-role')
+      if (presRoleEl) presRoleEl.textContent = defaultPresRole
 
       if (c.submitted_at || c.president_signed_at) {
         const dStr = new Date(c.president_signed_at || c.submitted_at).toLocaleDateString('pt-BR')

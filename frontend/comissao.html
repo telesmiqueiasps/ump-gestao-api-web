@@ -989,6 +989,19 @@
       const congress = data.congress
       const fedName = data.federation_name || 'Federação'
 
+      // Tipo de Sociedade (UPH ou UMP)
+      const isUph = (data.society_type === 'UPH') ||
+                    (localStorage.getItem('society_type') === 'UPH') ||
+                    (data.federation_name && data.federation_name.includes('UPH')) ||
+                    (data.congress && data.congress.title && data.congress.title.includes('UPH'))
+      const logoSrc = isUph ? '/assets/img/logo_parecer_uph.png' : '/assets/img/logo_parecer.png'
+
+      const logoImg = document.querySelector('.header-card .logo-img')
+      if (logoImg) logoImg.src = logoSrc
+
+      const timbreLogo = document.querySelector('.timbre-logo')
+      if (timbreLogo) timbreLogo.src = logoSrc
+
       // Títulos topo
       document.getElementById('fed-name-label').textContent = fedName
       document.getElementById('congress-title-label').textContent = `${congress.title || 'Congresso'} (${congress.fiscal_year || ''})`

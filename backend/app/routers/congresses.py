@@ -193,6 +193,7 @@ def _serialize_credential(cred: CongressCredential, include_token: bool = True) 
         "submitted_by": str(cred.submitted_by) if cred.submitted_by else None,
         "validation_code": cred.validation_code,
         "homologated_at": cred.homologated_at.isoformat() if cred.homologated_at else None,
+        "society_type": cred.local_ump.society_type if (cred.local_ump and getattr(cred.local_ump, "society_type", None)) else "UMP",
         "notes": cred.notes,
         "delegates_count": len(cred.delegates) if cred.delegates else 0,
         "delegates": [
@@ -1036,6 +1037,7 @@ def preview_commission_pdf_admin(
 
     congress = comm.congress
     fed = db.query(Federation).filter(Federation.id == congress.federation_id).first() if congress else None
+    fed_society = fed.society_type if (fed and fed.society_type) else "UMP"
 
     is_closed = bool(congress and congress.status == "encerrado")
     rel_name = comm.relator_name if is_closed else (comm.relator.full_name.strip() if (comm.relator and comm.relator.full_name) else (comm.relator_name or "Não informado"))
@@ -1051,7 +1053,8 @@ def preview_commission_pdf_admin(
         presbytery_name=fed.presbytery_name if fed else None,
         federation_name=fed.name if fed else None,
         validation_code=comm.validation_code,
-        is_preview=True
+        is_preview=True,
+        society_type=fed_society
     )
 
     return Response(
@@ -1089,6 +1092,7 @@ def approve_commission_opinion(
 
     congress = comm.congress
     fed = db.query(Federation).filter(Federation.id == congress.federation_id).first() if congress else None
+    fed_society = fed.society_type if (fed and fed.society_type) else "UMP"
 
     # Gerar código de validação único
     year = congress.fiscal_year if congress else datetime.utcnow().year
@@ -1110,7 +1114,8 @@ def approve_commission_opinion(
         presbytery_name=fed.presbytery_name if fed else None,
         federation_name=fed.name if fed else None,
         validation_code=val_code,
-        is_preview=False
+        is_preview=False,
+        society_type=fed_society
     )
 
     # Upload para o Cloudflare R2
@@ -1145,10 +1150,14 @@ def get_public_commission(
 
     congress = comm.congress
     fed_name = "Federação"
+    society_type = "UMP"
+    presbytery_name = ""
     if congress:
         fed = db.query(Federation).filter(Federation.id == congress.federation_id).first()
         if fed:
             fed_name = fed.name
+            society_type = fed.society_type or "UMP"
+            presbytery_name = fed.presbytery_name or ""
 
     return {
         "commission": _serialize_commission(comm),
@@ -1158,7 +1167,9 @@ def get_public_commission(
             "fiscal_year": congress.fiscal_year if congress else None,
             "status": congress.status if congress else "aberto"
         },
-        "federation_name": fed_name
+        "federation_name": fed_name,
+        "presbytery_name": presbytery_name,
+        "society_type": society_type
     }
 
 
@@ -1209,6 +1220,7 @@ def preview_public_commission_pdf(
 
     congress = comm.congress
     fed = db.query(Federation).filter(Federation.id == congress.federation_id).first() if congress else None
+    fed_society = fed.society_type if (fed and fed.society_type) else "UMP"
 
     is_closed = bool(congress and congress.status == "encerrado")
     rel_name = comm.relator_name if is_closed else (comm.relator.full_name.strip() if (comm.relator and comm.relator.full_name) else (comm.relator_name or "Não informado"))
@@ -1224,7 +1236,8 @@ def preview_public_commission_pdf(
         presbytery_name=fed.presbytery_name if fed else None,
         federation_name=fed.name if fed else None,
         validation_code=comm.validation_code,
-        is_preview=True
+        is_preview=True,
+        society_type=fed_society
     )
 
     return Response(
@@ -1645,9 +1658,11 @@ def get_public_credential(
     congress = cred.congress
     local_ump = cred.local_ump
     fed = db.query(Federation).filter(Federation.id == congress.federation_id).first() if congress else None
+    fed_society = fed.society_type if (fed and getattr(fed, "society_type", None)) else (local_ump.society_type if (local_ump and getattr(local_ump, "society_type", None)) else "UMP")
 
     return {
         "credential": _serialize_credential(cred, include_token=False),
+        "society_type": fed_society,
         "congress": {
             "id": str(congress.id) if congress else None,
             "title": congress.title if congress else "Congresso",
@@ -1660,11 +1675,13 @@ def get_public_credential(
             "name": fed.name if fed else "Federação",
             "presbytery_name": fed.presbytery_name if fed else "",
             "synodal_name": fed.synodal_name if fed else "",
+            "society_type": fed_society,
         },
         "local_ump": {
             "name": local_ump.name if local_ump else "",
             "church_name": local_ump.church_name if local_ump else "",
             "cidade": local_ump.cidade if local_ump else "",
+            "society_type": local_ump.society_type if (local_ump and getattr(local_ump, "society_type", None)) else fed_society,
         }
     }
 
@@ -1748,6 +1765,7 @@ def get_credential_pdf(
     congress = cred.congress
     local_ump = cred.local_ump
     fed = db.query(Federation).filter(Federation.id == congress.federation_id).first() if congress else None
+    fed_society = fed.society_type if (fed and getattr(fed, "society_type", None)) else (local_ump.society_type if (local_ump and getattr(local_ump, "society_type", None)) else "UMP")
 
     delegates_list = [
         {
@@ -1772,7 +1790,8 @@ def get_credential_pdf(
         pastor_approved_at=cred.pastor_approved_at,
         president_signed_at=cred.president_signed_at,
         validation_code=cred.validation_code,
-        is_preview=(cred.status not in ("enviada", "homologada"))
+        is_preview=(cred.status not in ("enviada", "homologada")),
+        society_type=fed_society
     )
 
     return Response(

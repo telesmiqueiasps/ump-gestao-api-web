@@ -3141,62 +3141,87 @@ def _format_commission_date(dt_input):
         return "___ de ____________ de ______"
 
 
-_COMMISSION_LOGO_BYTES = None
+_COMMISSION_LOGOS_CACHE = {}
 
-def _get_commission_logo_flowable():
-    """Obtém o flowable da logo do cabeçalho institucional (logo_parecer.png)."""
-    global _COMMISSION_LOGO_BYTES
-    if _COMMISSION_LOGO_BYTES is None:
+def _get_commission_logo_flowable(society_type: str = "UMP"):
+    """Obtém o flowable da logo do cabeçalho institucional (logo_parecer.png ou logo_parecer_uph.png)."""
+    global _COMMISSION_LOGOS_CACHE
+    st_upper = (society_type or "UMP").strip().upper()
+    is_uph = (st_upper == "UPH")
+    logo_filename = "logo_parecer_uph.png" if is_uph else "logo_parecer.png"
+
+    logo_bytes = _COMMISSION_LOGOS_CACHE.get(logo_filename)
+    if logo_bytes is None:
         candidate_paths = [
             # 1. Caminho dentro do backend (Docker container / local)
-            os.path.join(os.path.dirname(__file__), '..', 'assets', 'logo_parecer.png'),
-            os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'assets', 'logo_parecer.png'),
-            '/app/app/assets/logo_parecer.png',
+            os.path.join(os.path.dirname(__file__), '..', 'assets', logo_filename),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'assets', logo_filename),
+            f'/app/app/assets/{logo_filename}',
             # 2. Caminhos na raiz do projeto / frontend
-            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), 'backend', 'app', 'assets', 'logo_parecer.png'),
-            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), 'frontend', 'assets', 'img', 'logo_parecer.png'),
-            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), 'frontend', 'img', 'logo_parecer.png'),
+            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), 'backend', 'app', 'assets', logo_filename),
+            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), 'frontend', 'assets', 'img', logo_filename),
+            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), 'frontend', 'img', logo_filename),
         ]
         for p in candidate_paths:
             try:
                 if os.path.exists(p):
                     with open(p, 'rb') as f:
-                        _COMMISSION_LOGO_BYTES = f.read()
-                        logger.info("Carregada logo_parecer de %s (%d bytes)", p, len(_COMMISSION_LOGO_BYTES))
+                        logo_bytes = f.read()
+                        logger.info("Carregada %s de %s (%d bytes)", logo_filename, p, len(logo_bytes))
                         break
             except Exception as e:
                 logger.warning("Falha ao ler logo de %s: %s", p, e)
 
         # 3. Fallback remoto via Cloudflare R2 presigned URL
-        if not _COMMISSION_LOGO_BYTES:
+        if not logo_bytes:
             try:
                 import urllib.request
                 from app.services.storage import get_presigned_url
-                signed_url = get_presigned_url("assets/logo_parecer.png", expires_in=3600)
+                signed_url = get_presigned_url(f"assets/{logo_filename}", expires_in=3600)
                 with urllib.request.urlopen(signed_url, timeout=6) as resp:
                     if resp.status == 200:
-                        _COMMISSION_LOGO_BYTES = resp.read()
-                        logger.info("Carregada logo_parecer via R2 (%d bytes)", len(_COMMISSION_LOGO_BYTES))
+                        logo_bytes = resp.read()
+                        logger.info("Carregada %s via R2 (%d bytes)", logo_filename, len(logo_bytes))
             except Exception as e:
-                logger.warning("Falha ao buscar logo_parecer no R2: %s", e)
+                logger.warning("Falha ao buscar %s no R2: %s", logo_filename, e)
 
-        # 4. Fallback local para ipb_logo.png
-        if not _COMMISSION_LOGO_BYTES:
+        # 4. Fallback se UPH não for encontrado, tenta logo_parecer.png padrão
+        if not logo_bytes and is_uph:
+            return _get_commission_logo_flowable(society_type="UMP")
+
+        # 5. Fallback local para ipb_logo.png
+        if not logo_bytes:
             ipb_p = os.path.join(os.path.dirname(__file__), '..', 'assets', 'ipb_logo.png')
             if os.path.exists(ipb_p):
                 try:
                     with open(ipb_p, 'rb') as f:
-                        _COMMISSION_LOGO_BYTES = f.read()
+                        logo_bytes = f.read()
                 except Exception:
                     pass
 
-    if _COMMISSION_LOGO_BYTES:
-        try:
-            return Image(io.BytesIO(_COMMISSION_LOGO_BYTES), width=52*mm, height=28.5*mm)
-        except Exception as e:
-            logger.warning("Falha ao criar Image ReportLab para logo_parecer: %s", e)
+        if logo_bytes:
+            _COMMISSION_LOGOS_CACHE[logo_filename] = logo_bytes
 
-    return Paragraph("<b><font size=16 color='#0f172a'>UMP</font></b>", ParagraphStyle('NoLogo', alignment=TA_CENTER))
+    if logo_bytes:
+        try:
+            from PIL import Image as PILImage
+            pil_im = PILImage.open(io.BytesIO(logo_bytes))
+            w_px, h_px = pil_im.size
+            target_w = 52 * mm
+            target_h = target_w * (h_px / w_px)
+            if target_h > 29 * mm:
+                target_h = 29 * mm
+                target_w = target_h * (w_px / h_px)
+            return Image(io.BytesIO(logo_bytes), width=target_w, height=target_h)
+        except Exception as e:
+            logger.warning("Falha ao criar Image ReportLab para %s: %s", logo_filename, e)
+            try:
+                return Image(io.BytesIO(logo_bytes), width=52*mm, height=26*mm)
+            except Exception:
+                pass
+
+    label = "UPH" if is_uph else "UMP"
+    return Paragraph(f"<b><font size=16 color='#0f172a'>{label}</font></b>", ParagraphStyle('NoLogo', alignment=TA_CENTER))
 
 
 def generate_commission_report(
@@ -3209,7 +3234,8 @@ def generate_commission_report(
     presbytery_name: str = None,
     federation_name: str = None,
     validation_code: str = None,
-    is_preview: bool = False
+    is_preview: bool = False,
+    society_type: str = "UMP"
 ) -> bytes:
     """Generates official or preview PDF for Congress Commission Report (Images 1 & 2 layout)."""
     buf = io.BytesIO()
@@ -3226,11 +3252,12 @@ def generate_commission_report(
     story = []
 
     # 1. Header Table (Image 1 layout)
-    logo_img = _get_commission_logo_flowable()
+    logo_img = _get_commission_logo_flowable(society_type=society_type)
 
     ipb_title = "IGREJA PRESBITERIANA DO BRASIL"
     presb_str = presbytery_name or "PRESBITÉRIO OESTE DA PARAÍBA"
-    fed_str = federation_name or "FEDERAÇÃO DE MOCIDADE PRESBITERIANA"
+    default_fed = "FEDERAÇÃO DE UPHs" if (society_type or "").upper() == "UPH" else "FEDERAÇÃO DE MOCIDADE PRESBITERIANA"
+    fed_str = federation_name or default_fed
 
     header_text = (
         f"<font size=10 color='#0f172a'><b>{ipb_title}</b></font><br/>"
@@ -3389,7 +3416,8 @@ def generate_credential_pdf(
     pastor_approved_at: datetime.datetime = None,
     president_signed_at: datetime.datetime = None,
     validation_code: str = None,
-    is_preview: bool = False
+    is_preview: bool = False,
+    society_type: str = "UMP"
 ) -> bytes:
     """Gera o PDF oficial da Credencial de Delegados conforme layout padrão do modelo."""
     buf = io.BytesIO()
@@ -3405,8 +3433,11 @@ def generate_credential_pdf(
     W = A4[0] - ML - MR
     story = []
 
-    # 1. Logo da UMP / IPB no topo centralizado
-    logo_img = _get_commission_logo_flowable()
+    soc_label = (society_type or "UMP").strip().upper()
+    is_uph = (soc_label == "UPH")
+
+    # 1. Logo institucional no topo centralizado (logo_parecer.png ou logo_parecer_uph.png)
+    logo_img = _get_commission_logo_flowable(society_type=society_type)
     logo_table = Table([[logo_img]], colWidths=[W])
     logo_table.setStyle(TableStyle([
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
@@ -3430,8 +3461,9 @@ def generate_credential_pdf(
     ipb_line = "IGREJA PRESBITERIANA DO BRASIL"
     syn_str = synodal_name or "SÍNODO PARAÍBA"
     presb_str = presbytery_name or federation_name or "POPB"
-    sub_line = f"UMP | {syn_str.upper()} | {presb_str.upper()}"
-    cong_line = "CONGRESSO ANUAL DE MOCIDADE"
+    sub_line = f"{soc_label} | {syn_str.upper()} | {presb_str.upper()}"
+    default_cong = "CONGRESSO ANUAL DE HOMENS" if is_uph else "CONGRESSO ANUAL DE MOCIDADE"
+    cong_line = (congress_title or default_cong).upper()
     year_line = f"GESTÃO {fiscal_year or datetime.datetime.now().year}"
 
     story.append(Paragraph(f"{ipb_line}<br/>{sub_line}<br/>{cong_line}<br/>{year_line}", p_hdr))
@@ -3446,7 +3478,10 @@ def generate_credential_pdf(
         textColor=colors.HexColor('#334155'),
         alignment=TA_CENTER
     )
-    verse_text = '“Ninguém despreze a tua mocidade; pelo contrário, torna-te padrão dos fiéis, na palavra, no procedimento, no amor, na fé, na pureza.” (I Tm. 4.12).'
+    if is_uph:
+        verse_text = '“Sede vigilantes, permanecei firmes na fé, portai-vos varonilmente, fortalecei-vos. Todas as vossas ações sejam feitas com amor.” (I Co. 16.13-14).'
+    else:
+        verse_text = '“Ninguém despreze a tua mocidade; pelo contrário, torna-te padrão dos fiéis, na palavra, no procedimento, no amor, na fé, na pureza.” (I Tm. 4.12).'
     story.append(Paragraph(verse_text, p_verse))
     story.append(Spacer(1, 5*mm))
 
@@ -3495,8 +3530,8 @@ def generate_credential_pdf(
     fed_label = (presbytery_name or federation_name or "POPB").strip()
 
     intro_text = (
-        f"Sr. (a) Presidente, a UMP da <b>{igreja}</b> tem o prazer de apresentar "
-        f"os seguintes delegados ao <b>{c_title}</b> da Federação de UMPs do {fed_label}:"
+        f"Sr. (a) Presidente, a {soc_label} da <b>{igreja}</b> tem o prazer de apresentar "
+        f"os seguintes delegados ao <b>{c_title}</b> da Federação de {soc_label}s do {fed_label}:"
     )
     story.append(Paragraph(intro_text, p_body))
     story.append(Spacer(1, 4*mm))
@@ -3588,7 +3623,8 @@ def generate_credential_pdf(
         alignment=TA_CENTER
     )
 
-    pres_name = (president_name or "Presidente da UMP").strip().upper()
+    pres_role = f"Presidente da {soc_label}"
+    pres_name = (president_name or pres_role).strip().upper()
     past_name = (pastor_name or "Pastor da Igreja").strip().upper()
 
     pres_meta = ""
@@ -3603,7 +3639,7 @@ def generate_credential_pdf(
         Paragraph(pres_name, p_sign_name),
         Spacer(1, 1*mm),
         HRFlowable(width=W * 0.42, thickness=0.75, color=colors.HexColor('#0f172a'), spaceBefore=1, spaceAfter=2),
-        Paragraph(f"Presidente da UMP{pres_meta}", p_sign_role)
+        Paragraph(f"{pres_role}{pres_meta}", p_sign_role)
     ]
     past_cell = [
         Paragraph(past_name, p_sign_name),

@@ -3016,8 +3016,23 @@
         })
       }
 
+      // Tipo de Sociedade (UPH ou UMP)
+      const isUph = (localStorage.getItem('society_type') === 'UPH') ||
+                    (targetCred?.society_type === 'UPH') ||
+                    (targetFed?.society_type === 'UPH') ||
+                    (targetLump?.society_type === 'UPH') ||
+                    (sessionStorage.getItem('society_type') === 'UPH') ||
+                    (window.CURRENT_USER?.society_type === 'UPH')
+      const socType = isUph ? 'UPH' : 'UMP'
+      const parecerLogo = isUph ? '/assets/img/logo_parecer_uph.png' : '/assets/img/logo_parecer.png'
+      const fedName = isUph ? 'Federação de UPHs' : 'Federação de UMPs'
+      const verseText = isUph
+        ? '“Vigiai, estai firmes na fé, portai-vos varonilmente, fortalecei-vos. Todas as vossas ações sejam feitas com amor.” (I Co. 16.13-14).'
+        : '“Ninguém despreze a tua mocidade; pelo contrário, torna-te padrão dos fiéis, na palavra, no procedimento, no amor, na fé, na pureza.” (I Tm. 4.12).'
+
       // Assinatura do Presidente
-      const presName = targetCred.president_name || (!credId ? (localCredentialData?.current_user_name || 'Presidente da UMP') : 'Presidente da UMP')
+      const defaultPresRole = `Presidente da ${socType}`
+      const presName = targetCred.president_name || (!credId ? (localCredentialData?.current_user_name || defaultPresRole) : defaultPresRole)
       let presMeta = ''
       if (targetCred.submitted_at || targetCred.president_signed_at) {
         const dStr = new Date(targetCred.president_signed_at || targetCred.submitted_at).toLocaleDateString('pt-BR')
@@ -3036,15 +3051,15 @@
       area.innerHTML = `
         ${statusNoticeHtml}
         <div style="text-align:center; margin-bottom:1.5rem;">
-          <img src="/assets/img/logo_parecer.png" style="height:65px; object-fit:contain; margin-bottom:.5rem;" onerror="this.src='/assets/img/logo_icone.png'" />
+          <img src="${parecerLogo}" style="height:65px; object-fit:contain; margin-bottom:.5rem;" onerror="this.src='/assets/img/logo_icone.png'" />
           <h2 style="font-size:.95rem; font-weight:800; color:#0f172a; letter-spacing:.4px;">IGREJA PRESBITERIANA DO BRASIL</h2>
-          <h3 style="font-size:.86rem; font-weight:700; color:#1e293b; margin-top:.15rem;">UMP | ${syn.toUpperCase()} | ${presb.toUpperCase()}</h3>
+          <h3 style="font-size:.86rem; font-weight:700; color:#1e293b; margin-top:.15rem;">${socType} | ${syn.toUpperCase()} | ${presb.toUpperCase()}</h3>
           <p style="font-size:.82rem; font-weight:700; color:#334155; margin-top:.1rem;">${cTitle}</p>
           <p style="font-size:.82rem; font-weight:700; color:#334155;">GESTÃO ${year}</p>
         </div>
 
         <div style="text-align:center; font-size:.84rem; font-style:italic; color:#334155; margin-bottom:1.25rem;">
-          “Ninguém despreze a tua mocidade; pelo contrário, torna-te padrão dos fiéis, na palavra, no procedimento, no amor, na fé, na pureza.” (I Tm. 4.12).
+          ${verseText}
         </div>
 
         <div style="text-align:right; font-size:.88rem; font-weight:500; margin-bottom:1.5rem;">
@@ -3056,7 +3071,7 @@
         </h1>
 
         <div style="font-size:.95rem; line-height:1.65; text-align:justify; text-indent:1.8rem; margin-bottom:1.75rem;">
-          Sr. (a) Presidente, a UMP da <b>${church.toUpperCase()}</b> tem o prazer de apresentar os seguintes delegados ao <b>${cTitle}</b> da Federação de UMPs do ${presb}:
+          Sr. (a) Presidente, a ${socType} da <b>${church.toUpperCase()}</b> tem o prazer de apresentar os seguintes delegados ao <b>${cTitle}</b> da ${fedName} do ${presb}:
         </div>
 
         <div style="margin-bottom:2rem;">
@@ -3073,7 +3088,7 @@
           <div>
             <div style="font-weight:700; font-size:.88rem; text-transform:uppercase;">${presName}</div>
             <div style="height:1px; background:#0f172a; width:85%; margin:.3rem auto .35rem;"></div>
-            <div style="font-size:.8rem; color:#475569;">Presidente da UMP</div>
+            <div style="font-size:.8rem; color:#475569;">Presidente da ${socType}</div>
             ${presMeta}
           </div>
           <div>
