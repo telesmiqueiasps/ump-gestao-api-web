@@ -1375,11 +1375,6 @@
             <label>Ano do Congresso *</label>
             <input type="number" id="c-year" class="input" required min="2020" max="2050" />
           </div>
-          <div class="field">
-            <label>Descrição (Opcional)</label>
-            <textarea id="c-desc" class="input" rows="3"
-              placeholder="Informações gerais, local, tema do congresso..."></textarea>
-          </div>
         </div>
         <div class="modal-box-footer">
           <button type="button" class="btn btn-secondary" onclick="closeModal('modal-congress')">Cancelar</button>
@@ -2182,7 +2177,6 @@
     window.openNewCongressModal = function () {
       document.getElementById('c-title').value = ''
       document.getElementById('c-year').value = new Date().getFullYear()
-      document.getElementById('c-desc').value = ''
       openModal('modal-congress')
     }
 
@@ -2190,10 +2184,9 @@
       e.preventDefault()
       const title = document.getElementById('c-title').value.trim()
       const fiscal_year = parseInt(document.getElementById('c-year').value)
-      const description = document.getElementById('c-desc').value.trim()
 
       try {
-        const created = await api.post('/api/congresses/', { title, fiscal_year, description })
+        const created = await api.post('/api/congresses/', { title, fiscal_year })
         closeModal('modal-congress')
         await loadCongresses()
         openCongressDetail(created.id)
