@@ -22,6 +22,14 @@ class Congress(Base):
     min_delegates = Column(Integer, default=1, nullable=False)
     max_delegates = Column(Integer, default=5, nullable=False)
 
+    # Edital de Convocação
+    convocation_text = Column(Text, nullable=True)
+    convocation_status = Column(String(30), nullable=False, default="rascunho")  # rascunho, enviada
+    convocation_date = Column(Date, nullable=True)
+    convocation_sent_at = Column(DateTime, nullable=True)
+    convocation_president_name = Column(String(200), nullable=True)
+    convocation_secretary_name = Column(String(200), nullable=True)
+
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

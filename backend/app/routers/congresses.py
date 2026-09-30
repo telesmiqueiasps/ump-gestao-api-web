@@ -18,7 +18,8 @@ from app.models.user import User, UserRole
 from app.models.federation import Federation
 from app.models.local_ump import LocalUmp
 from app.models.member import Member
-from app.models.enums import MemberType
+from app.models.enums import MemberType, BoardRole, OrgType
+from app.models.board import BoardMember
 from app.models.finance import FinancialPeriod
 from app.models.activity_report import ActivityReport
 from app.models.ump_statistic import UmpStatisticCollector
@@ -29,7 +30,7 @@ from app.models.congress import (
 from app.services.storage import (
     get_presigned_url, upload_file, delete_file, delete_folder, extract_key_from_url, resize_image_max_size
 )
-from app.services.pdf_generator import generate_commission_report, generate_credential_pdf
+from app.services.pdf_generator import generate_commission_report, generate_credential_pdf, generate_convocation_pdf
 from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -38,6 +39,10 @@ router = APIRouter()
 
 
 # ── SCHEMAS ──
+
+class ConvocationSavePayload(BaseModel):
+    convocation_text: Optional[str] = None
+    convocation_date: Optional[date] = None
 
 class CongressCreate(BaseModel):
     title: str
@@ -219,6 +224,12 @@ def _serialize_congress(c: Congress, include_commissions: bool = True) -> dict:
         "status": c.status,
         "min_delegates": c.min_delegates if c.min_delegates is not None else 1,
         "max_delegates": c.max_delegates if c.max_delegates is not None else 5,
+        "convocation_status": getattr(c, "convocation_status", "rascunho") or "rascunho",
+        "has_convocation": bool(getattr(c, "convocation_text", None)),
+        "convocation_date": c.convocation_date.isoformat() if getattr(c, "convocation_date", None) else None,
+        "convocation_sent_at": c.convocation_sent_at.isoformat() if getattr(c, "convocation_sent_at", None) else None,
+        "convocation_president_name": getattr(c, "convocation_president_name", None),
+        "convocation_secretary_name": getattr(c, "convocation_secretary_name", None),
         "created_by": str(c.created_by) if c.created_by else None,
         "created_at": c.created_at.isoformat() if c.created_at else None,
         "updated_at": c.updated_at.isoformat() if c.updated_at else None,
@@ -304,13 +315,13 @@ def _is_local_leader(user_id: UUID, db: Session) -> tuple[bool, str]:
 
 @router.get("/active-for-local")
 def get_active_congress_for_local(
+    congress_id: Optional[UUID] = Query(None),
     current_user: User = Depends(require_local_ump),
     db: Session = Depends(get_db)
 ):
     """
-    Retorna o congresso ativo da federação para a UMP Local do usuário,
-    junto aos limites de delegados e a credencial atual.
-    Acesso restrito a Presidente e Vice-Presidente da UMP Local.
+    Retorna os congressos ativos da federação para a UMP Local do usuário,
+    com resumo de convocação, status de credencial e dados para preenchimento.
     """
     is_leader, role_label = _is_local_leader(current_user.id, db)
     if not is_leader:
@@ -323,27 +334,56 @@ def get_active_congress_for_local(
     if not local_ump:
         raise HTTPException(status_code=404, detail="UMP Local não encontrada.")
 
-    # Busca congresso aberto da federação vinculada
-    congress = db.query(Congress).filter(
+    # Busca todos os congressos abertos da federação vinculada
+    active_congresses = db.query(Congress).filter(
         Congress.federation_id == local_ump.federation_id,
         Congress.status == "aberto"
-    ).order_by(desc(Congress.fiscal_year), desc(Congress.created_at)).first()
+    ).order_by(desc(Congress.fiscal_year), desc(Congress.created_at)).all()
 
-    if not congress:
+    if not active_congresses:
         return {
             "has_active_congress": False,
+            "active_congresses": [],
             "message": "Nenhum congresso aberto no momento pela sua Federação."
         }
 
-    # Busca ou cria a credencial da UMP local para este congresso
+    # Sumário dos congressos ativos com status de convocação e credencial da UMP local
+    congress_summaries = []
+    for c in active_congresses:
+        local_c_cred = db.query(CongressCredential).filter(
+            CongressCredential.congress_id == c.id,
+            CongressCredential.local_ump_id == local_ump.id
+        ).first()
+        congress_summaries.append({
+            "id": str(c.id),
+            "title": c.title,
+            "fiscal_year": c.fiscal_year,
+            "description": c.description,
+            "min_delegates": c.min_delegates or 1,
+            "max_delegates": c.max_delegates or 5,
+            "convocation_status": getattr(c, "convocation_status", "rascunho") or "rascunho",
+            "has_convocation": bool(getattr(c, "convocation_text", None)),
+            "convocation_sent_at": c.convocation_sent_at.isoformat() if getattr(c, "convocation_sent_at", None) else None,
+            "credential_status": local_c_cred.status if local_c_cred else "nao_iniciada",
+            "delegates_count": len(local_c_cred.delegates) if (local_c_cred and local_c_cred.delegates) else 0
+        })
+
+    # Seleciona o congresso alvo (se especificado por parâmetro ou o primeiro)
+    target_congress = None
+    if congress_id:
+        target_congress = next((c for c in active_congresses if c.id == congress_id), None)
+    if not target_congress:
+        target_congress = active_congresses[0]
+
+    # Busca ou cria a credencial da UMP local para este congresso alvo
     cred = db.query(CongressCredential).filter(
-        CongressCredential.congress_id == congress.id,
+        CongressCredential.congress_id == target_congress.id,
         CongressCredential.local_ump_id == local_ump.id
     ).first()
 
     if not cred:
         cred = CongressCredential(
-            congress_id=congress.id,
+            congress_id=target_congress.id,
             local_ump_id=local_ump.id,
             status="rascunho",
             city=local_ump.cidade or "Patos",
@@ -362,12 +402,14 @@ def get_active_congress_for_local(
 
     return {
         "has_active_congress": True,
-        "congress": _serialize_congress(congress, include_commissions=False),
+        "active_congresses": congress_summaries,
+        "congress": _serialize_congress(target_congress, include_commissions=False),
         "credential": _serialize_credential(cred, include_token=True),
         "federation": {
             "name": fed.name if fed else "",
             "presbytery_name": fed.presbytery_name if fed else "",
             "synodal_name": fed.synodal_name if fed else "",
+            "society_type": fed.society_type if (fed and getattr(fed, "society_type", None)) else "UMP"
         },
         "local_ump": {
             "id": str(local_ump.id),
@@ -375,6 +417,7 @@ def get_active_congress_for_local(
             "church_name": local_ump.church_name,
             "pastor_name": local_ump.pastor_name,
             "cidade": local_ump.cidade,
+            "society_type": local_ump.society_type or "UMP"
         },
         "members": [
             {"id": str(m.id), "full_name": m.full_name}
@@ -1244,6 +1287,242 @@ def preview_public_commission_pdf(
         content=pdf_bytes,
         media_type="application/pdf",
         headers={"Content-Disposition": f"inline; filename=previa_parecer_{comm.id}.pdf"}
+    )
+
+
+# ── HELPERS & ROTAS DE CONVOCAÇÃO DO CONGRESSO ──
+
+def _get_federation_signers(federation_id: UUID, fiscal_year: int, db: Session):
+    """
+    Retorna os nomes do Presidente e do Secretário Executivo da Federação
+    para assinatura digital e homologação da Convocação Oficial.
+    """
+    president_bm = db.query(BoardMember).filter(
+        BoardMember.organization_id == federation_id,
+        BoardMember.organization_type == OrgType.federation,
+        BoardMember.role == BoardRole.presidente,
+        BoardMember.is_active == True,
+    ).order_by(BoardMember.fiscal_year.desc()).first()
+
+    secretary_bm = db.query(BoardMember).filter(
+        BoardMember.organization_id == federation_id,
+        BoardMember.organization_type == OrgType.federation,
+        BoardMember.role == BoardRole.secretario_executivo,
+        BoardMember.is_active == True,
+    ).order_by(BoardMember.fiscal_year.desc()).first()
+
+    pres_name = president_bm.member_name if president_bm else "Presidente da Federação"
+    sec_name = secretary_bm.member_name if secretary_bm else "Secretário(a) Executivo(a)"
+    return pres_name, sec_name
+
+
+def _get_default_convocation_text(congress: Congress, federation: Federation) -> str:
+    fed_name = federation.name if federation else "Federação"
+    c_title = congress.title or "CONGRESSO ORDINÁRIO"
+    year = congress.fiscal_year or datetime.utcnow().year
+    min_d = congress.min_delegates or 1
+    max_d = congress.max_delegates or 5
+
+    return (
+        f"<p>Às Diretorias das Sociedades Internas Locais,</p>"
+        f"<p>A Diretoria da <strong>{fed_name}</strong>, no uso de suas atribuições regimentais e estatutárias, "
+        f"vem por meio deste instrumento <strong>CONVOCAR</strong> todas as organizações locais jurisdicionadas "
+        f"para participarem do:</p>"
+        f"<h3 style=\"text-align:center; color:#1a2a6c; margin: 1.25rem 0;\">{c_title.upper()} — GESTÃO {year}</h3>"
+        f"<p>O conclave realizar-se-á com a finalidade de deliberar sobre os relatórios do exercício, os pareceres "
+        f"das comissões temáticas de trabalho, planos e metas administrativas, apreciação financeira e eleições.</p>"
+        f"<h4>1. CREDENCIAMENTO E DELEGAÇÃO</h4>"
+        f"<p>Conforme os limites regimentais aprovados pela Federação, cada organização local terá o direito e o dever "
+        f"de credenciar entre <strong>{min_d}</strong> e <strong>{max_d}</strong> delegados, sendo indispensável a validação "
+        f"pastoral prévia mediante foto selfie na plataforma oficial.</p>"
+        f"<h4>2. RELATÓRIOS E DOCUMENTOS DE TRABALHO</h4>"
+        f"<p>Todos os relatórios, propostas e documentos foram digitalizados no sistema para análise antecipada pelos "
+        f"membros e delegados relatores das respectivas comissões temáticas.</p>"
+        f"<h4>3. ORIENTAÇÕES FINAIS</h4>"
+        f"<p>Exortamos os amados irmãos à oração, ao zelo administrativo e à pontualidade, certos de que Deus nos concederá "
+        f"um congresso abençoado e frutuoso.</p>"
+        f"<p>Fraternalmente em Cristo Jesus,</p>"
+    )
+
+
+@router.get("/{congress_id}/convocation")
+def get_congress_convocation(
+    congress_id: UUID,
+    current_user: User = Depends(require_local_or_federation),
+    db: Session = Depends(get_db)
+):
+    """Retorna os dados da convocação oficial de um congresso."""
+    congress = db.query(Congress).filter(Congress.id == congress_id).first()
+    if not congress:
+        raise HTTPException(status_code=404, detail="Congresso não encontrado.")
+
+    fed = db.query(Federation).filter(Federation.id == congress.federation_id).first()
+    society_type = fed.society_type if (fed and getattr(fed, "society_type", None)) else "UMP"
+
+    live_pres, live_sec = _get_federation_signers(congress.federation_id, congress.fiscal_year, db)
+    pres_name = congress.convocation_president_name or live_pres
+    sec_name = congress.convocation_secretary_name or live_sec
+
+    text = congress.convocation_text
+    if not text or not text.strip():
+        text = _get_default_convocation_text(congress, fed)
+
+    return {
+        "congress_id": str(congress.id),
+        "congress_title": congress.title,
+        "fiscal_year": congress.fiscal_year,
+        "status": congress.status,
+        "convocation_text": text,
+        "convocation_status": congress.convocation_status or "rascunho",
+        "convocation_date": congress.convocation_date.isoformat() if congress.convocation_date else date.today().isoformat(),
+        "convocation_sent_at": congress.convocation_sent_at.isoformat() if congress.convocation_sent_at else None,
+        "president_name": pres_name,
+        "secretary_name": sec_name,
+        "congress": {
+            "id": str(congress.id),
+            "title": congress.title,
+            "fiscal_year": congress.fiscal_year,
+            "status": congress.status,
+            "society_type": society_type
+        },
+        "convocation": {
+            "text": text,
+            "status": congress.convocation_status or "rascunho",
+            "date": congress.convocation_date.isoformat() if congress.convocation_date else date.today().isoformat(),
+            "sent_at": congress.convocation_sent_at.isoformat() if congress.convocation_sent_at else None,
+            "president_name": pres_name,
+            "secretary_name": sec_name
+        },
+        "signers": {
+            "presidente": {"name": pres_name},
+            "secretario_executivo": {"name": sec_name}
+        },
+        "default_text": _get_default_convocation_text(congress, fed),
+        "federation": {
+            "name": fed.name if fed else "Federação",
+            "presbytery_name": fed.presbytery_name if fed else "",
+            "synodal_name": fed.synodal_name if fed else "",
+            "society_type": society_type
+        }
+    }
+
+
+@router.put("/{congress_id}/convocation")
+def save_congress_convocation(
+    congress_id: UUID,
+    payload: ConvocationSavePayload,
+    current_user: User = Depends(require_federation),
+    db: Session = Depends(get_db)
+):
+    """Salva o rascunho do edital de convocação (auto-save)."""
+    congress = db.query(Congress).filter(
+        Congress.id == congress_id,
+        Congress.federation_id == current_user.organization_id
+    ).first()
+    if not congress:
+        raise HTTPException(status_code=404, detail="Congresso não encontrado.")
+
+    if congress.status == "encerrado":
+        raise HTTPException(status_code=400, detail="Este congresso já foi encerrado.")
+
+    if payload.convocation_text is not None:
+        congress.convocation_text = payload.convocation_text
+    if payload.convocation_date is not None:
+        congress.convocation_date = payload.convocation_date
+
+    db.commit()
+    db.refresh(congress)
+
+    return {
+        "message": "Convocação salva com sucesso!",
+        "saved_at": datetime.utcnow().strftime("%H:%M:%S")
+    }
+
+
+@router.post("/{congress_id}/convocation/send")
+def send_congress_convocation(
+    congress_id: UUID,
+    payload: Optional[ConvocationSavePayload] = None,
+    current_user: User = Depends(require_federation),
+    db: Session = Depends(get_db)
+):
+    """Envia oficialmente a convocação, assinando digitalmente com Presidente e Secretário Executivo."""
+    congress = db.query(Congress).filter(
+        Congress.id == congress_id,
+        Congress.federation_id == current_user.organization_id
+    ).first()
+    if not congress:
+        raise HTTPException(status_code=404, detail="Congresso não encontrado.")
+
+    if congress.status == "encerrado":
+        raise HTTPException(status_code=400, detail="Este congresso já foi encerrado.")
+
+    live_pres, live_sec = _get_federation_signers(congress.federation_id, congress.fiscal_year, db)
+
+    if payload and payload.convocation_text is not None and payload.convocation_text.strip():
+        congress.convocation_text = payload.convocation_text
+    elif not congress.convocation_text:
+        fed = db.query(Federation).filter(Federation.id == congress.federation_id).first()
+        congress.convocation_text = _get_default_convocation_text(congress, fed)
+
+    congress.convocation_date = (payload.convocation_date if payload else None) or congress.convocation_date or date.today()
+    congress.convocation_president_name = live_pres
+    congress.convocation_secretary_name = live_sec
+    congress.convocation_sent_at = datetime.utcnow()
+    congress.convocation_status = "enviada"
+
+    db.commit()
+    db.refresh(congress)
+
+    return {
+        "message": "Convocação enviada e publicada oficialmente com sucesso!",
+        "convocation_status": congress.convocation_status,
+        "president_name": congress.convocation_president_name,
+        "secretary_name": congress.convocation_secretary_name,
+        "sent_at": congress.convocation_sent_at.isoformat()
+    }
+
+
+@router.get("/{congress_id}/convocation/pdf")
+def get_congress_convocation_pdf(
+    congress_id: UUID,
+    current_user: User = Depends(require_local_or_federation),
+    db: Session = Depends(get_db)
+):
+    """Gera e retorna o PDF oficial da Convocação do Congresso."""
+    congress = db.query(Congress).filter(Congress.id == congress_id).first()
+    if not congress:
+        raise HTTPException(status_code=404, detail="Congresso não encontrado.")
+
+    fed = db.query(Federation).filter(Federation.id == congress.federation_id).first()
+    society_type = fed.society_type if (fed and getattr(fed, "society_type", None)) else "UMP"
+
+    live_pres, live_sec = _get_federation_signers(congress.federation_id, congress.fiscal_year, db)
+    pres_name = congress.convocation_president_name or live_pres
+    sec_name = congress.convocation_secretary_name or live_sec
+
+    text = congress.convocation_text
+    if not text or not text.strip():
+        text = _get_default_convocation_text(congress, fed)
+
+    pdf_bytes = generate_convocation_pdf(
+        congress_title=congress.title or "Congresso",
+        fiscal_year=congress.fiscal_year or datetime.utcnow().year,
+        federation_name=fed.name if fed else "Federação",
+        presbytery_name=fed.presbytery_name if fed else "",
+        synodal_name=fed.synodal_name if fed else "",
+        convocation_html=text,
+        convocation_date=congress.convocation_date or date.today(),
+        president_name=pres_name,
+        secretary_name=sec_name,
+        society_type=society_type,
+        is_preview=(congress.convocation_status != "enviada")
+    )
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"inline; filename=convocacao_congresso_{congress.fiscal_year}.pdf"}
     )
 
 

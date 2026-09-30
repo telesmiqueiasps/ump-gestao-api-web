@@ -50,6 +50,12 @@ try:
         conn.execute(text("ALTER TABLE congress_commissions ADD COLUMN IF NOT EXISTS approved_by UUID;"))
         conn.execute(text("ALTER TABLE congresses ADD COLUMN IF NOT EXISTS min_delegates INTEGER DEFAULT 1;"))
         conn.execute(text("ALTER TABLE congresses ADD COLUMN IF NOT EXISTS max_delegates INTEGER DEFAULT 5;"))
+        conn.execute(text("ALTER TABLE congresses ADD COLUMN IF NOT EXISTS convocation_text TEXT;"))
+        conn.execute(text("ALTER TABLE congresses ADD COLUMN IF NOT EXISTS convocation_status VARCHAR(30) DEFAULT 'rascunho';"))
+        conn.execute(text("ALTER TABLE congresses ADD COLUMN IF NOT EXISTS convocation_date DATE;"))
+        conn.execute(text("ALTER TABLE congresses ADD COLUMN IF NOT EXISTS convocation_sent_at TIMESTAMP WITH TIME ZONE;"))
+        conn.execute(text("ALTER TABLE congresses ADD COLUMN IF NOT EXISTS convocation_president_name VARCHAR(200);"))
+        conn.execute(text("ALTER TABLE congresses ADD COLUMN IF NOT EXISTS convocation_secretary_name VARCHAR(200);"))
         conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS custom_permissions JSON;"))
         conn.execute(text("""
             CREATE TABLE IF NOT EXISTS role_permissions (

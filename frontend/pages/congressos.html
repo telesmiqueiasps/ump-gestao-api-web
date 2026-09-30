@@ -238,6 +238,192 @@
       line-height: 1.5;
     }
 
+    /* ── Timbre Oficial & Editor de Convocação ── */
+    .official-timbre-preview {
+      background: #fff;
+      border: 1px solid var(--slate-200);
+      border-bottom: 2px solid var(--slate-800);
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      padding: 1.25rem 1.5rem 1rem;
+    }
+    .timbre-top-row {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      margin-bottom: .75rem;
+    }
+    .timbre-logo {
+      height: 52px;
+      max-width: 140px;
+      width: auto;
+      object-fit: contain;
+    }
+    .timbre-meta {
+      flex: 1;
+      text-align: left;
+    }
+    .timbre-meta h4 {
+      font-size: .85rem;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: .3px;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .timbre-meta p {
+      font-size: .78rem;
+      font-weight: 700;
+      color: #334155;
+      text-transform: uppercase;
+      line-height: 1.3;
+      margin: 0;
+    }
+    .timbre-center-titles {
+      text-align: center;
+      padding-top: .6rem;
+      border-top: 1px solid var(--slate-200);
+    }
+    .timbre-cong-title {
+      font-size: .95rem;
+      font-weight: 800;
+      color: #0f172a;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .timbre-comm-title {
+      font-size: .88rem;
+      font-weight: 700;
+      color: #1e293b;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .timbre-rel-subtitle {
+      font-size: .82rem;
+      font-style: italic;
+      color: #64748b;
+    }
+    .editor-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      background: var(--slate-100);
+      border: 1px solid var(--slate-200);
+      border-top: none;
+      border-bottom: none;
+      padding: .45rem .6rem;
+      align-items: center;
+    }
+    .tool-btn {
+      background: #fff;
+      border: 1px solid var(--slate-300);
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--slate-700);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      height: 28px;
+      transition: all .12s;
+    }
+    .tool-btn:hover {
+      background: #e2e8f0;
+      color: var(--slate-900);
+    }
+    .tool-select {
+      background: #fff;
+      border: 1px solid var(--slate-300);
+      border-radius: 4px;
+      padding: 3px 6px;
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--slate-700);
+      height: 28px;
+      outline: none;
+      cursor: pointer;
+    }
+    .tool-separator {
+      width: 1px;
+      height: 18px;
+      background: var(--slate-300);
+      margin: 0 3px;
+      display: inline-block;
+    }
+    .editor-content {
+      min-height: 320px;
+      border: 1px solid var(--slate-200);
+      border-top: none;
+      padding: 1.5rem 1.75rem;
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--slate-800);
+      background: #fff;
+      outline: none;
+    }
+    .editor-content p {
+      margin-bottom: .85rem;
+      text-align: justify;
+    }
+    .editor-content h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--slate-900);
+      margin: 1.25rem 0 .5rem;
+    }
+    .editor-content h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--slate-800);
+      margin: 1rem 0 .4rem;
+    }
+    .editor-content h4 {
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--slate-800);
+      margin: .85rem 0 .3rem;
+    }
+    .editor-content blockquote {
+      border-left: 3px solid var(--blue-600);
+      padding-left: 1rem;
+      margin: 1rem 0;
+      color: var(--slate-600);
+      font-style: italic;
+    }
+    .editor-content ul, .editor-content ol {
+      padding-left: 1.5rem;
+      margin-bottom: .85rem;
+    }
+    .editor-content li {
+      margin-bottom: .3rem;
+    }
+    .save-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      font-size: .78rem;
+      font-weight: 600;
+      padding: .25rem .65rem;
+      border-radius: 99px;
+      background: var(--slate-100);
+      color: var(--slate-600);
+      transition: all .2s;
+    }
+    .save-status-badge.status-saving {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .save-status-badge.status-saved {
+      background: #dcfce7;
+      color: #166534;
+    }
+    .save-status-badge.status-error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
     /* Modal styles */
     .modal-overlay {
       position: fixed;
@@ -649,10 +835,13 @@
         visibility: hidden !important;
       }
       #modal-view-credential,
-      #modal-view-credential * {
+      #modal-view-credential *,
+      #modal-read-convocation,
+      #modal-read-convocation * {
         visibility: visible !important;
       }
-      #modal-view-credential {
+      #modal-view-credential,
+      #modal-read-convocation {
         position: fixed;
         left: 0;
         top: 0;
@@ -771,6 +960,12 @@
                 style="background:#fff; color:var(--brand-blue, #1a2a6c); border-color:#fff; font-weight:700;"
                 onclick="openNewCommissionModal()">
                 + Nova Comissão
+              </button>
+              <button class="btn btn-secondary btn-sm"
+                style="background:rgba(255,255,255,.15); color:#fff; border-color:rgba(255,255,255,.25); display:inline-flex; align-items:center; gap:6px;"
+                onclick="openCongressConvocation(activeCongress.id)" title="Edital de Convocação do Congresso">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                <span>Convocação</span>
               </button>
               <button class="btn btn-sm" id="btn-toggle-congress-status"
                 style="display:inline-flex; align-items:center; gap:.35rem; font-weight:700;"
@@ -891,6 +1086,146 @@
           </div>
         </div>
 
+        <!-- ── VISÃO 4: REDAÇÃO DA CONVOCAÇÃO DO CONGRESSO (FEDERAÇÃO) ── -->
+        <div id="view-congress-convocation" style="display:none;">
+          <!-- Top Header / Banner -->
+          <div class="congress-header-banner" style="margin-bottom:1.25rem;">
+            <div class="congress-banner-info">
+              <h2 id="convocation-cong-title">Edital de Convocação</h2>
+              <p id="convocation-cong-sub">Redija a convocação oficial para as organizações locais e configure a publicação</p>
+              <div class="congress-banner-badges">
+                <span class="badge badge-blue" id="convocation-badge-year">Ano 2026</span>
+                <span class="badge badge-green" id="convocation-badge-status">Rascunho</span>
+                <span class="save-status-badge status-saved" id="convocation-save-status" style="display:inline-flex; align-items:center; gap:4px;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Salvo</span>
+                </span>
+              </div>
+            </div>
+            <div style="display:flex; gap:.6rem; align-items:center; flex-wrap:wrap;">
+              <button class="btn btn-secondary btn-sm"
+                style="background:rgba(255,255,255,.15); color:#fff; border-color:rgba(255,255,255,.25); display:inline-flex; align-items:center; gap:4px;"
+                onclick="closeConvocationView()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                <span>Voltar</span>
+              </button>
+              <button class="btn btn-secondary btn-sm" id="btn-convocation-pdf"
+                style="background:rgba(255,255,255,.15); color:#fff; border-color:rgba(255,255,255,.25); display:inline-flex; align-items:center; gap:4px;"
+                onclick="openConvocationPdfPreview()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                <span>Prévia em PDF</span>
+              </button>
+              <button class="btn btn-primary btn-sm" id="btn-publish-convocation"
+                style="background:#fff; color:var(--brand-blue, #1a2a6c); border-color:#fff; font-weight:700; display:inline-flex; align-items:center; gap:6px;"
+                onclick="confirmPublishConvocation()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span id="btn-publish-convocation-label">Enviar Convocação Oficial</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Card do Editor e Timbre Oficial -->
+          <div class="content-card" style="padding:0; overflow:hidden;">
+            <!-- Timbre Institucional Oficial -->
+            <div class="official-timbre-preview">
+              <div class="timbre-top-row">
+                <div style="width:130px; display:flex; align-items:center;">
+                  <img src="/assets/img/logo_parecer.png" id="conv-timbre-logo" class="timbre-logo" alt="Logo Institucional" onerror="this.src='/assets/img/logo_icone.png'" />
+                </div>
+                <div class="timbre-meta">
+                  <h4>IGREJA PRESBITERIANA DO BRASIL</h4>
+                  <p id="conv-presbytery-label">PRESBITÉRIO OESTE DA PARAÍBA</p>
+                  <p id="conv-fed-label">FEDERAÇÃO DE MOCIDADES PRESBITERIANAS</p>
+                </div>
+              </div>
+              <div class="timbre-center-titles">
+                <div class="timbre-cong-title" id="conv-center-cong-title">XXXII CONGRESSO ORDINÁRIO</div>
+                <div class="timbre-comm-title" style="letter-spacing:1px;">EDITAL OFICIAL DE CONVOCAÇÃO</div>
+                <div class="timbre-rel-subtitle" id="conv-center-year-sub">GESTÃO 2026</div>
+              </div>
+            </div>
+
+            <!-- Barra de Ferramentas de Formatação -->
+            <div class="editor-toolbar" id="conv-editor-toolbar">
+              <button type="button" class="tool-btn" onclick="stepConvFontSize(-1)" title="Diminuir Fonte (A-)">A-</button>
+              <button type="button" class="tool-btn" onclick="stepConvFontSize(1)" title="Aumentar Fonte (A+)">A+</button>
+              <select id="conv-font-size-select" class="tool-select" onchange="changeConvFontSize(this.value)" title="Tamanho da Fonte">
+                <option value="13px">13px</option>
+                <option value="14px">14px</option>
+                <option value="15px" selected>15px (Padrão)</option>
+                <option value="16px">16px</option>
+                <option value="18px">18px</option>
+              </select>
+              <span class="tool-separator"></span>
+
+              <button type="button" class="tool-btn" onclick="formatConvDoc('formatBlock', '<p>')" title="Parágrafo Normal">P</button>
+              <button type="button" class="tool-btn" onclick="formatConvDoc('formatBlock', '<h2>')" title="Título H2">H2</button>
+              <button type="button" class="tool-btn" onclick="formatConvDoc('formatBlock', '<h3>')" title="Título H3">H3</button>
+              <span class="tool-separator"></span>
+
+              <button type="button" class="tool-btn" onclick="formatConvDoc('bold')" title="Negrito"><b>B</b></button>
+              <button type="button" class="tool-btn" onclick="formatConvDoc('italic')" title="Itálico"><i>I</i></button>
+              <button type="button" class="tool-btn" onclick="formatConvDoc('underline')" title="Sublinhado"><u>U</u></button>
+              <span class="tool-separator"></span>
+
+              <button type="button" class="tool-btn" onclick="formatConvDoc('justifyFull')" title="Alinhar Justificado">≡ Justificar</button>
+              <button type="button" class="tool-btn" onclick="formatConvDoc('indent')" title="Aumentar Recuo">⇥ Recuo</button>
+              <button type="button" class="tool-btn" onclick="formatConvDoc('outdent')" title="Diminuir Recuo">⇤ Reduzir</button>
+              <span class="tool-separator"></span>
+
+              <button type="button" class="tool-btn" onclick="formatConvDoc('insertUnorderedList')" title="Lista">• Lista</button>
+              <button type="button" class="tool-btn" onclick="formatConvDoc('insertOrderedList')" title="Numeração">1. Lista</button>
+              <button type="button" class="tool-btn" onclick="formatConvDoc('formatBlock', '<blockquote>')" title="Citação">“ Citação</button>
+              <span class="tool-separator"></span>
+
+              <button type="button" class="tool-btn" onclick="formatConvDoc('removeFormat')" title="Limpar Formatação">✕ Limpar</button>
+            </div>
+
+            <!-- Área de Escrita -->
+            <div id="convocation-editor" class="editor-content" contenteditable="true" placeholder="Redija aqui o edital de convocação do congresso...">
+            </div>
+
+            <!-- Data do Documento & Assinaturas Oficiais -->
+            <div style="background:#f8fafc; border-top:1px solid var(--slate-200); padding:1.25rem 1.5rem;">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:.75rem;">
+                <div style="display:flex; align-items:center; gap:.5rem;">
+                  <label style="font-size:.85rem; font-weight:700; color:var(--slate-700); display:inline-flex; align-items:center; gap:5px;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    <span>Data da Convocação:</span>
+                  </label>
+                  <input type="date" id="convocation-date-input" class="input" style="width:auto; padding:.35rem .6rem;" onchange="triggerConvocationSave()" />
+                </div>
+                <div style="font-size:.8rem; color:var(--slate-500); font-style:italic;" id="convocation-last-saved-meta">
+                  Salvamento automático em tempo real ativado.
+                </div>
+              </div>
+
+              <!-- Prévia das Assinaturas da Diretoria -->
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:2rem; text-align:center; margin-top:2rem; padding:1.5rem 1rem; border-top:1px dashed var(--slate-200);">
+                <div>
+                  <div style="font-weight:700; font-size:.92rem; text-transform:uppercase;" id="conv-sign-sec-name">Secretário(a) Executivo(a)</div>
+                  <div style="height:1px; background:#0f172a; width:80%; margin:.35rem auto .4rem;"></div>
+                  <div style="font-size:.82rem; color:#475569; font-weight:600;">Secretário(a) Executivo(a)</div>
+                  <div style="font-size:.76rem; color:#64748b;" id="conv-sign-sec-fed">Federação</div>
+                </div>
+                <div>
+                  <div style="font-weight:700; font-size:.92rem; text-transform:uppercase;" id="conv-sign-pres-name">Presidente da Federação</div>
+                  <div style="height:1px; background:#0f172a; width:80%; margin:.35rem auto .4rem;"></div>
+                  <div style="font-size:.82rem; color:#475569; font-weight:600;" id="conv-sign-pres-role">Presidente da Federação</div>
+                  <div style="font-size:.76rem; color:#64748b;" id="conv-sign-pres-fed">Federação</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── VISÃO 5: CONGRESSOS ATIVOS DA FEDERAÇÃO (UMP LOCAL) ── -->
+        <div id="view-local-congresses" style="display:none;">
+          <div id="local-congress-cards-container" class="congress-grid">
+            <!-- Renderizado dinamicamente via JS -->
+          </div>
+        </div>
+
         <!-- ── VISÃO 3: CREDENCIAL DA UMP LOCAL (PRESIDENTE & VICE) ── -->
         <div id="view-local-credential" style="display:none;">
           <!-- Banner do Congresso Ativo -->
@@ -902,6 +1237,20 @@
                 <span class="badge badge-blue" id="local-cong-year">2026</span>
                 <span class="badge badge-green" id="local-cong-limits-badge">Mínimo 1 e Máximo 5 delegados</span>
               </div>
+            </div>
+            <div style="display:flex; gap:.6rem; align-items:center; flex-wrap:wrap;">
+              <button class="btn btn-secondary btn-sm"
+                style="background:rgba(255,255,255,.15); color:#fff; border-color:rgba(255,255,255,.25); display:inline-flex; align-items:center; gap:6px;"
+                onclick="returnToLocalCongressesList()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                <span>Voltar aos Congressos</span>
+              </button>
+              <button class="btn btn-secondary btn-sm" id="btn-local-read-convocation"
+                style="background:rgba(255,255,255,.15); color:#fff; border-color:rgba(255,255,255,.25); display:inline-flex; align-items:center; gap:6px;"
+                onclick="readCurrentCongressConvocation()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                <span>Ler Convocação</span>
+              </button>
             </div>
           </div>
 
@@ -1345,6 +1694,87 @@
         <button type="button" class="btn btn-primary" onclick="closeModal('modal-credential-alert')">Entendido</button>
       </div>
     </div>
+  <!-- ── MODAL: LER EDITAL OFICIAL DE CONVOCAÇÃO ── -->
+  <div class="modal-overlay" id="modal-read-convocation">
+    <div class="modal-box" style="max-width: 780px;">
+      <div class="modal-box-header">
+        <div style="display:flex; align-items:center; gap:.5rem;">
+          <div style="width:34px; height:34px; border-radius:50%; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          </div>
+          <div>
+            <h3 style="font-weight:700; font-size:1.05rem; color:var(--slate-800)">Edital Oficial de Convocação</h3>
+            <p style="font-size:.76rem; color:var(--slate-500); margin:0;" id="read-convocation-header-subtitle">Documento oficial expedido pela Diretoria da Federação</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close" onclick="closeModal('modal-read-convocation')" aria-label="Fechar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="official-doc-modal-body" id="modal-read-conv-body" style="background:#f1f5f9; padding:1.25rem; max-height:calc(85vh - 130px); overflow-y:auto;">
+        <div class="official-paper-preview" id="read-convocation-printable-area" style="background:#fff; border:1px solid #cbd5e1; border-radius:4px; box-shadow:0 4px 15px rgba(0,0,0,.06); padding:2rem 2.5rem; max-width:680px; margin:0 auto; font-family:'Inter', -apple-system, sans-serif; color:#0f172a;">
+          <!-- Cabeçalho Institucional Timbrado -->
+          <div style="text-align:center; margin-bottom:1.5rem; border-bottom:2px solid #0f172a; padding-bottom:1rem;">
+            <img src="/assets/img/logo_parecer.png" id="read-conv-logo" style="height:65px; object-fit:contain; margin-bottom:.5rem;" onerror="this.src='/assets/img/logo_icone.png'" alt="Logo Institucional" />
+            <h2 style="font-size:.95rem; font-weight:800; color:#0f172a; letter-spacing:.5px; margin:0;">IGREJA PRESBITERIANA DO BRASIL</h2>
+            <h3 style="font-size:.84rem; font-weight:700; color:#1e293b; margin:.2rem 0 0;" id="read-conv-presbytery-header">PRESBITÉRIO OESTE DA PARAÍBA</h3>
+            <p style="font-size:.82rem; font-weight:700; color:#334155; margin:.15rem 0 0;" id="read-conv-fed-header">FEDERAÇÃO DE MOCIDADES PRESBITERIANAS</p>
+          </div>
+
+          <!-- Títulos Centrais -->
+          <div style="text-align:center; margin-bottom:1.25rem;">
+            <div style="font-size:1.15rem; font-weight:800; color:#0f172a; text-transform:uppercase; letter-spacing:1px;" id="read-conv-center-title">XXXII CONGRESSO ORDINÁRIO</div>
+            <div style="font-size:1rem; font-weight:800; color:#1e3a8a; letter-spacing:1.5px; margin-top:.2rem;">EDITAL OFICIAL DE CONVOCAÇÃO</div>
+            <div style="font-size:.82rem; font-weight:700; color:#64748b; margin-top:.15rem;" id="read-conv-center-year">GESTÃO 2026</div>
+          </div>
+
+          <!-- Versículo Oficial -->
+          <div style="text-align:center; font-size:.84rem; font-style:italic; color:#334155; margin-bottom:1.25rem;" id="read-conv-verse">
+            “Ninguém despreze a tua mocidade; pelo contrário, torna-te padrão dos fiéis, na palavra, no procedimento, no amor, na fé, na pureza.” (I Tm. 4.12).
+          </div>
+
+          <!-- Faixa de Status (se Rascunho ou Enviada) -->
+          <div id="read-conv-status-banner" style="margin-bottom:1.25rem;"></div>
+
+          <!-- Corpo do Documento -->
+          <div id="read-conv-body-text" style="font-size:.92rem; line-height:1.75; text-align:justify; color:#1e293b; margin-bottom:2rem; min-height:120px;">
+            <!-- Conteúdo da convocação -->
+          </div>
+
+          <!-- Data -->
+          <div style="text-align:right; font-size:.88rem; font-weight:600; color:#334155; margin-bottom:2rem;" id="read-conv-date-line">
+            Patos, 30 de setembro de 2026.
+          </div>
+
+          <!-- Assinaturas da Diretoria -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:2rem; text-align:center; margin-top:2.5rem; padding-top:1.5rem; border-top:1px dashed #cbd5e1;">
+            <div>
+              <div style="font-weight:700; font-size:.9rem; text-transform:uppercase; color:#0f172a;" id="read-conv-sec-name">Secretário(a) Executivo(a)</div>
+              <div style="height:1px; background:#0f172a; width:80%; margin:.35rem auto .4rem;"></div>
+              <div style="font-size:.8rem; color:#475569; font-weight:600;">Secretário(a) Executivo(a)</div>
+              <div style="font-size:.74rem; color:#64748b;" id="read-conv-sec-fed">Federação</div>
+            </div>
+            <div>
+              <div style="font-weight:700; font-size:.9rem; text-transform:uppercase; color:#0f172a;" id="read-conv-pres-name">Presidente da Federação</div>
+              <div style="height:1px; background:#0f172a; width:80%; margin:.35rem auto .4rem;"></div>
+              <div style="font-size:.8rem; color:#475569; font-weight:600;" id="read-conv-pres-role">Presidente da Federação</div>
+              <div style="font-size:.74rem; color:#64748b;" id="read-conv-pres-fed">Federação</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-box-footer">
+        <a id="btn-modal-download-convocation-pdf" href="#" target="_blank" class="btn btn-secondary btn-sm" style="display:inline-flex; align-items:center; gap:6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          <span>Baixar PDF Oficial</span>
+        </a>
+        <button type="button" class="btn btn-primary btn-sm" onclick="printConvocationDoc()" style="display:inline-flex; align-items:center; gap:6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+          <span>Imprimir</span>
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('modal-read-convocation')">Fechar</button>
+      </div>
+    </div>
   </div>
 
   <!-- Toast para cópia de link -->
@@ -1378,6 +1808,12 @@
     let activeCongressSubtab = 'commissions'
     let pendingHomologateCredId = null
     let pendingHomologateLumpName = ''
+
+    // ── VARIÁVEIS DE CONVOCAÇÃO ──
+    let convocationCongressId = null
+    let convocationData = null
+    let convocationAutoSaveTimer = null
+    let isConvocationSaving = false
 
     // Helper para modais de aviso/erro com estilo moderno
     window.showCredentialAlert = function (title, message, type = 'warning') {
@@ -1480,16 +1916,22 @@
               <span><strong>${c.commissions_count || 0}</strong> comissões</span>
               <span><strong>${c.total_documents_count || 0}</strong> documentos</span>
             </div>
-            <div style="display:flex; gap:.5rem;">
-              <button class="btn btn-primary btn-sm" style="flex:1; justify-content:center; display:inline-flex; align-items:center; gap:6px;" onclick="openCongressDetail('${c.id}')">
+            <div style="display:flex; flex-direction:column; gap:.5rem;">
+              <div style="display:flex; gap:.5rem;">
+                <button class="btn btn-secondary btn-sm" style="flex:1; justify-content:center; display:inline-flex; align-items:center; gap:6px; font-weight:600; ${c.convocation_status === 'enviada' ? 'background:#ecfdf5; border-color:#a7f3d0; color:#065f46;' : ''}" onclick="openCongressConvocation('${c.id}')" title="Edital de Convocação do Congresso">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                  <span>${c.convocation_status === 'enviada' ? 'Convocação Publicada' : 'Convocação'}</span>
+                </button>
+                ${c.status !== 'encerrado' ? `
+                <button class="btn btn-secondary btn-sm btn-icon" onclick="deleteCongress('${c.id}', '${c.title.replace(/'/g, "\\'")}')" title="Excluir Congresso" aria-label="Excluir Congresso">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+                ` : ''}
+              </div>
+              <button class="btn btn-primary btn-sm" style="width:100%; justify-content:center; display:inline-flex; align-items:center; gap:6px;" onclick="openCongressDetail('${c.id}')">
                 <span>${c.status === 'encerrado' ? 'Visualizar Comissões' : 'Gerenciar Comissões'}</span>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
               </button>
-              ${c.status !== 'encerrado' ? `
-              <button class="btn btn-secondary btn-sm btn-icon" onclick="deleteCongress('${c.id}', '${c.title.replace(/'/g, "\\'")}')" title="Excluir Congresso" aria-label="Excluir Congresso">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-              </button>
-              ` : ''}
             </div>
           </div>
         </div>
@@ -2500,25 +2942,27 @@
       }
     }
 
-    // ── VISÃO DA UMP LOCAL (PRESIDENTE & VICE) ──
+    // ── VISÃO DA ORGANIZAÇÃO LOCAL (PRESIDENTE & VICE) ──
     async function initLocalUmpCredentialView() {
       // Ajusta cabeçalho
-      document.getElementById('page-title').textContent = 'Credencial do Congresso'
-      document.getElementById('page-subtitle').textContent = 'Preenchimento, aprovação pastoral por selfie e envio de delegados'
-      document.getElementById('breadcrumb-area').innerHTML = '<span>Credencial</span> &gt; <span>Enviar Delegados</span>'
+      document.getElementById('page-title').textContent = 'Congressos e Credenciamento'
+      document.getElementById('page-subtitle').textContent = 'Editais de convocação e envio de credenciais de delegados'
+      document.getElementById('breadcrumb-area').innerHTML = '<span>Credencial</span> &gt; <span>Congressos Ativos</span>'
 
       const pageActions = document.getElementById('page-actions-area')
       if (pageActions) pageActions.style.display = 'none'
 
       document.getElementById('view-congress-list').style.display = 'none'
       document.getElementById('view-congress-detail').style.display = 'none'
+      document.getElementById('view-congress-convocation').style.display = 'none'
+      document.getElementById('view-local-credential').style.display = 'none'
 
       try {
         const data = await api.get('/api/congresses/active-for-local')
         localCredentialData = data
 
-        if (!data.has_active_congress) {
-          document.getElementById('view-local-credential').innerHTML = `
+        if (!data.has_active_congress || !data.active_congresses || data.active_congresses.length === 0) {
+          document.getElementById('view-local-congresses').innerHTML = `
             <div class="empty-state-box">
               <div class="ei" style="display:flex;justify-content:center;margin-bottom:.5rem;color:var(--slate-400)">
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
@@ -2527,9 +2971,92 @@
               <p>Sua Federação não possui nenhum congresso ativo com credenciamento aberto para envio de delegados no momento.</p>
             </div>
           `
-          document.getElementById('view-local-credential').style.display = 'block'
+          document.getElementById('view-local-congresses').style.display = 'block'
           return
         }
+
+        renderLocalCongressesList(data.active_congresses)
+        document.getElementById('view-local-congresses').style.display = 'block'
+      } catch (err) {
+        showAlert('Erro ao carregar congressos ativos: ' + (err.message || err))
+      }
+    }
+
+    function renderLocalCongressesList(congresses) {
+      const container = document.getElementById('local-congress-cards-container')
+      if (!container) return
+
+      container.innerHTML = congresses.map(c => {
+        let statusBadgeClass = 'badge-slate'
+        let statusText = 'Não preenchida'
+        if (c.credential_status === 'homologada') {
+          statusBadgeClass = 'badge-green'
+          statusText = 'Homologada'
+        } else if (c.credential_status === 'enviada') {
+          statusBadgeClass = 'badge-blue'
+          statusText = 'Enviada à Federação'
+        } else if (c.credential_status === 'aprovado_pastor') {
+          statusBadgeClass = 'badge-green'
+          statusText = 'Aprovada pelo Pastor'
+        } else if (c.credential_status === 'aguardando_pastor') {
+          statusBadgeClass = 'badge-amber'
+          statusText = 'Aguardando Pastor'
+        } else if (c.credential_status === 'rascunho') {
+          statusBadgeClass = 'badge-blue'
+          statusText = 'Rascunho'
+        }
+
+        const isSubmitted = c.credential_status === 'enviada' || c.credential_status === 'homologada'
+        const hasConvocation = c.convocation_status === 'enviada'
+
+        return `
+          <div class="congress-card">
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.75rem;">
+                <span class="badge badge-blue" style="font-size:.8rem; font-weight:700;">Ano ${c.fiscal_year}</span>
+                <span class="badge ${hasConvocation ? 'badge-green' : 'badge-slate'}" style="display:inline-flex; align-items:center; gap:4px;">
+                  ${hasConvocation ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>` : ''}
+                  <span>${hasConvocation ? 'Convocação Publicada' : 'Convocação em Elaboração'}</span>
+                </span>
+              </div>
+              <h3 style="font-size:1.15rem; font-weight:700; color:var(--slate-800); margin-bottom:.4rem; line-height:1.35;">
+                ${c.title}
+              </h3>
+              <p style="font-size:.84rem; color:var(--slate-500); line-height:1.5; margin-bottom:.85rem; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+                ${c.description || 'Congresso oficial promovido pela Federação.'}
+              </p>
+              <div style="display:flex; flex-direction:column; gap:.4rem; font-size:.8rem; color:var(--slate-600); background:#f8fafc; padding:.65rem .85rem; border-radius:6px; border:1px solid var(--slate-100); margin-bottom:.85rem;">
+                <div style="display:flex; justify-content:space-between;">
+                  <span>Limites de Delegação:</span>
+                  <strong>${c.min_delegates} a ${c.max_delegates} delegados</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span>Status da Credencial:</span>
+                  <span class="badge ${statusBadgeClass}">${statusText}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="border-top:1px solid var(--slate-100); padding-top:.9rem; display:flex; flex-direction:column; gap:.5rem;">
+              <button class="btn btn-secondary btn-sm" style="width:100%; justify-content:center; display:inline-flex; align-items:center; gap:6px; font-weight:600;" onclick="readCongressConvocation('${c.id}')" title="Ler Edital de Convocação">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                <span>Ler Convocação</span>
+              </button>
+              <button class="btn btn-primary btn-sm" style="width:100%; justify-content:center; display:inline-flex; align-items:center; gap:6px; font-weight:600;" onclick="openLocalCredentialForm('${c.id}')">
+                <span>${isSubmitted ? 'Ver Credencial Enviada' : 'Preencher e Enviar Credenciais'}</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+              </button>
+            </div>
+          </div>
+        `
+      }).join('')
+    }
+
+    window.openLocalCredentialForm = async function (congressId = null) {
+      try {
+        const url = congressId ? `/api/congresses/active-for-local?congress_id=${congressId}` : '/api/congresses/active-for-local'
+        const data = await api.get(url)
+        localCredentialData = data
 
         localMembersList = data.members || []
         localDelegatesList = (data.credential.delegates || []).map(d => ({
@@ -2545,12 +3072,20 @@
         const minD = data.congress.min_delegates || 1
         const maxD = data.congress.max_delegates || 5
         document.getElementById('local-cong-limits-badge').textContent = `Mínimo de ${minD} e Máximo de ${maxD} delegados`
-        document.getElementById('local-limits-helper').textContent = `Sua UMP deve enviar entre ${minD} e ${maxD} delegados. Os primeiros ${minD} são obrigatórios e os demais são opcionais.`
+        document.getElementById('local-limits-helper').textContent = `Sua organização deve enviar entre ${minD} e ${maxD} delegados. Os primeiros ${minD} são obrigatórios e os demais são opcionais.`
 
         // Preenche campos
         document.getElementById('local-input-pastor').value = data.credential.pastor_name || data.local_ump.pastor_name || ''
         document.getElementById('local-signer-name').textContent = data.current_user_name
         document.getElementById('local-signer-role').textContent = `${data.current_user_role} da ${data.local_ump.name}`
+
+        // Atualiza cabeçalho e breadcrumbs
+        document.getElementById('page-title').textContent = `Credencial - ${data.congress.title}`
+        document.getElementById('page-subtitle').textContent = 'Preenchimento, aprovação pastoral por selfie e envio de delegados'
+        document.getElementById('breadcrumb-area').innerHTML = `
+          <a href="javascript:void(0)" onclick="returnToLocalCongressesList()" style="color:var(--blue-600); text-decoration:none; font-weight:600;">Congressos Ativos</a>
+          <span> / ${data.congress.title} / Credencial</span>
+        `
 
         // Renderiza seções
         renderLocalStatusTracker()
@@ -2558,9 +3093,21 @@
         renderLocalPastorSection()
         updateLocalActionButtons()
 
+        document.getElementById('view-local-congresses').style.display = 'none'
         document.getElementById('view-local-credential').style.display = 'block'
       } catch (err) {
-        showAlert('Erro ao carregar dados do congresso: ' + (err.message || err))
+        showCredentialAlert('Erro', 'Erro ao carregar dados do congresso: ' + (err.message || err), 'error')
+      }
+    }
+
+    window.returnToLocalCongressesList = async function () {
+      document.getElementById('view-local-credential').style.display = 'none'
+      await initLocalUmpCredentialView()
+    }
+
+    window.readCurrentCongressConvocation = function () {
+      if (localCredentialData && localCredentialData.congress) {
+        readCongressConvocation(localCredentialData.congress.id)
       }
     }
 
@@ -3125,6 +3672,319 @@
       document.getElementById('modal-selfie-church-name').textContent = churchName || 'Igreja Presbiteriana'
       document.getElementById('modal-selfie-timestamp').textContent = approvedAt ? `Aprovado em ${approvedAt}` : 'Aprovado digitalmente'
       openModal('modal-view-selfie')
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // ── LEITURA E IMPRESSÃO DO EDITAL DE CONVOCAÇÃO ──
+    // ════════════════════════════════════════════════════════════
+
+    window.readCongressConvocation = async function (congressId) {
+      try {
+        const data = await api.get(`/api/congresses/${congressId}/convocation`)
+        const isUph = (localStorage.getItem('society_type') === 'UPH') ||
+                      (data.federation?.society_type === 'UPH') ||
+                      (data.congress?.society_type === 'UPH') ||
+                      (sessionStorage.getItem('society_type') === 'UPH') ||
+                      (window.CURRENT_USER?.society_type === 'UPH')
+
+        const logoSrc = isUph ? '/assets/img/logo_parecer_uph.png' : '/assets/img/logo_parecer.png'
+        const logoEl = document.getElementById('read-conv-logo')
+        if (logoEl) logoEl.src = logoSrc
+
+        document.getElementById('read-conv-presbytery-header').textContent = (data.federation?.presbytery_name || 'PRESBITÉRIO OESTE DA PARAÍBA').toUpperCase()
+        document.getElementById('read-conv-fed-header').textContent = (data.federation?.name || (isUph ? 'FEDERAÇÃO DE UPHs' : 'FEDERAÇÃO DE MOCIDADES PRESBITERIANAS')).toUpperCase()
+
+        const verseEl = document.getElementById('read-conv-verse')
+        if (verseEl) {
+          verseEl.textContent = isUph
+            ? '“Vigiai, estai firmes na fé, portai-vos varonilmente, fortalecei-vos. Todas as vossas ações sejam feitas com amor.” (I Co. 16.13-14).'
+            : '“Ninguém despreze a tua mocidade; pelo contrário, torna-te padrão dos fiéis, na palavra, no procedimento, no amor, na fé, na pureza.” (I Tm. 4.12).'
+        }
+
+        document.getElementById('read-conv-center-title').textContent = (data.congress?.title || 'CONGRESSO ORDINÁRIO').toUpperCase()
+        document.getElementById('read-conv-center-year').textContent = `GESTÃO ${data.congress?.fiscal_year || 2026}`
+
+        const isPublished = data.convocation?.status === 'enviada'
+        const bannerEl = document.getElementById('read-conv-status-banner')
+        if (bannerEl) {
+          if (isPublished) {
+            const sDate = data.convocation?.sent_at ? new Date(data.convocation.sent_at).toLocaleString('pt-BR') : ''
+            bannerEl.innerHTML = `
+              <div style="background:#f0fdf4; border:1px solid #bbf7d0; color:#166534; border-radius:6px; padding:.5rem .85rem; font-size:.82rem; display:flex; align-items:center; gap:6px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span><b>Edital Oficial Publicado:</b> Assinado digitalmente pela Diretoria da Federação em ${sDate}.</span>
+              </div>
+            `
+          } else {
+            bannerEl.innerHTML = `
+              <div style="background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af; border-radius:6px; padding:.5rem .85rem; font-size:.82rem; display:flex; align-items:center; gap:6px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                <span><b>Prévia do Edital de Convocação:</b> Documento em fase de elaboração pela diretoria da Federação.</span>
+              </div>
+            `
+          }
+        }
+
+        const bodyEl = document.getElementById('read-conv-body-text')
+        const rawContent = data.convocation?.text || data.default_text || '<p>Nenhum texto de convocação cadastrado ainda.</p>'
+        bodyEl.innerHTML = rawContent
+
+        // Data
+        const meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
+        const dateVal = data.convocation?.date ? new Date(data.convocation.date + 'T12:00:00') : new Date()
+        const city = data.federation?.city || 'Patos - PB'
+        document.getElementById('read-conv-date-line').textContent = `${city}, ${dateVal.getDate()} de ${meses[dateVal.getMonth()]} de ${dateVal.getFullYear()}.`
+
+        // Assinaturas
+        const secName = data.convocation?.secretary_name || data.signers?.secretario_executivo?.name || 'Secretário(a) Executivo(a)'
+        const presName = data.convocation?.president_name || data.signers?.presidente?.name || 'Presidente da Federação'
+        const fedLabel = data.federation?.name || 'Federação'
+
+        document.getElementById('read-conv-sec-name').textContent = secName
+        document.getElementById('read-conv-sec-fed').textContent = fedLabel
+        document.getElementById('read-conv-pres-name').textContent = presName
+        document.getElementById('read-conv-pres-role').textContent = `Presidente da ${isUph ? 'Federação de UPHs' : 'Federação de UMPs'}`
+        document.getElementById('read-conv-pres-fed').textContent = fedLabel
+
+        // Link PDF
+        const btnDl = document.getElementById('btn-modal-download-convocation-pdf')
+        if (btnDl) {
+          btnDl.href = `${API_BASE}/api/congresses/${congressId}/convocation/pdf`
+        }
+
+        openModal('modal-read-convocation')
+      } catch (err) {
+        showCredentialAlert('Erro', 'Erro ao carregar o edital de convocação: ' + (err.message || err), 'error')
+      }
+    }
+
+    window.printConvocationDoc = function () {
+      window.print()
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // ── ROTINA DE CONVOCAÇÃO DO CONGRESSO (FEDERAÇÃO) ──
+    // ════════════════════════════════════════════════════════════
+
+    window.openCongressConvocation = async function (congressId) {
+      convocationCongressId = congressId
+      document.getElementById('view-congress-list').style.display = 'none'
+      document.getElementById('view-congress-detail').style.display = 'none'
+      document.getElementById('view-local-congresses').style.display = 'none'
+      document.getElementById('view-local-credential').style.display = 'none'
+      const pageActions = document.getElementById('page-actions-area')
+      if (pageActions) pageActions.style.display = 'none'
+
+      document.getElementById('view-congress-convocation').style.display = 'block'
+
+      try {
+        const data = await api.get(`/api/congresses/${congressId}/convocation`)
+        convocationData = data
+
+        const isUph = (localStorage.getItem('society_type') === 'UPH') ||
+                      (data.federation?.society_type === 'UPH') ||
+                      (data.congress?.society_type === 'UPH') ||
+                      (sessionStorage.getItem('society_type') === 'UPH') ||
+                      (window.CURRENT_USER?.society_type === 'UPH')
+
+        // Timbre e Cabeçalho
+        document.getElementById('conv-timbre-logo').src = isUph ? '/assets/img/logo_parecer_uph.png' : '/assets/img/logo_parecer.png'
+        document.getElementById('conv-presbytery-label').textContent = (data.federation?.presbytery_name || 'PRESBITÉRIO OESTE DA PARAÍBA').toUpperCase()
+        document.getElementById('conv-fed-label').textContent = (data.federation?.name || (isUph ? 'FEDERAÇÃO DE UPHs' : 'FEDERAÇÃO DE MOCIDADES PRESBITERIANAS')).toUpperCase()
+        document.getElementById('conv-center-cong-title').textContent = (data.congress?.title || 'CONGRESSO ORDINÁRIO').toUpperCase()
+        document.getElementById('conv-center-year-sub').textContent = `GESTÃO ${data.congress?.fiscal_year || 2026}`
+
+        // Banner e Breadcrumbs
+        document.getElementById('page-title').textContent = `Edital de Convocação - ${data.congress.title}`
+        document.getElementById('page-subtitle').textContent = 'Elaboração e expedição oficial do edital de convocação'
+        document.getElementById('breadcrumb-area').innerHTML = `
+          <a href="javascript:void(0)" onclick="closeConvocationView()" style="color:var(--blue-600); text-decoration:none; font-weight:600;">Congressos</a>
+          <span> / ${data.congress.title} / Edital de Convocação</span>
+        `
+
+        document.getElementById('convocation-cong-title').textContent = `Edital de Convocação - ${data.congress.title}`
+        document.getElementById('convocation-badge-year').textContent = `Ano ${data.congress.fiscal_year}`
+
+        // Editor e Data
+        const editor = document.getElementById('convocation-editor')
+        editor.innerHTML = data.convocation?.text || data.default_text || ''
+
+        const dateInput = document.getElementById('convocation-date-input')
+        dateInput.value = data.convocation?.date || new Date().toISOString().split('T')[0]
+
+        // Assinaturas na prévia
+        const secName = data.convocation?.secretary_name || data.signers?.secretario_executivo?.name || 'Secretário(a) Executivo(a)'
+        const presName = data.convocation?.president_name || data.signers?.presidente?.name || 'Presidente da Federação'
+        const fedLabel = data.federation?.name || 'Federação'
+
+        document.getElementById('conv-sign-sec-name').textContent = secName
+        document.getElementById('conv-sign-sec-fed').textContent = fedLabel
+        document.getElementById('conv-sign-pres-name').textContent = presName
+        document.getElementById('conv-sign-pres-role').textContent = `Presidente da ${isUph ? 'Federação de UPHs' : 'Federação de UMPs'}`
+        document.getElementById('conv-sign-pres-fed').textContent = fedLabel
+
+        // Status
+        const statusBadge = document.getElementById('convocation-badge-status')
+        const publishLabel = document.getElementById('btn-publish-convocation-label')
+        const lastSavedMeta = document.getElementById('convocation-last-saved-meta')
+        const saveStatus = document.getElementById('convocation-save-status')
+
+        if (data.convocation?.status === 'enviada') {
+          statusBadge.textContent = 'Enviada e Publicada'
+          statusBadge.className = 'badge badge-green'
+          publishLabel.textContent = 'Reenviar / Atualizar Convocação'
+          const sDate = data.convocation.sent_at ? new Date(data.convocation.sent_at).toLocaleString('pt-BR') : ''
+          lastSavedMeta.innerHTML = `<span style="color:var(--green-700); font-weight:600;">Publicada e assinada digitalmente em ${sDate}.</span>`
+          if (saveStatus) saveStatus.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> <span>Convocação Publicada</span>'
+        } else {
+          statusBadge.textContent = 'Rascunho'
+          statusBadge.className = 'badge badge-amber'
+          publishLabel.textContent = 'Enviar Convocação Oficial'
+          lastSavedMeta.textContent = 'Salvamento automático ativado.'
+          if (saveStatus) saveStatus.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> <span>Rascunho Salvo</span>'
+        }
+
+        // Listener de input para auto-save
+        editor.oninput = () => {
+          triggerConvocationAutoSave()
+        }
+      } catch (err) {
+        showAlert('Erro ao abrir convocação: ' + (err.message || err))
+      }
+    }
+
+    window.triggerConvocationAutoSave = function () {
+      if (convocationAutoSaveTimer) clearTimeout(convocationAutoSaveTimer)
+      const meta = document.getElementById('convocation-last-saved-meta')
+      const saveStatus = document.getElementById('convocation-save-status')
+      if (meta) meta.innerHTML = '<span style="color:var(--blue-600)">Digitando... salvamento automático agendado.</span>'
+      if (saveStatus) {
+        saveStatus.className = 'save-status-badge status-saving'
+        saveStatus.innerHTML = '<span style="width:10px;height:10px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;display:inline-block;animation:spin .8s linear infinite;"></span> <span>Salvando...</span>'
+      }
+      convocationAutoSaveTimer = setTimeout(() => {
+        saveConvocationDraft(false)
+      }, 1200)
+    }
+
+    window.triggerConvocationSave = function () {
+      saveConvocationDraft(false)
+    }
+
+    window.saveConvocationDraft = async function (showToastNotice = false) {
+      if (!convocationCongressId || isConvocationSaving) return
+      isConvocationSaving = true
+      const meta = document.getElementById('convocation-last-saved-meta')
+      const saveStatus = document.getElementById('convocation-save-status')
+      if (meta) meta.innerHTML = '<span style="color:var(--blue-600)">Salvando rascunho da convocação...</span>'
+
+      try {
+        const text = document.getElementById('convocation-editor').innerHTML
+        const date = document.getElementById('convocation-date-input').value
+        await api.put(`/api/congresses/${convocationCongressId}/convocation`, {
+          convocation_text: text,
+          convocation_date: date
+        })
+        const nowStr = new Date().toLocaleTimeString('pt-BR')
+        if (meta) {
+          meta.innerHTML = `<span style="color:var(--slate-600)">Todas as alterações salvas às ${nowStr}.</span>`
+        }
+        if (saveStatus) {
+          saveStatus.className = 'save-status-badge status-saved'
+          saveStatus.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> <span>Salvo</span>'
+        }
+        if (showToastNotice) {
+          showToast('Convocação salva com sucesso!')
+        }
+      } catch (err) {
+        if (meta) {
+          meta.innerHTML = `<span style="color:var(--red-600)">Erro ao salvar rascunho: ${err.message || err}</span>`
+        }
+        if (saveStatus) {
+          saveStatus.className = 'save-status-badge status-error'
+          saveStatus.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> <span>Erro ao Salvar</span>'
+        }
+      } finally {
+        isConvocationSaving = false
+      }
+    }
+
+    window.confirmPublishConvocation = async function () {
+      if (!convocationCongressId) return
+      const isAlreadySent = convocationData?.convocation?.status === 'enviada'
+      const promptMsg = isAlreadySent
+        ? 'Deseja REENVIAR e atualizar oficialmente o Edital de Convocação deste congresso?\n\nO documento atualizado continuará disponível para todas as sociedades locais.'
+        : 'Deseja ENVIAR e PUBLICAR OFICIALMENTE o Edital de Convocação deste congresso?\n\nO documento será assinado eletronicamente pelo Secretário Executivo e Presidente da Federação e ficará imediatamente disponível para leitura e credenciamento de todas as organizações locais.'
+
+      if (!confirm(promptMsg)) return
+
+      const btn = document.getElementById('btn-publish-convocation')
+      const origHtml = btn.innerHTML
+      btn.disabled = true
+      btn.innerHTML = `<span style="width:13px;height:13px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;display:inline-block;animation:spin .8s linear infinite;"></span> <span>Publicando...</span>`
+
+      try {
+        await saveConvocationDraft(false)
+        await api.post(`/api/congresses/${convocationCongressId}/convocation/send`)
+        showToast('Edital de Convocação publicado oficialmente com sucesso!')
+        await openCongressConvocation(convocationCongressId)
+        await loadCongresses()
+      } catch (err) {
+        showCredentialAlert('Erro ao Publicar', err.message || 'Falha ao publicar a convocação.', 'error')
+      } finally {
+        btn.disabled = false
+        btn.innerHTML = origHtml
+      }
+    }
+
+    window.openConvocationPdfPreview = function () {
+      if (!convocationCongressId) return
+      window.open(`${API_BASE}/api/congresses/${convocationCongressId}/convocation/pdf`, '_blank')
+    }
+
+    window.closeConvocationView = async function () {
+      if (convocationAutoSaveTimer) {
+        clearTimeout(convocationAutoSaveTimer)
+        await saveConvocationDraft(false)
+      }
+      document.getElementById('view-congress-convocation').style.display = 'none'
+
+      if (activeCongress && activeCongress.id === convocationCongressId) {
+        document.getElementById('view-congress-detail').style.display = 'block'
+      } else {
+        document.getElementById('view-congress-list').style.display = 'block'
+        const pageActions = document.getElementById('page-actions-area')
+        if (pageActions) pageActions.style.display = 'flex'
+        document.getElementById('page-title').textContent = 'Congressos da Federação'
+        document.getElementById('page-subtitle').textContent = 'Gestão de congressos, comissões de trabalho e elaboração de pareceres'
+        document.getElementById('breadcrumb-area').innerHTML = '<span>Congressos</span>'
+        await loadCongresses()
+      }
+    }
+
+    // Ferramentas de formatação da convocação
+    window.formatConvDoc = function (cmd, val = null) {
+      document.getElementById('convocation-editor').focus()
+      document.execCommand(cmd, false, val)
+      triggerConvocationAutoSave()
+    }
+
+    window.changeConvFontSize = function (size) {
+      const editor = document.getElementById('convocation-editor')
+      editor.style.fontSize = size
+      triggerConvocationAutoSave()
+    }
+
+    window.stepConvFontSize = function (delta) {
+      const select = document.getElementById('conv-font-size-select')
+      const sizes = ['13px', '14px', '15px', '16px', '18px']
+      let currIdx = sizes.indexOf(select.value)
+      if (currIdx === -1) currIdx = 2
+      let newIdx = currIdx + delta
+      if (newIdx >= 0 && newIdx < sizes.length) {
+        select.value = sizes[newIdx]
+        changeConvFontSize(sizes[newIdx])
+      }
     }
 
     function showAlert(msg) {

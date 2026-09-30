@@ -3678,4 +3678,223 @@ def generate_credential_pdf(
 
     doc.build(story, onFirstPage=_credential_footer, onLaterPages=_credential_footer)
     return buf.getvalue()
+
+
+def generate_convocation_pdf(
+    congress_title: str,
+    fiscal_year: int,
+    federation_name: str,
+    presbytery_name: str = None,
+    synodal_name: str = None,
+    convocation_html: str = "",
+    convocation_date: datetime.date = None,
+    president_name: str = "Presidente da Federação",
+    secretary_name: str = "Secretário Executivo",
+    society_type: str = "UMP",
+    is_preview: bool = False
+) -> bytes:
+    """Gera o PDF oficial do Edital de Convocação do Congresso da Federação."""
+    buf = io.BytesIO()
+    ML = 18 * mm
+    MR = 18 * mm
+    MT = 16 * mm
+    MB = 18 * mm
+    doc = SimpleDocTemplate(
+        buf,
+        pagesize=A4,
+        leftMargin=ML,
+        rightMargin=MR,
+        topMargin=MT,
+        bottomMargin=MB
+    )
+    W = A4[0] - ML - MR
+    story = []
+
+    soc_label = (society_type or "UMP").strip().upper()
+    is_uph = (soc_label == "UPH")
+
+    # 1. Logo institucional no topo centralizado
+    logo_img = _get_commission_logo_flowable(society_type=society_type)
+    logo_table = Table([[logo_img]], colWidths=[W])
+    logo_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+    ]))
+    story.append(logo_table)
+    story.append(Spacer(1, 4 * mm))
+
+    # 2. Cabeçalho Oficial
+    p_hdr = ParagraphStyle(
+        'ConvocationHeader',
+        fontName='Helvetica-Bold',
+        fontSize=10,
+        leading=14,
+        textColor=colors.HexColor('#0f172a'),
+        alignment=TA_CENTER
+    )
+    ipb_line = "IGREJA PRESBITERIANA DO BRASIL"
+    syn_str = synodal_name or "SÍNODO PARAÍBA"
+    presb_str = presbytery_name or "PRESBITÉRIO"
+    sub_line = f"{soc_label} | {syn_str.upper()} | {presb_str.upper()}"
+    fed_line = (federation_name or f"FEDERAÇÃO DE {soc_label}s").upper()
+    cong_line = (congress_title or f"CONGRESSO DA FEDERAÇÃO").upper()
+    year_line = f"GESTÃO {fiscal_year or datetime.datetime.now().year}"
+
+    story.append(Paragraph(f"{ipb_line}<br/>{sub_line}<br/>{fed_line}<br/>{cong_line}<br/>{year_line}", p_hdr))
+    story.append(Spacer(1, 4 * mm))
+
+    # Linha divisória
+    story.append(HRFlowable(width=W, thickness=1, color=colors.HexColor('#0f172a'), spaceAfter=4 * mm))
+
+    # 3. Versículo Bíblico Temático
+    p_verse = ParagraphStyle(
+        'ConvocationVerse',
+        fontName='Helvetica-Oblique',
+        fontSize=9,
+        leading=13,
+        textColor=colors.HexColor('#334155'),
+        alignment=TA_CENTER
+    )
+    if is_uph:
+        verse_text = '“Sede vigilantes, permanecei firmes na fé, portai-vos varonilmente, fortalecei-vos. Todas as vossas ações sejam feitas com amor.” (I Co. 16.13-14).'
+    else:
+        verse_text = '“Ninguém despreze a tua mocidade; pelo contrário, torna-te padrão dos fiéis, na palavra, no procedimento, no amor, na fé, na pureza.” (I Tm. 4.12).'
+    story.append(Paragraph(verse_text, p_verse))
+    story.append(Spacer(1, 5 * mm))
+
+    # 4. Título do Documento
+    p_title = ParagraphStyle(
+        'ConvocationMainTitle',
+        fontName='Helvetica-Bold',
+        fontSize=15,
+        leading=19,
+        textColor=colors.HexColor('#0f172a'),
+        alignment=TA_CENTER,
+        spaceAfter=3 * mm
+    )
+    story.append(Paragraph("EDITAL OFICIAL DE CONVOCAÇÃO", p_title))
+
+    if is_preview:
+        p_prev = Paragraph(
+            "<b><font size=8 color='#e11d48'>[ RASCUNHO — CONVOCAÇÃO EM ELABORAÇÃO / NÃO ENVIADA ]</font></b>",
+            ParagraphStyle('PrevWarn', alignment=TA_CENTER, spaceAfter=4 * mm)
+        )
+        story.append(p_prev)
+
+    story.append(Spacer(1, 3 * mm))
+
+    # 5. Corpo do Texto da Convocação
+    p_base = ParagraphStyle(
+        'ConvBase',
+        fontName='Helvetica',
+        fontSize=10.5,
+        leading=15,
+        textColor=colors.HexColor('#1e293b'),
+        alignment=TA_JUSTIFY,
+        firstLineIndent=14
+    )
+    p_bold = ParagraphStyle('ConvBold', parent=p_base, fontName='Helvetica-Bold')
+    p_h2 = ParagraphStyle('ConvH2', fontName='Helvetica-Bold', fontSize=12, leading=16, textColor=colors.HexColor('#0f172a'), spaceBefore=3 * mm, spaceAfter=2 * mm)
+    p_h3 = ParagraphStyle('ConvH3', fontName='Helvetica-Bold', fontSize=11, leading=15, textColor=colors.HexColor('#1e293b'), spaceBefore=2 * mm, spaceAfter=1 * mm)
+    p_quote = ParagraphStyle('ConvQuote', fontName='Helvetica-Oblique', fontSize=10, leading=14, leftIndent=20, rightIndent=15, textColor=colors.HexColor('#334155'), alignment=TA_JUSTIFY)
+
+    clean_text = (convocation_html or "").strip()
+    if clean_text:
+        parser = _CommissionHTMLParser(p_base, p_bold, p_h2, p_h3, p_quote)
+        parser.feed(clean_text)
+        flowables = parser.get_flowables()
+        if flowables:
+            story.extend(flowables)
+        else:
+            story.append(Paragraph("<i>Nenhum texto de convocação redigido até o momento.</i>", p_base))
+    else:
+        story.append(Paragraph("<i>Nenhum texto de convocação redigido até o momento.</i>", p_base))
+
+    story.append(Spacer(1, 6 * mm))
+
+    # 6. Data por extenso
+    p_date = ParagraphStyle(
+        'ConvDate',
+        fontName='Helvetica',
+        fontSize=10,
+        leading=14,
+        textColor=colors.HexColor('#0f172a'),
+        alignment=TA_RIGHT
+    )
+    meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
+    doc_d = convocation_date or datetime.date.today()
+    date_str = f"{doc_d.day} de {meses[doc_d.month - 1]} de {doc_d.year}."
+    story.append(Paragraph(date_str, p_date))
+    story.append(Spacer(1, 10 * mm))
+
+    # 7. Bloco de Assinaturas (Secretário Executivo e Presidente da Federação)
+    p_sign_name = ParagraphStyle(
+        'ConvSignName',
+        fontName='Helvetica-Bold',
+        fontSize=9.5,
+        leading=12,
+        textColor=colors.HexColor('#0f172a'),
+        alignment=TA_CENTER
+    )
+    p_sign_role = ParagraphStyle(
+        'ConvSignRole',
+        fontName='Helvetica',
+        fontSize=8.5,
+        leading=11,
+        textColor=colors.HexColor('#475569'),
+        alignment=TA_CENTER
+    )
+
+    sec_name = (secretary_name or "Secretário(a) Executivo(a)").strip().upper()
+    pres_role = f"Presidente da Federação de {soc_label}s"
+    pres_name = (president_name or pres_role).strip().upper()
+
+    sec_cell = [
+        Paragraph(sec_name, p_sign_name),
+        Spacer(1, 1 * mm),
+        HRFlowable(width=W * 0.42, thickness=0.75, color=colors.HexColor('#0f172a'), spaceBefore=1, spaceAfter=2),
+        Paragraph("Secretário(a) Executivo(a)", p_sign_role),
+        Paragraph(federation_name or "", p_sign_role)
+    ]
+    pres_cell = [
+        Paragraph(pres_name, p_sign_name),
+        Spacer(1, 1 * mm),
+        HRFlowable(width=W * 0.42, thickness=0.75, color=colors.HexColor('#0f172a'), spaceBefore=1, spaceAfter=2),
+        Paragraph(pres_role, p_sign_role),
+        Paragraph(federation_name or "", p_sign_role)
+    ]
+
+    col_w = W / 2.0
+    sign_table = Table([[sec_cell, pres_cell]], colWidths=[col_w, col_w])
+    sign_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 4 * mm),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 4 * mm),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+    ]))
+    story.append(KeepTogether([sign_table]))
+
+    def _convocation_footer(canvas_obj, doc_obj):
+        canvas_obj.saveState()
+        canvas_obj.setStrokeColor(colors.HexColor('#cbd5e1'))
+        canvas_obj.setLineWidth(0.5)
+        canvas_obj.line(ML, 12 * mm, A4[0] - MR, 12 * mm)
+        canvas_obj.setFont("Helvetica", 7.5)
+        canvas_obj.setFillColor(colors.HexColor('#64748b'))
+        foot_str = f"Edital Oficial de Convocação — Gerado em {datetime.datetime.now().strftime('%d/%m/%Y às %H:%M')}"
+        if is_preview:
+            foot_str += " · Rascunho / Prévia"
+        else:
+            foot_str += " · Documento Oficial Homologado"
+        canvas_obj.drawString(ML, 7 * mm, foot_str)
+        canvas_obj.drawRightString(A4[0] - MR, 7 * mm, f"Página {doc_obj.page}")
+        canvas_obj.restoreState()
+
+    doc.build(story, onFirstPage=_convocation_footer, onLaterPages=_convocation_footer)
+    return buf.getvalue()
 
