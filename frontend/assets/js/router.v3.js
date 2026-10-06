@@ -129,7 +129,7 @@ export function canAccessPage(page) {
   const rolePermsRaw = localStorage.getItem('role_permissions')
   let rolePerms = null
   if (rolePermsRaw) {
-    try { rolePerms = JSON.parse(rolePermsRaw) } catch {}
+    try { rolePerms = JSON.parse(rolePermsRaw) } catch { }
   }
 
   const userRoles = user?.roles ?? []
@@ -304,8 +304,8 @@ export async function renderShell() {
           }
         }
       }
-    }).catch(() => {})
-  } catch {}
+    }).catch(() => { })
+  } catch { }
 
   // Formata o nome para cabeçalho (Primeiro e Último nome se tiver 3+ partes)
   const formatHeaderName = (fullName) => {
@@ -829,18 +829,18 @@ const PAGE_HELP_INFO = {
   },
   board: {
     title: 'Tutorial — Diretoria',
-    content: 'Entenda como cadastrar a diretoria eleita da sua UMP e gerenciar os cargos oficiais do mandato.',
-    videoUrl: 'https://www.youtube.com/embed/placeholder_board'
+    content: 'Entenda como cadastrar a diretoria da sua local ou federação e gerenciar os cargos oficiais do mandato.',
+    videoUrl: 'https://www.youtube.com/embed/tmlIahnUDp4'
   },
   'local-umps': {
-    title: 'Tutorial — UMPs Locais',
-    content: 'Guia para Federações e Sinodais sobre como gerenciar as sociedades locais do seu presbitério/sínodo.',
+    title: 'Tutorial — Locais',
+    content: 'Guia para Federações sobre como gerenciar as sociedades locais do seu presbitério.',
     videoUrl: 'https://www.youtube.com/embed/placeholder_local_umps'
   },
   secretary: {
     title: 'Tutorial — Secretaria',
-    content: 'Como arquivar atas de reuniões, expedir ofícios e gerenciar relatórios de atividades da sua secretaria.',
-    videoUrl: 'https://www.youtube.com/embed/placeholder_secretary'
+    content: 'Entenda como gerenciar toda parte de Atas de reuniões e documentos expedidos.',
+    videoUrl: 'https://www.youtube.com/embed/LCFhrtpyacg'
   },
   president: {
     title: 'Tutorial — Presidência',
@@ -860,12 +860,12 @@ const PAGE_HELP_INFO = {
   calendar: {
     title: 'Tutorial — Calendário',
     content: 'Veja como cadastrar eventos, reuniões e programações no calendário integrado da plataforma.',
-    videoUrl: 'https://www.youtube.com/embed/placeholder_calendar'
+    videoUrl: 'https://www.youtube.com/embed/_Zui_VxArTc'
   },
   eleicoes: {
     title: 'Tutorial — Eleições',
-    content: 'Passo a passo para abrir pleitos de votação, registrar candidatos, auditar votos e visualizar resultados apurados em tempo real.',
-    videoUrl: 'https://www.youtube.com/embed/placeholder_eleicoes'
+    content: 'Passo a passo para abrir pleitos de votação, registrar candidatos e visualizar resultados apurados em tempo real.',
+    videoUrl: 'https://www.youtube.com/embed/ASTAUNBa8cc'
   },
   admin: {
     title: 'Tutorial — Admin',
