@@ -84,6 +84,12 @@ const NAV_ITEMS = [
     roles: null
   },
   {
+    page: 'signature', label: 'Assinatura Digital',
+    icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="nav-icon"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>',
+    path: '/pages/signature.html',
+    roles: null
+  },
+  {
     page: 'eleicoes',
     label: 'Eleições',
     icon: '/assets/img/eleicao.png',
@@ -197,7 +203,9 @@ function buildNavHTML(user, societyType) {
       }
       const iconHtml = item.icon.startsWith('/')
         ? `<img class="nav-icon" src="${item.icon}" alt="" />`
-        : `<span class="nav-icon" style="font-size:1.1rem;display:inline-flex;align-items:center;justify-content:center">${item.icon}</span>`
+        : item.icon.startsWith('<svg')
+          ? item.icon
+          : `<span class="nav-icon" style="font-size:1.1rem;display:inline-flex;align-items:center;justify-content:center">${item.icon}</span>`
       return `
         <button class="nav-item" data-page="${item.page}" onclick="navigate('${item.page}')">
           ${iconHtml}
@@ -861,6 +869,11 @@ const PAGE_HELP_INFO = {
     title: 'Tutorial — Calendário',
     content: 'Veja como cadastrar eventos, reuniões e programações no calendário integrado da plataforma.',
     videoUrl: 'https://www.youtube.com/embed/_Zui_VxArTc'
+  },
+  signature: {
+    title: 'Tutorial — Assinatura Digital',
+    content: 'Carregue um documento PDF, posicione o carimbo oficial com sua assinatura digital no local desejado e confirme para gerar o arquivo assinado.',
+    videoUrl: ''
   },
   eleicoes: {
     title: 'Tutorial — Eleições',
