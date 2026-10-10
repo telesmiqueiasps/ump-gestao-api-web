@@ -176,12 +176,41 @@
       align-items: center;
       padding: 6px 12px;
       gap: 10px;
+      transform-origin: top left;
+      transform: scale(var(--stamp-scale, 1));
     }
 
     .stamp-overlay:hover, .stamp-overlay.dragging {
       outline-color: #2563eb;
       outline-style: solid;
       box-shadow: 0 8px 24px rgba(37,99,235,.25);
+    }
+
+    /* Alça de redimensionamento no canto do carimbo */
+    .stamp-resize-handle {
+      position: absolute;
+      right: -10px;
+      bottom: -10px;
+      width: 24px;
+      height: 24px;
+      background: #fff;
+      border: 2px solid var(--brand-blue);
+      border-radius: 50%;
+      cursor: nwse-resize;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--brand-blue);
+      box-shadow: 0 2px 6px rgba(0,0,0,.2);
+      touch-action: none;
+      z-index: 60;
+      transition: transform .15s, background .15s;
+    }
+
+    .stamp-resize-handle:hover, .stamp-resize-handle.active {
+      background: var(--brand-blue);
+      color: #fff;
+      transform: scale(1.15);
     }
 
     .stamp-badge-tag {
@@ -278,6 +307,122 @@
       margin-bottom: 1rem;
       display: flex;
       align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,.03);
+    }
+
+    /* Controles de Escala / Tamanho do Carimbo */
+    .stamp-size-toolbar-group {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      flex-wrap: wrap;
+    }
+
+    .stamp-size-control-box {
+      display: inline-flex;
+      align-items: center;
+      gap: .3rem;
+      background: var(--slate-50);
+      border: 1.5px solid var(--slate-200);
+      border-radius: var(--radius-sm);
+      padding: .2rem .4rem;
+    }
+
+    .scale-val-badge {
+      font-size: .8rem;
+      font-weight: 700;
+      color: var(--brand-blue);
+      min-width: 44px;
+      text-align: center;
+    }
+
+    .scale-presets {
+      display: inline-flex;
+      align-items: center;
+      gap: .25rem;
+    }
+
+    .preset-chip {
+      background: #fff;
+      border: 1.5px solid var(--slate-200);
+      color: var(--slate-600);
+      font-size: .75rem;
+      font-weight: 600;
+      padding: .25rem .55rem;
+      border-radius: 99px;
+      cursor: pointer;
+      transition: all .15s;
+      line-height: 1.2;
+    }
+
+    .preset-chip:hover {
+      background: var(--slate-50);
+      border-color: var(--slate-300);
+      color: var(--slate-900);
+    }
+
+    .preset-chip.active {
+      background: var(--brand-blue);
+      border-color: var(--brand-blue);
+      color: #fff;
+    }
+
+    /* Otimização Responsiva e Mobile */
+    @media (max-width: 768px) {
+      .viewer-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: .75rem;
+        padding: .75rem;
+      }
+
+      .toolbar-group {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .stamp-size-toolbar-group {
+        flex-direction: column;
+        align-items: stretch;
+        gap: .5rem;
+        background: var(--slate-50);
+        padding: .6rem;
+        border-radius: var(--radius);
+        border: 1px solid var(--slate-200);
+      }
+
+      .stamp-size-control-box {
+        justify-content: space-between;
+        width: 100%;
+        background: #fff;
+      }
+
+      .scale-presets {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .preset-chip {
+        flex: 1;
+        text-align: center;
+        padding: .35rem .2rem;
+      }
+
+      .toolbar-btn {
+        padding: .5rem .75rem;
+        font-size: .82rem;
+      }
+
+      .viewer-stage {
+        padding: 1rem .4rem;
+        min-height: 420px;
+      }
+
+      #btn-confirm-signature-mobile {
+        display: inline-flex !important;
+      }
+    }
       justify-content: center;
       box-shadow: inset 0 1px 3px rgba(0,0,0,.03);
     }
@@ -392,6 +537,28 @@
                 </button>
               </div>
 
+              <div class="toolbar-group stamp-size-toolbar-group">
+                <div class="stamp-size-control-box">
+                  <span style="font-size: .8rem; font-weight: 600; color: var(--slate-600); display: flex; align-items: center; gap: .35rem;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+                    <span>Tamanho:</span>
+                  </span>
+                  <button class="toolbar-btn" id="btn-scale-down" title="Diminuir Carimbo" style="padding: .3rem .55rem;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  </button>
+                  <span class="scale-val-badge" id="stamp-scale-display">100%</span>
+                  <button class="toolbar-btn" id="btn-scale-up" title="Aumentar Carimbo" style="padding: .3rem .55rem;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  </button>
+                </div>
+                <div class="scale-presets">
+                  <button type="button" class="preset-chip" data-scale="0.65">P (65%)</button>
+                  <button type="button" class="preset-chip" data-scale="0.85">M (85%)</button>
+                  <button type="button" class="preset-chip active" data-scale="1.0">Padrão</button>
+                  <button type="button" class="preset-chip" data-scale="1.25">G (125%)</button>
+                </div>
+              </div>
+
               <div class="toolbar-group">
                 <button class="toolbar-btn" id="btn-change-file" style="color: var(--red-600);">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
@@ -420,15 +587,24 @@
                       <div class="stamp-date-line" id="stamp-overlay-date">--/--/---- --:--</div>
                     </div>
                   </div>
+
+                  <!-- Alça de redimensionamento tátil e visual -->
+                  <div class="stamp-resize-handle" id="stamp-resize-handle" title="Arraste para redimensionar o carimbo">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+                  </div>
                 </div>
               </div>
             </div>
 
             <div style="margin-top: .75rem; display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap;">
-              <p style="font-size: .8rem; color: var(--slate-500); display: flex; align-items: center; gap: .4rem;">
+              <p style="font-size: .8rem; color: var(--slate-500); display: flex; align-items: center; gap: .4rem; flex: 1; min-width: 200px;">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-                <span>Dica: clique em qualquer ponto do documento ou arraste o carimbo com o mouse para escolher o local da assinatura.</span>
+                <span>Dica: arraste o carimbo para o local desejado e use o controle de tamanho para ajustá-lo perfeitamente ao documento.</span>
               </p>
+              <button class="btn btn-primary" id="btn-confirm-signature-mobile" style="display: none; align-items: center; gap: .4rem; padding: .65rem 1.1rem; font-weight: 600;" disabled>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                <span>Confirmar Assinatura</span>
+              </button>
             </div>
           </div>
         </div>
@@ -452,6 +628,22 @@
                   <div class="stamp-system-line">assinado digitalmente pelo <strong>SIGES POPB</strong></div>
                   <div class="stamp-date-line" id="side-preview-date">09/10/2026 19:20</div>
                 </div>
+              </div>
+            </div>
+
+            <div class="stamp-size-slider-box" style="margin-bottom: 1.25rem; background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: var(--radius); padding: .75rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: .4rem;">
+                <label style="font-size: .8rem; font-weight: 600; color: var(--slate-700); display: flex; align-items: center; gap: .35rem;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+                  <span>Tamanho da Assinatura:</span>
+                </label>
+                <span class="badge badge-blue" id="side-scale-badge" style="font-size: .75rem; font-weight: 700;">100%</span>
+              </div>
+              <input type="range" id="stamp-scale-range" min="50" max="150" step="5" value="100" style="width: 100%; accent-color: var(--brand-blue); cursor: pointer;" />
+              <div style="display: flex; justify-content: space-between; font-size: .7rem; color: var(--slate-400); margin-top: .2rem;">
+                <span>50% (Pequeno)</span>
+                <span>100% (Padrão)</span>
+                <span>150% (Grande)</span>
               </div>
             </div>
 
@@ -574,6 +766,7 @@
   // Padrão: parte inferior, centralizada
   let stampPctX = 0.35
   let stampPctY = 0.78
+  let currentStampScale = window.innerWidth <= 768 ? 0.85 : 1.0
   let signedPdfBlobUrl = null
 
   const dropZone = document.getElementById('drop-zone')
@@ -635,9 +828,12 @@
       uploadContainer.style.display = 'none'
       viewerContainer.style.display = 'block'
       btnConfirmSignature.disabled = false
+      const btnMobile = document.getElementById('btn-confirm-signature-mobile')
+      if (btnMobile) btnMobile.disabled = false
 
       await renderPage(currentPageNum)
       stampOverlay.style.display = 'flex'
+      setStampScale(window.innerWidth <= 768 ? 0.85 : 1.0)
       updateStampOverlayPosition()
       updatePaginationControls()
     } catch (err) {
@@ -690,15 +886,40 @@
     targetPageIndicator.textContent = `Página ${currentPageNum}`
   }
 
-  // ── POSICIONAMENTO E DRAG-AND-DROP DO CARIMBO ───────────────────
+  // ── POSICIONAMENTO E ESCALA DO CARIMBO ────────────────────────
+  function setStampScale(newScale) {
+    newScale = Math.max(0.45, Math.min(1.6, Math.round(newScale * 100) / 100))
+    currentStampScale = newScale
+    const pct = Math.round(newScale * 100)
+
+    stampOverlay.style.setProperty('--stamp-scale', newScale)
+    stampOverlay.style.transform = `scale(${newScale})`
+
+    const displayEl = document.getElementById('stamp-scale-display')
+    if (displayEl) displayEl.textContent = `${pct}%`
+
+    const sideBadgeEl = document.getElementById('side-scale-badge')
+    if (sideBadgeEl) sideBadgeEl.textContent = `${pct}%`
+
+    const rangeEl = document.getElementById('stamp-scale-range')
+    if (rangeEl) rangeEl.value = pct
+
+    document.querySelectorAll('.preset-chip').forEach(chip => {
+      const chipScale = parseFloat(chip.dataset.scale)
+      chip.classList.toggle('active', Math.abs(chipScale - newScale) < 0.05)
+    })
+
+    updateStampOverlayPosition()
+  }
+
   function updateStampOverlayPosition() {
     if (!renderedPageViewport) return
 
     const pageWidth = renderedPageViewport.width
     const pageHeight = renderedPageViewport.height
 
-    const stampW = stampOverlay.offsetWidth || 260
-    const stampH = stampOverlay.offsetHeight || 70
+    const stampW = (stampOverlay.offsetWidth || 260) * currentStampScale
+    const stampH = (stampOverlay.offsetHeight || 70) * currentStampScale
 
     // Converte percentual para pixels limitando dentro da página
     let pxX = stampPctX * pageWidth
@@ -713,15 +934,15 @@
 
   // Clique no documento posiciona o carimbo no local clicado
   pageWrapper.addEventListener('click', (e) => {
-    // Se o clique foi no próprio carimbo, ignora
+    // Se o clique foi no próprio carimbo ou na alça, ignora
     if (stampOverlay.contains(e.target)) return
 
     const rect = pageWrapper.getBoundingClientRect()
     const clickX = e.clientX - rect.left
     const clickY = e.clientY - rect.top
 
-    const stampW = stampOverlay.offsetWidth || 260
-    const stampH = stampOverlay.offsetHeight || 70
+    const stampW = (stampOverlay.offsetWidth || 260) * currentStampScale
+    const stampH = (stampOverlay.offsetHeight || 70) * currentStampScale
 
     const targetX = clickX - (stampW / 2)
     const targetY = clickY - (stampH / 2)
@@ -761,8 +982,8 @@
     const deltaY = currentY - dragStartY
 
     const rect = pageWrapper.getBoundingClientRect()
-    const stampW = stampOverlay.offsetWidth
-    const stampH = stampOverlay.offsetHeight
+    const stampW = (stampOverlay.offsetWidth || 260) * currentStampScale
+    const stampH = (stampOverlay.offsetHeight || 70) * currentStampScale
 
     let newLeft = initialLeft + deltaX
     let newTop = initialTop + deltaY
@@ -786,6 +1007,71 @@
   }
 
   stampOverlay.addEventListener('pointerdown', onPointerDown)
+
+  // ── CONTROLES DE ESCALA DO CARIMBO ─────────────────────────────
+  document.getElementById('btn-scale-down')?.addEventListener('click', () => {
+    setStampScale(currentStampScale - 0.1)
+  })
+
+  document.getElementById('btn-scale-up')?.addEventListener('click', () => {
+    setStampScale(currentStampScale + 0.1)
+  })
+
+  document.querySelectorAll('.preset-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const val = parseFloat(chip.dataset.scale)
+      if (!isNaN(val)) setStampScale(val)
+    })
+  })
+
+  const scaleRangeEl = document.getElementById('stamp-scale-range')
+  if (scaleRangeEl) {
+    scaleRangeEl.addEventListener('input', (e) => {
+      setStampScale(parseInt(e.target.value) / 100)
+    })
+  }
+
+  // Alça de redimensionamento tátil no canto do carimbo
+  const resizeHandle = document.getElementById('stamp-resize-handle')
+  let isResizing = false
+  let startResizeX = 0
+  let startScale = 1.0
+
+  if (resizeHandle) {
+    resizeHandle.addEventListener('pointerdown', (e) => {
+      e.stopPropagation()
+      isResizing = true
+      resizeHandle.classList.add('active')
+      startResizeX = e.clientX || (e.touches && e.touches[0].clientX)
+      startScale = currentStampScale
+      document.addEventListener('pointermove', onResizeMove)
+      document.addEventListener('pointerup', onResizeUp)
+    })
+  }
+
+  function onResizeMove(e) {
+    if (!isResizing) return
+    const currentX = e.clientX || (e.touches && e.touches[0].clientX)
+    const deltaX = currentX - startResizeX
+    const deltaScale = deltaX / 180
+    setStampScale(startScale + deltaScale)
+  }
+
+  function onResizeUp() {
+    if (!isResizing) return
+    isResizing = false
+    resizeHandle?.classList.remove('active')
+    document.removeEventListener('pointermove', onResizeMove)
+    document.removeEventListener('pointerup', onResizeUp)
+  }
+
+  // Botão mobile de confirmação
+  const btnMobileConfirm = document.getElementById('btn-confirm-signature-mobile')
+  if (btnMobileConfirm) {
+    btnMobileConfirm.addEventListener('click', () => {
+      btnConfirmSignature.click()
+    })
+  }
 
   // ── CONTROLES DA TOOLBAR ───────────────────────────────────────
   document.getElementById('btn-prev-page').addEventListener('click', async () => {
@@ -913,12 +1199,15 @@
     if (!originalPdfBytes || !pdfDoc) return
 
     btnConfirmSignature.disabled = true
-    btnConfirmSignature.innerHTML = `
+    if (btnMobileConfirm) btnMobileConfirm.disabled = true
+    const loadingHtml = `
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="spin">
         <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
       </svg>
       <span>Processando assinatura...</span>
     `
+    btnConfirmSignature.innerHTML = loadingHtml
+    if (btnMobileConfirm) btnMobileConfirm.innerHTML = loadingHtml
 
     try {
       // 1. Gera imagem PNG do selo em altíssima resolução
@@ -941,8 +1230,8 @@
       const scaleX = pdfWidth / screenPageWidth
       const scaleY = pdfHeight / screenPageHeight
 
-      const stampW = stampOverlay.offsetWidth
-      const stampH = stampOverlay.offsetHeight
+      const stampW = (stampOverlay.offsetWidth || 260) * currentStampScale
+      const stampH = (stampOverlay.offsetHeight || 70) * currentStampScale
 
       const stampScreenLeft = parseFloat(stampOverlay.style.left) || (stampPctX * screenPageWidth)
       const stampScreenTop = parseFloat(stampOverlay.style.top) || (stampPctY * screenPageHeight)
@@ -975,11 +1264,16 @@
       console.error('Erro ao assinar documento:', err)
       showAlert('Ocorreu um erro ao assinar o documento. Tente novamente.', 'error')
     } finally {
-      btnConfirmSignature.disabled = false
-      btnConfirmSignature.innerHTML = `
+      const readyHtml = `
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
         <span>Confirmar Assinatura</span>
       `
+      btnConfirmSignature.disabled = false
+      btnConfirmSignature.innerHTML = readyHtml
+      if (btnMobileConfirm) {
+        btnMobileConfirm.disabled = false
+        btnMobileConfirm.innerHTML = readyHtml
+      }
     }
   })
 
