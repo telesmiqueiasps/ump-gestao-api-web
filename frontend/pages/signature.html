@@ -561,6 +561,7 @@
   setInterval(updateStampPreviews, 30000)
 
   // ── ESTADO DO VISUALIZADOR ─────────────────────────────────────
+  let selectedFile = null
   let pdfDoc = null
   let originalPdfBytes = null
   let originalFileName = 'documento.pdf'
@@ -617,14 +618,16 @@
       return
     }
 
+    selectedFile = file
     originalFileName = file.name || 'documento.pdf'
 
     try {
       const arrayBuffer = await file.arrayBuffer()
-      originalPdfBytes = arrayBuffer
+      // Mantém cópia isolada para evitar que o worker do PDF.js a desanexe (detached buffer)
+      originalPdfBytes = arrayBuffer.slice(0)
 
-      // Carrega no PDF.js
-      const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) })
+      // Carrega no PDF.js passando uma cópia separada para o worker
+      const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer.slice(0)) })
       pdfDoc = await loadingTask.promise
       totalPages = pdfDoc.numPages
       currentPageNum = 1
@@ -821,6 +824,7 @@
     fileInput.value = ''
     pdfDoc = null
     originalPdfBytes = null
+    selectedFile = null
     btnConfirmSignature.disabled = true
   })
 
@@ -895,8 +899,13 @@
     ctx.fillText(currentSignatureTime, textCenterX, line3Y)
 
     const dataUrl = offscreen.toDataURL('image/png')
-    const res = await fetch(dataUrl)
-    return await res.arrayBuffer()
+    const base64 = dataUrl.split(',')[1]
+    const binary = atob(base64)
+    const bytes = new Uint8Array(binary.length)
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i)
+    }
+    return bytes
   }
 
   // ── CONFIRMAR E EMBUTIR ASSINATURA COM PDF-LIB ──────────────────
@@ -915,8 +924,9 @@
       // 1. Gera imagem PNG do selo em altíssima resolução
       const stampPngBytes = await generateHighResStampPng()
 
-      // 2. Carrega documento no PDF-Lib
-      const pdfLibDoc = await PDFLib.PDFDocument.load(originalPdfBytes)
+      // 2. Carrega documento no PDF-Lib usando cópia fresca dos bytes do arquivo
+      const pdfBytesToSign = selectedFile ? await selectedFile.arrayBuffer() : originalPdfBytes.slice(0)
+      const pdfLibDoc = await PDFLib.PDFDocument.load(pdfBytesToSign)
       const embeddedStampPng = await pdfLibDoc.embedPng(stampPngBytes)
 
       // 3. Obtém a página alvo (índice 0-based)
