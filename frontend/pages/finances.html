@@ -1058,7 +1058,7 @@
       </p>
 
       <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--radius);padding:.75rem .85rem;margin-bottom:1rem;font-size:.8rem;color:#1e40af;line-height:1.45;">
-        <strong>Importante:</strong> Todos os lançamentos até a data de corte serão congelados para auditoria. O mês de <strong>Dezembro permanecerá aberto</strong> para que a gestão realize os lançamentos finais normalmente.
+        <strong>Importante:</strong> Todos os lançamentos até a data de corte serão congelados para auditoria. Todos os <strong>lançamentos após a data de corte permanecerão liberados</strong> para que a gestão continue registrando movimentações normalmente.
       </div>
 
       <div class="form-group" style="margin-bottom:1rem">
@@ -1336,7 +1336,7 @@
           document.getElementById('period-status-badge').removeAttribute('style')
           if (bannerEl) bannerEl.style.display = 'none'
         } else if (currentPeriod.is_congress_closed) {
-          document.getElementById('period-status-badge').innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><polyline points="9 15 11 17 15 13"></polyline></svg><span>Fechado p/ Congresso (Dezembro Aberto)</span>'
+          document.getElementById('period-status-badge').innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><polyline points="9 15 11 17 15 13"></polyline></svg><span>Fechado p/ Congresso (Pós-Corte Aberto)</span>'
           document.getElementById('period-status-badge').className = 'badge'
           document.getElementById('period-status-badge').style.cssText = 'background:#e0e7ff;color:#3730a3;border:1px solid #c7d2fe;'
           if (bannerEl) {
@@ -1349,7 +1349,7 @@
                 </span>
                 <div style="font-size:.825rem;color:#1e3a8a;line-height:1.45;">
                   <strong>Prestação de Contas do Congresso Encerrada (posição até ${cutoffFmt}):</strong>
-                  Os lançamentos até esta data foram congelados para auditoria da Comissão de Exame de Contas. Lançamentos posteriores (ex.: mês de Dezembro e encerramento de mandato) estão <strong>totalmente liberados</strong>. Ao final do mandato, realize o "Encerramento Definitivo".
+                  Os lançamentos até esta data foram congelados para auditoria da Comissão de Exame de Contas. Todos os lançamentos após a data de corte estão <strong>totalmente liberados</strong>. Ao final do mandato/exercício, realize o "Encerramento Definitivo".
                 </div>
               </div>`
           }
@@ -1445,7 +1445,7 @@
               btnCloseCongress.style.cssText = 'background:linear-gradient(135deg,#3730a3,#4f46e5);color:#fff;border-color:transparent;font-size:.78rem;display:inline-flex;align-items:center;gap:.35rem;'
               const congIconSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M12 18v-6"></path><path d="m9 15 3 3 3-3"></path></svg>'
               btnCloseCongress.innerHTML = `${congIconSvg}<span>Encerrar p/ Congresso</span>`
-              btnCloseCongress.title = 'Prestação de contas do Congresso (Dezembro permanece liberado)'
+              btnCloseCongress.title = 'Prestação de contas do Congresso (lançamentos após a data de corte permanecem liberados)'
               btnCloseCongress.onclick = () => {
                 const todayStr = new Date().toISOString().split('T')[0]
                 document.getElementById('close-congress-cutoff-date').value = todayStr
@@ -1899,7 +1899,7 @@
         return
       }
 
-      if (!confirm(`Confirmar o encerramento da prestação de contas do Congresso com data de corte ${formatDate(cutoff)}?\n\n- Todos os lançamentos até ${formatDate(cutoff)} serão congelados.\n- Os relatórios oficiais do Congresso serão gerados e assinados digitalmente.\n- O mês de Dezembro permanecerá aberto para novos lançamentos.`)) {
+      if (!confirm(`Confirmar o encerramento da prestação de contas do Congresso com data de corte ${formatDate(cutoff)}?\n\n- Todos os lançamentos até ${formatDate(cutoff)} serão congelados.\n- Os relatórios oficiais do Congresso serão gerados e assinados digitalmente.\n- Todos os lançamentos após a data de corte permanecerão liberados para novas movimentações.`)) {
         return
       }
 
@@ -1910,7 +1910,7 @@
         await api.post(`/api/finances/periods/${currentPeriod.id}/close-congress`, { cutoff_date: cutoff }, 300000)
         closeModal('modal-closing-progress')
         clearAlert('screen-months-alert')
-        showAlert('screen-months-alert', 'Prestação de contas do Congresso encerrada com sucesso! Relatórios assinados gerados. Dezembro permanece aberto.', 'success')
+        showAlert('screen-months-alert', 'Prestação de contas do Congresso encerrada com sucesso! Relatórios assinados gerados. Lançamentos posteriores ao corte continuam liberados.', 'success')
         await loadPage()
       } catch (err) {
         closeModal('modal-closing-progress')

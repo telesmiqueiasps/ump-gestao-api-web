@@ -758,7 +758,7 @@ def close_period_for_congress(
     db.commit()
 
     return {
-        "detail": "Período encerrado para o Congresso com sucesso! O mês de Dezembro permanece liberado para movimentações.",
+        "detail": "Período encerrado para o Congresso com sucesso! Os lançamentos posteriores à data de corte permanecem liberados para movimentações.",
         "congress_closing_balance": res["running"],
         "congress_cutoff_date": cutoff_date.isoformat(),
         "congress_report_url": res["fin_url"],
