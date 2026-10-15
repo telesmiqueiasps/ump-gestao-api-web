@@ -710,33 +710,36 @@ def get_available_documents(
 
     # 1. Documentos das UMPs Locais
     for loc in locals_in_fed:
-        # A. Relatórios Financeiros e Comprovantes de Períodos Encerrados
+        # A. Relatórios Financeiros e Comprovantes de Períodos Encerrados (Congresso ou Definitivo)
         p_query = db.query(FinancialPeriod).filter(
             FinancialPeriod.organization_id == loc.id,
-            FinancialPeriod.is_closed == True
+            (FinancialPeriod.is_congress_closed == True) | (FinancialPeriod.is_closed == True)
         )
         if year:
             p_query = p_query.filter(FinancialPeriod.fiscal_year == year)
         periods = p_query.order_by(desc(FinancialPeriod.fiscal_year)).all()
 
         for p in periods:
-            if p.report_url:
+            fin_doc = p.congress_report_url or p.report_url
+            rec_doc = p.congress_receipts_report_url or p.receipts_report_url
+            tag = " (Prestação p/ Congresso)" if (getattr(p, 'is_congress_closed', False) and not p.is_closed) else ""
+            if fin_doc:
                 documents.append({
                     "id": f"fin_{p.id}",
-                    "title": f"Relatório Financeiro {p.fiscal_year} — {loc.name}",
+                    "title": f"Relatório Financeiro {p.fiscal_year}{tag} — {loc.name}",
                     "category": "financeiro",
                     "origin_name": loc.name,
-                    "document_url": p.report_url.split('?')[0],
+                    "document_url": fin_doc.split('?')[0],
                     "fiscal_year": p.fiscal_year,
                     "external_reference_id": str(p.id)
                 })
-            if p.receipts_report_url:
+            if rec_doc:
                 documents.append({
                     "id": f"rec_{p.id}",
-                    "title": f"Comprovantes Financeiros {p.fiscal_year} — {loc.name}",
+                    "title": f"Comprovantes Financeiros {p.fiscal_year}{tag} — {loc.name}",
                     "category": "comprovantes",
                     "origin_name": loc.name,
-                    "document_url": p.receipts_report_url.split('?')[0],
+                    "document_url": rec_doc.split('?')[0],
                     "fiscal_year": p.fiscal_year,
                     "external_reference_id": str(p.id)
                 })
@@ -785,30 +788,33 @@ def get_available_documents(
     # 2. Documentos da própria Federação
     fed_p_query = db.query(FinancialPeriod).filter(
         FinancialPeriod.organization_id == fed_id,
-        FinancialPeriod.is_closed == True
+        (FinancialPeriod.is_congress_closed == True) | (FinancialPeriod.is_closed == True)
     )
     if year:
         fed_p_query = fed_p_query.filter(FinancialPeriod.fiscal_year == year)
     fed_periods = fed_p_query.order_by(desc(FinancialPeriod.fiscal_year)).all()
 
     for fp in fed_periods:
-        if fp.report_url:
+        fin_doc = fp.congress_report_url or fp.report_url
+        rec_doc = fp.congress_receipts_report_url or fp.receipts_report_url
+        tag = " (Prestação p/ Congresso)" if (getattr(fp, 'is_congress_closed', False) and not fp.is_closed) else ""
+        if fin_doc:
             documents.append({
                 "id": f"fin_fed_{fp.id}",
-                "title": f"Relatório Financeiro {fp.fiscal_year} — {fed_name}",
+                "title": f"Relatório Financeiro {fp.fiscal_year}{tag} — {fed_name}",
                 "category": "financeiro",
                 "origin_name": fed_name,
-                "document_url": fp.report_url.split('?')[0],
+                "document_url": fin_doc.split('?')[0],
                 "fiscal_year": fp.fiscal_year,
                 "external_reference_id": str(fp.id)
             })
-        if fp.receipts_report_url:
+        if rec_doc:
             documents.append({
                 "id": f"rec_fed_{fp.id}",
-                "title": f"Comprovantes Financeiros {fp.fiscal_year} — {fed_name}",
+                "title": f"Comprovantes Financeiros {fp.fiscal_year}{tag} — {fed_name}",
                 "category": "comprovantes",
                 "origin_name": fed_name,
-                "document_url": fp.receipts_report_url.split('?')[0],
+                "document_url": rec_doc.split('?')[0],
                 "fiscal_year": fp.fiscal_year,
                 "external_reference_id": str(fp.id)
             })

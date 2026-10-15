@@ -482,14 +482,30 @@
             <div>
               <div style="font-weight:700;font-size:.95rem;margin-bottom:.25rem">Período Financeiro ${p.fiscal_year}</div>
               <div style="font-size:.78rem;color:var(--slate-500)">Marcado como pronto em ${formatDate(p.ready_at?.split('T')[0])}</div>
-              <div style="margin-top:.5rem"><span class="badge badge-pending" style="display:inline-flex;align-items:center;gap:.3rem"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Aguardando encerramento</span></div>
+              <div style="margin-top:.5rem;display:flex;gap:.4rem;flex-wrap:wrap">
+                <span class="badge badge-pending" style="display:inline-flex;align-items:center;gap:.3rem"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Aguardando encerramento</span>
+                ${p.is_congress_closed ? `
+                  <span class="badge" style="background:#e0e7ff;color:#3730a3;border:1px solid #c7d2fe;display:inline-flex;align-items:center;gap:.3rem">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg>
+                    Congresso Encerrado (Dezembro Aberto)
+                  </span>
+                ` : ''}
+              </div>
             </div>
-            <div style="display:flex;gap:.5rem;flex-shrink:0">
+            <div style="display:flex;gap:.5rem;flex-shrink:0;flex-wrap:wrap">
+              ${!p.is_congress_closed ? `
+                <button class="btn btn-sm"
+                  style="background:linear-gradient(135deg,#3730a3,#4f46e5);color:#fff;display:inline-flex;align-items:center;gap:.35rem"
+                  onclick="closeCongressPeriod('${p.id}', ${p.fiscal_year})">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M12 18v-6"></path><path d="m9 15 3 3 3-3"></path></svg>
+                  <span>Encerrar p/ Congresso</span>
+                </button>
+              ` : ''}
               <button class="btn btn-sm"
                 style="background:linear-gradient(135deg,#1a5c2a,#2d8a40);color:#fff;display:inline-flex;align-items:center;gap:.35rem"
-                onclick="closePeriod('${p.id}', ${p.fiscal_year})">
+                onclick="closePeriod('${p.id}', ${p.fiscal_year}, ${!!p.is_congress_closed})">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                <span>Encerrar Período</span>
+                <span>${p.is_congress_closed ? 'Encerrar Definitivamente' : 'Encerrar Período'}</span>
               </button>
             </div>
           </div>
@@ -524,7 +540,7 @@
     el.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>'
     try {
       const periods = await api.get('/api/finances/periods')
-      const closed = periods.filter(p => p.is_closed)
+      const closed = periods.filter(p => p.is_closed || p.is_congress_closed)
       if (!closed.length) {
         el.innerHTML = `
           <div class="empty-state" style="text-align:center;padding:2rem;color:var(--slate-400)">
@@ -539,16 +555,29 @@
         <div class="sig-card" style="margin-bottom:.75rem">
           <div class="sig-card-row">
             <div class="sig-card-title">Período Financeiro ${p.fiscal_year}</div>
-            <span class="badge badge-approved" style="display:inline-flex;align-items:center;gap:.3rem"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Encerrado</span>
+            ${p.is_closed ? `
+              <span class="badge badge-approved" style="display:inline-flex;align-items:center;gap:.3rem"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Encerrado Definitivamente</span>
+            ` : `
+              <span class="badge" style="background:#e0e7ff;color:#3730a3;border:1px solid #c7d2fe;display:inline-flex;align-items:center;gap:.3rem"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg> Fechado p/ Congresso (Dezembro Aberto)</span>
+            `}
           </div>
-          <div class="sig-card-meta">Encerrado em ${fmtDate(p.closed_at)}</div>
-          ${p.report_url || p.receipts_report_url ? `
-          <div class="sig-card-actions">
-            <button class="btn btn-ghost btn-sm btn-download-period" data-id="${p.id}" style="display:inline-flex;align-items:center;gap:.35rem">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-              <span>Ver Relatórios</span>
-            </button>
-          </div>` : ''}
+          <div class="sig-card-meta">
+            ${p.is_closed ? `Encerrado em ${fmtDate(p.closed_at)}` : `Corte do Congresso em ${formatDate(p.congress_cutoff_date)}`}
+          </div>
+          <div class="sig-card-actions" style="gap:.5rem;margin-top:.5rem">
+            ${p.congress_report_url || p.congress_receipts_report_url ? `
+              <button class="btn btn-ghost btn-sm btn-download-congress" data-id="${p.id}" style="color:#4338ca;border:1px solid #c7d2fe;background:#eef2ff;display:inline-flex;align-items:center;gap:.35rem">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                <span>Relatórios do Congresso</span>
+              </button>
+            ` : ''}
+            ${p.report_url || p.receipts_report_url ? `
+              <button class="btn btn-ghost btn-sm btn-download-period" data-id="${p.id}" style="display:inline-flex;align-items:center;gap:.35rem">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                <span>Relatórios Anuais</span>
+              </button>
+            ` : ''}
+          </div>
         </div>
       `).join('')
     } catch(err) {
@@ -557,35 +586,85 @@
   }
 
   document.getElementById('history-list').addEventListener('click', async e => {
+    const congBtn = e.target.closest('.btn-download-congress')
+    if (congBtn) {
+      const periodId = congBtn.dataset.id
+      setLoading(congBtn, true, 'Obtendo...')
+      try {
+        const data = await api.get(`/api/finances/periods/${periodId}/report-urls`)
+        if (data.congress_report_url) window.open(data.congress_report_url, '_blank')
+        if (data.congress_receipts_report_url) window.open(data.congress_receipts_report_url, '_blank')
+      } catch(err) {
+        showAlert('page-alert', 'Erro ao obter relatórios do Congresso: ' + (err.message || 'Tente novamente.'), 'error')
+      } finally {
+        setLoading(congBtn, false, '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg> <span>Relatórios do Congresso</span>')
+      }
+      return
+    }
+
     const dlBtn = e.target.closest('.btn-download-period')
-    if (!dlBtn) return
-    const periodId = dlBtn.dataset.id
-    setLoading(dlBtn, true, 'Obtendo...')
-    try {
-      const data = await api.get(`/api/finances/periods/${periodId}/report-urls`)
-      if (data.report_url) window.open(data.report_url, '_blank')
-      if (data.receipts_report_url) window.open(data.receipts_report_url, '_blank')
-    } catch(err) {
-      showAlert('page-alert', 'Erro ao obter relatórios: ' + (err.message || 'Tente novamente.'), 'error')
-    } finally {
-      setLoading(dlBtn, false, '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> <span>Ver Relatórios</span>')
+    if (dlBtn) {
+      const periodId = dlBtn.dataset.id
+      setLoading(dlBtn, true, 'Obtendo...')
+      try {
+        const data = await api.get(`/api/finances/periods/${periodId}/report-urls`)
+        if (data.report_url) window.open(data.report_url, '_blank')
+        if (data.receipts_report_url) window.open(data.receipts_report_url, '_blank')
+      } catch(err) {
+        showAlert('page-alert', 'Erro ao obter relatórios: ' + (err.message || 'Tente novamente.'), 'error')
+      } finally {
+        setLoading(dlBtn, false, '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> <span>Relatórios Anuais</span>')
+      }
     }
   })
 
-  window.closePeriod = async (periodId, year) => {
+  window.closeCongressPeriod = async (periodId, year) => {
+    const todayStr = new Date().toISOString().split('T')[0]
+    const cutoff = prompt(`Informe a Data de Corte do Congresso (formato AAAA-MM-DD):`, todayStr)
+    if (!cutoff) return
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(cutoff)) {
+      alert('Data inválida. Use o formato AAAA-MM-DD.')
+      return
+    }
+
     if (!confirm(
-      `Encerrar definitivamente o período ${year}?\n\n` +
-      `- Relatório financeiro assinado digitalmente\n` +
-      `- Relatório de comprovantes gerado\n` +
-      `- Período bloqueado permanentemente\n\n` +
-      `Esta ação é irreversível.`
+      `Confirmar o encerramento da prestação de contas do Congresso (Ano ${year}) com data de corte ${formatDate(cutoff)}?\n\n` +
+      `- Relatórios da Comissão de Exame de Contas gerados e assinados\n` +
+      `- Lançamentos até ${formatDate(cutoff)} serão congelados\n` +
+      `- Mês de Dezembro permanecerá liberado para lançamentos`
     )) return
+
+    document.getElementById('pending-list').innerHTML =
+      '<div class="loading-center"><div class="spinner"></div></div><p style="text-align:center;color:var(--slate-500);margin-top:.5rem;font-size:.875rem">Gerando relatórios assinados do Congresso... Aguarde.</p>'
+
+    try {
+      await api.post(`/api/finances/periods/${periodId}/close-congress`, { cutoff_date: cutoff }, 300000)
+      showAlert('page-alert', 'Prestação de contas do Congresso encerrada com sucesso! Relatórios assinados gerados. Dezembro permanece aberto.', 'success')
+      await Promise.all([loadPending(), loadHistory()])
+    } catch(err) {
+      showAlert('page-alert', err.message, 'error')
+      await loadPending()
+    }
+  }
+
+  window.closePeriod = async (periodId, year, isCongressClosed) => {
+    const msg = isCongressClosed
+      ? `Encerrar DEFINITIVAMENTE o período ${year} (12 meses)?\n\n` +
+        `- Relatório anual consolidado assinado digitalmente\n` +
+        `- Período bloqueado permanentemente\n\n` +
+        `Esta ação é irreversível.`
+      : `Encerrar definitivamente o período ${year}?\n\n` +
+        `- Relatório financeiro assinado digitalmente\n` +
+        `- Relatório de comprovantes gerado\n` +
+        `- Período bloqueado permanentemente\n\n` +
+        `Esta ação é irreversível.`
+    if (!confirm(msg)) return
 
     document.getElementById('pending-list').innerHTML =
       '<div class="loading-center"><div class="spinner"></div></div><p style="text-align:center;color:var(--slate-500);margin-top:.5rem;font-size:.875rem">Gerando relatórios assinados... Aguarde.</p>'
 
     try {
-      await api.post(`/api/finances/periods/${periodId}/close`)
+      await api.post(`/api/finances/periods/${periodId}/close`, null, 300000)
       showAlert('page-alert', 'Período encerrado! Relatórios assinados gerados com sucesso.', 'success')
       await Promise.all([loadPending(), loadHistory()])
     } catch(err) {

@@ -163,19 +163,23 @@ def get_local_reports(
     from app.models.finance import FinancialPeriod
     periods = db.query(FinancialPeriod).filter(
         FinancialPeriod.organization_id == local_id,
-        FinancialPeriod.is_closed == True,
+        (FinancialPeriod.is_closed == True) | (FinancialPeriod.is_congress_closed == True),
     ).order_by(FinancialPeriod.fiscal_year.desc()).all()
 
     result = []
     for p in periods:
-        if p.report_url or p.receipts_report_url:
+        fin_url = p.report_url or p.congress_report_url
+        rec_url = p.receipts_report_url or p.congress_receipts_report_url
+        if fin_url or rec_url:
             result.append({
                 "id": str(p.id),
                 "fiscal_year": p.fiscal_year,
-                "closed_at": p.closed_at.isoformat() if p.closed_at else None,
-                "report_url": p.report_url,
-                "receipts_report_url": p.receipts_report_url,
-                "validation_code": p.validation_code,
+                "closed_at": p.closed_at.isoformat() if p.closed_at else (p.congress_closed_at.isoformat() if getattr(p, 'congress_closed_at', None) else None),
+                "report_url": fin_url,
+                "receipts_report_url": rec_url,
+                "validation_code": p.validation_code or getattr(p, 'congress_validation_code', None),
+                "is_congress_closed": getattr(p, 'is_congress_closed', False) or False,
+                "is_closed": p.is_closed,
             })
     return result
 
@@ -202,7 +206,7 @@ def get_local_report_urls(
     period = db.query(FinancialPeriod).filter(
         FinancialPeriod.id == period_id,
         FinancialPeriod.organization_id == local_id,
-        FinancialPeriod.is_closed == True,
+        (FinancialPeriod.is_closed == True) | (FinancialPeriod.is_congress_closed == True),
     ).first()
     if not period:
         raise HTTPException(status_code=404, detail="Período não encontrado")
@@ -218,12 +222,19 @@ def get_local_report_urls(
             return None
         return get_presigned_url(match.group(1), expires_in=3600)
 
+    fin_url = period.report_url or getattr(period, 'congress_report_url', None)
+    rec_url = period.receipts_report_url or getattr(period, 'congress_receipts_report_url', None)
+    val_code = period.validation_code or getattr(period, 'congress_validation_code', None)
+    close_dt = period.closed_at or getattr(period, 'congress_closed_at', None)
+
     return {
         "fiscal_year": period.fiscal_year,
-        "report_url": _presign(period.report_url),
-        "receipts_report_url": _presign(period.receipts_report_url),
-        "validation_code": period.validation_code,
-        "closed_at": period.closed_at.isoformat() if period.closed_at else None,
+        "report_url": _presign(fin_url),
+        "receipts_report_url": _presign(rec_url),
+        "validation_code": val_code,
+        "closed_at": close_dt.isoformat() if close_dt else None,
+        "is_congress_closed": getattr(period, 'is_congress_closed', False) or False,
+        "is_closed": period.is_closed,
     }
 
 

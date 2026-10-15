@@ -364,6 +364,9 @@ def get_organization_periods(
             "initial_balance": float(p.initial_balance or 0),
             "is_closed": bool(p.is_closed),
             "closed_at": p.closed_at.isoformat() if p.closed_at else None,
+            "is_congress_closed": bool(getattr(p, 'is_congress_closed', False)),
+            "congress_closed_at": p.congress_closed_at.isoformat() if getattr(p, 'congress_closed_at', None) else None,
+            "congress_cutoff_date": p.congress_cutoff_date.isoformat() if getattr(p, 'congress_cutoff_date', None) else None,
             "validation_code": p.validation_code,
             "is_locked": bool(p.is_locked),
             "has_report_url": bool(p.report_url),
@@ -402,14 +405,14 @@ def reopen_financial_period(
     if not period:
         raise HTTPException(status_code=404, detail="Período financeiro não encontrado")
 
-    if not period.is_closed:
+    if not period.is_closed and not getattr(period, 'is_congress_closed', False):
         raise HTTPException(status_code=400, detail=f"O período financeiro de {period.fiscal_year} já se encontra aberto.")
 
     # Regra LIFO: verificar se há ano posterior fechado para a mesma organização
     later_closed = db.query(FinancialPeriod).filter(
         FinancialPeriod.organization_id == period.organization_id,
         FinancialPeriod.fiscal_year > period.fiscal_year,
-        FinancialPeriod.is_closed == True
+        (FinancialPeriod.is_closed == True) | (FinancialPeriod.is_congress_closed == True)
     ).order_by(FinancialPeriod.fiscal_year.asc()).first()
 
     if later_closed:
@@ -421,6 +424,14 @@ def reopen_financial_period(
     # Reabre o período financeiro e invalida autenticações e relatórios antigos
     period.is_closed = False
     period.closed_at = None
+    period.is_congress_closed = False
+    period.congress_closed_at = None
+    period.congress_cutoff_date = None
+    period.congress_report_url = None
+    period.congress_receipts_report_url = None
+    period.congress_validation_code = None
+    period.congress_data_hash = None
+    period.congress_closing_balance = None
     period.is_locked = False
     period.ready_to_close = False
     period.validation_code = None

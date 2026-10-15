@@ -27,6 +27,16 @@ class FinancialPeriod(Base):
     data_hash = Column(Text, nullable=True)
     observations = Column(Text, nullable=True)
 
+    # Fechamento de Congresso (Fase 1 / Prestação de Contas)
+    is_congress_closed = Column(Boolean, default=False)
+    congress_closed_at = Column(DateTime(timezone=True), nullable=True)
+    congress_cutoff_date = Column(Date, nullable=True)
+    congress_report_url = Column(Text, nullable=True)
+    congress_receipts_report_url = Column(Text, nullable=True)
+    congress_validation_code = Column(String(64), nullable=True)
+    congress_data_hash = Column(Text, nullable=True)
+    congress_closing_balance = Column(Numeric(12, 2), nullable=True)
+
     __table_args__ = (
         UniqueConstraint("organization_id", "fiscal_year", name="uq_period_org_year"),
     )

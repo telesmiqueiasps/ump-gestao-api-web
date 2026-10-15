@@ -174,11 +174,18 @@
 
   <!-- Válido -->
   <div class="state" id="state-valid">
-    <div class="result-icon">✅</div>
+    <div class="result-icon">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 12px;display:block;">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+      </svg>
+    </div>
     <div class="result-title">Documento Válido</div>
     <p class="result-msg">Este relatório financeiro possui assinatura digital válida e seus dados não foram alterados.</p>
     <div class="doc-details">
       <dl>
+        <dt id="lbl-type" style="display:none">Tipo</dt><dd id="d-type" style="display:none">—</dd>
+        <dt id="lbl-cutoff" style="display:none">Data de Corte</dt><dd id="d-cutoff" style="display:none">—</dd>
         <dt>Organização</dt><dd id="d-org">—</dd>
         <dt>Exercício</dt><dd id="d-year">—</dd>
         <dt id="lbl-requester">Solicitante</dt><dd id="d-requester">—</dd>
@@ -192,14 +199,26 @@
 
   <!-- Inválido (código não encontrado) -->
   <div class="state" id="state-invalid">
-    <div class="result-icon">❌</div>
+    <div class="result-icon">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 12px;display:block;">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="15" y1="9" x2="9" y2="15"></line>
+        <line x1="9" y1="9" x2="15" y2="15"></line>
+      </svg>
+    </div>
     <div class="result-title">Documento Inválido</div>
     <p class="result-msg">Nenhuma assinatura digital foi encontrada para este código de validação. O documento pode ser falso ou o código pode estar incorreto.</p>
   </div>
 
   <!-- Invalidado / Revogado -->
   <div class="state" id="state-invalidated">
-    <div class="result-icon">⚠️</div>
+    <div class="result-icon">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 12px;display:block;">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+        <line x1="12" y1="9" x2="12" y2="13"></line>
+        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+      </svg>
+    </div>
     <div class="result-title">Assinatura Invalidada</div>
     <p class="result-msg">Esta assinatura digital foi invalidada ou revogada pelo administrador.</p>
     <div class="doc-details">
@@ -214,7 +233,13 @@
 
   <!-- Erro de rede / servidor -->
   <div class="state" id="state-error">
-    <div class="result-icon">🔴</div>
+    <div class="result-icon">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 12px;display:block;">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+    </div>
     <div class="result-title">Erro de Consulta</div>
     <p class="result-msg" id="error-msg">Não foi possível consultar o servidor. Tente novamente mais tarde.</p>
   </div>
@@ -290,6 +315,13 @@
           }
         }
         
+        setField('lbl-type', 'd-type', data.report_type)
+        if (data.cutoff_date) {
+          const parts = data.cutoff_date.split('-')
+          setField('lbl-cutoff', 'd-cutoff', `${parts[2]}/${parts[1]}/${parts[0]}`)
+        } else {
+          setField('lbl-cutoff', 'd-cutoff', null)
+        }
         setField('lbl-requester', 'd-requester', data.requester)
         setField('lbl-reviewer', 'd-reviewer', data.approver)
         

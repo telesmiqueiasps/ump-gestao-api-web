@@ -305,8 +305,16 @@
       document.getElementById('stat-aci-out').textContent = formatCurrency(aciOut)
 
       document.getElementById('period-title').textContent = `Período Financeiro ${period.fiscal_year}`
-      document.getElementById('period-badge').textContent = period.is_closed ? 'Encerrado' : 'Aberto'
-      document.getElementById('period-badge').className = `badge ${period.is_closed ? 'badge-slate' : 'badge-green'}`
+      if (period.is_closed) {
+        document.getElementById('period-badge').textContent = 'Encerrado Definitivamente'
+        document.getElementById('period-badge').className = 'badge badge-slate'
+      } else if (period.is_congress_closed) {
+        document.getElementById('period-badge').textContent = 'Fechado p/ Congresso'
+        document.getElementById('period-badge').className = 'badge badge-blue'
+      } else {
+        document.getElementById('period-badge').textContent = 'Aberto'
+        document.getElementById('period-badge').className = 'badge badge-green'
+      }
       document.getElementById('period-initial').textContent = formatCurrency(period.initial_balance)
       document.getElementById('period-in').textContent  = formatCurrency(totalIn)
       document.getElementById('period-out').textContent = formatCurrency(totalOut)

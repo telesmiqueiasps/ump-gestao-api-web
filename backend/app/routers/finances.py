@@ -42,6 +42,10 @@ class PeriodObservation(BaseModel):
     observations: str
 
 
+class CongressClosePayload(BaseModel):
+    cutoff_date: Optional[datetime.date] = None
+
+
 INCOME_TYPES = {TransactionType.outras_receitas, TransactionType.aci_recebida}
 EXPENSE_TYPES = {TransactionType.outras_despesas, TransactionType.aci_enviada}
 
@@ -138,7 +142,12 @@ def create_transaction(
     if period.is_locked:
         raise HTTPException(status_code=400, detail="Período bloqueado — relatório assinado pendente. Solicite desbloqueio ao Tesoureiro.")
     if period.is_closed:
-        raise HTTPException(status_code=400, detail="Este período financeiro está encerrado")
+        raise HTTPException(status_code=400, detail="Este período financeiro está encerrado definitivamente")
+    if getattr(period, 'is_congress_closed', False) and period.congress_cutoff_date and payload.transaction_date <= period.congress_cutoff_date:
+        raise HTTPException(
+            status_code=400,
+            detail=f"As contas até {period.congress_cutoff_date.strftime('%d/%m/%Y')} já foram encerradas e auditadas para o Congresso. Só é permitido lançar movimentações com data posterior ao corte do Congresso."
+        )
 
     transaction = FinancialTransaction(
         period_id=period.id,
@@ -169,6 +178,12 @@ async def upload_receipt(
     ).first()
     if not transaction:
         raise HTTPException(status_code=404, detail="Lançamento não encontrado")
+
+    period = db.query(FinancialPeriod).filter(FinancialPeriod.id == transaction.period_id).first()
+    if period and period.is_closed:
+        raise HTTPException(status_code=400, detail="Período encerrado definitivamente — comprovante não pode ser alterado")
+    if period and getattr(period, 'is_congress_closed', False) and period.congress_cutoff_date and transaction.transaction_date <= period.congress_cutoff_date:
+        raise HTTPException(status_code=400, detail="Comprovante de lançamento já auditado e encerrado para o Congresso não pode ser modificado")
 
     allowed = ["image/png", "image/jpeg", "application/pdf"]
     if file.content_type not in allowed:
@@ -282,7 +297,18 @@ def update_transaction(
     if period and period.is_locked:
         raise HTTPException(status_code=400, detail="Período bloqueado — relatório assinado pendente.")
     if period and period.is_closed:
-        raise HTTPException(status_code=400, detail="Período encerrado — lançamento não pode ser editado")
+        raise HTTPException(status_code=400, detail="Período encerrado definitivamente — lançamento não pode ser editado")
+    if period and getattr(period, 'is_congress_closed', False) and period.congress_cutoff_date:
+        if transaction.transaction_date <= period.congress_cutoff_date:
+            raise HTTPException(
+                status_code=400,
+                detail="Este lançamento já foi auditado e encerrado para o Congresso e não pode ser editado."
+            )
+        if payload.transaction_date and payload.transaction_date <= period.congress_cutoff_date:
+            raise HTTPException(
+                status_code=400,
+                detail=f"A nova data não pode ser anterior ou igual à data de corte do Congresso ({period.congress_cutoff_date.strftime('%d/%m/%Y')})."
+            )
 
     for field, value in payload.model_dump(exclude_none=True).items():
         setattr(transaction, field, value)
@@ -316,7 +342,13 @@ def delete_transaction(
     if period and period.is_locked:
         raise HTTPException(status_code=400, detail="Período bloqueado — relatório assinado pendente.")
     if period and period.is_closed:
-        raise HTTPException(status_code=400, detail="Período encerrado — lançamento não pode ser excluído")
+        raise HTTPException(status_code=400, detail="Período encerrado definitivamente — lançamento não pode ser excluído")
+    if period and getattr(period, 'is_congress_closed', False) and period.congress_cutoff_date:
+        if transaction.transaction_date <= period.congress_cutoff_date:
+            raise HTTPException(
+                status_code=400,
+                detail="Este lançamento já foi auditado e encerrado para o Congresso e não pode ser excluído."
+            )
 
     # Captura receipt_url antes de deletar
     receipt_url = str(transaction.receipt_url) if transaction.receipt_url else None
@@ -426,37 +458,26 @@ def delete_receipts_by_year(
 
 
 # Encerrar período
-@router.post("/periods/{period_id}/close")
-def close_period(
-    period_id: UUID,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+def _generate_and_upload_closure_reports(
+    period: FinancialPeriod,
+    current_user: User,
+    user_roles: list,
+    db: Session,
+    is_congress: bool = False,
+    cutoff_date = None,
 ):
     import datetime as dt
     import secrets
     import hashlib
-
-    user_roles = _get_user_roles(db, current_user.id)
-    if not any(r in CLOSE_ROLES for r in user_roles):
-        raise HTTPException(status_code=403, detail="Apenas Presidente, Vice-Presidente, Secretário Presbiterial ou Conselheiro podem encerrar o período")
-
-    period = db.query(FinancialPeriod).filter(
-        FinancialPeriod.id == period_id,
-        FinancialPeriod.organization_id == current_user.organization_id,
-    ).first()
-    if not period:
-        raise HTTPException(status_code=404, detail="Período não encontrado")
-    if period.is_closed:
-        raise HTTPException(status_code=400, detail="Período já encerrado")
-
-    # Busca dados necessários para os PDFs
     from app.models.board import BoardMember
     from app.models.local_ump import LocalUmp
     from app.models.federation import Federation
-    from app.services.storage import upload_file, _get_client, get_presigned_url
+    from app.services.storage import upload_file, _get_client
     from app.services.pdf_generator import generate_financial_report, generate_receipts_report
     from app.core.config import get_settings
     import re
+    import io as _io
+    import qrcode as _qrcode
 
     settings_obj = get_settings()
 
@@ -500,9 +521,12 @@ def close_period(
     board_data = [{"role": b.role.value, "member_name": b.member_name} for b in board_list]
 
     # Lançamentos por mês
-    transactions = db.query(FinancialTransaction).filter(
+    tx_query = db.query(FinancialTransaction).filter(
         FinancialTransaction.period_id == period.id,
-    ).order_by(FinancialTransaction.transaction_date).all()
+    )
+    if is_congress and cutoff_date:
+        tx_query = tx_query.filter(FinancialTransaction.transaction_date <= cutoff_date)
+    transactions = tx_query.order_by(FinancialTransaction.transaction_date).all()
 
     INCOME_TYPES = {"outras_receitas", "aci_recebida"}
     tx_by_month = {}
@@ -546,15 +570,28 @@ def close_period(
             "has_transactions": len(txs) > 0,
         })
 
+    if is_congress:
+        cutoff_fmt = cutoff_date.strftime('%d/%m/%Y') if cutoff_date else ''
+        header_title = "PRESTAÇÃO DE CONTAS PARA CONGRESSO — RELATÓRIO FINANCEIRO DA"
+        rec_header   = "PRESTAÇÃO DE CONTAS PARA CONGRESSO — RELATÓRIO DE COMPROVANTES"
+        sub_title    = f"Ano {period.fiscal_year} — Movimentações até {cutoff_fmt}"
+    else:
+        header_title = "RELATÓRIO FINANCEIRO ANUAL CONSOLIDADO DA"
+        rec_header   = "RELATÓRIO DE COMPROVANTES ANUAL CONSOLIDADO"
+        sub_title    = f"Exercício {period.fiscal_year} Completo (12 Meses)"
+
     period_dict = {
         "fiscal_year": period.fiscal_year,
         "initial_balance": float(period.initial_balance or 0),
         "final_balance": running,
         "observations": period.observations or "",
+        "report_title_header": header_title,
+        "receipts_title_header": rec_header,
+        "report_subtitle": sub_title,
     }
     import logging as _logging
     _logging.getLogger(__name__).info(
-        f"Period dict: initial={float(period.initial_balance or 0)}, final={running}"
+        f"Period dict ({'congress' if is_congress else 'final'}): initial={float(period.initial_balance or 0)}, final={running}"
     )
 
     # Baixa logo da organização
@@ -577,8 +614,9 @@ def close_period(
     # ── Gera validation_code e data_hash ──
     validation_code = secrets.token_urlsafe(32)[:48]
     ts = dt.datetime.now(dt.timezone.utc).isoformat()
+    stage_key = f"congress:{cutoff_date.isoformat()}" if is_congress and cutoff_date else "final"
     data_hash = hashlib.sha256(
-        f"{str(current_user.organization_id)}:{period.fiscal_year}:{total_in_all}:{total_out_all}:{float(period.initial_balance)}:{running}:{ts}".encode()
+        f"{str(current_user.organization_id)}:{period.fiscal_year}:{total_in_all}:{total_out_all}:{float(period.initial_balance)}:{running}:{stage_key}:{ts}".encode()
     ).hexdigest()
 
     # ── Monta signature_data para os PDFs ──
@@ -595,8 +633,6 @@ def close_period(
 
     validation_url = f"https://umpgestao.netlify.app/validar.html?codigo={validation_code}"
 
-    import io as _io
-    import qrcode as _qrcode
     _qr = _qrcode.QRCode(version=1, box_size=6, border=2)
     _qr.add_data(validation_url)
     _qr.make(fit=True)
@@ -645,28 +681,137 @@ def close_period(
     org_id = str(current_user.organization_id)
     year = period.fiscal_year
 
-    fin_key = f"reports/{org_id}/{year}/relatorio_financeiro_{year}.pdf"
-    rec_key = f"reports/{org_id}/{year}/relatorio_comprovantes_{year}.pdf"
+    if is_congress:
+        fin_key = f"reports/{org_id}/{year}/relatorio_financeiro_congresso_{year}.pdf"
+        rec_key = f"reports/{org_id}/{year}/relatorio_comprovantes_congresso_{year}.pdf"
+    else:
+        fin_key = f"reports/{org_id}/{year}/relatorio_financeiro_{year}.pdf"
+        rec_key = f"reports/{org_id}/{year}/relatorio_comprovantes_{year}.pdf"
 
     fin_url = upload_file(fin_pdf_bytes, fin_key, 'application/pdf')
     rec_url = upload_file(rec_pdf_bytes, rec_key, 'application/pdf')
 
-    # ── Encerra o período ──
+    return {
+        "running": running,
+        "fin_url": fin_url,
+        "rec_url": rec_url,
+        "validation_code": validation_code,
+        "data_hash": data_hash,
+    }
+
+
+# Encerrar período para o Congresso (Fase 1 - Congela até a data de corte, Dezembro permanece liberado)
+@router.post("/periods/{period_id}/close-congress")
+def close_period_for_congress(
+    period_id: UUID,
+    payload: Optional[CongressClosePayload] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    import datetime as dt
+
+    user_roles = _get_user_roles(db, current_user.id)
+    if not any(r in CLOSE_ROLES for r in user_roles):
+        raise HTTPException(status_code=403, detail="Apenas Presidente, Vice-Presidente, Secretário Presbiterial ou Conselheiro podem encerrar o período para o Congresso")
+
+    period = db.query(FinancialPeriod).filter(
+        FinancialPeriod.id == period_id,
+        FinancialPeriod.organization_id == current_user.organization_id,
+    ).first()
+    if not period:
+        raise HTTPException(status_code=404, detail="Período não encontrado")
+    if period.is_closed:
+        raise HTTPException(status_code=400, detail="Este período já foi encerrado definitivamente.")
+    if getattr(period, 'is_congress_closed', False):
+        raise HTTPException(status_code=400, detail="Este período já foi encerrado para o Congresso.")
+
+    cutoff_date = payload.cutoff_date if (payload and payload.cutoff_date) else None
+    if not cutoff_date:
+        today = dt.date.today()
+        if today.year == period.fiscal_year:
+            cutoff_date = today
+        else:
+            cutoff_date = dt.date(period.fiscal_year, 11, 30)
+
+    if cutoff_date.year != period.fiscal_year:
+        raise HTTPException(status_code=400, detail=f"A data de corte deve ser dentro do ano vigente ({period.fiscal_year})")
+
+    res = _generate_and_upload_closure_reports(
+        period=period,
+        current_user=current_user,
+        user_roles=user_roles,
+        db=db,
+        is_congress=True,
+        cutoff_date=cutoff_date,
+    )
+
     now_close = dt.datetime.now(dt.timezone.utc)
-    period.is_closed = True
-    period.closed_at = now_close
-    period.report_url = fin_url
-    period.receipts_report_url = rec_url
-    period.validation_code = validation_code
-    period.data_hash = data_hash
+    period.is_congress_closed = True
+    period.congress_closed_at = now_close
+    period.congress_cutoff_date = cutoff_date
+    period.congress_report_url = res["fin_url"]
+    period.congress_receipts_report_url = res["rec_url"]
+    period.congress_validation_code = res["validation_code"]
+    period.congress_data_hash = res["data_hash"]
+    period.congress_closing_balance = res["running"]
     period.ready_to_close = False
     db.commit()
 
     return {
-        "detail": "Período encerrado com sucesso",
-        "final_balance": running,
-        "report_url": fin_url,
-        "receipts_report_url": rec_url,
+        "detail": "Período encerrado para o Congresso com sucesso! O mês de Dezembro permanece liberado para movimentações.",
+        "congress_closing_balance": res["running"],
+        "congress_cutoff_date": cutoff_date.isoformat(),
+        "congress_report_url": res["fin_url"],
+        "congress_receipts_report_url": res["rec_url"],
+    }
+
+
+# Encerrar período definitivamente (Fase 2 - Fechamento Anual Completo)
+@router.post("/periods/{period_id}/close")
+def close_period(
+    period_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    import datetime as dt
+
+    user_roles = _get_user_roles(db, current_user.id)
+    if not any(r in CLOSE_ROLES for r in user_roles):
+        raise HTTPException(status_code=403, detail="Apenas Presidente, Vice-Presidente, Secretário Presbiterial ou Conselheiro podem encerrar o período")
+
+    period = db.query(FinancialPeriod).filter(
+        FinancialPeriod.id == period_id,
+        FinancialPeriod.organization_id == current_user.organization_id,
+    ).first()
+    if not period:
+        raise HTTPException(status_code=404, detail="Período não encontrado")
+    if period.is_closed:
+        raise HTTPException(status_code=400, detail="Período já encerrado definitivamente")
+
+    res = _generate_and_upload_closure_reports(
+        period=period,
+        current_user=current_user,
+        user_roles=user_roles,
+        db=db,
+        is_congress=False,
+        cutoff_date=None,
+    )
+
+    now_close = dt.datetime.now(dt.timezone.utc)
+    period.is_closed = True
+    period.closed_at = now_close
+    period.report_url = res["fin_url"]
+    period.receipts_report_url = res["rec_url"]
+    period.validation_code = res["validation_code"]
+    period.data_hash = res["data_hash"]
+    period.ready_to_close = False
+    db.commit()
+
+    return {
+        "detail": "Período encerrado definitivamente com sucesso! Relatórios anuais consolidados gerados.",
+        "final_balance": res["running"],
+        "report_url": res["fin_url"],
+        "receipts_report_url": res["rec_url"],
     }
 
 
@@ -683,14 +828,11 @@ def get_report_urls(
     ).first()
     if not period:
         raise HTTPException(status_code=404, detail="Período não encontrado")
-    if not period.is_closed:
-        raise HTTPException(status_code=400, detail="Período não encerrado")
+    if not period.is_closed and not getattr(period, 'is_congress_closed', False):
+        raise HTTPException(status_code=400, detail="Período ainda não possui relatórios de encerramento")
 
-    from app.services.storage import get_presigned_url, _get_client
-    from app.core.config import get_settings
+    from app.services.storage import get_presigned_url
     import re
-    settings_obj = get_settings()
-    bucket_name = settings_obj.b2_bucket_name
 
     def get_url(stored_url):
         if not stored_url:
@@ -701,9 +843,14 @@ def get_report_urls(
         return get_presigned_url(match.group(1), expires_in=3600)
 
     return {
+        "fiscal_year": period.fiscal_year,
+        "is_closed": bool(period.is_closed),
+        "is_congress_closed": bool(getattr(period, 'is_congress_closed', False)),
         "report_url": get_url(period.report_url),
         "receipts_report_url": get_url(period.receipts_report_url),
-        "fiscal_year": period.fiscal_year,
+        "congress_report_url": get_url(getattr(period, 'congress_report_url', None)),
+        "congress_receipts_report_url": get_url(getattr(period, 'congress_receipts_report_url', None)),
+        "congress_cutoff_date": period.congress_cutoff_date.isoformat() if getattr(period, 'congress_cutoff_date', None) else None,
     }
 
 
@@ -828,7 +975,7 @@ def validate_period_code(
     db: Session = Depends(get_db),
 ):
     period = db.query(FinancialPeriod).filter(
-        FinancialPeriod.validation_code == code,
+        (FinancialPeriod.validation_code == code) | (FinancialPeriod.congress_validation_code == code)
     ).first()
 
     if not period:
@@ -845,15 +992,31 @@ def validate_period_code(
         if local:
             org_name = local.name
 
-    return {
-        "valid": True,
-        "message": "✅ Documento válido e autêntico.",
-        "organization": org_name,
-        "fiscal_year": period.fiscal_year,
-        "validation_code": period.validation_code,
-        "closed_at": period.closed_at.isoformat() if period.closed_at else None,
-        "data_hash": period.data_hash,
-    }
+    is_congress_doc = (getattr(period, 'congress_validation_code', None) == code)
+
+    if is_congress_doc:
+        return {
+            "valid": True,
+            "message": "✅ Documento válido e autêntico.",
+            "organization": org_name,
+            "fiscal_year": period.fiscal_year,
+            "validation_code": period.congress_validation_code,
+            "closed_at": period.congress_closed_at.isoformat() if period.congress_closed_at else None,
+            "data_hash": period.congress_data_hash,
+            "report_type": "Prestação de Contas para Congresso",
+            "cutoff_date": period.congress_cutoff_date.isoformat() if getattr(period, 'congress_cutoff_date', None) else None,
+        }
+    else:
+        return {
+            "valid": True,
+            "message": "✅ Documento válido e autêntico.",
+            "organization": org_name,
+            "fiscal_year": period.fiscal_year,
+            "validation_code": period.validation_code,
+            "closed_at": period.closed_at.isoformat() if period.closed_at else None,
+            "data_hash": period.data_hash,
+            "report_type": "Relatório Financeiro Anual Consolidado",
+        }
 
 
 # Gerar pre-signed URL para comprovante de uma transação
@@ -902,6 +1065,15 @@ def _period_out(p: FinancialPeriod, db) -> dict:
         "validation_code": p.validation_code,
         "data_hash": p.data_hash,
         "observations": p.observations,
+        # Fechamento de Congresso
+        "is_congress_closed": getattr(p, 'is_congress_closed', False) or False,
+        "congress_closed_at": p.congress_closed_at.isoformat() if getattr(p, 'congress_closed_at', None) else None,
+        "congress_cutoff_date": p.congress_cutoff_date.isoformat() if getattr(p, 'congress_cutoff_date', None) else None,
+        "congress_report_url": getattr(p, 'congress_report_url', None),
+        "congress_receipts_report_url": getattr(p, 'congress_receipts_report_url', None),
+        "congress_validation_code": getattr(p, 'congress_validation_code', None),
+        "congress_data_hash": getattr(p, 'congress_data_hash', None),
+        "congress_closing_balance": float(p.congress_closing_balance) if getattr(p, 'congress_closing_balance', None) is not None else None,
     }
 
 

@@ -700,6 +700,9 @@
             </div>
           </div>
 
+          <!-- Banner Informativo da Fase de Congresso -->
+          <div id="congress-phase-banner" style="display:none;margin-top:.75rem"></div>
+
           <!-- Sem período -->
           <div id="no-period" style="display:none">
             <div class="no-period-box">
@@ -1030,47 +1033,122 @@
     </div>
   </div>
 
-  <!-- Modal Ver Relatórios -->
-  <div class="modal-overlay" id="modal-view-reports">
+  <!-- Modal Encerramento para Congresso -->
+  <div class="modal-overlay" id="modal-close-congress">
     <div class="modal modal-sm">
       <div class="modal-header">
-        <h2>Relatórios <span id="modal-reports-year"></span></h2>
-        <button class="modal-close" style="display:inline-flex;align-items:center;justify-content:center;"
-          aria-label="Fechar">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
+        <h2 style="display:flex;align-items:center;gap:.5rem;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <path d="M12 18v-6"></path>
+            <path d="m9 15 3 3 3-3"></path>
+          </svg>
+          <span>Encerrar para Congresso</span>
+        </h2>
+        <button class="modal-close" style="display:inline-flex;align-items:center;justify-content:center;" aria-label="Fechar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
         </button>
       </div>
-      <p class="text-sm text-slate-500" style="margin-bottom:1.25rem">
-        Relatórios gerados automaticamente no encerramento do período.
+      <p class="text-sm text-slate-500" style="margin-bottom:1rem;line-height:1.45;">
+        Gera os relatórios de prestação de contas assinados digitalmente para a <strong>Comissão de Exame de Contas do Congresso</strong>.
       </p>
-      <div style="display:flex;flex-direction:column;gap:.75rem">
-        <a id="link-fin-report" href="#" target="_blank" class="btn btn-primary"
-          style="justify-content:center;text-decoration:none;display:flex;align-items:center;gap:.4rem;">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
+
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--radius);padding:.75rem .85rem;margin-bottom:1rem;font-size:.8rem;color:#1e40af;line-height:1.45;">
+        <strong>Importante:</strong> Todos os lançamentos até a data de corte serão congelados para auditoria. O mês de <strong>Dezembro permanecerá aberto</strong> para que a gestão realize os lançamentos finais normalmente.
+      </div>
+
+      <div class="form-group" style="margin-bottom:1rem">
+        <label for="close-congress-cutoff-date" style="font-size:.8rem;font-weight:600;display:block;margin-bottom:.35rem">
+          Data de Corte das Contas do Congresso:
+        </label>
+        <input type="date" id="close-congress-cutoff-date" class="form-control" style="width:100%" />
+        <small style="color:var(--slate-500);font-size:.72rem;display:block;margin-top:.25rem">
+          Lançamentos até esta data entrarão no relatório do Congresso e serão congelados.
+        </small>
+      </div>
+
+      <div id="close-congress-alert" style="margin-bottom:.75rem"></div>
+
+      <div class="modal-footer" style="display:flex;gap:.5rem;justify-content:flex-end">
+        <button class="btn btn-ghost modal-close" type="button">Cancelar</button>
+        <button class="btn btn-primary" id="btn-confirm-close-congress" style="background:linear-gradient(135deg,#4338ca,#6366f1);color:#fff;" type="button">
+          Confirmar Encerramento p/ Congresso
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ver Relatórios -->
+  <div class="modal-overlay" id="modal-view-reports">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <h2 style="display:flex;align-items:center;gap:.5rem;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
             <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="16" y1="13" x2="8" y2="13"></line>
-            <line x1="16" y1="17" x2="8" y2="17"></line>
           </svg>
-          <span>Relatório Financeiro</span>
-        </a>
-        <a id="link-rec-report" href="#" target="_blank" class="btn btn-secondary"
-          style="justify-content:center;text-decoration:none;display:flex;align-items:center;gap:.4rem;">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-            <circle cx="8.5" cy="8.5" r="1.5"></circle>
-            <polyline points="21 15 16 10 5 21"></polyline>
+          <span>Relatórios Oficiais <span id="modal-reports-year"></span></span>
+        </h2>
+        <button class="modal-close" style="display:inline-flex;align-items:center;justify-content:center;" aria-label="Fechar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
-          <span>Relatório de Comprovantes</span>
-        </a>
+        </button>
       </div>
-      <div class="modal-footer" style="margin-top:1rem">
+      <p class="text-sm text-slate-500" style="margin-bottom:1rem">
+        Relatórios e comprovantes oficiais assinados digitalmente com validação pública por QR Code.
+      </p>
+
+      <div id="modal-reports-container" style="display:flex;flex-direction:column;gap:1rem;">
+        <!-- Bloco Congresso -->
+        <div id="block-congress-reports" style="display:none;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:var(--radius);padding:1rem;">
+          <div style="font-weight:700;font-size:.85rem;color:#3730a3;margin-bottom:.25rem;display:flex;align-items:center;gap:.35rem;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg>
+            <span>Prestação de Contas para Congresso</span>
+          </div>
+          <div style="font-size:.75rem;color:var(--slate-500);margin-bottom:.75rem;" id="congress-reports-meta">
+            Relatórios assinados digitalmente até a data de corte do Congresso.
+          </div>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <a id="link-congress-fin" href="#" target="_blank" class="btn btn-sm" style="background:#4338ca;color:#fff;text-decoration:none;display:inline-flex;align-items:center;gap:.35rem;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              <span>Relatório Financeiro do Congresso</span>
+            </a>
+            <a id="link-congress-rec" href="#" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:.35rem;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+              <span>Comprovantes do Congresso</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Bloco Anual Consolidado -->
+        <div id="block-final-reports" style="display:none;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:var(--radius);padding:1rem;">
+          <div style="font-weight:700;font-size:.85rem;color:#166534;margin-bottom:.25rem;display:flex;align-items:center;gap:.35rem;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span>Fechamento Definitivo do Exercício (12 Meses)</span>
+          </div>
+          <div style="font-size:.75rem;color:var(--slate-500);margin-bottom:.75rem;">
+            Relatórios consolidados de Janeiro a Dezembro com o saldo final de encerramento de mandato.
+          </div>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <a id="link-final-fin" href="#" target="_blank" class="btn btn-sm btn-primary" style="text-decoration:none;display:inline-flex;align-items:center;gap:.35rem;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              <span>Relatório Financeiro Anual Consolidado</span>
+            </a>
+            <a id="link-final-rec" href="#" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:.35rem;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+              <span>Comprovantes Anuais Consolidados</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="margin-top:1.25rem">
         <button class="btn btn-ghost modal-close" style="width:100%;justify-content:center">Fechar</button>
       </div>
     </div>
@@ -1250,19 +1328,44 @@
         const canClose = userRoles.some(r => ['presidente', 'vice_presidente', 'secretario_presbiterial', 'conselheiro'].includes(r))
         const canMarkReady = userRoles.some(r => ['tesoureiro', 'vice_presidente'].includes(r))
 
-        // Badge de status
+        // Badge de status e Banner informativo
+        const bannerEl = document.getElementById('congress-phase-banner')
         if (currentPeriod.is_closed) {
-          document.getElementById('period-status-badge').innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg><span>Encerrado</span>'
+          document.getElementById('period-status-badge').innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg><span>Encerrado Definitivamente</span>'
           document.getElementById('period-status-badge').className = 'badge badge-slate'
+          document.getElementById('period-status-badge').removeAttribute('style')
+          if (bannerEl) bannerEl.style.display = 'none'
+        } else if (currentPeriod.is_congress_closed) {
+          document.getElementById('period-status-badge').innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><polyline points="9 15 11 17 15 13"></polyline></svg><span>Fechado p/ Congresso (Dezembro Aberto)</span>'
+          document.getElementById('period-status-badge').className = 'badge'
+          document.getElementById('period-status-badge').style.cssText = 'background:#e0e7ff;color:#3730a3;border:1px solid #c7d2fe;'
+          if (bannerEl) {
+            bannerEl.style.display = 'block'
+            const cutoffFmt = formatDate(currentPeriod.congress_cutoff_date)
+            bannerEl.innerHTML = `
+              <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:var(--radius);padding:.85rem 1rem;display:flex;align-items:flex-start;gap:.75rem;">
+                <span style="color:#2563eb;flex-shrink:0;margin-top:2px;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                </span>
+                <div style="font-size:.825rem;color:#1e3a8a;line-height:1.45;">
+                  <strong>Prestação de Contas do Congresso Encerrada (posição até ${cutoffFmt}):</strong>
+                  Os lançamentos até esta data foram congelados para auditoria da Comissão de Exame de Contas. Lançamentos posteriores (ex.: mês de Dezembro e encerramento de mandato) estão <strong>totalmente liberados</strong>. Ao final do mandato, realize o "Encerramento Definitivo".
+                </div>
+              </div>`
+          }
         } else if (currentPeriod.ready_to_close) {
           document.getElementById('period-status-badge').innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg><span>Aguardando Encerramento</span>'
           document.getElementById('period-status-badge').className = 'badge badge-amber'
+          document.getElementById('period-status-badge').removeAttribute('style')
+          if (bannerEl) bannerEl.style.display = 'none'
         } else {
           document.getElementById('period-status-badge').innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 10"></polyline></svg><span>Aberto</span>'
           document.getElementById('period-status-badge').className = 'badge badge-green'
+          document.getElementById('period-status-badge').removeAttribute('style')
+          if (bannerEl) bannerEl.style.display = 'none'
         }
 
-        // Botão gerar relatório — apenas período aberto e não bloqueado
+        // Botão gerar relatório — apenas período não bloqueado
         document.getElementById('btn-report').style.display = (!currentPeriod.is_closed && !currentPeriod.is_locked) ? 'inline-flex' : 'none'
 
         // Monta os botões de ação dinamicamente no annual-actions
@@ -1309,7 +1412,10 @@
               btnReady.style.cssText = 'font-size:.78rem;display:inline-flex;align-items:center;gap:.35rem;'
               btnReady.innerHTML = `${clipIconSvg}<span>Marcar Pronto</span>`
               btnReady.onclick = async () => {
-                if (!confirm(`Marcar período ${currentYear} como pronto para encerramento?`)) return
+                const msg = currentPeriod.is_congress_closed
+                  ? `Marcar período ${currentYear} como pronto para o Encerramento Definitivo?`
+                  : `Marcar período ${currentYear} como pronto para encerramento?`
+                if (!confirm(msg)) return
                 try {
                   await api.post(`/api/finances/periods/${currentPeriod.id}/mark-ready`)
                   showAlert('screen-months-alert', 'Marcado como pronto! O Presidente pode encerrar.', 'success')
@@ -1320,69 +1426,82 @@
             actionsDiv.appendChild(btnReady)
           }
 
-          // Botão encerrar (presidente/vice/sec.presbiterial/conselheiro)
+          // Se já está fechado para congresso, exibe botão para ver relatórios do congresso
+          if (currentPeriod.is_congress_closed) {
+            const btnCongressRep = document.createElement('button')
+            btnCongressRep.className = 'btn btn-ghost btn-sm'
+            btnCongressRep.style.cssText = 'font-size:.78rem;color:#4338ca;border:1px solid #c7d2fe;background:#eef2ff;display:inline-flex;align-items:center;gap:.35rem;'
+            btnCongressRep.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg><span>Relatórios do Congresso</span>'
+            btnCongressRep.onclick = () => openReportsModal()
+            actionsDiv.appendChild(btnCongressRep)
+          }
+
+          // Botões de encerramento para o presidente/liderança
           if (canClose) {
-            const btnClose = document.createElement('button')
-            const lockIconSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>'
-            if (currentPeriod.ready_to_close) {
-              btnClose.className = 'btn btn-sm btn-encerrar'
-              btnClose.style.cssText = 'background:linear-gradient(135deg,#1a5c2a,#2d8a40);color:#fff;border-color:transparent;font-size:.78rem;'
-              btnClose.innerHTML = `<span class="btn-icon-only">${lockIconSvg}</span><span class="btn-label">${lockIconSvg}<span>Encerrar</span></span>`
-            } else {
-              btnClose.className = 'btn-encerrar'
-              btnClose.innerHTML = `<span class="btn-icon-only">${lockIconSvg}</span><span class="btn-label">${lockIconSvg}<span>Encerrar</span></span>`
+            // Fase 1: Encerrar para Congresso (se ainda não encerrou para o congresso)
+            if (!currentPeriod.is_congress_closed) {
+              const btnCloseCongress = document.createElement('button')
+              btnCloseCongress.className = 'btn btn-sm'
+              btnCloseCongress.style.cssText = 'background:linear-gradient(135deg,#3730a3,#4f46e5);color:#fff;border-color:transparent;font-size:.78rem;display:inline-flex;align-items:center;gap:.35rem;'
+              const congIconSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M12 18v-6"></path><path d="m9 15 3 3 3-3"></path></svg>'
+              btnCloseCongress.innerHTML = `${congIconSvg}<span>Encerrar p/ Congresso</span>`
+              btnCloseCongress.title = 'Prestação de contas do Congresso (Dezembro permanece liberado)'
+              btnCloseCongress.onclick = () => {
+                const todayStr = new Date().toISOString().split('T')[0]
+                document.getElementById('close-congress-cutoff-date').value = todayStr
+                clearAlert('close-congress-alert')
+                openModal('modal-close-congress')
+              }
+              actionsDiv.appendChild(btnCloseCongress)
             }
-            btnClose.onclick = async () => {
-              if (!confirm(
-                `Encerrar definitivamente o período ${currentYear}?\n\n` +
-                `- Relatório financeiro assinado digitalmente\n` +
-                `- Relatório de comprovantes gerado\n` +
-                `- Ação irreversível`
-              )) return
 
-              // Abre o modal de carregamento animado de encerramento
+            // Fase 2: Encerramento Definitivo
+            const btnCloseDef = document.createElement('button')
+            const lockIconSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>'
+            btnCloseDef.className = 'btn btn-sm btn-encerrar'
+            const defText = currentPeriod.is_congress_closed ? 'Encerrar Definitivamente' : 'Encerrar Ano'
+            btnCloseDef.innerHTML = `<span class="btn-icon-only">${lockIconSvg}</span><span class="btn-label">${lockIconSvg}<span>${defText}</span></span>`
+            btnCloseDef.onclick = async () => {
+              const confirmMsg = currentPeriod.is_congress_closed
+                ? `Encerrar DEFINITIVAMENTE o período de ${currentYear} (12 meses)?\n\n` +
+                  `- Consolida todos os meses (Janeiro a Dezembro)\n` +
+                  `- Gera o Relatório Anual Final assinado digitalmente\n` +
+                  `- Congela todo o ano definitivamente`
+                : `Encerrar definitivamente o período de ${currentYear}?\n\n` +
+                  `- Relatório financeiro assinado digitalmente\n` +
+                  `- Relatório de comprovantes gerado\n` +
+                  `- Ação irreversível`
+              if (!confirm(confirmMsg)) return
+
               openModal('modal-closing-progress')
-              btnClose.disabled = true
-
+              btnCloseDef.disabled = true
               try {
-                // Passa timeout de 5 minutos (300.000 ms) para a chamada de fechamento
                 await api.post(`/api/finances/periods/${currentPeriod.id}/close`, null, 300000)
                 closeModal('modal-closing-progress')
                 clearAlert('screen-months-alert')
-                showAlert('screen-months-alert', 'Período encerrado! Relatórios assinados gerados.', 'success')
+                showAlert('screen-months-alert', 'Período encerrado definitivamente! Relatórios consolidados gerados.', 'success')
                 await loadPage()
               } catch (err) {
                 closeModal('modal-closing-progress')
-                btnClose.disabled = false
+                btnCloseDef.disabled = false
                 clearAlert('screen-months-alert')
                 showAlert('screen-months-alert', err.message, 'error')
                 await loadPage()
               }
             }
-            actionsDiv.appendChild(btnClose)
+            actionsDiv.appendChild(btnCloseDef)
           }
 
         } else {
-          // Período encerrado — botões de relatórios
-          if (currentPeriod.report_url || currentPeriod.receipts_report_url) {
-            const btnReports = document.createElement('button')
-            btnReports.className = 'btn btn-sm'
-            btnReports.style.cssText = 'background:linear-gradient(135deg,#1a2a6c,#2a3f9f);color:#fff;font-size:.78rem;display:inline-flex;align-items:center;gap:.35rem;'
-            const reportIconSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>'
-            btnReports.innerHTML = `${reportIconSvg}<span>Relatórios</span>`
-            btnReports.onclick = async () => {
-              try {
-                const data = await api.get(`/api/finances/periods/${currentPeriod.id}/report-urls`)
-                document.getElementById('modal-reports-year').textContent = data.fiscal_year
-                document.getElementById('link-fin-report').href = data.report_url || '#'
-                document.getElementById('link-rec-report').href = data.receipts_report_url || '#'
-                document.getElementById('link-fin-report').style.display = data.report_url ? 'inline-flex' : 'none'
-                document.getElementById('link-rec-report').style.display = data.receipts_report_url ? 'inline-flex' : 'none'
-                openModal('modal-view-reports')
-              } catch (err) { showAlert('screen-months-alert', err.message, 'error') }
-            }
-            actionsDiv.appendChild(btnReports)
-          }
+          // Período já encerrado definitivamente
+          const btnReports = document.createElement('button')
+          btnReports.className = 'btn btn-sm'
+          btnReports.style.cssText = 'background:linear-gradient(135deg,#1a2a6c,#2a3f9f);color:#fff;font-size:.78rem;display:inline-flex;align-items:center;gap:.35rem;'
+          const reportIconSvg = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>'
+          btnReports.innerHTML = `${reportIconSvg}<span>Ver Relatórios</span>`
+          btnReports.onclick = () => openReportsModal()
+          actionsDiv.appendChild(btnReports)
+        }
 
           if (currentPeriod.is_locked && currentPeriod.signature_id) {
             const btnSigned = document.createElement('button')
@@ -1492,8 +1611,15 @@
       document.getElementById('msb-out').textContent = formatCurrency(month.total_out)
       document.getElementById('msb-closing').textContent = formatCurrency(month.closing_balance)
 
-      const canEdit = !currentPeriod?.is_closed && !currentPeriod?.is_locked
-      document.getElementById('btn-new-tx').style.display = canEdit ? 'inline-flex' : 'none'
+      let canAddTx = !currentPeriod?.is_closed && !currentPeriod?.is_locked
+      if (canAddTx && currentPeriod?.is_congress_closed && currentPeriod?.congress_cutoff_date) {
+        const cutoffParts = currentPeriod.congress_cutoff_date.split('-').map(Number)
+        const cutoffMonth = cutoffParts[1] - 1
+        if (idx < cutoffMonth) {
+          canAddTx = false
+        }
+      }
+      document.getElementById('btn-new-tx').style.display = canAddTx ? 'inline-flex' : 'none'
       document.getElementById('th-actions-col').textContent = ''
 
       txMap = {}
@@ -1515,6 +1641,8 @@
         const nature = TYPES[t.transaction_type]?.nature
         const label = TYPES[t.transaction_type]?.label
         const hasReceipt = !!t.receipt_url
+        const isTxFrozen = (currentPeriod?.is_closed || currentPeriod?.is_locked) ||
+          (currentPeriod?.is_congress_closed && currentPeriod?.congress_cutoff_date && t.transaction_date <= currentPeriod.congress_cutoff_date)
         return `
         <tr>
           <td style="white-space:nowrap">${formatDate(t.transaction_date)}</td>
@@ -1552,7 +1680,7 @@
             : '<span style="color:var(--slate-300);font-size:.8rem">—</span>'}
           </td>
           <td>
-            ${canEdit ? `
+            ${!isTxFrozen ? `
               <div class="row-actions">
                 <button class="btn btn-ghost btn-icon" data-action="edit" data-id="${t.id}" title="Editar" style="display:inline-flex;align-items:center;justify-content:center;">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
@@ -1560,7 +1688,13 @@
                 <button class="btn btn-ghost btn-icon danger" data-action="delete" data-id="${t.id}" title="Excluir" style="display:inline-flex;align-items:center;justify-content:center;">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                 </button>
-              </div>` : ''}
+              </div>` : `
+              <div class="row-actions">
+                <span title="Lançamento congelado na prestação de contas do Congresso" style="color:var(--slate-400);display:inline-flex;align-items:center;justify-content:center;padding:.2rem .4rem;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                </span>
+              </div>
+            `}
           </td>
         </tr>`
       }).join('')
@@ -1582,9 +1716,22 @@
       }
 
       if (action === 'edit' && t) {
+        const isTxFrozen = (currentPeriod?.is_closed || currentPeriod?.is_locked) ||
+          (currentPeriod?.is_congress_closed && currentPeriod?.congress_cutoff_date && t.transaction_date <= currentPeriod.congress_cutoff_date)
+        if (isTxFrozen) {
+          alert('Este lançamento está congelado na prestação de contas do Congresso e não pode ser editado.')
+          return
+        }
         editId = id
         document.getElementById('modal-tx-title').textContent = 'Editar Lançamento'
         document.getElementById('tx-date').value = t.transaction_date
+        if (currentPeriod?.is_congress_closed && currentPeriod?.congress_cutoff_date) {
+          const nextDay = new Date(currentPeriod.congress_cutoff_date + 'T12:00:00')
+          nextDay.setDate(nextDay.getDate() + 1)
+          document.getElementById('tx-date').min = nextDay.toISOString().split('T')[0]
+        } else {
+          document.getElementById('tx-date').removeAttribute('min')
+        }
         document.getElementById('tx-type').value = t.transaction_type
         syncTxTypeColor()
         document.getElementById('tx-desc').value = t.description
@@ -1595,6 +1742,12 @@
       }
 
       if (action === 'delete') {
+        const isTxFrozen = (currentPeriod?.is_closed || currentPeriod?.is_locked) ||
+          (currentPeriod?.is_congress_closed && currentPeriod?.congress_cutoff_date && t.transaction_date <= currentPeriod.congress_cutoff_date)
+        if (isTxFrozen) {
+          alert('Este lançamento está congelado na prestação de contas do Congresso e não pode ser excluído.')
+          return
+        }
         if (!confirm('Excluir este lançamento?')) return
         try {
           await api.delete(`/api/finances/transactions/${id}`)
@@ -1674,9 +1827,23 @@
       const today = new Date()
       const month = currentMonthIndex + 1
       const year = currentYear
-      const day = today.getMonth() === currentMonthIndex && today.getFullYear() === year
+      let day = today.getMonth() === currentMonthIndex && today.getFullYear() === year
         ? today.getDate() : 1
-      document.getElementById('tx-date').value = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+      let defaultDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+
+      if (currentPeriod?.is_congress_closed && currentPeriod?.congress_cutoff_date) {
+        const nextDay = new Date(currentPeriod.congress_cutoff_date + 'T12:00:00')
+        nextDay.setDate(nextDay.getDate() + 1)
+        const minDateStr = nextDay.toISOString().split('T')[0]
+        document.getElementById('tx-date').min = minDateStr
+        if (defaultDate <= currentPeriod.congress_cutoff_date) {
+          defaultDate = minDateStr
+        }
+      } else {
+        document.getElementById('tx-date').removeAttribute('min')
+      }
+
+      document.getElementById('tx-date').value = defaultDate
       document.getElementById('tx-type').value = 'outras_receitas'
       syncTxTypeColor()
       document.getElementById('tx-desc').value = ''
@@ -1700,6 +1867,12 @@
       if (!payload.transaction_date || !payload.description || !payload.amount || (!editId && !file)) {
         showAlert('tx-alert', 'Preencha todos os campos e anexe o comprovante.', 'error'); return
       }
+
+      if (currentPeriod?.is_congress_closed && currentPeriod?.congress_cutoff_date && payload.transaction_date <= currentPeriod.congress_cutoff_date) {
+        showAlert('tx-alert', `Não é possível registrar lançamentos em data igual ou anterior ao corte do Congresso (${formatDate(currentPeriod.congress_cutoff_date)}).`, 'error')
+        return
+      }
+
       setLoading(btn, true, 'Salvar')
       try {
         if (editId) {
@@ -1717,6 +1890,86 @@
         setLoading(btn, false, 'Salvar')
       }
     })
+
+    // ── Encerramento para Congresso ──
+    document.getElementById('btn-confirm-close-congress').addEventListener('click', async () => {
+      const btn = document.getElementById('btn-confirm-close-congress')
+      const cutoff = document.getElementById('close-congress-cutoff-date').value
+      if (!cutoff) {
+        showAlert('close-congress-alert', 'Por favor, selecione a data de corte.', 'error')
+        return
+      }
+
+      if (!confirm(`Confirmar o encerramento da prestação de contas do Congresso com data de corte ${formatDate(cutoff)}?\n\n- Todos os lançamentos até ${formatDate(cutoff)} serão congelados.\n- Os relatórios oficiais do Congresso serão gerados e assinados digitalmente.\n- O mês de Dezembro permanecerá aberto para novos lançamentos.`)) {
+        return
+      }
+
+      setLoading(btn, true, 'Encerrando...')
+      closeModal('modal-close-congress')
+      openModal('modal-closing-progress')
+      try {
+        await api.post(`/api/finances/periods/${currentPeriod.id}/close-congress`, { cutoff_date: cutoff }, 300000)
+        closeModal('modal-closing-progress')
+        clearAlert('screen-months-alert')
+        showAlert('screen-months-alert', 'Prestação de contas do Congresso encerrada com sucesso! Relatórios assinados gerados. Dezembro permanece aberto.', 'success')
+        await loadPage()
+      } catch (err) {
+        closeModal('modal-closing-progress')
+        clearAlert('screen-months-alert')
+        showAlert('screen-months-alert', 'Erro ao encerrar para congresso: ' + err.message, 'error')
+        await loadPage()
+      } finally {
+        setLoading(btn, false, 'Confirmar Encerramento p/ Congresso')
+      }
+    })
+
+    // ── Visualização de Relatórios Oficiais ──
+    async function openReportsModal() {
+      try {
+        const data = await api.get(`/api/finances/periods/${currentPeriod.id}/report-urls`)
+        document.getElementById('modal-reports-year').textContent = data.fiscal_year || currentYear
+
+        // Bloco Congresso
+        const blockCongress = document.getElementById('block-congress-reports')
+        const hasCongress = !!(data.congress_report_url || data.congress_receipts_report_url)
+        if (hasCongress) {
+          blockCongress.style.display = 'block'
+          const cutoffStr = data.congress_cutoff_date ? formatDate(data.congress_cutoff_date) : '—'
+          document.getElementById('congress-reports-meta').textContent =
+            `Prestação de contas com posição até ${cutoffStr}. Código: ${data.congress_validation_code || '—'}`
+
+          const linkCongFin = document.getElementById('link-congress-fin')
+          linkCongFin.href = data.congress_report_url || '#'
+          linkCongFin.style.display = data.congress_report_url ? 'inline-flex' : 'none'
+
+          const linkCongRec = document.getElementById('link-congress-rec')
+          linkCongRec.href = data.congress_receipts_report_url || '#'
+          linkCongRec.style.display = data.congress_receipts_report_url ? 'inline-flex' : 'none'
+        } else {
+          blockCongress.style.display = 'none'
+        }
+
+        // Bloco Anual Consolidado
+        const blockFinal = document.getElementById('block-final-reports')
+        const hasFinal = !!(data.report_url || data.receipts_report_url)
+        if (hasFinal) {
+          blockFinal.style.display = 'block'
+          const linkFinalFin = document.getElementById('link-final-fin')
+          linkFinalFin.href = data.report_url || '#'
+          linkFinalFin.style.display = data.report_url ? 'inline-flex' : 'none'
+
+          const linkFinalRec = document.getElementById('link-final-rec')
+          linkFinalRec.href = data.receipts_report_url || '#'
+          linkFinalRec.style.display = data.receipts_report_url ? 'inline-flex' : 'none'
+        } else {
+          blockFinal.style.display = 'none'
+        }
+
+        openModal('modal-view-reports')
+      } catch (err) {
+        showAlert('screen-months-alert', err.message || 'Erro ao carregar relatórios', 'error')
+      }
+    }
 
     // ── Criar período (modal) ──
     document.getElementById('btn-save-period').addEventListener('click', async () => {

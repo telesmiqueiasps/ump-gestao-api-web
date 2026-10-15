@@ -1346,11 +1346,13 @@ def generate_financial_report(
     HDR_H  = 35*mm
     logo_img = _logo(logo_bytes, LOGO_W, LOGO_W)
 
-    # Conteúdo do bloco azul: 3 linhas em células separadas
+    # Conteúdo do bloco colorido do cabeçalho
+    title_line1 = period_data.get('report_title_header') or 'RELATÓRIO FINANCEIRO DA'
+    title_sub   = period_data.get('report_subtitle') or f'Ano {year}'
     title_content = [
-        [Paragraph('RELATÓRIO FINANCEIRO DA', _ps(9, WHITE, align=TA_CENTER))],
-        [Paragraph(org_name,                  _ps(13, WHITE, bold=True, align=TA_CENTER))],
-        [Paragraph(f'Ano {year}',             _ps(8, WHITE, align=TA_CENTER))],
+        [Paragraph(title_line1, _ps(9, WHITE, align=TA_CENTER))],
+        [Paragraph(org_name,    _ps(13, WHITE, bold=True, align=TA_CENTER))],
+        [Paragraph(title_sub,   _ps(8, WHITE, align=TA_CENTER))],
     ]
     title_inner = Table(title_content, colWidths=[W - (LOGO_W*mm if logo_img else 0)])
     title_inner.setStyle(TableStyle([
@@ -1825,10 +1827,12 @@ def generate_receipts_report(
     logo_img_capa = _logo(logo_bytes, 28, 28) if logo_bytes else None
     title_w_capa = W - (28*mm if logo_img_capa else 0)
 
+    title_line1 = period_data.get('receipts_title_header') or 'RELATÓRIO DE COMPROVANTES'
+    title_sub   = period_data.get('report_subtitle') or f'Ano {year}'
     title_capa = Table([
-        [Paragraph('RELATÓRIO DE COMPROVANTES', _ps(9, WHITE, align=TA_CENTER))],
-        [Paragraph(org_name,                    _ps(13, WHITE, bold=True, align=TA_CENTER))],
-        [Paragraph(f'Ano {year}',               _ps(8, WHITE, align=TA_CENTER))],
+        [Paragraph(title_line1, _ps(9, WHITE, align=TA_CENTER))],
+        [Paragraph(org_name,    _ps(13, WHITE, bold=True, align=TA_CENTER))],
+        [Paragraph(title_sub,   _ps(8, WHITE, align=TA_CENTER))],
     ], colWidths=[title_w_capa])
     title_capa.setStyle(TableStyle([
         ('BACKGROUND',    (0,0),(-1,-1), TC),

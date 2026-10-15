@@ -58,6 +58,14 @@ try:
         conn.execute(text("ALTER TABLE congresses ADD COLUMN IF NOT EXISTS convocation_president_name VARCHAR(200);"))
         conn.execute(text("ALTER TABLE congresses ADD COLUMN IF NOT EXISTS convocation_secretary_name VARCHAR(200);"))
         conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS custom_permissions JSON;"))
+        conn.execute(text("ALTER TABLE financial_periods ADD COLUMN IF NOT EXISTS is_congress_closed BOOLEAN DEFAULT FALSE;"))
+        conn.execute(text("ALTER TABLE financial_periods ADD COLUMN IF NOT EXISTS congress_closed_at TIMESTAMP WITH TIME ZONE;"))
+        conn.execute(text("ALTER TABLE financial_periods ADD COLUMN IF NOT EXISTS congress_cutoff_date DATE;"))
+        conn.execute(text("ALTER TABLE financial_periods ADD COLUMN IF NOT EXISTS congress_report_url TEXT;"))
+        conn.execute(text("ALTER TABLE financial_periods ADD COLUMN IF NOT EXISTS congress_receipts_report_url TEXT;"))
+        conn.execute(text("ALTER TABLE financial_periods ADD COLUMN IF NOT EXISTS congress_validation_code VARCHAR(64);"))
+        conn.execute(text("ALTER TABLE financial_periods ADD COLUMN IF NOT EXISTS congress_data_hash TEXT;"))
+        conn.execute(text("ALTER TABLE financial_periods ADD COLUMN IF NOT EXISTS congress_closing_balance NUMERIC(12, 2);"))
         conn.execute(text("""
             CREATE TABLE IF NOT EXISTS role_permissions (
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
