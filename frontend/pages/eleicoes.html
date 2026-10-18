@@ -667,7 +667,7 @@
     import { requireAuth, getUser, isFederation } from '../assets/js/auth.js?v=9'
     import { renderShell, renderBottomNav } from '../assets/js/router.v3.js?v=9'
     import { api } from '../assets/js/api.js?v=9'
-    import { showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading, formatDate } from '../assets/js/utils.js?v=9'
+    import { showAlert, clearAlert, openModal, closeModal, initModalClose, setLoading, formatDate, avatarHtml } from '../assets/js/utils.js?v=9'
 
     (async () => {
       if (!requireAuth()) throw new Error()
@@ -754,6 +754,7 @@
             allActiveMembers = localMembers.filter(m => m.member_type === 'ativo').map(m => ({
               id: m.id,
               name: m.full_name,
+              avatar_url: m.avatar_url || null,
               local_society: m.local_society || '',
               full_name: m.local_society ? `${m.full_name} (${m.local_society})` : m.full_name
             }))
@@ -786,8 +787,9 @@
           const isChecked = !ineligibleMemberIds.has(m.id)
           return `
           <label class="eligibility-card" style="display: flex; align-items: center; justify-content: space-between; gap: .5rem;">
-            <div style="display: flex; align-items: center; gap: .5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
+            <div style="display: flex; align-items: center; gap: .6rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
               <input type="checkbox" class="can-be-voted-cb" data-member-id="${m.id}" ${isChecked ? 'checked' : ''} onchange="toggleMemberEligibility('${m.id}', this.checked)" />
+              ${avatarHtml(m.name || m.full_name, 28, '.75rem', m.avatar_url)}
               <span style="font-weight: 500; color: var(--slate-700); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${m.full_name}">${m.full_name}</span>
             </div>
           </label>
@@ -956,12 +958,15 @@
             ? `<span class="badge voter-badge-voted">Votou</span>`
             : `<span class="badge voter-badge-pending">Não votou</span>`
           return `
-          <div class="code-card" style="align-items: flex-start;">
-            <div>
-              <div class="code-card-name" title="${v.full_name}">${v.full_name}</div>
-              <div style="margin-top: .3rem;">${voteBadge}</div>
+          <div class="code-card" style="align-items: center; gap: .75rem;">
+            <div style="display: flex; align-items: center; gap: .65rem; min-width: 0; flex: 1;">
+              ${avatarHtml(v.full_name, 36, '.85rem', v.avatar_url)}
+              <div style="min-width: 0;">
+                <div class="code-card-name" title="${v.full_name}">${v.full_name}</div>
+                <div style="margin-top: .2rem;">${voteBadge}</div>
+              </div>
             </div>
-            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: .4rem;">
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: .4rem; flex-shrink: 0;">
               <div class="code-card-code">${v.access_code}</div>
               ${!v.has_voted ? `
                 <button class="btn btn-ghost danger btn-sm" 
@@ -1128,13 +1133,22 @@
         } else {
           barsContainer.innerHTML = res.results.map(r => {
             const pct = res.total_votes > 0 ? Math.round((r.votes / res.total_votes) * 100) : 0
+            const avatar = r.candidate_id === 'blank'
+              ? `<div style="width:30px;height:30px;border-radius:50%;background:var(--slate-200);display:flex;align-items:center;justify-content:center;color:var(--slate-500);flex-shrink:0;">
+                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                 </div>`
+              : avatarHtml(r.name, 30, '.75rem', r.avatar_url)
+
             return `
             <div class="result-bar-container">
-              <div class="result-bar-header">
-                <span>${r.name}</span>
-                <span>${r.votes} voto${r.votes !== 1 ? 's' : ''} (${pct}%)</span>
+              <div class="result-bar-header" style="align-items: center; gap: .5rem;">
+                <div style="display: flex; align-items: center; gap: .5rem; min-width: 0;">
+                  ${avatar}
+                  <span style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${r.name}</span>
+                </div>
+                <span style="flex-shrink: 0;">${r.votes} voto${r.votes !== 1 ? 's' : ''} (${pct}%)</span>
               </div>
-              <div class="result-bar-bg">
+              <div class="result-bar-bg" style="margin-top: .35rem;">
                 <div class="result-bar-fill" style="width: ${pct}%"></div>
               </div>
             </div>
@@ -1275,10 +1289,19 @@
             let roundsHtml = ''
             r.rounds.forEach(rnd => {
               let candidatesHtml = rnd.results.map(cand => {
+                const candAvatar = cand.candidate_id === 'blank'
+                  ? `<div style="width:22px;height:22px;border-radius:50%;background:var(--slate-200);display:flex;align-items:center;justify-content:center;color:var(--slate-500);flex-shrink:0;">
+                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                     </div>`
+                  : avatarHtml(cand.name, 22, '.65rem', cand.avatar_url)
+
                 return `
-                <div style="display:flex; justify-content:space-between; font-size:.8rem; padding:.25rem 0; border-bottom:1px dashed var(--slate-200)">
-                  <span>${cand.name}</span>
-                  <span style="font-weight:600">${cand.votes} voto${cand.votes !== 1 ? 's' : ''} (${Math.round(cand.percentage)}%)</span>
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:.8rem; padding:.35rem 0; border-bottom:1px dashed var(--slate-200); gap:.5rem;">
+                  <div style="display:flex; align-items:center; gap:.45rem; min-width:0;">
+                    ${candAvatar}
+                    <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${cand.name}</span>
+                  </div>
+                  <span style="font-weight:600; flex-shrink:0;">${cand.votes} voto${cand.votes !== 1 ? 's' : ''} (${Math.round(cand.percentage)}%)</span>
                 </div>
               `
               }).join('')

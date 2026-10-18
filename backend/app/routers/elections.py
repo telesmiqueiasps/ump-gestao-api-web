@@ -249,6 +249,7 @@ def get_voting_status(
             "id": str(v.id),
             "member_id": str(v.member_id),
             "full_name": v.member.full_name,
+            "avatar_url": v.member.avatar_url,
             "access_code": v.access_code,
             "can_be_voted": v.can_be_voted,
             "has_voted": v.has_voted_current_round,
@@ -316,11 +317,13 @@ def close_round(
         if cid is None:
             name = "Branco/Nulo"
             cid_str = "blank"
+            avatar_url = None
         else:
             m = db.query(Member).filter(Member.id == cid).first()
             name = m.full_name if m else "Desconhecido"
+            avatar_url = m.avatar_url if m else None
             cid_str = str(cid)
-        results_list.append({"candidate_id": cid_str, "name": name, "votes": count})
+        results_list.append({"candidate_id": cid_str, "name": name, "avatar_url": avatar_url, "votes": count})
     
     results_list.sort(key=lambda x: x["votes"], reverse=True)
 
@@ -414,11 +417,13 @@ def get_current_round_results(
         if cid is None:
             name = "Branco/Nulo"
             cid_str = "blank"
+            avatar_url = None
         else:
             m = db.query(Member).filter(Member.id == cid).first()
             name = m.full_name if m else "Desconhecido"
+            avatar_url = m.avatar_url if m else None
             cid_str = str(cid)
-        results_list.append({"candidate_id": cid_str, "name": name, "votes": count})
+        results_list.append({"candidate_id": cid_str, "name": name, "avatar_url": avatar_url, "votes": count})
     
     results_list.sort(key=lambda x: x["votes"], reverse=True)
 
@@ -538,7 +543,7 @@ def get_public_session(
     candidates = get_eligible_candidates(db, session)
 
     candidates_list = [
-        {"id": str(c.id), "full_name": c.full_name}
+        {"id": str(c.id), "full_name": c.full_name, "avatar_url": c.avatar_url}
         for c in candidates
     ]
 
@@ -650,15 +655,18 @@ def _get_session_report_data(db: Session, session: ElectionSession) -> dict:
                 if cid is None:
                     name = "Branco/Nulo"
                     cid_str = "blank"
+                    avatar_url = None
                 else:
                     m = db.query(Member).filter(Member.id == cid).first()
                     name = m.full_name if m else "Desconhecido"
+                    avatar_url = m.avatar_url if m else None
                     cid_str = str(cid)
                 
                 pct = (count / total_r_votes * 100) if total_r_votes > 0 else 0
                 results_list.append({
                     "candidate_id": cid_str,
                     "name": name,
+                    "avatar_url": avatar_url,
                     "votes": count,
                     "percentage": pct
                 })
