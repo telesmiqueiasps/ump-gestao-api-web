@@ -3,16 +3,16 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#1a2a6c" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Votação — UMP POPB</title>
+  <title>Urna Eletrônica — UMP POPB</title>
   <link rel="icon" type="image/png" href="/assets/img/logo_icone.png" />
   <link rel="manifest" href="/manifest.json" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
   <style>
     *,
@@ -30,12 +30,13 @@
       --red: #c0392b;
       --white: #ffffff;
       --gray50: #f8fafc;
+      --gray100: #f1f5f9;
       --gray200: #e2e8f0;
       --gray400: #94a3b8;
       --gray600: #475569;
       --gray800: #1e293b;
-      --radius: 14px;
-      --shadow: 0 20px 60px rgba(0, 0, 0, .35);
+      --radius: 12px;
+      --shadow: 0 10px 30px rgba(0, 0, 0, .1);
       --green: #16a34a;
       --green-dark: #15803d;
     }
@@ -49,13 +50,14 @@
 
     body {
       min-height: 100vh;
+      min-height: 100dvh;
       background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #dbeafe 100%);
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 1.5rem 1rem;
+      padding: .65rem;
       position: relative;
-      overflow: hidden;
+      overflow-y: auto;
     }
 
     body::before {
@@ -63,99 +65,89 @@
       position: fixed;
       inset: 0;
       background:
-        radial-gradient(circle at 10% 20%, rgba(37, 99, 235, .06) 0%, transparent 40%),
-        radial-gradient(circle at 90% 80%, rgba(26, 42, 108, .08) 0%, transparent 50%);
+        radial-gradient(circle at 10% 20%, rgba(37, 99, 235, .05) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(26, 42, 108, .07) 0%, transparent 50%);
       pointer-events: none;
     }
 
     .vote-wrapper {
       width: 100%;
-      max-width: 480px;
+      max-width: 440px;
       position: relative;
       z-index: 1;
+      margin: auto;
     }
 
     .vote-logo-wrap {
       display: flex;
-      flex-direction: column;
       align-items: center;
-      margin-bottom: 1.5rem;
+      justify-content: center;
+      gap: .65rem;
+      margin-bottom: .65rem;
     }
 
     .vote-logo {
-      width: 80px;
-      height: 80px;
+      width: 38px;
+      height: 38px;
       object-fit: contain;
-      filter: drop-shadow(0 8px 24px rgba(26, 42, 108, .18));
-      animation: floatLogo 3s ease-in-out infinite;
-    }
-
-    @keyframes floatLogo {
-
-      0%,
-      100% {
-        transform: translateY(0);
-      }
-
-      50% {
-        transform: translateY(-6px);
-      }
+      filter: drop-shadow(0 3px 8px rgba(26, 42, 108, .15));
     }
 
     .vote-brand {
-      margin-top: .5rem;
-      text-align: center;
+      text-align: left;
     }
 
     .vote-brand h1 {
-      font-size: 1.25rem;
+      font-size: .95rem;
       font-weight: 800;
       color: #1a2a6c;
+      line-height: 1.2;
     }
 
     .vote-brand p {
-      font-size: .8rem;
+      font-size: .72rem;
       color: #475569;
-      margin-top: .2rem;
       font-weight: 500;
+      line-height: 1.2;
+      margin-top: 1px;
     }
 
     .vote-card {
       background: rgba(255, 255, 255, .98);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
-      padding: 2rem;
+      padding: 1.1rem 1.2rem;
       backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.7);
     }
 
     .vote-card h2 {
-      font-size: 1.15rem;
-      font-weight: 600;
+      font-size: 1.05rem;
+      font-weight: 700;
       color: var(--gray800);
-      margin-bottom: 1.5rem;
+      margin-bottom: .9rem;
       text-align: center;
     }
 
     .field {
-      margin-bottom: 1.25rem;
+      margin-bottom: .85rem;
       display: flex;
       flex-direction: column;
-      gap: .4rem;
+      gap: .3rem;
     }
 
     .field label {
-      font-size: .8rem;
+      font-size: .78rem;
       font-weight: 600;
       color: var(--gray600);
     }
 
-    .input,
-    .select {
+    .input {
       width: 100%;
-      padding: .75rem 1rem;
+      padding: .65rem .85rem;
       border: 1.5px solid var(--gray200);
-      border-radius: 10px;
-      font-size: 1rem;
+      border-radius: 8px;
+      font-size: .95rem;
       font-family: inherit;
       color: var(--gray800);
       background: var(--gray50);
@@ -163,25 +155,20 @@
       transition: border-color .15s, box-shadow .15s;
     }
 
-    .input:focus,
-    .select:focus {
+    .input:focus {
       border-color: #1a2a6c;
-      background: #white;
-      background: #white;
+      background: #fff;
       box-shadow: 0 0 0 3px rgba(26, 42, 108, .12);
     }
 
     .btn {
       width: 100%;
-      padding: .85rem;
+      padding: .65rem .85rem;
       background: linear-gradient(135deg, #1a2a6c, #2a3f9f);
-      color: #white;
-      color: #white;
-      color: #white;
       color: #fff;
       border: none;
-      border-radius: 10px;
-      font-size: 1rem;
+      border-radius: 8px;
+      font-size: .92rem;
       font-weight: 600;
       font-family: inherit;
       cursor: pointer;
@@ -189,12 +176,12 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: .6rem;
-      min-height: 48px;
+      gap: .45rem;
+      min-height: 42px;
     }
 
     .btn:hover:not(:disabled) {
-      opacity: .92;
+      opacity: .93;
       transform: translateY(-1px);
     }
 
@@ -212,23 +199,11 @@
       color: var(--gray800);
     }
 
-    .badge-step {
-      display: inline-block;
-      padding: .2rem .6rem;
-      background: #eef0fb;
-      color: #1a2a6c;
-      border-radius: 6px;
-      font-size: .75rem;
-      font-weight: 600;
-      margin-bottom: .75rem;
-      text-transform: uppercase;
-    }
-
     .alert {
-      padding: .75rem 1rem;
-      border-radius: 10px;
-      font-size: .85rem;
-      line-height: 1.5;
+      padding: .6rem .85rem;
+      border-radius: 8px;
+      font-size: .8rem;
+      line-height: 1.4;
     }
 
     .alert-error {
@@ -247,41 +222,81 @@
       display: none !important;
     }
 
+    /* Ballot Header Strip */
+    .ballot-header-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .5rem;
+      padding: .6rem .85rem;
+      background: var(--gray50);
+      border: 1.5px solid var(--gray200);
+      border-radius: 10px;
+      margin-bottom: .75rem;
+    }
+
+    .ballot-subtitle {
+      font-size: .72rem;
+      color: var(--gray600);
+      font-weight: 500;
+      display: block;
+      line-height: 1.2;
+    }
+
+    .ballot-role-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #1a2a6c;
+      margin: 0;
+      line-height: 1.2;
+    }
+
+    .badge-step-pill {
+      padding: .22rem .55rem;
+      background: #1a2a6c;
+      color: #fff;
+      border-radius: 14px;
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
     /* Candidate Cards in Urna */
     .candidates-list {
       display: flex;
       flex-direction: column;
-      gap: .65rem;
-      max-height: 380px;
+      gap: .4rem;
+      max-height: clamp(150px, 34vh, 225px);
       overflow-y: auto;
-      padding: .25rem 2px;
-      margin-bottom: 1.25rem;
+      padding: 2px;
+      margin-bottom: .75rem;
     }
 
     .candidate-card {
       display: flex;
       align-items: center;
-      gap: .85rem;
-      padding: .75rem .95rem;
+      gap: .65rem;
+      padding: .45rem .75rem;
       background: #ffffff;
       border: 1.5px solid var(--gray200);
-      border-radius: 12px;
+      border-radius: 10px;
       cursor: pointer;
-      transition: all .18s ease;
+      transition: all .15s ease;
       user-select: none;
     }
 
     .candidate-card:hover {
       border-color: #93c5fd;
       background: #f8fafc;
-      transform: translateY(-1px);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, .04);
     }
 
     .candidate-card.selected {
       border-color: #2563eb !important;
       background: #eff6ff !important;
-      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.14) !important;
+      box-shadow: 0 3px 10px rgba(37, 99, 235, 0.12) !important;
     }
 
     .candidate-card.selected .candidate-check-circle {
@@ -300,7 +315,7 @@
     }
 
     .candidate-name {
-      font-size: .92rem;
+      font-size: .88rem;
       font-weight: 700;
       color: var(--gray800);
       white-space: nowrap;
@@ -309,50 +324,38 @@
     }
 
     .candidate-sub {
-      font-size: .75rem;
+      font-size: .68rem;
       color: var(--gray600);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      margin-top: .15rem;
+      margin-top: .05rem;
     }
 
     .candidate-check-circle {
-      width: 22px;
-      height: 22px;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
-      border: 2px solid var(--gray400);
+      border: 1.5px solid var(--gray400);
       display: flex;
       align-items: center;
       justify-content: center;
       color: transparent;
-      transition: all .18s ease;
+      transition: all .15s ease;
       flex-shrink: 0;
     }
 
-    .blank-avatar {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      background: #f1f5f9;
-      color: #64748b;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 1.5px solid #cbd5e1;
-    }
-
     .candidate-search-wrap {
-      margin-bottom: .75rem;
+      margin-bottom: .45rem;
       position: relative;
     }
 
     .candidate-search-wrap input {
       width: 100%;
-      padding: .65rem .85rem .65rem 2.2rem;
+      padding: .4rem .65rem .4rem 2rem;
       border: 1.5px solid var(--gray200);
-      border-radius: 10px;
-      font-size: .88rem;
+      border-radius: 8px;
+      font-size: .82rem;
       font-family: inherit;
       color: var(--gray800);
       background: var(--gray50);
@@ -363,12 +366,12 @@
     .candidate-search-wrap input:focus {
       border-color: #2563eb;
       background: #ffffff;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, .1);
+      box-shadow: 0 0 0 2.5px rgba(37, 99, 235, .1);
     }
 
     .candidate-search-icon {
       position: absolute;
-      left: .75rem;
+      left: .65rem;
       top: 50%;
       transform: translateY(-50%);
       pointer-events: none;
@@ -382,9 +385,9 @@
     }
 
     .spinner {
-      width: 20px;
-      height: 20px;
-      border: 2.5px solid rgba(255, 255, 255, .3);
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255, 255, 255, .3);
       border-top-color: #fff;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
@@ -406,19 +409,19 @@
       <img class="vote-logo" src="/assets/img/logo.png" alt="Logo UMP" />
       <div class="vote-brand">
         <h1>Módulo de Eleição - SIGES FPOPB</h1>
-        <p id="society-subtitle"> Plataforma de Gestão</p>
+        <p id="society-subtitle">Plataforma de Gestão</p>
       </div>
     </div>
 
     <!-- ── CARD: STEP 1 (LOGIN WITH ACCESS CODE) ── -->
     <div class="vote-card" id="card-login">
       <h2>Código Secreto de Votante</h2>
-      <div id="login-alert" class="hidden" style="margin-bottom: 1.25rem;"></div>
+      <div id="login-alert" class="hidden" style="margin-bottom: .85rem;"></div>
 
       <div class="field">
         <label for="voter-code">Insira seu código de 6 caracteres</label>
         <input class="input text-center" type="text" id="voter-code" maxlength="6" placeholder="A1B2C3"
-          style="text-transform: uppercase; font-family: monospace; font-size: 1.3rem; letter-spacing: 2px;" />
+          style="text-transform: uppercase; font-family: monospace; font-size: 1.25rem; letter-spacing: 2.5px; font-weight: 700; height: 46px;" />
       </div>
 
       <button class="btn" id="btn-login-code">Entrar na Seção Secreta</button>
@@ -426,30 +429,27 @@
 
     <!-- ── CARD: STEP 2 (CAST VOTE) ── -->
     <div class="vote-card hidden" id="card-ballot">
-      <div class="text-center"
-        style="margin-bottom: 1.5rem; background: var(--gray50); border: 1.5px solid var(--gray200); padding: 1.25rem; border-radius: 12px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.02);">
-        <h2 style="margin-bottom: .4rem; font-size: 1.1rem; font-weight: 500; color: var(--gray600);" id="ballot-title">
-          Eleição de Diretoria 2026</h2>
-        <div style="font-size: 1.6rem; font-weight: 800; color: #1a2a6c; margin-bottom: .4rem;" id="ballot-step-badge">
-          Presidente</div>
-        <span
-          style="display: inline-block; padding: .25rem .75rem; background: #1a2a6c; color: #fff; border-radius: 20px; font-size: .75rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;"
-          id="ballot-role-label">1º Escrutínio</span>
+      <div class="ballot-header-box">
+        <div style="min-width:0">
+          <span class="ballot-subtitle" id="ballot-title">Eleição</span>
+          <h2 class="ballot-role-title" id="ballot-step-badge">Presidente</h2>
+        </div>
+        <span class="badge-step-pill" id="ballot-role-label">1º Escrutínio</span>
       </div>
 
-      <div id="ballot-alert" class="hidden" style="margin-bottom: 1.25rem;"></div>
+      <div id="ballot-alert" class="hidden" style="margin-bottom: .75rem;"></div>
 
       <!-- Active Voting state -->
       <div id="ballot-active-state">
-        <div class="field">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.5rem;">
-            <label style="margin:0; font-size:.85rem; font-weight:700; color:var(--gray800);">Selecione seu Candidato</label>
-            <span id="candidates-count-badge" style="font-size:.72rem; font-weight:600; color:var(--gray600); background:var(--gray200); padding:2px 8px; border-radius:12px;">0 candidatos</span>
+        <div class="field" style="margin-bottom: .65rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.35rem;">
+            <label style="margin:0; font-size:.8rem; font-weight:700; color:var(--gray800);">Escolha o Candidato:</label>
+            <span id="candidates-count-badge" style="font-size:.68rem; font-weight:600; color:var(--gray600); background:var(--gray100); padding:2px 7px; border-radius:10px;">0 candidatos</span>
           </div>
 
           <div id="candidate-search-wrap" class="candidate-search-wrap hidden">
             <span class="candidate-search-icon">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             </span>
             <input type="text" id="candidate-search-input" placeholder="Buscar candidato por nome..." />
           </div>
@@ -459,39 +459,39 @@
           </div>
         </div>
 
-        <button class="btn btn-success" id="btn-cast-vote" style="gap:.5rem;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <button class="btn btn-success" id="btn-cast-vote">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
           <span id="btn-cast-vote-text">Confirmar Voto</span>
         </button>
 
-        <div style="font-size: .75rem; color: var(--gray600); display: flex; align-items: center; justify-content: center; gap: .4rem; margin-top: 1.1rem; text-align: center; line-height: 1.4;">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--green); flex-shrink: 0;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-          <span><strong>Voto Secreto e Anônimo:</strong> Seu voto não fica vinculado ao seu nome.</span>
+        <div style="font-size: .7rem; color: var(--gray600); display: flex; align-items: center; justify-content: center; gap: .35rem; margin-top: .6rem; text-align: center; line-height: 1.3;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--green); flex-shrink: 0;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          <span><strong>Voto Secreto:</strong> Seu voto não fica vinculado ao seu nome ou código.</span>
         </div>
       </div>
 
       <!-- Voted / Wait state -->
-      <div id="ballot-voted-state" class="hidden text-center" style="padding: 1rem 0;">
-        <div style="margin-bottom: 1rem;">
-          <img src="/assets/img/check.png" style="width: 64px; height: 64px; margin: 0 auto; display: block;"
+      <div id="ballot-voted-state" class="hidden text-center" style="padding: .75rem 0;">
+        <div style="margin-bottom: .65rem;">
+          <img src="/assets/img/check.png" style="width: 48px; height: 48px; margin: 0 auto; display: block;"
             alt="Voto Computado" />
         </div>
-        <h3 style="font-size: 1.1rem; color: var(--gray800); margin-bottom: .5rem;">Voto Computado com Sucesso!</h3>
-        <p style="font-size: .85rem; color: var(--gray600); line-height: 1.6; margin-bottom: 1.5rem;">
+        <h3 style="font-size: 1.05rem; color: var(--gray800); margin-bottom: .35rem; font-weight: 700;">Voto Computado com Sucesso!</h3>
+        <p style="font-size: .8rem; color: var(--gray600); line-height: 1.5; margin-bottom: 1rem;">
           Seu voto secreto foi computado. Aguarde o encerramento da votação.
         </p>
         <button class="btn btn-secondary" id="btn-refresh-status"
-          style="display: inline-flex; align-items: center; gap: .5rem; justify-content: center; margin: 0 auto;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+          style="display: inline-flex; align-items: center; gap: .45rem; justify-content: center; margin: 0 auto; font-size: .85rem; padding: .55rem 1rem;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
           <span>Votar Próximo Cargo</span>
         </button>
       </div>
 
       <!-- Sair / Trocar de Código -->
-      <div style="margin-top: 1.5rem; border-top: 1.5px solid var(--gray200); padding-top: 1rem; text-align: center;">
+      <div style="margin-top: .65rem; border-top: 1px solid var(--gray200); padding-top: .5rem; text-align: center;">
         <button class="btn btn-secondary" id="btn-logout"
-          style="width: auto; margin: 0 auto; padding: .5rem 1.25rem; font-size: .85rem; min-height: auto; display: inline-flex; align-items: center; gap: .5rem; justify-content: center;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          style="width: auto; margin: 0 auto; padding: .35rem .85rem; font-size: .75rem; min-height: auto; display: inline-flex; align-items: center; gap: .4rem; justify-content: center;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
           <span>Sair / Votar com outro código</span>
         </button>
       </div>
@@ -587,7 +587,7 @@
       }
     })
 
-    // Render Candidate Cards with Avatars and selection
+    // Render Candidate Cards with Avatars and selection (NO BLANK / NULL OPTION)
     function renderCandidatesCards(filterText = '') {
       const listContainer = document.getElementById('candidates-list')
       const query = filterText.toLowerCase().trim()
@@ -598,7 +598,7 @@
       let html = ''
 
       if (!filtered.length) {
-        html += '<p style="text-align:center; color:var(--gray600); font-size:.85rem; padding:1.2rem 0;">Nenhum candidato encontrado com este nome.</p>'
+        html += '<p style="text-align:center; color:var(--gray600); font-size:.8rem; padding:1rem 0;">Nenhum candidato encontrado com este nome.</p>'
       } else {
         html += filtered.map(c => {
           const isSelected = selectedCandidateId === c.id
@@ -606,41 +606,19 @@
           return `
             <div class="candidate-card ${isSelected ? 'selected' : ''}" data-id="${c.id}" onclick="window.selectCandidate('${c.id}', '${escapedName}')">
               <div class="candidate-avatar-wrap">
-                ${avatarHtml(c.full_name, 44, '1rem', c.avatar_url)}
+                ${avatarHtml(c.full_name, 34, '.8rem', c.avatar_url)}
               </div>
               <div class="candidate-info">
                 <div class="candidate-name" title="${c.full_name}">${c.full_name}</div>
                 <div class="candidate-sub">Candidato(a) Elegível</div>
               </div>
               <div class="candidate-check-circle">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
               </div>
             </div>
           `
         }).join('')
       }
-
-      // Add "Votar em Branco / Nulo" card
-      const isBlankSelected = selectedCandidateId === 'blank'
-      html += `
-        <div class="candidate-card blank-card ${isBlankSelected ? 'selected' : ''}" data-id="blank" onclick="window.selectCandidate('blank', 'Voto em Branco / Nulo')">
-          <div class="candidate-avatar-wrap">
-            <div class="blank-avatar">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
-              </svg>
-            </div>
-          </div>
-          <div class="candidate-info">
-            <div class="candidate-name">Votar em Branco / Nulo</div>
-            <div class="candidate-sub">Abster-se do voto neste escrutínio</div>
-          </div>
-          <div class="candidate-check-circle">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-          </div>
-        </div>
-      `
 
       listContainer.innerHTML = html
     }
@@ -656,12 +634,8 @@
       })
 
       const btnText = document.getElementById('btn-cast-vote-text')
-      if (id === 'blank') {
-        btnText.textContent = 'Confirmar Voto em Branco'
-      } else {
-        const firstName = name.split(' ')[0]
-        btnText.textContent = `Confirmar Voto em ${firstName}`
-      }
+      const firstName = name.split(' ')[0]
+      btnText.textContent = `Confirmar Voto em ${firstName}`
     }
 
     // Search input listener
@@ -713,7 +687,7 @@
           searchWrap.classList.add('hidden')
         }
 
-        document.getElementById('btn-cast-vote-text').textContent = 'Confirmar Voto'
+        document.getElementById('btn-cast-vote-text').textContent = 'Selecione um Candidato'
         renderCandidatesCards()
       }
     }
@@ -721,14 +695,11 @@
     // Step 2: Cast Vote
     document.getElementById('btn-cast-vote').addEventListener('click', async () => {
       if (!selectedCandidateId) {
-        showAlert('ballot-alert', 'Por favor, selecione um candidato ou marque a opção de voto em branco.')
+        showAlert('ballot-alert', 'Por favor, toque em um dos candidatos acima para votar.')
         return
       }
 
-      const candidateId = selectedCandidateId === 'blank' ? null : selectedCandidateId
-      const confirmMsg = selectedCandidateId === 'blank'
-        ? 'Deseja realmente confirmar seu voto em BRANCO / NULO? Uma vez enviado, não poderá ser alterado.'
-        : `Deseja realmente confirmar seu voto secreto em "${selectedCandidateName}"? Uma vez enviado, não poderá ser alterado.`
+      const confirmMsg = `Deseja realmente confirmar seu voto secreto em "${selectedCandidateName}"? Uma vez enviado, não poderá ser alterado.`
 
       if (!confirm(confirmMsg)) {
         return
@@ -744,7 +715,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             code: voterCode,
-            candidate_member_id: candidateId
+            candidate_member_id: selectedCandidateId
           })
         })
 
@@ -758,7 +729,7 @@
       } catch (err) {
         showAlert('ballot-alert', err.message)
       } finally {
-        setLoading(btn, false, `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> <span id="btn-cast-vote-text">Confirmar Voto</span>`)
+        setLoading(btn, false, `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> <span id="btn-cast-vote-text">Confirmar Voto</span>`)
       }
     })
 
@@ -791,7 +762,7 @@
       } catch (err) {
         showAlert('ballot-alert', err.message)
       } finally {
-        setLoading(btn, false, `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg> <span>Votar Próximo Cargo</span>`)
+        setLoading(btn, false, `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg> <span>Votar Próximo Cargo</span>`)
       }
     })
 

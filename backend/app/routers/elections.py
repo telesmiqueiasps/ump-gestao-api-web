@@ -576,12 +576,14 @@ def cast_public_vote(
     if voter.has_voted_current_round:
         raise HTTPException(status_code=400, detail="Você já votou nesta rodada.")
 
-    # Validate candidate selection
-    if payload.candidate_member_id:
-        eligible_candidates = get_eligible_candidates(db, session)
-        eligible_ids = {c.id for c in eligible_candidates}
-        if payload.candidate_member_id not in eligible_ids:
-            raise HTTPException(status_code=400, detail="O candidato selecionado não é elegível para esta rodada.")
+    # Validate candidate selection (blank/null votes are forbidden)
+    if not payload.candidate_member_id:
+        raise HTTPException(status_code=400, detail="É obrigatório selecionar um candidato. Voto em branco não é permitido.")
+
+    eligible_candidates = get_eligible_candidates(db, session)
+    eligible_ids = {c.id for c in eligible_candidates}
+    if payload.candidate_member_id not in eligible_ids:
+        raise HTTPException(status_code=400, detail="O candidato selecionado não é elegível para esta rodada.")
 
     # Save vote anonymously
     vote = ElectionVote(
