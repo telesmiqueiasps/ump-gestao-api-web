@@ -1036,7 +1036,7 @@
                   <label style="font-size:.82rem; font-weight:700; color:var(--slate-700);">Máximo:</label>
                   <input type="number" id="fed-input-max-del" class="input" style="width:75px; text-align:center;" min="1" max="50" value="5" />
                 </div>
-                <button type="button" class="btn btn-primary btn-sm" onclick="saveCongressDelegateLimits()" style="display:inline-flex; align-items:center; gap:4px;">
+                <button type="button" id="btn-save-del-limits" class="btn btn-primary btn-sm" onclick="saveCongressDelegateLimits()" style="display:inline-flex; align-items:center; gap:4px;">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
                   <span>Salvar Limites</span>
                 </button>
@@ -1465,7 +1465,7 @@
               3. Assinatura da Presidência e Envio à Federação
             </h3>
             <p style="font-size:.84rem; color:var(--slate-500); margin-bottom:1rem;">
-              A credencial é assinada automaticamente com a sua conta ativa no momento do envio à federação.
+              A credencial é assinada em nome do Presidente registrado na aba Diretoria da organização local.
             </p>
 
             <div style="background:var(--slate-50); border:1px solid var(--slate-200); border-radius:var(--radius); padding:1rem 1.25rem; margin-bottom:1.5rem; display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
@@ -1473,8 +1473,8 @@
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
               </div>
               <div style="flex:1">
-                <div style="font-weight:700; font-size:.95rem; color:var(--slate-900);" id="local-signer-name">Nome do Usuário</div>
-                <div style="font-size:.8rem; color:var(--slate-500);" id="local-signer-role">Presidente / Vice-Presidente da UMP Local</div>
+                <div style="font-weight:700; font-size:.95rem; color:var(--slate-900);" id="local-signer-name">Presidente da Diretoria</div>
+                <div style="font-size:.8rem; color:var(--slate-500);" id="local-signer-role">Presidente da UMP Local</div>
               </div>
               <div id="local-signature-badge">
                 <!-- Badge de status -->
@@ -3048,9 +3048,11 @@
       }
 
       const btn = document.getElementById('btn-save-del-limits')
-      const origHtml = btn.innerHTML
-      btn.disabled = true
-      btn.innerHTML = `<span style="width:13px;height:13px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;display:inline-block;animation:spin .8s linear infinite;"></span> <span>Salvando...</span>`
+      const origHtml = btn ? btn.innerHTML : ''
+      if (btn) {
+        btn.disabled = true
+        btn.innerHTML = `<span style="width:13px;height:13px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;display:inline-block;animation:spin .8s linear infinite;"></span> <span>Salvando...</span>`
+      }
 
       try {
         const res = await api.put(`/api/congresses/${activeCongress.id}/delegate-limits`, {
@@ -3067,8 +3069,10 @@
       } catch (err) {
         showCredentialAlert('Erro ao Salvar Limites', err.message || 'Falha ao atualizar limites de delegados.', 'error')
       } finally {
-        btn.disabled = false
-        btn.innerHTML = origHtml
+        if (btn) {
+          btn.disabled = false
+          btn.innerHTML = origHtml
+        }
       }
     }
 
@@ -3240,8 +3244,14 @@
 
         // Preenche campos
         document.getElementById('local-input-pastor').value = data.credential.pastor_name || data.local_ump.pastor_name || ''
-        document.getElementById('local-signer-name').textContent = data.current_user_name
-        document.getElementById('local-signer-role').textContent = `${data.current_user_role} da ${data.local_ump.name}`
+        const presName = data.local_president_name || data.credential.president_name || data.local_ump.president_name
+        if (presName) {
+          document.getElementById('local-signer-name').textContent = presName
+          document.getElementById('local-signer-role').textContent = `Presidente da ${data.local_ump.name || 'UMP Local'} (Diretoria)`
+        } else {
+          document.getElementById('local-signer-name').innerHTML = `<span style="color:var(--amber-700); font-weight:600;">Nenhum Presidente cadastrado na aba Diretoria</span>`
+          document.getElementById('local-signer-role').textContent = `Cadastre o Presidente na aba Diretoria para assinar a credencial`
+        }
 
         // Atualiza cabeçalho e breadcrumbs
         document.getElementById('page-title').textContent = `Credencial - ${data.congress.title}`
@@ -3570,9 +3580,20 @@
       }
 
       // Preenche os dados no modal de confirmação
+      const presName = localCredentialData.local_president_name ||
+                       localCredentialData.credential?.president_name ||
+                       localCredentialData.local_ump?.president_name
+      if (!presName) {
+        showCredentialAlert(
+          'Presidente Não Cadastrado na Diretoria',
+          'Não foi encontrado nenhum <b>Presidente</b> ativo cadastrado na aba <b>Diretoria</b> da sua organização local.<br/><br/>Por favor, acesse a aba <b>Diretoria</b>, cadastre o Presidente da sociedade para este ano e tente novamente.'
+        )
+        return
+      }
+
       document.getElementById('modal-submit-summary-ump').textContent = localCredentialData.local_ump.name || 'UMP Local'
       document.getElementById('modal-submit-summary-dels').textContent = `${count} delegado(s) (${Math.min(count, minD)} titular(es))`
-      document.getElementById('modal-submit-summary-pres').textContent = `${localCredentialData.current_user_name} (${localCredentialData.current_user_role})`
+      document.getElementById('modal-submit-summary-pres').textContent = `${presName} (Presidente da Diretoria)`
 
       openModal('modal-confirm-submit-cred')
     }
@@ -3743,7 +3764,8 @@
 
       // Assinatura do Presidente
       const defaultPresRole = `Presidente da ${socType}`
-      const presName = targetCred.president_name || (!credId ? (localCredentialData?.current_user_name || defaultPresRole) : defaultPresRole)
+      const presName = targetCred.president_name ||
+                       (!credId ? (localCredentialData?.local_president_name || localCredentialData?.local_ump?.president_name || defaultPresRole) : (targetLump?.president_name || defaultPresRole))
       let presMeta = ''
       if (targetCred.submitted_at || targetCred.president_signed_at) {
         const dStr = new Date(targetCred.president_signed_at || targetCred.submitted_at).toLocaleDateString('pt-BR')

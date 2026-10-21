@@ -182,7 +182,33 @@ def _serialize_commission(comm: CongressCommission) -> dict:
     }
 
 
-def _serialize_credential(cred: CongressCredential, include_token: bool = True) -> dict:
+def _get_local_board_president(local_ump_id: Optional[UUID], fiscal_year: Optional[int], db: Session) -> Optional[str]:
+    """
+    Retorna o nome do Presidente cadastrado na aba Diretoria da UMP Local.
+    Busca preferencialmente pelo ano fiscal do congresso; se não encontrar, busca o ativo mais recente.
+    """
+    if not local_ump_id:
+        return None
+    q = db.query(BoardMember).filter(
+        BoardMember.organization_id == local_ump_id,
+        (BoardMember.role == BoardRole.presidente) | (BoardMember.role == "presidente"),
+        BoardMember.is_active == True,
+    )
+    if fiscal_year:
+        pres = q.filter(BoardMember.fiscal_year == fiscal_year).first()
+        if pres and pres.member_name:
+            return pres.member_name.strip()
+    pres = q.order_by(BoardMember.fiscal_year.desc()).first()
+    if pres and pres.member_name:
+        return pres.member_name.strip()
+    return None
+
+
+def _serialize_credential(
+    cred: CongressCredential,
+    include_token: bool = True,
+    override_president_name: Optional[str] = None
+) -> dict:
     return {
         "id": str(cred.id),
         "congress_id": str(cred.congress_id),
@@ -196,7 +222,7 @@ def _serialize_credential(cred: CongressCredential, include_token: bool = True) 
         "pastor_token": cred.pastor_token if include_token else None,
         "pastor_selfie_url": _presign_url_if_needed(cred.pastor_selfie_url),
         "pastor_approved_at": cred.pastor_approved_at.isoformat() if cred.pastor_approved_at else None,
-        "president_name": cred.president_name,
+        "president_name": override_president_name or cred.president_name,
         "president_signed_at": cred.president_signed_at.isoformat() if cred.president_signed_at else None,
         "submitted_at": cred.submitted_at.isoformat() if cred.submitted_at else None,
         "submitted_by": str(cred.submitted_by) if cred.submitted_by else None,
@@ -390,6 +416,9 @@ def get_active_congress_for_local(
         CongressCredential.local_ump_id == local_ump.id
     ).first()
 
+    # Busca o presidente cadastrado na Diretoria da UMP Local
+    board_pres_name = _get_local_board_president(local_ump.id, target_congress.fiscal_year, db)
+
     if not cred:
         cred = CongressCredential(
             congress_id=target_congress.id,
@@ -397,11 +426,18 @@ def get_active_congress_for_local(
             status="rascunho",
             city=local_ump.cidade or "Patos",
             pastor_name=local_ump.pastor_name,
+            president_name=board_pres_name,
             document_date=date.today()
         )
         db.add(cred)
         db.commit()
         db.refresh(cred)
+    else:
+        # Se houver presidente na diretoria, assegura atualização da credencial em rascunho/preparação
+        if board_pres_name and (not cred.president_name or cred.status in ("rascunho", "aguardando_pastor", "aprovado_pastor")):
+            cred.president_name = board_pres_name
+            db.commit()
+            db.refresh(cred)
 
     fed = db.query(Federation).filter(Federation.id == local_ump.federation_id).first()
     active_members = db.query(Member).filter(
@@ -413,7 +449,7 @@ def get_active_congress_for_local(
         "has_active_congress": True,
         "active_congresses": congress_summaries,
         "congress": _serialize_congress(target_congress, include_commissions=False),
-        "credential": _serialize_credential(cred, include_token=True),
+        "credential": _serialize_credential(cred, include_token=True, override_president_name=board_pres_name),
         "federation": {
             "name": fed.name if fed else "",
             "presbytery_name": fed.presbytery_name if fed else "",
@@ -426,12 +462,14 @@ def get_active_congress_for_local(
             "church_name": local_ump.church_name,
             "pastor_name": local_ump.pastor_name,
             "cidade": local_ump.cidade,
-            "society_type": local_ump.society_type or "UMP"
+            "society_type": local_ump.society_type or "UMP",
+            "president_name": board_pres_name
         },
         "members": [
             {"id": str(m.id), "full_name": m.full_name}
             for m in active_members
         ],
+        "local_president_name": board_pres_name,
         "current_user_name": current_user.full_name,
         "current_user_role": role_label
     }
@@ -1751,11 +1789,15 @@ def save_my_credential(
     if cred.status == "rascunho" and new_del_names:
         cred.status = "aguardando_pastor"
 
+    board_pres_name = _get_local_board_president(cred.local_ump_id, cred.congress.fiscal_year if cred.congress else None, db)
+    if board_pres_name:
+        cred.president_name = board_pres_name
+
     db.commit()
     db.refresh(cred)
     return {
         "message": "Credencial salva com sucesso.",
-        "credential": _serialize_credential(cred, include_token=True)
+        "credential": _serialize_credential(cred, include_token=True, override_president_name=board_pres_name)
     }
 
 
@@ -1809,8 +1851,9 @@ def submit_credential_to_federation(
             detail="A credencial precisa ser aprovada pelo Pastor da igreja via foto/selfie antes do envio à Federação."
         )
 
-    # Assinatura automática da Presidência da UMP
-    cred.president_name = current_user.full_name
+    # Assinatura oficial em nome do Presidente da UMP Local (Diretoria)
+    board_pres_name = _get_local_board_president(cred.local_ump_id, congress.fiscal_year, db)
+    cred.president_name = board_pres_name or cred.president_name or current_user.full_name
     cred.president_signed_at = datetime.utcnow()
     cred.submitted_at = datetime.utcnow()
     cred.submitted_by = current_user.id
@@ -1822,7 +1865,7 @@ def submit_credential_to_federation(
 
     return {
         "message": "Credencial enviada com sucesso à Federação!",
-        "credential": _serialize_credential(cred, include_token=True)
+        "credential": _serialize_credential(cred, include_token=True, override_president_name=board_pres_name)
     }
 
 
@@ -1896,10 +1939,14 @@ def list_congress_credentials(
 
     for lump in local_umps:
         cred = credentials_map.get(lump.id)
+        board_pres_name = _get_local_board_president(lump.id, congress.fiscal_year, db)
         if cred:
             is_submitted = cred.status in ("enviada", "homologada")
             if is_submitted:
-                serialized = _serialize_credential(cred, include_token=False)
+                if board_pres_name and (not cred.president_name or cred.president_name != board_pres_name):
+                    cred.president_name = board_pres_name
+                    db.commit()
+                serialized = _serialize_credential(cred, include_token=False, override_president_name=board_pres_name)
                 delegates_count = len(cred.delegates)
                 total_delegates += delegates_count
                 total_submitted += 1
@@ -1919,7 +1966,7 @@ def list_congress_credentials(
                     "pastor_token": None,
                     "pastor_selfie_url": None,
                     "pastor_approved_at": None,
-                    "president_name": None,
+                    "president_name": board_pres_name or cred.president_name,
                     "president_signed_at": None,
                     "submitted_at": None,
                     "validation_code": None,
@@ -1946,7 +1993,7 @@ def list_congress_credentials(
                 "pastor_token": None,
                 "pastor_selfie_url": None,
                 "pastor_approved_at": None,
-                "president_name": None,
+                "president_name": board_pres_name,
                 "president_signed_at": None,
                 "submitted_at": None,
                 "validation_code": None,
@@ -2085,8 +2132,13 @@ def get_public_credential(
     fed = db.query(Federation).filter(Federation.id == congress.federation_id).first() if congress else None
     fed_society = fed.society_type if (fed and getattr(fed, "society_type", None)) else (local_ump.society_type if (local_ump and getattr(local_ump, "society_type", None)) else "UMP")
 
+    board_pres_name = _get_local_board_president(cred.local_ump_id, congress.fiscal_year if congress else None, db)
+    if board_pres_name and (not cred.president_name or cred.president_name != board_pres_name):
+        cred.president_name = board_pres_name
+        db.commit()
+
     return {
-        "credential": _serialize_credential(cred, include_token=False),
+        "credential": _serialize_credential(cred, include_token=False, override_president_name=board_pres_name),
         "society_type": fed_society,
         "congress": {
             "id": str(congress.id) if congress else None,
@@ -2107,6 +2159,7 @@ def get_public_credential(
             "church_name": local_ump.church_name if local_ump else "",
             "cidade": local_ump.cidade if local_ump else "",
             "society_type": local_ump.society_type if (local_ump and getattr(local_ump, "society_type", None)) else fed_society,
+            "president_name": board_pres_name
         }
     }
 
@@ -2200,12 +2253,15 @@ def get_credential_pdf(
         for d in cred.delegates
     ]
 
+    board_pres_name = _get_local_board_president(cred.local_ump_id, congress.fiscal_year if congress else None, db)
+    pres_name = cred.president_name or board_pres_name or (local_ump.name if local_ump else "Presidente da UMP")
+
     pdf_bytes = generate_credential_pdf(
         congress_title=congress.title if congress else "Congresso Ordinário",
         fiscal_year=congress.fiscal_year if congress else datetime.utcnow().year,
         church_name=local_ump.church_name or local_ump.name if local_ump else "Igreja Local",
         delegates=delegates_list,
-        president_name=cred.president_name or (local_ump.name if local_ump else "Presidente"),
+        president_name=pres_name,
         pastor_name=cred.pastor_name or (local_ump.pastor_name if local_ump else "Pastor"),
         city=cred.city or (local_ump.cidade if local_ump else "Patos"),
         document_date=cred.document_date or date.today(),
