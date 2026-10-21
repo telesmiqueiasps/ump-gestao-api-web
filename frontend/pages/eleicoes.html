@@ -257,44 +257,17 @@
       border-bottom-color: var(--blue-600) !important;
     }
 
-    .role-checkbox-group {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: .75rem;
-      margin-top: .5rem;
-    }
-
-    .role-checkbox-card {
-      display: flex;
-      align-items: center;
-      gap: .65rem;
-      border: 1px solid var(--slate-200);
-      border-radius: 6px;
-      padding: .75rem 1rem;
-      background: #fff;
-      cursor: pointer;
-      transition: all .15s;
-      font-size: .9rem;
-      user-select: none;
-    }
-
-    .role-checkbox-card:hover {
-      border-color: var(--slate-300);
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    }
-
     .role-checkbox-card:has(input:checked) {
-      border-color: var(--blue-400) !important;
+      border-color: var(--blue-500) !important;
       background: var(--blue-50) !important;
-      font-weight: 600;
+    }
+
+    .role-checkbox-card:has(input:checked) span {
       color: var(--blue-900);
     }
 
-    .role-checkbox-card input {
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
-      margin: 0;
+    .role-checkbox-card:has(input:checked) .role-icon-box {
+      background: #dbeafe;
     }
 
     .eligibility-card {
