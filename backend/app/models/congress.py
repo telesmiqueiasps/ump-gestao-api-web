@@ -23,6 +23,8 @@ class Congress(Base):
     max_delegates = Column(Integer, default=5, nullable=False)
 
     # Edital de Convocação
+    convocation_type = Column(String(30), nullable=False, default="texto")  # texto, upload
+    convocation_file_url = Column(Text, nullable=True)
     convocation_text = Column(Text, nullable=True)
     convocation_status = Column(String(30), nullable=False, default="rascunho")  # rascunho, enviada
     convocation_date = Column(Date, nullable=True)

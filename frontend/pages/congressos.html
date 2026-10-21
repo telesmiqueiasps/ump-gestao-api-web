@@ -577,6 +577,8 @@
       background: #fff;
       padding: .25rem .75rem 0;
       border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      overflow-x: auto;
+      white-space: nowrap;
     }
 
     .subtab-btn {
@@ -1124,104 +1126,243 @@
             </div>
           </div>
 
-          <!-- Card do Editor e Timbre Oficial -->
-          <div class="content-card" style="padding:0; overflow:hidden;">
-            <!-- Timbre Institucional Oficial -->
-            <div class="official-timbre-preview">
-              <div class="timbre-top-row">
-                <div style="width:130px; display:flex; align-items:center;">
-                  <img src="/assets/img/logo_parecer.png" id="conv-timbre-logo" class="timbre-logo" alt="Logo Institucional" onerror="this.src='/assets/img/logo_icone.png'" />
-                </div>
-                <div class="timbre-meta">
-                  <h4>IGREJA PRESBITERIANA DO BRASIL</h4>
-                  <p id="conv-presbytery-label">PRESBITÉRIO OESTE DA PARAÍBA</p>
-                  <p id="conv-fed-label">FEDERAÇÃO DE MOCIDADES PRESBITERIANAS</p>
-                </div>
-              </div>
-              <div class="timbre-center-titles">
-                <div class="timbre-cong-title" id="conv-center-cong-title">XXXII CONGRESSO ORDINÁRIO</div>
-                <div class="timbre-comm-title" style="letter-spacing:1px;">EDITAL OFICIAL DE CONVOCAÇÃO</div>
-                <div class="timbre-rel-subtitle" id="conv-center-year-sub">GESTÃO 2026</div>
-              </div>
-            </div>
+          <!-- Sub-abas do Modo de Convocação: Redigir no Sistema vs Upload de PDF Pronto -->
+          <div class="subtabs-bar" style="margin-bottom:1.25rem;">
+            <button type="button" class="subtab-btn active" id="btn-conv-mode-text" onclick="switchConvocationMode('texto')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+              <span>Confeccionar no Sistema</span>
+            </button>
+            <button type="button" class="subtab-btn" id="btn-conv-mode-upload" onclick="switchConvocationMode('upload')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+              <span>Fazer Upload de PDF Pronto</span>
+            </button>
+          </div>
 
-            <!-- Barra de Ferramentas de Formatação -->
-            <div class="editor-toolbar" id="conv-editor-toolbar">
-              <button type="button" class="tool-btn" onclick="stepConvFontSize(-1)" title="Diminuir Fonte (A-)">A-</button>
-              <button type="button" class="tool-btn" onclick="stepConvFontSize(1)" title="Aumentar Fonte (A+)">A+</button>
-              <select id="conv-font-size-select" class="tool-select" onchange="changeConvFontSize(this.value)" title="Tamanho da Fonte">
-                <option value="13px">13px</option>
-                <option value="14px">14px</option>
-                <option value="15px" selected>15px (Padrão)</option>
-                <option value="16px">16px</option>
-                <option value="18px">18px</option>
-              </select>
-              <span class="tool-separator"></span>
-
-              <button type="button" class="tool-btn" onclick="formatConvDoc('formatBlock', '<p>')" title="Parágrafo Normal">P</button>
-              <button type="button" class="tool-btn" onclick="formatConvDoc('formatBlock', '<h2>')" title="Título H2">H2</button>
-              <button type="button" class="tool-btn" onclick="formatConvDoc('formatBlock', '<h3>')" title="Título H3">H3</button>
-              <span class="tool-separator"></span>
-
-              <button type="button" class="tool-btn" onclick="formatConvDoc('bold')" title="Negrito"><b>B</b></button>
-              <button type="button" class="tool-btn" onclick="formatConvDoc('italic')" title="Itálico"><i>I</i></button>
-              <button type="button" class="tool-btn" onclick="formatConvDoc('underline')" title="Sublinhado"><u>U</u></button>
-              <span class="tool-separator"></span>
-
-              <button type="button" class="tool-btn" onclick="formatConvDoc('justifyFull')" title="Alinhar Justificado">≡ Justificar</button>
-              <button type="button" class="tool-btn" onclick="formatConvDoc('indent')" title="Aumentar Recuo">⇥ Recuo</button>
-              <button type="button" class="tool-btn" onclick="formatConvDoc('outdent')" title="Diminuir Recuo">⇤ Reduzir</button>
-              <span class="tool-separator"></span>
-
-              <button type="button" class="tool-btn" onclick="formatConvDoc('insertUnorderedList')" title="Lista">• Lista</button>
-              <button type="button" class="tool-btn" onclick="formatConvDoc('insertOrderedList')" title="Numeração">1. Lista</button>
-              <button type="button" class="tool-btn" onclick="formatConvDoc('formatBlock', '<blockquote>')" title="Citação">“ Citação</button>
-              <span class="tool-separator"></span>
-
-              <button type="button" class="tool-btn" onclick="formatConvDoc('removeFormat')" title="Limpar Formatação">✕ Limpar</button>
-            </div>
-
-            <!-- Área de Escrita -->
-            <div id="convocation-editor" class="editor-content" contenteditable="true" placeholder="Redija aqui o edital de convocação do congresso...">
-            </div>
-
-            <!-- Data do Documento & Assinaturas Oficiais -->
-            <div style="background:#f8fafc; border-top:1px solid var(--slate-200); padding:1.25rem 1.5rem;">
-              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:.75rem;">
-                <div style="display:flex; align-items:center; flex-wrap:wrap; gap:1.25rem;">
-                  <div style="display:flex; align-items:center; gap:.5rem;">
-                    <label style="font-size:.85rem; font-weight:700; color:var(--slate-700); display:inline-flex; align-items:center; gap:5px;">
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                      <span>Cidade:</span>
-                    </label>
-                    <input type="text" id="convocation-city-input" class="input" style="width:170px; padding:.35rem .6rem;" placeholder="Ex: Patos - PB" oninput="triggerConvocationAutoSave()" />
+          <!-- MODO 1: EDITOR E TIMBRE OFICIAL NO SISTEMA -->
+          <div id="convocation-mode-text-container">
+            <div class="content-card" style="padding:0; overflow:hidden;">
+              <!-- Timbre Institucional Oficial -->
+              <div class="official-timbre-preview">
+                <div class="timbre-top-row">
+                  <div style="width:130px; display:flex; align-items:center;">
+                    <img src="/assets/img/logo_parecer.png" id="conv-timbre-logo" class="timbre-logo" alt="Logo Institucional" onerror="this.src='/assets/img/logo_icone.png'" />
                   </div>
-                  <div style="display:flex; align-items:center; gap:.5rem;">
-                    <label style="font-size:.85rem; font-weight:700; color:var(--slate-700); display:inline-flex; align-items:center; gap:5px;">
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                      <span>Data da Convocação:</span>
-                    </label>
-                    <input type="date" id="convocation-date-input" class="input" style="width:auto; padding:.35rem .6rem;" onchange="triggerConvocationSave()" />
+                  <div class="timbre-meta">
+                    <h4>IGREJA PRESBITERIANA DO BRASIL</h4>
+                    <p id="conv-presbytery-label">PRESBITÉRIO OESTE DA PARAÍBA</p>
+                    <p id="conv-fed-label">FEDERAÇÃO DE MOCIDADES PRESBITERIANAS</p>
                   </div>
                 </div>
-                <div style="font-size:.8rem; color:var(--slate-500); font-style:italic;" id="convocation-last-saved-meta">
-                  Salvamento automático em tempo real ativado.
+                <div class="timbre-center-titles">
+                  <div class="timbre-cong-title" id="conv-center-cong-title">XXXII CONGRESSO ORDINÁRIO</div>
+                  <div class="timbre-comm-title" style="letter-spacing:1px;">EDITAL OFICIAL DE CONVOCAÇÃO</div>
+                  <div class="timbre-rel-subtitle" id="conv-center-year-sub">GESTÃO 2026</div>
                 </div>
               </div>
 
-              <!-- Prévia das Assinaturas da Diretoria -->
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:2rem; text-align:center; margin-top:2rem; padding:1.5rem 1rem; border-top:1px dashed var(--slate-200);">
-                <div>
-                  <div style="font-weight:700; font-size:.92rem; text-transform:uppercase;" id="conv-sign-sec-name">Secretário(a) Executivo(a)</div>
-                  <div style="height:1px; background:#0f172a; width:80%; margin:.35rem auto .4rem;"></div>
-                  <div style="font-size:.82rem; color:#475569; font-weight:600;">Secretário(a) Executivo(a)</div>
-                  <div style="font-size:.76rem; color:#64748b;" id="conv-sign-sec-fed">Federação</div>
+              <!-- Barra de Ferramentas de Formatação -->
+              <div class="editor-toolbar" id="conv-editor-toolbar">
+                <button type="button" class="tool-btn" onclick="stepConvFontSize(-1)" title="Diminuir Fonte (A-)">A-</button>
+                <button type="button" class="tool-btn" onclick="stepConvFontSize(1)" title="Aumentar Fonte (A+)">A+</button>
+                <select id="conv-font-size-select" class="tool-select" onchange="changeConvFontSize(this.value)" title="Tamanho da Fonte">
+                  <option value="13px">13px</option>
+                  <option value="14px">14px</option>
+                  <option value="15px" selected>15px (Padrão)</option>
+                  <option value="16px">16px</option>
+                  <option value="18px">18px</option>
+                </select>
+                <span class="tool-separator"></span>
+
+                <button type="button" class="tool-btn" onclick="formatConvDoc('formatBlock', '<p>')" title="Parágrafo Normal">P</button>
+                <button type="button" class="tool-btn" onclick="formatConvDoc('formatBlock', '<h2>')" title="Título H2">H2</button>
+                <button type="button" class="tool-btn" onclick="formatConvDoc('formatBlock', '<h3>')" title="Título H3">H3</button>
+                <span class="tool-separator"></span>
+
+                <button type="button" class="tool-btn" onclick="formatConvDoc('bold')" title="Negrito"><b>B</b></button>
+                <button type="button" class="tool-btn" onclick="formatConvDoc('italic')" title="Itálico"><i>I</i></button>
+                <button type="button" class="tool-btn" onclick="formatConvDoc('underline')" title="Sublinhado"><u>U</u></button>
+                <span class="tool-separator"></span>
+
+                <button type="button" class="tool-btn" onclick="formatConvDoc('justifyFull')" title="Alinhar Justificado">≡ Justificar</button>
+                <button type="button" class="tool-btn" onclick="formatConvDoc('indent')" title="Aumentar Recuo">⇥ Recuo</button>
+                <button type="button" class="tool-btn" onclick="formatConvDoc('outdent')" title="Diminuir Recuo">⇤ Reduzir</button>
+                <span class="tool-separator"></span>
+
+                <button type="button" class="tool-btn" onclick="formatConvDoc('insertUnorderedList')" title="Lista">• Lista</button>
+                <button type="button" class="tool-btn" onclick="formatConvDoc('insertOrderedList')" title="Numeração">1. Lista</button>
+                <button type="button" class="tool-btn" onclick="formatConvDoc('formatBlock', '<blockquote>')" title="Citação">“ Citação</button>
+                <span class="tool-separator"></span>
+
+                <button type="button" class="tool-btn" onclick="formatConvDoc('removeFormat')" title="Limpar Formatação">✕ Limpar</button>
+              </div>
+
+              <!-- Área de Escrita -->
+              <div id="convocation-editor" class="editor-content" contenteditable="true" placeholder="Redija aqui o edital de convocação do congresso...">
+              </div>
+
+              <!-- Data do Documento & Assinaturas Oficiais -->
+              <div style="background:#f8fafc; border-top:1px solid var(--slate-200); padding:1.25rem 1.5rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:.75rem;">
+                  <div style="display:flex; align-items:center; flex-wrap:wrap; gap:1.25rem;">
+                    <div style="display:flex; align-items:center; gap:.5rem;">
+                      <label style="font-size:.85rem; font-weight:700; color:var(--slate-700); display:inline-flex; align-items:center; gap:5px;">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        <span>Cidade:</span>
+                      </label>
+                      <input type="text" id="convocation-city-input" class="input" style="width:170px; padding:.35rem .6rem;" placeholder="Ex: Patos - PB" oninput="triggerConvocationAutoSave()" />
+                    </div>
+                    <div style="display:flex; align-items:center; gap:.5rem;">
+                      <label style="font-size:.85rem; font-weight:700; color:var(--slate-700); display:inline-flex; align-items:center; gap:5px;">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        <span>Data da Convocação:</span>
+                      </label>
+                      <input type="date" id="convocation-date-input" class="input" style="width:auto; padding:.35rem .6rem;" onchange="triggerConvocationSave()" />
+                    </div>
+                  </div>
+                  <div style="font-size:.8rem; color:var(--slate-500); font-style:italic;" id="convocation-last-saved-meta">
+                    Salvamento automático em tempo real ativado.
+                  </div>
                 </div>
-                <div>
-                  <div style="font-weight:700; font-size:.92rem; text-transform:uppercase;" id="conv-sign-pres-name">Presidente da Federação</div>
-                  <div style="height:1px; background:#0f172a; width:80%; margin:.35rem auto .4rem;"></div>
-                  <div style="font-size:.82rem; color:#475569; font-weight:600;" id="conv-sign-pres-role">Presidente da Federação</div>
-                  <div style="font-size:.76rem; color:#64748b;" id="conv-sign-pres-fed">Federação</div>
+
+                <!-- Prévia das Assinaturas da Diretoria -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:2rem; text-align:center; margin-top:2rem; padding:1.5rem 1rem; border-top:1px dashed var(--slate-200);">
+                  <div>
+                    <div style="font-weight:700; font-size:.92rem; text-transform:uppercase;" id="conv-sign-sec-name">Secretário(a) Executivo(a)</div>
+                    <div style="height:1px; background:#0f172a; width:80%; margin:.35rem auto .4rem;"></div>
+                    <div style="font-size:.82rem; color:#475569; font-weight:600;">Secretário(a) Executivo(a)</div>
+                    <div style="font-size:.76rem; color:#64748b;" id="conv-sign-sec-fed">Federação</div>
+                  </div>
+                  <div>
+                    <div style="font-weight:700; font-size:.92rem; text-transform:uppercase;" id="conv-sign-pres-name">Presidente da Federação</div>
+                    <div style="height:1px; background:#0f172a; width:80%; margin:.35rem auto .4rem;"></div>
+                    <div style="font-size:.82rem; color:#475569; font-weight:600;" id="conv-sign-pres-role">Presidente da Federação</div>
+                    <div style="font-size:.76rem; color:#64748b;" id="conv-sign-pres-fed">Federação</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MODO 2: UPLOAD DE PDF PRONTO -->
+          <div id="convocation-mode-upload-container" style="display:none;">
+            <div class="content-card" style="padding:1.75rem;">
+              <!-- Explicação e Orientações -->
+              <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:var(--radius); padding:1rem 1.25rem; margin-bottom:1.5rem; display:flex; align-items:flex-start; gap:.85rem;">
+                <div style="width:36px; height:36px; border-radius:50%; background:#dbeafe; color:#2563eb; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                </div>
+                <div style="flex:1;">
+                  <h4 style="font-size:.95rem; font-weight:700; color:#1e40af; margin-bottom:.25rem;">Envio de Edital Confeccionado em PDF</h4>
+                  <p style="font-size:.85rem; color:#1e3a8a; line-height:1.5; margin:0;">
+                    Caso sua diretoria já possua o edital oficial de convocação elaborado e assinado externamente em PDF, envie o arquivo pronto abaixo. Ele será salvo diretamente no Cloud Storage Bucket e disponibilizado para todas as organizações locais.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Estado 1: Dropzone para envio -->
+              <div id="conv-upload-dropzone" style="border:2px dashed #93c5fd; border-radius:var(--radius-lg); background:#f8fafc; padding:3rem 1.5rem; text-align:center; transition:all .2s ease; cursor:pointer;"
+                onclick="document.getElementById('convocation-file-input').click()"
+                ondragover="event.preventDefault(); this.style.borderColor='#2563eb'; this.style.background='#eff6ff';"
+                ondragleave="this.style.borderColor='#93c5fd'; this.style.background='#f8fafc';"
+                ondrop="handleConvocationDrop(event)">
+                <input type="file" id="convocation-file-input" accept="application/pdf" style="display:none;" onchange="handleConvocationFileSelect(event)" />
+                <div style="width:58px; height:58px; border-radius:50%; background:#dbeafe; color:#2563eb; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem;">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="12" y2="12"></line><line x1="15" y1="15" x2="12" y2="12"></line></svg>
+                </div>
+                <h3 style="font-size:1.05rem; font-weight:700; color:var(--slate-800); margin-bottom:.35rem;">
+                  Clique para selecionar ou arraste o arquivo PDF aqui
+                </h3>
+                <p style="font-size:.85rem; color:var(--slate-500); margin-bottom:1.25rem;">
+                  Formato permitido: <strong>PDF</strong> (tamanho máximo de 25MB)
+                </p>
+                <button type="button" class="btn btn-primary btn-sm" style="display:inline-flex; align-items:center; gap:6px; pointer-events:none;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                  <span>Procurar Arquivo PDF</span>
+                </button>
+              </div>
+
+              <!-- Estado 2: Em progresso de upload -->
+              <div id="conv-upload-loading" style="display:none; padding:3rem 1.5rem; text-align:center;">
+                <div style="width:40px; height:40px; border:3px solid #bfdbfe; border-top-color:#2563eb; border-radius:50%; animation:spin .8s linear infinite; margin:0 auto 1rem;"></div>
+                <h4 style="font-size:1rem; font-weight:700; color:var(--slate-800); margin-bottom:.25rem;">Enviando convocação para o Bucket Cloud...</h4>
+                <p style="font-size:.84rem; color:var(--slate-500);">Aguarde a finalização do upload seguro.</p>
+              </div>
+
+              <!-- Estado 3: Arquivo salvo no Bucket -->
+              <div id="conv-upload-success" style="display:none;">
+                <div style="background:#f0fdf4; border:1.5px solid #86efac; border-radius:var(--radius-lg); padding:1.25rem 1.5rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1.25rem;">
+                  <div style="display:flex; align-items:center; gap:1rem;">
+                    <div style="width:46px; height:46px; border-radius:10px; background:#fee2e2; color:#dc2626; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-weight:800; font-size:.85rem; border:1px solid #fca5a5;">
+                      PDF
+                    </div>
+                    <div>
+                      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <h4 style="font-size:.98rem; font-weight:700; color:#0f172a; margin:0;" id="conv-uploaded-filename">convocacao.pdf</h4>
+                        <span class="badge badge-green" style="display:inline-flex; align-items:center; gap:4px; font-size:.72rem;">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                          <span>Salvo no Bucket Cloud</span>
+                        </span>
+                      </div>
+                      <p style="font-size:.82rem; color:var(--slate-500); margin-top:.25rem; margin-bottom:0;" id="conv-uploaded-url-meta">
+                        Arquivo pronto para visualização e publicação oficial aos delegados.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div style="display:flex; gap:.6rem; align-items:center; flex-wrap:wrap;">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="openUploadedConvocationPdf()" style="display:inline-flex; align-items:center; gap:5px;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                      <span>Visualizar PDF</span>
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('convocation-file-input').click()" style="display:inline-flex; align-items:center; gap:5px;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                      <span>Substituir Arquivo</span>
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="removeUploadedConvocationPdf()" style="display:inline-flex; align-items:center; gap:5px; color:#ef4444; border-color:#fca5a5;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                      <span>Remover</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Prévia do PDF embutido -->
+                <div style="margin-top:1.5rem; border:1px solid var(--slate-200); border-radius:var(--radius); overflow:hidden;">
+                  <div style="background:var(--slate-100); padding:.6rem 1rem; border-bottom:1px solid var(--slate-200); display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:.82rem; font-weight:700; color:var(--slate-700); display:inline-flex; align-items:center; gap:6px;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                      <span>Prévia do Documento Enviado</span>
+                    </span>
+                    <a id="conv-uploaded-newtab-btn" href="#" target="_blank" style="font-size:.8rem; color:var(--blue-600); text-decoration:none; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
+                      <span>Abrir em Nova Aba</span>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                    </a>
+                  </div>
+                  <iframe id="conv-upload-preview-frame" src="" style="width:100%; height:500px; border:none; background:#fff; display:block;"></iframe>
+                </div>
+              </div>
+
+              <!-- Metadados de Cidade e Data da Convocação -->
+              <div style="background:#f8fafc; border:1px solid var(--slate-200); border-radius:var(--radius); padding:1.25rem 1.5rem; margin-top:1.5rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:.75rem;">
+                  <div style="display:flex; align-items:center; flex-wrap:wrap; gap:1.25rem;">
+                    <div style="display:flex; align-items:center; gap:.5rem;">
+                      <label style="font-size:.85rem; font-weight:700; color:var(--slate-700); display:inline-flex; align-items:center; gap:5px;">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        <span>Cidade:</span>
+                      </label>
+                      <input type="text" id="convocation-upload-city-input" class="input" style="width:170px; padding:.35rem .6rem;" placeholder="Ex: Patos - PB" oninput="triggerUploadMetaAutoSave()" />
+                    </div>
+                    <div style="display:flex; align-items:center; gap:.5rem;">
+                      <label style="font-size:.85rem; font-weight:700; color:var(--slate-700); display:inline-flex; align-items:center; gap:5px;">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        <span>Data da Convocação:</span>
+                      </label>
+                      <input type="date" id="convocation-upload-date-input" class="input" style="width:auto; padding:.35rem .6rem;" onchange="triggerUploadMetaSave()" />
+                    </div>
+                  </div>
+                  <div style="font-size:.8rem; color:var(--slate-500); font-style:italic;" id="convocation-upload-last-saved-meta">
+                    Salvamento automático em tempo real ativado.
+                  </div>
                 </div>
               </div>
             </div>
@@ -1766,6 +1907,24 @@
             </div>
           </div>
         </div>
+
+        <!-- VISÃO DE LEITURA 2: DOCUMENTO ENVIADO VIA UPLOAD DE PDF PRONTO -->
+        <div id="read-convocation-upload-area" style="display:none; max-width:720px; margin:0 auto;">
+          <div id="read-conv-upload-status-banner" style="margin-bottom:1rem;"></div>
+          <div style="border:1px solid #cbd5e1; border-radius:8px; overflow:hidden; background:#fff; box-shadow:0 4px 15px rgba(0,0,0,.06);">
+            <div style="background:#f8fafc; padding:.65rem 1.25rem; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:.5rem;">
+              <span style="font-size:.85rem; font-weight:700; color:#1e293b; display:inline-flex; align-items:center; gap:6px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#ef4444"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                <span>Edital Oficial de Convocação (PDF)</span>
+              </span>
+              <a id="btn-read-conv-open-newtab" href="#" target="_blank" class="btn btn-secondary btn-sm" style="display:inline-flex; align-items:center; gap:4px; font-size:.8rem; padding:.3rem .6rem;">
+                <span>Abrir em Tela Cheia</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+              </a>
+            </div>
+            <iframe id="read-conv-pdf-iframe" src="" style="width:100%; height:520px; border:none; display:block;"></iframe>
+          </div>
+        </div>
       </div>
       <div class="modal-box-footer">
         <a id="btn-modal-download-convocation-pdf" href="#" target="_blank" class="btn btn-secondary btn-sm" style="display:inline-flex; align-items:center; gap:6px;">
@@ -1816,6 +1975,7 @@
     // ── VARIÁVEIS DE CONVOCAÇÃO ──
     let convocationCongressId = null
     let convocationData = null
+    let convocationMode = 'texto'
     let convocationAutoSaveTimer = null
     let isConvocationSaving = false
 
@@ -3691,81 +3851,126 @@
                       (sessionStorage.getItem('society_type') === 'UPH') ||
                       (window.CURRENT_USER?.society_type === 'UPH')
 
-        const logoSrc = isUph ? '/assets/img/logo_parecer_uph.png' : '/assets/img/logo_parecer.png'
-        const logoEl = document.getElementById('read-conv-logo')
-        if (logoEl) logoEl.src = logoSrc
+        const isPublished = (data.convocation?.status === 'enviada') || (data.convocation_status === 'enviada')
+        const cType = data.convocation_type || data.convocation?.type || 'texto'
+        const fileUrl = data.convocation_file_url || data.convocation?.file_url
+        const isUploadMode = (cType === 'upload' && fileUrl)
 
-        const setText = (id, val) => {
-          const el = document.getElementById(id)
-          if (el) el.textContent = val
-        }
-
-        setText('read-conv-presbytery-header', (data.federation?.presbytery_name || 'PRESBITÉRIO OESTE DA PARAÍBA').toUpperCase())
-        setText('read-conv-fed-header', (data.federation?.name || (isUph ? 'FEDERAÇÃO DE UPHs' : 'FEDERAÇÃO DE MOCIDADES PRESBITERIANAS')).toUpperCase())
-
-        const verseEl = document.getElementById('read-conv-verse')
-        if (verseEl) {
-          verseEl.textContent = isUph
-            ? '“Vigiai, estai firmes na fé, portai-vos varonilmente, fortalecei-vos. Todas as vossas ações sejam feitas com amor.” (I Co. 16.13-14).'
-            : '“Ninguém despreze a tua mocidade; pelo contrário, torna-te padrão dos fiéis, na palavra, no procedimento, no amor, na fé, na pureza.” (I Tm. 4.12).'
-        }
-
-        setText('read-conv-center-title', (data.congress?.title || 'CONGRESSO ORDINÁRIO').toUpperCase())
-        setText('read-conv-center-year', `GESTÃO ${data.congress?.fiscal_year || 2026}`)
-
-        const isPublished = data.convocation?.status === 'enviada'
-        const bannerEl = document.getElementById('read-conv-status-banner')
-        if (bannerEl) {
-          if (isPublished) {
-            const sDate = data.convocation?.sent_at ? new Date(data.convocation.sent_at).toLocaleString('pt-BR') : ''
-            bannerEl.innerHTML = `
-              <div style="background:#f0fdf4; border:1px solid #bbf7d0; color:#166534; border-radius:6px; padding:.5rem .85rem; font-size:.82rem; display:flex; align-items:center; gap:6px;">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                <span><b>Edital Oficial Publicado:</b> Assinado digitalmente pela Diretoria da Federação em ${sDate}.</span>
-              </div>
-            `
-          } else {
-            bannerEl.innerHTML = `
-              <div style="background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af; border-radius:6px; padding:.5rem .85rem; font-size:.82rem; display:flex; align-items:center; gap:6px;">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                <span><b>Prévia do Edital de Convocação:</b> Documento em fase de elaboração pela diretoria da Federação.</span>
-              </div>
-            `
-          }
-        }
-
-        const bodyEl = document.getElementById('read-conv-body-text')
-        const rawContent = data.convocation?.text || data.default_text || '<p>Nenhum texto de convocação cadastrado ainda.</p>'
-        if (bodyEl) bodyEl.innerHTML = rawContent
-
-        // Data e Cidade
-        const meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
-        let dateVal = new Date()
-        if (data.convocation?.date) {
-          const parsed = new Date(data.convocation.date.includes('T') ? data.convocation.date : data.convocation.date + 'T12:00:00')
-          if (!isNaN(parsed.getTime())) dateVal = parsed
-        }
-        const city = (data.convocation?.city || data.convocation_city || '').trim()
-        const datelineText = city
-          ? `${city}, ${dateVal.getDate()} de ${meses[dateVal.getMonth()]} de ${dateVal.getFullYear()}.`
-          : `${dateVal.getDate()} de ${meses[dateVal.getMonth()]} de ${dateVal.getFullYear()}.`
-        setText('read-conv-date-line', datelineText)
-
-        // Assinaturas
-        const secName = data.convocation?.secretary_name || data.signers?.secretario_executivo?.name || 'Secretário(a) Executivo(a)'
-        const presName = data.convocation?.president_name || data.signers?.presidente?.name || 'Presidente da Federação'
-        const fedLabel = data.federation?.name || 'Federação'
-
-        setText('read-conv-sec-name', secName)
-        setText('read-conv-sec-fed', fedLabel)
-        setText('read-conv-pres-name', presName)
-        setText('read-conv-pres-role', `Presidente da ${isUph ? 'Federação de UPHs' : 'Federação de UMPs'}`)
-        setText('read-conv-pres-fed', fedLabel)
-
-        // Link PDF
+        const printableArea = document.getElementById('read-convocation-printable-area')
+        const uploadArea = document.getElementById('read-convocation-upload-area')
         const btnDl = document.getElementById('btn-modal-download-convocation-pdf')
-        if (btnDl) {
-          btnDl.href = `${API_BASE}/api/congresses/${congressId}/convocation/pdf`
+
+        if (isUploadMode) {
+          if (printableArea) printableArea.style.display = 'none'
+          if (uploadArea) uploadArea.style.display = 'block'
+
+          const iframe = document.getElementById('read-conv-pdf-iframe')
+          if (iframe) iframe.src = fileUrl
+
+          const newtabBtn = document.getElementById('btn-read-conv-open-newtab')
+          if (newtabBtn) newtabBtn.href = fileUrl
+
+          const uploadBanner = document.getElementById('read-conv-upload-status-banner')
+          if (uploadBanner) {
+            if (isPublished) {
+              const rawDate = data.convocation?.sent_at || data.convocation_sent_at
+              const sDate = rawDate ? new Date(rawDate).toLocaleString('pt-BR') : ''
+              uploadBanner.innerHTML = `
+                <div style="background:#f0fdf4; border:1px solid #bbf7d0; color:#166534; border-radius:6px; padding:.5rem .85rem; font-size:.82rem; display:flex; align-items:center; gap:6px;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span><b>Edital Oficial Publicado:</b> Documento em PDF expedido e assinado digitalmente em ${sDate}.</span>
+                </div>
+              `
+            } else {
+              uploadBanner.innerHTML = `
+                <div style="background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af; border-radius:6px; padding:.5rem .85rem; font-size:.82rem; display:flex; align-items:center; gap:6px;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                  <span><b>Prévia do Edital de Convocação:</b> Arquivo PDF anexado (em elaboração pela diretoria da Federação).</span>
+                </div>
+              `
+            }
+          }
+
+          if (btnDl) {
+            btnDl.href = fileUrl
+          }
+        } else {
+          if (printableArea) printableArea.style.display = 'block'
+          if (uploadArea) uploadArea.style.display = 'none'
+
+          const logoSrc = isUph ? '/assets/img/logo_parecer_uph.png' : '/assets/img/logo_parecer.png'
+          const logoEl = document.getElementById('read-conv-logo')
+          if (logoEl) logoEl.src = logoSrc
+
+          const setText = (id, val) => {
+            const el = document.getElementById(id)
+            if (el) el.textContent = val
+          }
+
+          setText('read-conv-presbytery-header', (data.federation?.presbytery_name || 'PRESBITÉRIO OESTE DA PARAÍBA').toUpperCase())
+          setText('read-conv-fed-header', (data.federation?.name || (isUph ? 'FEDERAÇÃO DE UPHs' : 'FEDERAÇÃO DE MOCIDADES PRESBITERIANAS')).toUpperCase())
+
+          const verseEl = document.getElementById('read-conv-verse')
+          if (verseEl) {
+            verseEl.textContent = isUph
+              ? '“Vigiai, estai firmes na fé, portai-vos varonilmente, fortalecei-vos. Todas as vossas ações sejam feitas com amor.” (I Co. 16.13-14).'
+              : '“Ninguém despreze a tua mocidade; pelo contrário, torna-te padrão dos fiéis, na palavra, no procedimento, no amor, na fé, na pureza.” (I Tm. 4.12).'
+          }
+
+          setText('read-conv-center-title', (data.congress?.title || 'CONGRESSO ORDINÁRIO').toUpperCase())
+          setText('read-conv-center-year', `GESTÃO ${data.congress?.fiscal_year || 2026}`)
+
+          const bannerEl = document.getElementById('read-conv-status-banner')
+          if (bannerEl) {
+            if (isPublished) {
+              const sDate = data.convocation?.sent_at ? new Date(data.convocation.sent_at).toLocaleString('pt-BR') : ''
+              bannerEl.innerHTML = `
+                <div style="background:#f0fdf4; border:1px solid #bbf7d0; color:#166534; border-radius:6px; padding:.5rem .85rem; font-size:.82rem; display:flex; align-items:center; gap:6px;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span><b>Edital Oficial Publicado:</b> Assinado digitalmente pela Diretoria da Federação em ${sDate}.</span>
+                </div>
+              `
+            } else {
+              bannerEl.innerHTML = `
+                <div style="background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af; border-radius:6px; padding:.5rem .85rem; font-size:.82rem; display:flex; align-items:center; gap:6px;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                  <span><b>Prévia do Edital de Convocação:</b> Documento em fase de elaboração pela diretoria da Federação.</span>
+                </div>
+              `
+            }
+          }
+
+          const bodyEl = document.getElementById('read-conv-body-text')
+          const rawContent = data.convocation?.text || data.default_text || '<p>Nenhum texto de convocação cadastrado ainda.</p>'
+          if (bodyEl) bodyEl.innerHTML = rawContent
+
+          // Data e Cidade
+          const meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
+          let dateVal = new Date()
+          if (data.convocation?.date) {
+            const parsed = new Date(data.convocation.date.includes('T') ? data.convocation.date : data.convocation.date + 'T12:00:00')
+            if (!isNaN(parsed.getTime())) dateVal = parsed
+          }
+          const city = (data.convocation?.city || data.convocation_city || '').trim()
+          const datelineText = city
+            ? `${city}, ${dateVal.getDate()} de ${meses[dateVal.getMonth()]} de ${dateVal.getFullYear()}.`
+            : `${dateVal.getDate()} de ${meses[dateVal.getMonth()]} de ${dateVal.getFullYear()}.`
+          setText('read-conv-date-line', datelineText)
+
+          // Assinaturas
+          const secName = data.convocation?.secretary_name || data.signers?.secretario_executivo?.name || 'Secretário(a) Executivo(a)'
+          const presName = data.convocation?.president_name || data.signers?.presidente?.name || 'Presidente da Federação'
+          const fedLabel = data.federation?.name || 'Federação'
+
+          setText('read-conv-sec-name', secName)
+          setText('read-conv-sec-fed', fedLabel)
+          setText('read-conv-pres-name', presName)
+          setText('read-conv-pres-role', `Presidente da ${isUph ? 'Federação de UPHs' : 'Federação de UMPs'}`)
+          setText('read-conv-pres-fed', fedLabel)
+
+          if (btnDl) {
+            btnDl.href = `${API_BASE}/api/congresses/${congressId}/convocation/pdf`
+          }
         }
 
         openModal('modal-read-convocation')
@@ -3784,6 +3989,20 @@
     }
 
     window.printConvocationDoc = function () {
+      const uploadArea = document.getElementById('read-convocation-upload-area')
+      if (uploadArea && uploadArea.style.display !== 'none') {
+        const iframe = document.getElementById('read-conv-pdf-iframe')
+        if (iframe && iframe.src) {
+          try {
+            iframe.contentWindow.focus()
+            iframe.contentWindow.print()
+            return
+          } catch (e) {
+            window.open(iframe.src, '_blank')
+            return
+          }
+        }
+      }
       window.print()
     }
 
@@ -3853,22 +4072,36 @@
         setText('convocation-cong-title', `Edital de Convocação - ${congTitle}`)
         setText('convocation-badge-year', `Ano ${fiscalYear}`)
 
-        // Editor e Data
+        // Modo da convocação: texto vs upload
+        const cType = data.convocation_type || data.convocation?.type || 'texto'
+        convocationMode = cType
+
+        // Editor e Data (Modo Texto)
         const editor = document.getElementById('convocation-editor')
         if (editor) {
           editor.innerHTML = data.convocation?.text || data.convocation_text || data.default_text || ''
           editor.oninput = () => triggerConvocationAutoSave()
         }
 
+        const dateVal = data.convocation?.date || data.convocation_date || new Date().toISOString().split('T')[0]
+        const cityVal = data.convocation?.city || data.convocation_city || ''
+
         const dateInput = document.getElementById('convocation-date-input')
-        if (dateInput) {
-          dateInput.value = data.convocation?.date || data.convocation_date || new Date().toISOString().split('T')[0]
-        }
+        if (dateInput) dateInput.value = dateVal
 
         const cityInput = document.getElementById('convocation-city-input')
-        if (cityInput) {
-          cityInput.value = data.convocation?.city || data.convocation_city || ''
-        }
+        if (cityInput) cityInput.value = cityVal
+
+        // Campos de Data e Cidade (Modo Upload)
+        const upDateInput = document.getElementById('convocation-upload-date-input')
+        if (upDateInput) upDateInput.value = dateVal
+
+        const upCityInput = document.getElementById('convocation-upload-city-input')
+        if (upCityInput) upCityInput.value = cityVal
+
+        // Ativa o modo correto
+        switchConvocationMode(cType, false)
+        renderConvocationUploadCard(data.convocation_file_url || data.convocation?.file_url)
 
         // Assinaturas na prévia
         const secName = data.convocation?.secretary_name || data.secretary_name || data.signers?.secretario_executivo?.name || 'Secretário(a) Executivo(a)'
@@ -3885,6 +4118,7 @@
         const convStatus = data.convocation?.status || data.convocation_status || 'rascunho'
         const statusBadge = document.getElementById('convocation-badge-status')
         const lastSavedMeta = document.getElementById('convocation-last-saved-meta')
+        const uploadSavedMeta = document.getElementById('convocation-upload-last-saved-meta')
         const saveStatus = document.getElementById('convocation-save-status')
 
         if (convStatus === 'enviada') {
@@ -3895,9 +4129,9 @@
           setText('btn-publish-convocation-label', 'Reenviar / Atualizar Convocação')
           const rawDate = data.convocation?.sent_at || data.convocation_sent_at
           const sDate = rawDate ? new Date(rawDate).toLocaleString('pt-BR') : ''
-          if (lastSavedMeta) {
-            lastSavedMeta.innerHTML = `<span style="color:var(--green-700); font-weight:600;">Publicada e assinada digitalmente em ${sDate}.</span>`
-          }
+          const pubNotice = `<span style="color:var(--green-700); font-weight:600;">Publicada e homologada em ${sDate}.</span>`
+          if (lastSavedMeta) lastSavedMeta.innerHTML = pubNotice
+          if (uploadSavedMeta) uploadSavedMeta.innerHTML = pubNotice
           if (saveStatus) {
             saveStatus.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> <span>Convocação Publicada</span>'
           }
@@ -3908,6 +4142,7 @@
           }
           setText('btn-publish-convocation-label', 'Enviar Convocação Oficial')
           if (lastSavedMeta) lastSavedMeta.textContent = 'Salvamento automático ativado.'
+          if (uploadSavedMeta) uploadSavedMeta.textContent = 'Salvamento automático ativado.'
           if (saveStatus) {
             saveStatus.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> <span>Rascunho Salvo</span>'
           }
@@ -3915,6 +4150,205 @@
       } catch (err) {
         showAlert('Erro ao abrir convocação: ' + (err.message || err))
       }
+    }
+
+    // Alternar entre confeccionar no sistema e fazer upload
+    window.switchConvocationMode = function (mode, autoSave = true) {
+      convocationMode = mode
+      const btnText = document.getElementById('btn-conv-mode-text')
+      const btnUpload = document.getElementById('btn-conv-mode-upload')
+      const containerText = document.getElementById('convocation-mode-text-container')
+      const containerUpload = document.getElementById('convocation-mode-upload-container')
+
+      if (mode === 'texto') {
+        btnText?.classList.add('active')
+        btnUpload?.classList.remove('active')
+        if (containerText) containerText.style.display = 'block'
+        if (containerUpload) containerUpload.style.display = 'none'
+
+        // Sincroniza cidade e data para os campos de texto
+        const uploadCity = document.getElementById('convocation-upload-city-input')?.value
+        const uploadDate = document.getElementById('convocation-upload-date-input')?.value
+        if (uploadCity) {
+          const cityInp = document.getElementById('convocation-city-input')
+          if (cityInp && !cityInp.value) cityInp.value = uploadCity
+        }
+        if (uploadDate) {
+          const dateInp = document.getElementById('convocation-date-input')
+          if (dateInp && !dateInp.value) dateInp.value = uploadDate
+        }
+      } else {
+        btnText?.classList.remove('active')
+        btnUpload?.classList.add('active')
+        if (containerText) containerText.style.display = 'none'
+        if (containerUpload) containerUpload.style.display = 'block'
+
+        // Sincroniza cidade e data para os campos de upload
+        const textCity = document.getElementById('convocation-city-input')?.value
+        const textDate = document.getElementById('convocation-date-input')?.value
+        if (textCity) {
+          const upCityInp = document.getElementById('convocation-upload-city-input')
+          if (upCityInp && !upCityInp.value) upCityInp.value = textCity
+        }
+        if (textDate) {
+          const upDateInp = document.getElementById('convocation-upload-date-input')
+          if (upDateInp && !upDateInp.value) upDateInp.value = textDate
+        }
+
+        const fileUrl = convocationData?.convocation_file_url || convocationData?.convocation?.file_url
+        renderConvocationUploadCard(fileUrl)
+      }
+
+      if (autoSave) {
+        saveConvocationDraft(false)
+      }
+    }
+
+    // ── ROTINAS DE UPLOAD DE PDF PRONTO DA CONVOCAÇÃO ──
+
+    window.handleConvocationDrop = function (e) {
+      e.preventDefault()
+      const dropzone = document.getElementById('conv-upload-dropzone')
+      if (dropzone) {
+        dropzone.style.borderColor = '#93c5fd'
+        dropzone.style.background = '#f8fafc'
+      }
+      const files = e.dataTransfer?.files
+      if (files && files.length > 0) {
+        processConvocationFile(files[0])
+      }
+    }
+
+    window.handleConvocationFileSelect = function (e) {
+      const files = e.target.files
+      if (files && files.length > 0) {
+        processConvocationFile(files[0])
+      }
+    }
+
+    async function processConvocationFile(file) {
+      if (!convocationCongressId) return
+      if (!file.name.toLowerCase().endsWith('.pdf') && file.type !== 'application/pdf') {
+        alert('Apenas arquivos no formato PDF são aceitos.')
+        return
+      }
+      if (file.size > 25 * 1024 * 1024) {
+        alert('O arquivo selecionado excede o limite máximo de 25MB.')
+        return
+      }
+
+      const dropzone = document.getElementById('conv-upload-dropzone')
+      const loading = document.getElementById('conv-upload-loading')
+      const success = document.getElementById('conv-upload-success')
+
+      if (dropzone) dropzone.style.display = 'none'
+      if (success) success.style.display = 'none'
+      if (loading) loading.style.display = 'block'
+
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+
+        const res = await api.upload(`/api/congresses/${convocationCongressId}/convocation/upload`, formData)
+
+        if (convocationData) {
+          convocationData.convocation_type = 'upload'
+          convocationData.convocation_file_url = res.convocation_file_url
+          if (convocationData.convocation) {
+            convocationData.convocation.type = 'upload'
+            convocationData.convocation.file_url = res.convocation_file_url
+          }
+        }
+
+        renderConvocationUploadCard(res.convocation_file_url, file.name)
+        showToast('Arquivo PDF de convocação salvo no bucket com sucesso!')
+      } catch (err) {
+        alert('Erro ao enviar PDF da convocação: ' + (err.message || err))
+        const fileUrl = convocationData?.convocation_file_url || convocationData?.convocation?.file_url
+        renderConvocationUploadCard(fileUrl)
+      } finally {
+        if (loading) loading.style.display = 'none'
+        const fileInp = document.getElementById('convocation-file-input')
+        if (fileInp) fileInp.value = ''
+      }
+    }
+
+    function renderConvocationUploadCard(fileUrl, fileName = null) {
+      const dropzone = document.getElementById('conv-upload-dropzone')
+      const loading = document.getElementById('conv-upload-loading')
+      const success = document.getElementById('conv-upload-success')
+
+      if (loading) loading.style.display = 'none'
+
+      if (fileUrl) {
+        if (dropzone) dropzone.style.display = 'none'
+        if (success) success.style.display = 'block'
+
+        let displayFileName = fileName
+        if (!displayFileName) {
+          try {
+            const cleanPath = fileUrl.split('?')[0]
+            displayFileName = decodeURIComponent(cleanPath.split('/').pop() || 'convocacao.pdf')
+          } catch {
+            displayFileName = 'convocacao.pdf'
+          }
+        }
+
+        const nameEl = document.getElementById('conv-uploaded-filename')
+        if (nameEl) nameEl.textContent = displayFileName
+
+        const frame = document.getElementById('conv-upload-preview-frame')
+        if (frame && frame.src !== fileUrl) frame.src = fileUrl
+
+        const newtab = document.getElementById('conv-uploaded-newtab-btn')
+        if (newtab) newtab.href = fileUrl
+      } else {
+        if (dropzone) dropzone.style.display = 'block'
+        if (success) success.style.display = 'none'
+      }
+    }
+
+    window.openUploadedConvocationPdf = function () {
+      const url = convocationData?.convocation_file_url || convocationData?.convocation?.file_url
+      if (url) {
+        window.open(url, '_blank')
+      } else {
+        alert('Nenhum arquivo PDF carregado.')
+      }
+    }
+
+    window.removeUploadedConvocationPdf = async function () {
+      if (!convocationCongressId) return
+      if (!confirm('Deseja realmente remover este arquivo PDF da convocação? O documento será excluído do bucket Cloud.')) return
+
+      try {
+        await api.delete(`/api/congresses/${convocationCongressId}/convocation/file`)
+        if (convocationData) {
+          convocationData.convocation_file_url = null
+          convocationData.convocation_type = 'texto'
+          if (convocationData.convocation) {
+            convocationData.convocation.file_url = null
+            convocationData.convocation.type = 'texto'
+          }
+        }
+        renderConvocationUploadCard(null)
+        showToast('Arquivo removido do bucket com sucesso!')
+      } catch (err) {
+        alert('Erro ao remover arquivo: ' + (err.message || err))
+      }
+    }
+
+    window.triggerUploadMetaAutoSave = function () {
+      if (convocationAutoSaveTimer) clearTimeout(convocationAutoSaveTimer)
+      const meta = document.getElementById('convocation-upload-last-saved-meta')
+      if (meta) meta.innerHTML = '<span style="color:var(--blue-600)">Digitando... salvamento automático agendado.</span>'
+      convocationAutoSaveTimer = setTimeout(() => {
+        saveConvocationDraft(false)
+      }, 1200)
+    }
+
+    window.triggerUploadMetaSave = function () {
+      saveConvocationDraft(false)
     }
 
     window.triggerConvocationAutoSave = function () {
@@ -3939,21 +4373,54 @@
       if (!convocationCongressId || isConvocationSaving) return
       isConvocationSaving = true
       const meta = document.getElementById('convocation-last-saved-meta')
+      const uploadMeta = document.getElementById('convocation-upload-last-saved-meta')
       const saveStatus = document.getElementById('convocation-save-status')
       if (meta) meta.innerHTML = '<span style="color:var(--blue-600)">Salvando rascunho da convocação...</span>'
+      if (uploadMeta) uploadMeta.innerHTML = '<span style="color:var(--blue-600)">Salvando alterações...</span>'
 
       try {
+        const isUpload = (convocationMode === 'upload')
         const text = document.getElementById('convocation-editor')?.innerHTML || ''
-        const date = document.getElementById('convocation-date-input')?.value || ''
-        const city = document.getElementById('convocation-city-input')?.value || ''
+        const date = (isUpload ? document.getElementById('convocation-upload-date-input')?.value : document.getElementById('convocation-date-input')?.value) || ''
+        const city = (isUpload ? document.getElementById('convocation-upload-city-input')?.value : document.getElementById('convocation-city-input')?.value) || ''
+        const fileUrl = convocationData?.convocation_file_url || convocationData?.convocation?.file_url || null
+
         await api.put(`/api/congresses/${convocationCongressId}/convocation`, {
+          convocation_type: isUpload ? 'upload' : 'texto',
+          convocation_file_url: fileUrl,
           convocation_text: text,
           convocation_date: date,
           convocation_city: city
         })
+
+        if (convocationData) {
+          convocationData.convocation_type = isUpload ? 'upload' : 'texto'
+          convocationData.convocation_file_url = fileUrl
+          if (convocationData.convocation) {
+            convocationData.convocation.type = isUpload ? 'upload' : 'texto'
+            convocationData.convocation.file_url = fileUrl
+          }
+        }
+
+        // Sincroniza campos entre os modos
+        if (isUpload) {
+          const cityInput = document.getElementById('convocation-city-input')
+          if (cityInput) cityInput.value = city
+          const dateInput = document.getElementById('convocation-date-input')
+          if (dateInput) dateInput.value = date
+        } else {
+          const uploadCityInput = document.getElementById('convocation-upload-city-input')
+          if (uploadCityInput) uploadCityInput.value = city
+          const uploadDateInput = document.getElementById('convocation-upload-date-input')
+          if (uploadDateInput) uploadDateInput.value = date
+        }
+
         const nowStr = new Date().toLocaleTimeString('pt-BR')
         if (meta) {
           meta.innerHTML = `<span style="color:var(--slate-600)">Todas as alterações salvas às ${nowStr}.</span>`
+        }
+        if (uploadMeta) {
+          uploadMeta.innerHTML = `<span style="color:var(--slate-600)">Todas as alterações salvas às ${nowStr}.</span>`
         }
         if (saveStatus) {
           saveStatus.className = 'save-status-badge status-saved'
@@ -3966,6 +4433,9 @@
         if (meta) {
           meta.innerHTML = `<span style="color:var(--red-600)">Erro ao salvar rascunho: ${err.message || err}</span>`
         }
+        if (uploadMeta) {
+          uploadMeta.innerHTML = `<span style="color:var(--red-600)">Erro ao salvar rascunho: ${err.message || err}</span>`
+        }
         if (saveStatus) {
           saveStatus.className = 'save-status-badge status-error'
           saveStatus.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> <span>Erro ao Salvar</span>'
@@ -3977,6 +4447,15 @@
 
     window.confirmPublishConvocation = async function () {
       if (!convocationCongressId) return
+
+      if (convocationMode === 'upload') {
+        const fileUrl = convocationData?.convocation_file_url || convocationData?.convocation?.file_url
+        if (!fileUrl) {
+          showCredentialAlert('PDF Obrigatório', 'Faça o upload do arquivo PDF da convocação pronta antes de enviar e publicar oficialmente.')
+          return
+        }
+      }
+
       const isAlreadySent = (convocationData?.convocation?.status === 'enviada') || (convocationData?.convocation_status === 'enviada')
       const promptMsg = isAlreadySent
         ? 'Deseja REENVIAR e atualizar oficialmente o Edital de Convocação deste congresso?\n\nO documento atualizado continuará disponível para todas as sociedades locais.'
@@ -3991,7 +4470,15 @@
 
       try {
         await saveConvocationDraft(false)
-        await api.post(`/api/congresses/${convocationCongressId}/convocation/send`)
+        const isUpload = (convocationMode === 'upload')
+        const payload = {
+          convocation_type: isUpload ? 'upload' : 'texto',
+          convocation_file_url: convocationData?.convocation_file_url || convocationData?.convocation?.file_url || null,
+          convocation_text: document.getElementById('convocation-editor')?.innerHTML || '',
+          convocation_city: (isUpload ? document.getElementById('convocation-upload-city-input')?.value : document.getElementById('convocation-city-input')?.value) || '',
+          convocation_date: (isUpload ? document.getElementById('convocation-upload-date-input')?.value : document.getElementById('convocation-date-input')?.value) || ''
+        }
+        await api.post(`/api/congresses/${convocationCongressId}/convocation/send`, payload)
         showToast('Edital de Convocação publicado oficialmente com sucesso!')
         await openCongressConvocation(convocationCongressId)
         await loadCongresses()
@@ -4007,6 +4494,15 @@
 
     window.openConvocationPdfPreview = function () {
       if (!convocationCongressId) return
+      if (convocationMode === 'upload') {
+        const url = convocationData?.convocation_file_url || convocationData?.convocation?.file_url
+        if (url) {
+          window.open(url, '_blank')
+        } else {
+          showCredentialAlert('PDF Não Encontrado', 'Nenhum arquivo PDF de convocação foi enviado ainda.')
+        }
+        return
+      }
       window.open(`${API_BASE}/api/congresses/${convocationCongressId}/convocation/pdf`, '_blank')
     }
 

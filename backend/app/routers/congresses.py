@@ -8,6 +8,7 @@ from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Form, status, Response
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, func
@@ -41,6 +42,8 @@ router = APIRouter()
 # ── SCHEMAS ──
 
 class ConvocationSavePayload(BaseModel):
+    convocation_type: Optional[str] = "texto"
+    convocation_file_url: Optional[str] = None
     convocation_text: Optional[str] = None
     convocation_date: Optional[date] = None
     convocation_city: Optional[str] = None
@@ -226,7 +229,9 @@ def _serialize_congress(c: Congress, include_commissions: bool = True) -> dict:
         "min_delegates": c.min_delegates if c.min_delegates is not None else 1,
         "max_delegates": c.max_delegates if c.max_delegates is not None else 5,
         "convocation_status": getattr(c, "convocation_status", "rascunho") or "rascunho",
-        "has_convocation": bool(getattr(c, "convocation_text", None)),
+        "convocation_type": getattr(c, "convocation_type", "texto") or "texto",
+        "convocation_file_url": getattr(c, "convocation_file_url", None),
+        "has_convocation": bool(getattr(c, "convocation_text", None) or getattr(c, "convocation_file_url", None)),
         "convocation_date": c.convocation_date.isoformat() if getattr(c, "convocation_date", None) else None,
         "convocation_city": getattr(c, "convocation_city", None),
         "convocation_sent_at": c.convocation_sent_at.isoformat() if getattr(c, "convocation_sent_at", None) else None,
@@ -364,7 +369,9 @@ def get_active_congress_for_local(
             "min_delegates": c.min_delegates or 1,
             "max_delegates": c.max_delegates or 5,
             "convocation_status": getattr(c, "convocation_status", "rascunho") or "rascunho",
-            "has_convocation": bool(getattr(c, "convocation_text", None)),
+            "convocation_type": getattr(c, "convocation_type", "texto") or "texto",
+            "convocation_file_url": getattr(c, "convocation_file_url", None),
+            "has_convocation": bool(getattr(c, "convocation_text", None) or getattr(c, "convocation_file_url", None)),
             "convocation_sent_at": c.convocation_sent_at.isoformat() if getattr(c, "convocation_sent_at", None) else None,
             "credential_status": local_c_cred.status if local_c_cred else "nao_iniciada",
             "delegates_count": len(local_c_cred.delegates) if (local_c_cred and local_c_cred.delegates) else 0
@@ -1375,11 +1382,16 @@ def get_congress_convocation(
     if not text or not text.strip():
         text = _get_default_convocation_text(congress, fed)
 
+    c_type = getattr(congress, "convocation_type", "texto") or "texto"
+    file_url = getattr(congress, "convocation_file_url", None)
+
     return {
         "congress_id": str(congress.id),
         "congress_title": congress.title,
         "fiscal_year": congress.fiscal_year,
         "status": congress.status,
+        "convocation_type": c_type,
+        "convocation_file_url": file_url,
         "convocation_text": text,
         "convocation_status": congress.convocation_status or "rascunho",
         "convocation_date": congress.convocation_date.isoformat() if congress.convocation_date else date.today().isoformat(),
@@ -1395,6 +1407,8 @@ def get_congress_convocation(
             "society_type": society_type
         },
         "convocation": {
+            "type": c_type,
+            "file_url": file_url,
             "text": text,
             "status": congress.convocation_status or "rascunho",
             "date": congress.convocation_date.isoformat() if congress.convocation_date else date.today().isoformat(),
@@ -1435,6 +1449,10 @@ def save_congress_convocation(
     if congress.status == "encerrado":
         raise HTTPException(status_code=400, detail="Este congresso já foi encerrado.")
 
+    if payload.convocation_type is not None:
+        congress.convocation_type = payload.convocation_type
+    if payload.convocation_file_url is not None:
+        congress.convocation_file_url = payload.convocation_file_url
     if payload.convocation_text is not None:
         congress.convocation_text = payload.convocation_text
     if payload.convocation_date is not None:
@@ -1447,7 +1465,101 @@ def save_congress_convocation(
 
     return {
         "message": "Convocação salva com sucesso!",
-        "saved_at": datetime.utcnow().strftime("%H:%M:%S")
+        "saved_at": datetime.utcnow().strftime("%H:%M:%S"),
+        "convocation_type": congress.convocation_type,
+        "convocation_file_url": congress.convocation_file_url
+    }
+
+
+@router.post("/{congress_id}/convocation/upload")
+async def upload_congress_convocation_file(
+    congress_id: UUID,
+    file: UploadFile = File(...),
+    current_user: User = Depends(require_federation),
+    db: Session = Depends(get_db)
+):
+    """Faz o upload de um PDF pronto de convocação para o bucket Cloudflare R2 / S3."""
+    congress = db.query(Congress).filter(
+        Congress.id == congress_id,
+        Congress.federation_id == current_user.organization_id
+    ).first()
+    if not congress:
+        raise HTTPException(status_code=404, detail="Congresso não encontrado.")
+
+    if congress.status == "encerrado":
+        raise HTTPException(status_code=400, detail="Este congresso já foi encerrado.")
+
+    filename_lower = (file.filename or "").lower()
+    if not filename_lower.endswith(".pdf") and file.content_type != "application/pdf":
+        raise HTTPException(status_code=400, detail="Apenas arquivos no formato PDF são aceitos.")
+
+    content = await file.read()
+    if len(content) > 25 * 1024 * 1024:  # 25 MB max
+        raise HTTPException(status_code=400, detail="Arquivo muito grande. O limite máximo é 25MB.")
+
+    clean_filename = re.sub(r'[^a-zA-Z0-9_.-]', '_', file.filename or "convocacao.pdf")
+    unique_prefix = secrets.token_hex(4)
+    key = f"congresses/{congress.id}/convocation/{unique_prefix}_{clean_filename}"
+
+    uploaded_url = upload_file(content, key, "application/pdf")
+    clean_url = uploaded_url.split('?')[0].strip()
+
+    # Se havia arquivo anterior salvo, remove do bucket
+    if congress.convocation_file_url and congress.convocation_file_url != clean_url:
+        try:
+            old_key = extract_key_from_url(congress.convocation_file_url)
+            if old_key:
+                delete_file(old_key)
+        except Exception as e:
+            logger.warning(f"Erro ao remover arquivo anterior de convocação: {e}")
+
+    congress.convocation_type = "upload"
+    congress.convocation_file_url = clean_url
+    db.commit()
+    db.refresh(congress)
+
+    return {
+        "message": "Arquivo PDF de convocação salvo no bucket com sucesso!",
+        "convocation_type": "upload",
+        "convocation_file_url": clean_url,
+        "filename": file.filename
+    }
+
+
+@router.delete("/{congress_id}/convocation/file")
+def delete_congress_convocation_file(
+    congress_id: UUID,
+    current_user: User = Depends(require_federation),
+    db: Session = Depends(get_db)
+):
+    """Remove o arquivo PDF de convocação do bucket e redefine para 'texto'."""
+    congress = db.query(Congress).filter(
+        Congress.id == congress_id,
+        Congress.federation_id == current_user.organization_id
+    ).first()
+    if not congress:
+        raise HTTPException(status_code=404, detail="Congresso não encontrado.")
+
+    if congress.status == "encerrado":
+        raise HTTPException(status_code=400, detail="Este congresso já foi encerrado.")
+
+    if congress.convocation_file_url:
+        try:
+            old_key = extract_key_from_url(congress.convocation_file_url)
+            if old_key:
+                delete_file(old_key)
+        except Exception as e:
+            logger.warning(f"Erro ao deletar arquivo de convocação: {e}")
+
+    congress.convocation_file_url = None
+    congress.convocation_type = "texto"
+    db.commit()
+    db.refresh(congress)
+
+    return {
+        "message": "Arquivo PDF removido com sucesso.",
+        "convocation_type": "texto",
+        "convocation_file_url": None
     }
 
 
@@ -1471,15 +1583,29 @@ def send_congress_convocation(
 
     live_pres, live_sec = _get_federation_signers(congress.federation_id, congress.fiscal_year, db)
 
-    if payload and payload.convocation_text is not None and payload.convocation_text.strip():
-        congress.convocation_text = payload.convocation_text
-    elif not congress.convocation_text:
-        fed = db.query(Federation).filter(Federation.id == congress.federation_id).first()
-        congress.convocation_text = _get_default_convocation_text(congress, fed)
+    if payload:
+        if payload.convocation_type is not None:
+            congress.convocation_type = payload.convocation_type
+        if payload.convocation_file_url is not None:
+            congress.convocation_file_url = payload.convocation_file_url
+        if payload.convocation_text is not None and payload.convocation_text.strip():
+            congress.convocation_text = payload.convocation_text
+        if payload.convocation_city is not None:
+            congress.convocation_city = payload.convocation_city
+        if payload.convocation_date is not None:
+            congress.convocation_date = payload.convocation_date
+
+    # Validação do tipo de convocação
+    c_type = getattr(congress, "convocation_type", "texto") or "texto"
+    if c_type == "upload":
+        if not congress.convocation_file_url:
+            raise HTTPException(status_code=400, detail="Nenhum arquivo PDF de convocação foi enviado ainda. Faça o upload antes de enviar.")
+    else:
+        if not congress.convocation_text:
+            fed = db.query(Federation).filter(Federation.id == congress.federation_id).first()
+            congress.convocation_text = _get_default_convocation_text(congress, fed)
 
     congress.convocation_date = (payload.convocation_date if payload else None) or congress.convocation_date or date.today()
-    if payload and payload.convocation_city is not None:
-        congress.convocation_city = payload.convocation_city
     congress.convocation_president_name = live_pres
     congress.convocation_secretary_name = live_sec
     congress.convocation_sent_at = datetime.utcnow()
@@ -1491,6 +1617,8 @@ def send_congress_convocation(
     return {
         "message": "Convocação enviada e publicada oficialmente com sucesso!",
         "convocation_status": congress.convocation_status,
+        "convocation_type": congress.convocation_type,
+        "convocation_file_url": congress.convocation_file_url,
         "president_name": congress.convocation_president_name,
         "secretary_name": congress.convocation_secretary_name,
         "sent_at": congress.convocation_sent_at.isoformat()
@@ -1502,10 +1630,14 @@ def get_congress_convocation_pdf(
     congress_id: UUID,
     db: Session = Depends(get_db)
 ):
-    """Gera e retorna o PDF oficial da Convocação do Congresso."""
+    """Gera e retorna o PDF oficial da Convocação do Congresso (ou redireciona para o PDF enviado)."""
     congress = db.query(Congress).filter(Congress.id == congress_id).first()
     if not congress:
         raise HTTPException(status_code=404, detail="Congresso não encontrado.")
+
+    # Se a convocação for via upload de PDF pronto, redireciona para o arquivo no bucket
+    if getattr(congress, "convocation_type", "texto") == "upload" and congress.convocation_file_url:
+        return RedirectResponse(url=congress.convocation_file_url, status_code=status.HTTP_307_TEMPORARY_REDIRECT)
 
     fed = db.query(Federation).filter(Federation.id == congress.federation_id).first()
     society_type = fed.society_type if (fed and getattr(fed, "society_type", None)) else "UMP"

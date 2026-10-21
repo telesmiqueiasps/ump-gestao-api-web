@@ -50,6 +50,8 @@ try:
         conn.execute(text("ALTER TABLE congress_commissions ADD COLUMN IF NOT EXISTS approved_by UUID;"))
         conn.execute(text("ALTER TABLE congresses ADD COLUMN IF NOT EXISTS min_delegates INTEGER DEFAULT 1;"))
         conn.execute(text("ALTER TABLE congresses ADD COLUMN IF NOT EXISTS max_delegates INTEGER DEFAULT 5;"))
+        conn.execute(text("ALTER TABLE congresses ADD COLUMN IF NOT EXISTS convocation_type VARCHAR(30) DEFAULT 'texto';"))
+        conn.execute(text("ALTER TABLE congresses ADD COLUMN IF NOT EXISTS convocation_file_url TEXT;"))
         conn.execute(text("ALTER TABLE congresses ADD COLUMN IF NOT EXISTS convocation_text TEXT;"))
         conn.execute(text("ALTER TABLE congresses ADD COLUMN IF NOT EXISTS convocation_status VARCHAR(30) DEFAULT 'rascunho';"))
         conn.execute(text("ALTER TABLE congresses ADD COLUMN IF NOT EXISTS convocation_date DATE;"))
