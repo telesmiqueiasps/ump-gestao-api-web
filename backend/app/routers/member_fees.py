@@ -52,10 +52,31 @@ def _delete_receipt_from_b2(receipt_url, settings_obj):
         delete_folder(folder)
 
 
-def _delete_linked_transaction(db, transaction_id, settings_obj):
+def _validate_transaction_deletable(db, transaction_id):
+    if not transaction_id:
+        return None
     tx = db.query(FinancialTransaction).filter(
         FinancialTransaction.id == transaction_id
     ).first()
+    if tx:
+        period = db.query(FinancialPeriod).filter(
+            FinancialPeriod.id == tx.period_id
+        ).first()
+        if period and period.is_locked:
+            raise HTTPException(status_code=400, detail="Período bloqueado — relatório assinado pendente.")
+        if period and period.is_closed:
+            raise HTTPException(status_code=400, detail="Período encerrado definitivamente — lançamento não pode ser excluído")
+        if period and getattr(period, 'is_congress_closed', False) and period.congress_cutoff_date:
+            if tx.transaction_date <= period.congress_cutoff_date:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Este lançamento já foi auditado e encerrado para o Congresso e não pode ser excluído."
+                )
+    return tx
+
+
+def _delete_linked_transaction(db, transaction_id, settings_obj):
+    tx = _validate_transaction_deletable(db, transaction_id)
     if tx:
         _delete_receipt_from_b2(tx.receipt_url, settings_obj)
         db.delete(tx)
@@ -127,6 +148,7 @@ def list_monthly_fees(
     if not member:
         raise HTTPException(status_code=404, detail="Sócio não encontrado")
 
+    settings_obj = get_settings()
     months = []
     labels = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho",
               "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"]
@@ -136,6 +158,23 @@ def list_monthly_fees(
             MemberMonthlyFee.member_id == member_id,
             MemberMonthlyFee.reference_month == ref,
         ).first()
+
+        # Se houver registro residual órfão (não pago ou sem lançamento financeiro existente), limpa da base
+        if fee:
+            tx = db.query(FinancialTransaction).filter(
+                FinancialTransaction.id == fee.transaction_id
+            ).first() if fee.transaction_id else None
+
+            if not fee.is_paid or not tx:
+                if fee.receipt_url:
+                    try:
+                        _delete_receipt_from_b2(fee.receipt_url, settings_obj)
+                    except Exception:
+                        pass
+                db.delete(fee)
+                db.commit()
+                fee = None
+
         months.append({
             "month_num": m,
             "month_label": labels[m - 1],
@@ -163,12 +202,27 @@ def register_monthly_fee(
     if not member:
         raise HTTPException(status_code=404, detail="Sócio não encontrado")
 
+    settings_obj = get_settings()
     existing = db.query(MemberMonthlyFee).filter(
         MemberMonthlyFee.member_id == payload.member_id,
         MemberMonthlyFee.reference_month == payload.reference_month,
     ).first()
     if existing:
-        raise HTTPException(status_code=400, detail="Mensalidade já registrada para este mês")
+        tx = db.query(FinancialTransaction).filter(
+            FinancialTransaction.id == existing.transaction_id
+        ).first() if existing.transaction_id else None
+
+        if existing.is_paid and tx:
+            raise HTTPException(status_code=400, detail="Mensalidade já registrada para este mês")
+        else:
+            # Registro órfão / residual de lançamento anterior excluído: remove para permitir novo registro
+            if existing.receipt_url:
+                try:
+                    _delete_receipt_from_b2(existing.receipt_url, settings_obj)
+                except Exception:
+                    pass
+            db.delete(existing)
+            db.flush()
 
     year = payload.paid_at.year
     period = _get_period(db, current_user.organization_id, year)
@@ -269,30 +323,38 @@ def delete_monthly_fee(
     receipt_url   = fee.receipt_url
     transaction_id = fee.transaction_id
 
-    # 1. Deleta o fee primeiro
+    # Busca a transação vinculada e valida se o período permite exclusão
+    tx = _validate_transaction_deletable(db, transaction_id)
+    if not tx:
+        member = db.query(Member).filter(Member.id == fee.member_id).first()
+        if member:
+            expected_desc = f"Mensalidade {member.full_name} - {fee.reference_month.strftime('%m/%Y')}"
+            fallback_tx = db.query(FinancialTransaction).filter(
+                FinancialTransaction.organization_id == current_user.organization_id,
+                FinancialTransaction.description == expected_desc,
+            ).first()
+            if fallback_tx:
+                tx = _validate_transaction_deletable(db, fallback_tx.id)
+
+    # 1. Deleta o fee primeiro para respeitar a chave estrangeira
     db.delete(fee)
     db.flush()
 
     # 2. Deleta a transação vinculada (se houver)
-    if transaction_id:
-        tx = db.query(FinancialTransaction).filter(
-            FinancialTransaction.id == transaction_id
-        ).first()
-        if tx:
-            tx_receipt = tx.receipt_url
-            db.delete(tx)
-            db.flush()
-            # Remove comprovante da transação do B2 (fora do commit)
-            try:
-                _delete_receipt_from_b2(tx_receipt, settings_obj)
-            except Exception as e:
-                print(f"Erro ao deletar comprovante da transação do B2: {e}")
+    if tx:
+        tx_receipt = tx.receipt_url
+        db.delete(tx)
+        db.flush()
+        # Remove comprovante da transação do B2 (fora do commit)
+        try:
+            _delete_receipt_from_b2(tx_receipt, settings_obj)
+        except Exception as e:
+            print(f"Erro ao deletar comprovante da transação do B2: {e}")
 
     # 3. Commit de tudo junto
     db.commit()
 
     # 4. Remove comprovante do fee do B2 APÓS commit
-    # (B2 fora da transação do banco para não causar rollback)
     try:
         _delete_receipt_from_b2(receipt_url, settings_obj)
     except Exception as e:
@@ -327,12 +389,29 @@ def list_aci_contributions(
     local = db.query(LocalUmp).filter(LocalUmp.id == current_user.organization_id).first()
     aci_year_value = float(local.aci_year_value or 0)
 
+    settings_obj = get_settings()
     contributions = db.query(MemberAciContribution).filter(
         MemberAciContribution.member_id == member_id,
         MemberAciContribution.fiscal_year == year,
     ).order_by(MemberAciContribution.payment_date).all()
 
-    total_paid = sum(float(c.amount) for c in contributions)
+    valid_contributions = []
+    for c in contributions:
+        tx = db.query(FinancialTransaction).filter(
+            FinancialTransaction.id == c.transaction_id
+        ).first() if c.transaction_id else None
+        if c.transaction_id and not tx:
+            if c.receipt_url:
+                try:
+                    _delete_receipt_from_b2(c.receipt_url, settings_obj)
+                except Exception:
+                    pass
+            db.delete(c)
+            db.commit()
+        else:
+            valid_contributions.append(c)
+
+    total_paid = sum(float(c.amount) for c in valid_contributions)
     remaining = max(0, aci_year_value - total_paid)
     progress = (total_paid / aci_year_value * 100) if aci_year_value > 0 else 0
 
@@ -351,7 +430,7 @@ def list_aci_contributions(
                 "receipt_url": c.receipt_url,
                 "transaction_id": str(c.transaction_id) if c.transaction_id else None,
             }
-            for c in contributions
+            for c in valid_contributions
         ]
     }
 
@@ -465,14 +544,27 @@ def delete_aci_contribution(
     receipt_url = contribution.receipt_url
     transaction_id = contribution.transaction_id
 
+    # Valida período antes de deletar a contribuição
+    tx = _validate_transaction_deletable(db, transaction_id)
+
     db.delete(contribution)
     db.flush()
 
-    _delete_receipt_from_b2(receipt_url, settings_obj)
-    if transaction_id:
-        _delete_linked_transaction(db, transaction_id, settings_obj)
+    if tx:
+        tx_receipt = tx.receipt_url
+        db.delete(tx)
+        db.flush()
+        try:
+            _delete_receipt_from_b2(tx_receipt, settings_obj)
+        except Exception as e:
+            print(f"Erro ao deletar comprovante da transação do B2: {e}")
 
     db.commit()
+
+    try:
+        _delete_receipt_from_b2(receipt_url, settings_obj)
+    except Exception as e:
+        print(f"Erro ao deletar comprovante da contribuição do B2: {e}")
 
 
 # ── Resumo ACI da local (dashboard) ──────────────────────────

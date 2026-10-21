@@ -487,6 +487,38 @@
                 </div>
               </div>
 
+              <!-- 3º Escrutínio Candidates and Decline Controls -->
+              <div id="round-3-candidates-panel" class="hidden"
+                style="background: #f8fafc; border: 1.5px solid var(--slate-200); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.5rem;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.65rem; flex-wrap: wrap; gap: .5rem;">
+                  <div style="display: flex; align-items: center; gap: .5rem;">
+                    <div style="width: 28px; height: 28px; border-radius: 6px; background: var(--blue-100); color: var(--blue-700); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    </div>
+                    <div>
+                      <strong style="color: var(--slate-800); font-size: 0.95rem;">Candidatos do 3º Escrutínio</strong>
+                      <span style="font-size: 0.75rem; color: var(--slate-500); margin-left: 0.4rem;">(Maioria Simples)</span>
+                    </div>
+                  </div>
+                  <span class="badge" style="background: #e0e7ff; color: #4338ca; font-weight: 600; font-size: 0.72rem; padding: 3px 8px; border-radius: 12px;">Top 2 Classificados</span>
+                </div>
+                <p style="font-size: 0.8rem; color: var(--slate-600); margin-bottom: 1rem; line-height: 1.45;">
+                  Estes são os candidatos que disputam esta rodada. Caso algum candidato <strong>decline de concorrer</strong> em plenário, clique em <em>Declinar</em> para retirá-lo da votação e promover automaticamente o próximo mais votado do 2º escrutínio.
+                </p>
+                <div id="round-3-candidates-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.75rem;">
+                  <!-- Injected via loadRealtimeStatus -->
+                </div>
+                <div id="round-3-declined-box" class="hidden" style="margin-top: 0.85rem; padding-top: 0.85rem; border-top: 1px dashed var(--slate-250);">
+                  <div style="font-size: 0.75rem; font-weight: 700; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 4px;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                    <span>Candidatos que declinaram deste cargo:</span>
+                  </div>
+                  <div id="round-3-declined-list" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                    <!-- Injected via loadRealtimeStatus -->
+                  </div>
+                </div>
+              </div>
+
               <div
                 style="border-top: 1.5px solid var(--slate-200); padding-top: 1.5rem; text-align: right; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .75rem;">
                 <button class="btn btn-danger btn-secondary" id="btn-cancel-election-active">Cancelar Eleição</button>
@@ -1030,6 +1062,53 @@
             closeBtn.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.25)'
           }
 
+          // Render Round 3 Candidates Panel if in Round 3
+          const r3Panel = document.getElementById('round-3-candidates-panel')
+          if (r3Panel) {
+            if (stats.current_round === 3) {
+              r3Panel.classList.remove('hidden')
+              const grid = document.getElementById('round-3-candidates-grid')
+              const candidates = stats.current_round_candidates || []
+              if (!candidates.length) {
+                grid.innerHTML = '<p class="text-slate-400 text-sm" style="grid-column: 1/-1;">Carregando candidatos...</p>'
+              } else {
+                grid.innerHTML = candidates.map(c => `
+                  <div style="display: flex; align-items: center; justify-content: space-between; background: #fff; border: 1.5px solid var(--slate-200); border-radius: var(--radius-md); padding: 0.75rem 0.9rem; gap: 0.65rem;">
+                    <div style="display: flex; align-items: center; gap: 0.6rem; min-width: 0; flex: 1;">
+                      ${avatarHtml(c.full_name, 34, '.8rem', c.avatar_url)}
+                      <div style="min-width: 0;">
+                        <div style="font-weight: 600; font-size: 0.88rem; color: var(--slate-850); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${c.full_name}">${c.full_name}</div>
+                        <span class="badge" style="background: var(--blue-50); color: var(--blue-700); font-size: 0.7rem; padding: 1px 6px; border-radius: 4px; font-weight: 600;">Em Disputa</span>
+                      </div>
+                    </div>
+                    <button class="btn btn-ghost danger btn-sm" style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; font-size: 0.73rem; flex-shrink: 0;" onclick="declineInRound3('${c.id}', '${c.full_name.replace(/'/g, "\\'")}')" title="Declinar candidatura">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                      <span>Declinar</span>
+                    </button>
+                  </div>
+                `).join('')
+              }
+
+              const declinedBox = document.getElementById('round-3-declined-box')
+              const declinedList = document.getElementById('round-3-declined-list')
+              const declined = stats.declined_candidates || []
+              if (declined.length > 0) {
+                declinedBox.classList.remove('hidden')
+                declinedList.innerHTML = declined.map(d => `
+                  <div style="display: inline-flex; align-items: center; gap: 0.45rem; background: #fff; border: 1px solid #fecaca; border-radius: 20px; padding: 3px 10px 3px 5px; font-size: 0.78rem; color: #b91c1c;">
+                    ${avatarHtml(d.full_name, 22, '.65rem', d.avatar_url)}
+                    <span style="font-weight: 500;">${d.full_name}</span>
+                    <button class="btn btn-ghost btn-sm" style="padding: 0 4px; height: auto; min-height: 0; color: var(--blue-600); font-size: 0.75rem; text-decoration: underline;" onclick="undeclineInRound3('${d.id}')">Reativar</button>
+                  </div>
+                `).join('')
+              } else {
+                declinedBox.classList.add('hidden')
+              }
+            } else {
+              r3Panel.classList.add('hidden')
+            }
+          }
+
           // Construct voting URL
           const votingUrl = `${window.location.origin}/votar.html?session=${stats.session_id}`
           document.getElementById('voting-url-text').textContent = votingUrl
@@ -1123,15 +1202,40 @@
 
       function showActiveResultsModal(res) {
         // Show Results Modal
-        document.getElementById('results-step-label').textContent = `${ROLE_LABELS[activeSession.current_role] || activeSession.current_role} — ${activeSession.current_round}º Escrutínio`
+        const currentRole = res.current_role || (activeSession && activeSession.current_role)
+        const currentRound = res.current_round || (activeSession && activeSession.current_round)
+        const roleLabel = ROLE_LABELS[currentRole] || currentRole
+
+        document.getElementById('results-step-label').textContent = `${roleLabel} — ${currentRound}º Escrutínio`
         document.getElementById('results-total-label').textContent = `Total de votos: ${res.total_votes}`
+
+        const isRound2Pending = (currentRound === 2 && !res.elected)
+
+        // Informative alert for 2nd round when preparing for 3rd round
+        const resultsAlert = document.getElementById('results-alert')
+        if (isRound2Pending) {
+          resultsAlert.className = 'alert alert-info mb-3'
+          resultsAlert.innerHTML = `
+            <div style="display: flex; align-items: flex-start; gap: .6rem; font-size: .84rem; line-height: 1.45;">
+              <div style="color: var(--blue-700); flex-shrink: 0; margin-top: 2px;">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              </div>
+              <div>
+                <strong>3º Escrutínio (Maioria Simples):</strong> Os 2 candidatos mais votados disputam a próxima rodada. Caso algum candidato decida <strong>declinar</strong> em plenário, clique no botão <em>Declinar</em> para incluir automaticamente o próximo na sequência mais votada.
+              </div>
+            </div>
+          `
+          resultsAlert.classList.remove('hidden')
+        } else {
+          clearAlert('results-alert')
+        }
 
         // Injected bars
         const barsContainer = document.getElementById('results-bars-container')
         if (!res.results.length) {
           barsContainer.innerHTML = '<p class="text-slate-400 text-center py-3">Nenhum voto foi computado.</p>'
         } else {
-          barsContainer.innerHTML = res.results.map(r => {
+          let barsHtml = res.results.map(r => {
             const pct = res.total_votes > 0 ? Math.round((r.votes / res.total_votes) * 100) : 0
             const avatar = r.candidate_id === 'blank'
               ? `<div style="width:30px;height:30px;border-radius:50%;background:var(--slate-200);display:flex;align-items:center;justify-content:center;color:var(--slate-500);flex-shrink:0;">
@@ -1139,21 +1243,81 @@
                  </div>`
               : avatarHtml(r.name, 30, '.75rem', r.avatar_url)
 
+            let declineActionHtml = ''
+            if (isRound2Pending && r.candidate_id !== 'blank') {
+              if (r.is_declined) {
+                declineActionHtml = `
+                  <div style="display: flex; align-items: center; gap: .35rem;">
+                    <span style="display: inline-flex; align-items: center; gap: 3px; background: #fee2e2; color: #b91c1c; font-size: 0.7rem; font-weight: 600; padding: 2px 7px; border-radius: 10px;">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                      Declinou
+                    </span>
+                    <button class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 0.72rem; min-height: 0; height: auto;" onclick="toggleDeclineCandidate('${r.candidate_id}', false)" title="Reativar candidato">Reativar</button>
+                  </div>
+                `
+              } else if (r.will_advance_round_3) {
+                declineActionHtml = `
+                  <div style="display: flex; align-items: center; gap: .35rem;">
+                    <span style="display: inline-flex; align-items: center; gap: 3px; background: #dbeafe; color: #1d4ed8; font-size: 0.7rem; font-weight: 600; padding: 2px 7px; border-radius: 10px;">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                      3º Escrutínio
+                    </span>
+                    <button class="btn btn-ghost danger btn-sm" style="padding: 2px 8px; font-size: 0.72rem; min-height: 0; height: auto; display: inline-flex; align-items: center; gap: 3px;" onclick="toggleDeclineCandidate('${r.candidate_id}', true)" title="Declinar candidatura">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                      Declinar
+                    </button>
+                  </div>
+                `
+              } else {
+                declineActionHtml = `
+                  <div style="display: flex; align-items: center; gap: .35rem;">
+                    <button class="btn btn-ghost btn-sm" style="padding: 2px 8px; font-size: 0.72rem; min-height: 0; height: auto; color: var(--slate-500); display: inline-flex; align-items: center; gap: 3px;" onclick="toggleDeclineCandidate('${r.candidate_id}', true)" title="Declinar se não tiver intenção de concorrer">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                      Declinar
+                    </button>
+                  </div>
+                `
+              }
+            }
+
             return `
-            <div class="result-bar-container">
+            <div class="result-bar-container" style="${r.is_declined ? 'opacity: 0.6; background: #fff5f5;' : ''}">
               <div class="result-bar-header" style="align-items: center; gap: .5rem;">
-                <div style="display: flex; align-items: center; gap: .5rem; min-width: 0;">
+                <div style="display: flex; align-items: center; gap: .5rem; min-width: 0; flex: 1;">
                   ${avatar}
-                  <span style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${r.name}</span>
+                  <span style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; ${r.is_declined ? 'text-decoration: line-through; color: var(--slate-500);' : ''}">${r.name}</span>
                 </div>
-                <span style="flex-shrink: 0;">${r.votes} voto${r.votes !== 1 ? 's' : ''} (${pct}%)</span>
+                <div style="display: flex; align-items: center; gap: .6rem; flex-shrink: 0;">
+                  <span>${r.votes} voto${r.votes !== 1 ? 's' : ''} (${pct}%)</span>
+                  ${declineActionHtml}
+                </div>
               </div>
               <div class="result-bar-bg" style="margin-top: .35rem;">
-                <div class="result-bar-fill" style="width: ${pct}%"></div>
+                <div class="result-bar-fill" style="width: ${pct}%; ${r.is_declined ? 'background: #fca5a5;' : ''}"></div>
               </div>
             </div>
           `
           }).join('')
+
+          if (isRound2Pending) {
+            const advancingNames = (res.round_3_candidates || []).map(c => c.name || c.full_name)
+            barsHtml += `
+              <div style="background: var(--blue-50); border: 1.5px solid var(--blue-200); border-radius: var(--radius-md); padding: 0.85rem 1rem; margin-top: 1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .6rem;">
+                <div>
+                  <div style="font-size: 0.73rem; text-transform: uppercase; font-weight: 700; color: var(--blue-800); letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    Classificados para o 3º Escrutínio:
+                  </div>
+                  <div style="font-weight: 700; font-size: 0.95rem; color: var(--blue-950); margin-top: 3px;">
+                    ${advancingNames.length ? advancingNames.join(' <span style="color:var(--slate-400);font-weight:400;margin:0 4px">e</span> ') : 'Nenhum candidato apto'}
+                  </div>
+                </div>
+                <span class="badge" style="background: #fff; border: 1px solid var(--blue-200); color: var(--blue-700); font-weight: 700; font-size: 0.75rem; padding: 4px 10px; border-radius: 12px;">2 Vagas</span>
+              </div>
+            `
+          }
+
+          barsContainer.innerHTML = barsHtml
         }
 
         // Success / Progress Message
@@ -1398,6 +1562,41 @@
           loadScreen()
         } catch (err) {
           alert('Erro ao remover eleitor: ' + err.message)
+        }
+      }
+
+      window.toggleDeclineCandidate = async (candidateId, shouldDecline) => {
+        try {
+          const endpoint = shouldDecline ? '/api/elections/active/decline-candidate' : '/api/elections/active/undecline-candidate'
+          await api.post(endpoint, { member_id: candidateId })
+          const updatedRes = await api.get('/api/elections/active/results')
+          showActiveResultsModal(updatedRes)
+        } catch (err) {
+          alert('Erro ao atualizar candidatura: ' + err.message)
+        }
+      }
+
+      window.declineInRound3 = async (candidateId, name) => {
+        if (!confirm(`Atenção: Tem certeza de que o candidato "${name}" declinou da disputa no 3º escrutínio?\n\nEle será retirado da votação e o próximo candidato mais votado do 2º escrutínio assumirá a vaga automaticamente.\n\nCaso a votação da rodada já esteja em andamento, os votos desta rodada serão zerados para que todos votem na nova composição.`)) {
+          return
+        }
+
+        try {
+          await api.post('/api/elections/active/decline-candidate', { member_id: candidateId })
+          await loadRealtimeStatus()
+          showAlert('page-alert', `Candidatura de "${name}" declinada com sucesso. A nova composição já está ativa!`, 'success')
+        } catch (err) {
+          alert('Erro ao declinar candidato: ' + err.message)
+        }
+      }
+
+      window.undeclineInRound3 = async (candidateId) => {
+        try {
+          await api.post('/api/elections/active/undecline-candidate', { member_id: candidateId })
+          await loadRealtimeStatus()
+          showAlert('page-alert', 'Declínio desfeito com sucesso.', 'success')
+        } catch (err) {
+          alert('Erro ao reativar candidato: ' + err.message)
         }
       }
 

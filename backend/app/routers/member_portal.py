@@ -167,10 +167,10 @@ def get_member_fees(
             "month": month_num,
             "month_name": MONTH_NAMES[month_num - 1],
             "reference_month": ref_date.isoformat(),
-            "is_paid": fee.is_paid if fee else False,
+            "is_paid": bool(fee.is_paid and fee.transaction_id) if fee else False,
             "amount": float(fee.amount) if fee else None,
             "paid_at": fee.paid_at.isoformat() if fee and fee.paid_at else None,
-            "has_record": fee is not None,
+            "has_record": bool(fee is not None and fee.is_paid and fee.transaction_id),
         })
     return result
 

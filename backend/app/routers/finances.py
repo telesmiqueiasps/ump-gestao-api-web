@@ -196,6 +196,18 @@ async def upload_receipt(
     key = f"receipts/{current_user.organization_id}/{transaction_id}/{file.filename}"
     url = upload_file(contents, key, file.content_type)
     transaction.receipt_url = url
+
+    try:
+        from app.models.member_fees import MemberMonthlyFee, MemberAciContribution
+        db.query(MemberMonthlyFee).filter(
+            MemberMonthlyFee.transaction_id == transaction_id
+        ).update({"receipt_url": url}, synchronize_session=False)
+        db.query(MemberAciContribution).filter(
+            MemberAciContribution.transaction_id == transaction_id
+        ).update({"receipt_url": url}, synchronize_session=False)
+    except Exception:
+        pass
+
     db.commit()
     db.refresh(transaction)
     return _transaction_out(transaction)
@@ -312,6 +324,26 @@ def update_transaction(
 
     for field, value in payload.model_dump(exclude_none=True).items():
         setattr(transaction, field, value)
+
+    try:
+        from app.models.member_fees import MemberMonthlyFee, MemberAciContribution
+        if payload.amount is not None:
+            db.query(MemberMonthlyFee).filter(
+                MemberMonthlyFee.transaction_id == transaction_id
+            ).update({"amount": payload.amount}, synchronize_session=False)
+            db.query(MemberAciContribution).filter(
+                MemberAciContribution.transaction_id == transaction_id
+            ).update({"amount": payload.amount}, synchronize_session=False)
+        if payload.transaction_date is not None:
+            db.query(MemberMonthlyFee).filter(
+                MemberMonthlyFee.transaction_id == transaction_id
+            ).update({"paid_at": payload.transaction_date}, synchronize_session=False)
+            db.query(MemberAciContribution).filter(
+                MemberAciContribution.transaction_id == transaction_id
+            ).update({"payment_date": payload.transaction_date}, synchronize_session=False)
+    except Exception:
+        pass
+
     db.commit()
     db.refresh(transaction)
     return _transaction_out(transaction)
@@ -353,14 +385,43 @@ def delete_transaction(
     # Captura receipt_url antes de deletar
     receipt_url = str(transaction.receipt_url) if transaction.receipt_url else None
 
-    # Nulifica referências em member_monthly_fees se existir
+    # Exclui mensalidades e ACI vinculadas antes de deletar o lançamento
     try:
         from app.models.member_fees import MemberMonthlyFee, MemberAciContribution
 
-        # Mensalidades — nulifica referência e marca como não paga
-        db.query(MemberMonthlyFee).filter(
+        # Mensalidades — exclui a mensalidade vinculada e comprovante
+        monthly_fees = db.query(MemberMonthlyFee).filter(
             MemberMonthlyFee.transaction_id == transaction_id
-        ).update({"transaction_id": None, "is_paid": False, "paid_at": None}, synchronize_session=False)
+        ).all()
+
+        # Fallback caso a mensalidade tenha perdido o ID de vínculo anteriormente
+        if not monthly_fees and transaction.description and transaction.description.startswith("Mensalidade "):
+            match_desc = re.search(r'Mensalidade\s+(.+)\s+-\s+(\d{2})/(\d{4})', transaction.description)
+            if match_desc:
+                member_name = match_desc.group(1).strip()
+                month = int(match_desc.group(2))
+                ref_year = int(match_desc.group(3))
+                ref_date = datetime.date(ref_year, month, 1)
+                from app.models.member import Member
+                orphan_fee = db.query(MemberMonthlyFee).join(Member).filter(
+                    MemberMonthlyFee.local_ump_id == current_user.organization_id,
+                    MemberMonthlyFee.reference_month == ref_date,
+                    Member.full_name.ilike(f"%{member_name}%"),
+                ).first()
+                if orphan_fee:
+                    monthly_fees = [orphan_fee]
+
+        for fee in monthly_fees:
+            if fee.receipt_url:
+                try:
+                    bucket_name = settings_obj.b2_bucket_name
+                    match = re.search(r'(?:/file/[^/]+/|/)(activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+)$', fee.receipt_url)
+                    if match:
+                        folder = '/'.join(match.group(1).split('/')[:-1]) + '/'
+                        delete_folder(folder)
+                except Exception:
+                    pass
+            db.delete(fee)
 
         # ACI — exclui a contribuição vinculada completamente
         aci_contribs = db.query(MemberAciContribution).filter(

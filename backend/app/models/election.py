@@ -16,6 +16,7 @@ class ElectionSession(Base):
     current_round = Column(Integer, nullable=False, default=1)
     roles_to_dispute = Column(JSON, nullable=False)  # e.g., ['presidente', 'vice_presidente']
     elected_positions = Column(JSON, nullable=False, default=dict)  # e.g., {"presidente": "member_id"}
+    declined_candidates = Column(JSON, nullable=True, default=dict)  # e.g., {"presidente": ["member_id_1"]}
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     local_ump = relationship("LocalUmp")
