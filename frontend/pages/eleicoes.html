@@ -375,7 +375,10 @@
         <section id="section-config" class="hidden">
           <div class="card mb-4">
             <div class="card-header" style="border-left: 4px solid #2563eb; background: #eff6ff; padding: 1rem 1.25rem; border-radius: var(--radius) var(--radius) 0 0;">
-              <h2 style="color: #1d4ed8; font-weight: 700; font-size: 1.15rem; margin: 0">1. Configurar Sessão</h2>
+              <h2 style="color: #1d4ed8; font-weight: 700; font-size: 1.15rem; margin: 0; display: flex; align-items: center; gap: .65rem;">
+                <span style="width: 28px; height: 28px; border-radius: 50%; background: #2563eb; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: .85rem; font-weight: 800; flex-shrink: 0; box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);">1</span>
+                <span>Configurar Sessão</span>
+              </h2>
             </div>
             <div class="field mb-4" style="margin-bottom: 1.5rem;">
               <label for="election-title" style="font-size: 1.05rem; font-weight: 700; color: var(--slate-800); margin-bottom: .6rem; display: block;">Título da Eleição</label>
@@ -385,41 +388,81 @@
             <div style="border-bottom: 1.5px dashed var(--slate-200); margin: 1.75rem 0 1.5rem 0;"></div>
 
             <h3 class="mb-2" style="font-size: 1rem; font-weight: 700; color: var(--slate-850);">Cargos a disputar</h3>
-            <p class="text-sm text-slate-500 mb-3">Marque os cargos a serem disputados.</p>
+            <p class="text-sm text-slate-500 mb-3">Marque os cargos a serem disputados nesta eleição.</p>
             <div class="role-checkbox-group">
               <label class="role-checkbox-card">
                 <input type="checkbox" name="roles" value="presidente" checked />
-                <span>Presidente</span>
+                <div style="width: 28px; height: 28px; border-radius: 6px; background: #eff6ff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+                </div>
+                <span style="font-weight: 600;">Presidente</span>
               </label>
               <label class="role-checkbox-card">
                 <input type="checkbox" name="roles" value="vice_presidente" checked />
-                <span>Vice-Presidente</span>
+                <div style="width: 28px; height: 28px; border-radius: 6px; background: #f0f9ff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                </div>
+                <span style="font-weight: 600;">Vice-Presidente</span>
               </label>
               <label class="role-checkbox-card">
                 <input type="checkbox" name="roles" value="1_secretario" checked />
-                <span>1º Secretário(a)</span>
+                <div style="width: 28px; height: 28px; border-radius: 6px; background: #f0fdfa; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                </div>
+                <span style="font-weight: 600;">1º Secretário(a)</span>
               </label>
               <label class="role-checkbox-card">
                 <input type="checkbox" name="roles" value="2_secretario" />
-                <span>2º Secretário(a)</span>
+                <div style="width: 28px; height: 28px; border-radius: 6px; background: #ecfdf5; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                </div>
+                <span style="font-weight: 600;">2º Secretário(a)</span>
               </label>
               <label class="role-checkbox-card">
                 <input type="checkbox" name="roles" value="secretario_executivo" />
-                <span>Secretário Executivo</span>
+                <div style="width: 28px; height: 28px; border-radius: 6px; background: #f5f3ff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                </div>
+                <span style="font-weight: 600;">Secretário Executivo</span>
               </label>
               <label class="role-checkbox-card">
                 <input type="checkbox" name="roles" value="tesoureiro" checked />
-                <span>Tesoureiro(a)</span>
+                <div style="width: 28px; height: 28px; border-radius: 6px; background: #fffbeb; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                </div>
+                <span style="font-weight: 600;">Tesoureiro(a)</span>
               </label>
             </div>
           </div>
 
           <div class="card mb-4">
             <div class="card-header" style="border-left: 4px solid #16a34a; background: #f0fdf4; padding: 1rem 1.25rem; border-radius: var(--radius) var(--radius) 0 0;">
-              <h2 id="config-members-header-title" style="color: #15803d; font-weight: 700; font-size: 1.15rem; margin: 0">2. Sócios Votados (Elegibilidade)</h2>
+              <h2 style="color: #15803d; font-weight: 700; font-size: 1.15rem; margin: 0; display: flex; align-items: center; gap: .65rem;">
+                <span style="width: 28px; height: 28px; border-radius: 50%; background: #16a34a; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: .85rem; font-weight: 800; flex-shrink: 0; box-shadow: 0 2px 6px rgba(22, 163, 74, 0.35);">2</span>
+                <span id="config-members-header-title">Sócios Votados (Elegibilidade)</span>
+              </h2>
             </div>
             <p class="text-sm text-slate-500 mb-3" id="config-members-header-desc">Todos os sócios ativos listados
-              abaixo podem votar. Desmarque aqueles que <strong>não</strong> podem ser votados (impedidos).</p>
+              abaixo podem votar. Desmarque aqueles que <strong>não</strong> podem ser votados (impedidos) ou clique no <strong>X</strong> para retirá-los da eleição.</p>
+
+            <!-- Discreto Contador de Elegibilidade e Participação -->
+            <div id="members-eligibility-counters" style="display: flex; gap: .6rem; flex-wrap: wrap; margin-bottom: 1rem;">
+              <div style="background: #fff; border: 1.5px solid var(--slate-200); border-radius: var(--radius-sm); padding: .35rem .75rem; font-size: .8rem; display: flex; align-items: center; gap: .45rem;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #2563eb; display: inline-block;"></span>
+                <span style="color: var(--slate-600);">Total na Eleição:</span>
+                <strong id="counter-total-members" style="color: var(--slate-900); font-weight: 700;">0</strong>
+              </div>
+              <div style="background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: var(--radius-sm); padding: .35rem .75rem; font-size: .8rem; display: flex; align-items: center; gap: .45rem;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #16a34a; display: inline-block;"></span>
+                <span style="color: #166534;">Aptos a Voto (Elegíveis):</span>
+                <strong id="counter-eligible-members" style="color: #15803d; font-weight: 700;">0</strong>
+              </div>
+              <div style="background: #fef2f2; border: 1.5px solid #fecaca; border-radius: var(--radius-sm); padding: .35rem .75rem; font-size: .8rem; display: flex; align-items: center; gap: .45rem;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #dc2626; display: inline-block;"></span>
+                <span style="color: #991b1b;">Não Podem Ser Votados (Impedidos):</span>
+                <strong id="counter-ineligible-members" style="color: #b91c1c; font-weight: 700;">0</strong>
+              </div>
+            </div>
 
             <div style="margin-bottom: 1rem; position: relative;">
               <input class="input" type="text" id="input-search-members" placeholder="Pesquisar sócio por nome..."
@@ -485,6 +528,45 @@
                   <div class="stat-label" style="font-size: .8rem; color: var(--slate-500); font-weight: 500;">Votos
                     Registrados (<span id="active-percent-count" style="font-weight: 700;">0%</span>)</div>
                 </div>
+              </div>
+
+              <!-- Card de Quórum e Votos Necessários para Eleição -->
+              <div id="quorum-rules-card"
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                
+                <!-- Card Quórum -->
+                <div style="background: #fff; border: 1.5px solid var(--slate-200); border-radius: var(--radius-lg); padding: 1.1rem 1.25rem; display: flex; align-items: center; gap: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                  <div style="width: 44px; height: 44px; border-radius: 10px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                  </div>
+                  <div style="flex: 1; min-width: 0;">
+                    <div style="font-size: .75rem; text-transform: uppercase; font-weight: 700; color: var(--slate-500); letter-spacing: 0.5px;">Quórum da Sessão</div>
+                    <div style="display: flex; align-items: baseline; gap: .4rem; margin-top: .15rem;">
+                      <span id="quorum-total-display" style="font-size: 1.45rem; font-weight: 800; color: var(--slate-900);">0</span>
+                      <span style="font-size: .82rem; color: var(--slate-500); font-weight: 500;">eleitores aptos</span>
+                    </div>
+                    <div style="font-size: .76rem; color: var(--slate-500); margin-top: .15rem;" id="quorum-sub-text">
+                      <span id="quorum-voted-count" style="font-weight: 600; color: #16a34a;">0</span> votaram • <span id="quorum-pending-count" style="font-weight: 600; color: var(--slate-600);">0</span> pendente(s)
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card Votos Necessários para Eleição -->
+                <div style="background: #fff; border: 1.5px solid var(--slate-200); border-radius: var(--radius-lg); padding: 1.1rem 1.25rem; display: flex; align-items: center; gap: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                  <div id="rule-icon-wrap" style="width: 44px; height: 44px; border-radius: 10px; background: #f0fdf4; color: #16a34a; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+                  </div>
+                  <div style="flex: 1; min-width: 0;">
+                    <div style="font-size: .75rem; text-transform: uppercase; font-weight: 700; color: var(--slate-500); letter-spacing: 0.5px;" id="election-rule-label">Critério para Eleição</div>
+                    <div style="display: flex; align-items: baseline; gap: .4rem; margin-top: .15rem;">
+                      <span id="votes-needed-display" style="font-size: 1.45rem; font-weight: 800; color: #15803d;">0 votos</span>
+                    </div>
+                    <div style="font-size: .76rem; color: var(--slate-500); margin-top: .15rem;" id="votes-needed-detail">
+                      Maioria Absoluta (metade + 1 do quórum)
+                    </div>
+                  </div>
+                </div>
+
               </div>
 
               <!-- 3º Escrutínio Candidates and Decline Controls -->
@@ -767,15 +849,25 @@
       let allActiveMembers = []
       let ineligibleMemberIds = new Set()
 
+      function updateEligibilityCounters() {
+        const totalEl = document.getElementById('counter-total-members')
+        const eligibleEl = document.getElementById('counter-eligible-members')
+        const ineligibleEl = document.getElementById('counter-ineligible-members')
+        if (totalEl) totalEl.textContent = allActiveMembers.length
+        const ineligCount = allActiveMembers.filter(m => ineligibleMemberIds.has(m.id)).length
+        if (eligibleEl) eligibleEl.textContent = allActiveMembers.length - ineligCount
+        if (ineligibleEl) ineligibleEl.textContent = ineligCount
+      }
+
       async function loadConfigScreen() {
         try {
           const isFed = isFederation()
 
           // Adjust headers
-          document.getElementById('config-members-header-title').textContent = isFed ? '2. Delegados Votantes (Elegibilidade)' : '2. Sócios Votados (Elegibilidade)'
+          document.getElementById('config-members-header-title').textContent = isFed ? 'Delegados Votantes (Elegibilidade)' : 'Sócios Votados (Elegibilidade)'
           document.getElementById('config-members-header-desc').textContent = isFed
-            ? 'Todos os delegados ativos listados abaixo podem votar. Desmarque aqueles que não podem ser votados (impedidos).'
-            : 'Todos os sócios ativos listados abaixo podem votar. Desmarque aqueles que não podem ser votados (impedidos).'
+            ? 'Todos os delegados ativos listados abaixo podem votar. Desmarque aqueles que não podem ser votados (impedidos) ou clique no X para excluí-los desta eleição.'
+            : 'Todos os sócios ativos listados abaixo podem votar. Desmarque aqueles que não podem ser votados (impedidos) ou clique no X para excluí-los desta eleição.'
 
           const searchInput = document.getElementById('input-search-members')
           searchInput.placeholder = isFed ? 'Pesquisar delegado por nome...' : 'Pesquisar sócio por nome...'
@@ -806,6 +898,8 @@
         const grid = document.getElementById('config-members-grid')
         const isFed = isFederation()
 
+        updateEligibilityCounters()
+
         const filtered = allActiveMembers.filter(m => m.full_name.toLowerCase().includes(query))
 
         if (!filtered.length) {
@@ -817,14 +911,18 @@
 
         grid.innerHTML = filtered.map(m => {
           const isChecked = !ineligibleMemberIds.has(m.id)
+          const escapedName = (m.name || m.full_name).replace(/'/g, "\\'")
           return `
-          <label class="eligibility-card" style="display: flex; align-items: center; justify-content: space-between; gap: .5rem;">
-            <div style="display: flex; align-items: center; gap: .6rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">
-              <input type="checkbox" class="can-be-voted-cb" data-member-id="${m.id}" ${isChecked ? 'checked' : ''} onchange="toggleMemberEligibility('${m.id}', this.checked)" />
-              ${avatarHtml(m.name || m.full_name, 28, '.75rem', m.avatar_url)}
-              <span style="font-weight: 500; color: var(--slate-700); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${m.full_name}">${m.full_name}</span>
-            </div>
-          </label>
+          <div class="eligibility-card" style="display: flex; align-items: center; justify-content: space-between; gap: .45rem; background: #fff; border: 1.5px solid var(--slate-200); border-radius: var(--radius-sm); padding: .45rem .65rem; transition: border-color .15s;">
+            <label style="display: flex; align-items: center; gap: .55rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; cursor: pointer; margin: 0;">
+              <input type="checkbox" class="can-be-voted-cb" data-member-id="${m.id}" ${isChecked ? 'checked' : ''} onchange="toggleMemberEligibility('${m.id}', this.checked)" style="cursor: pointer; width: 16px; height: 16px; flex-shrink: 0;" />
+              ${avatarHtml(m.name || m.full_name, 26, '.75rem', m.avatar_url)}
+              <span style="font-weight: 500; font-size: .85rem; color: var(--slate-750); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${m.full_name}">${m.full_name}</span>
+            </label>
+            <button type="button" class="btn btn-ghost danger btn-icon" style="width: 24px; height: 24px; padding: 0; min-height: 0; flex-shrink: 0; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; color: var(--slate-400);" onclick="removeMemberFromConfig(event, '${m.id}', '${escapedName}')" title="Remover completamente da eleição">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+          </div>
         `
         }).join('')
       }
@@ -835,6 +933,21 @@
         } else {
           ineligibleMemberIds.add(memberId)
         }
+        updateEligibilityCounters()
+      }
+
+      window.removeMemberFromConfig = (event, memberId, name) => {
+        if (event) {
+          event.preventDefault()
+          event.stopPropagation()
+        }
+        if (!confirm(`Remover "${name}" da lista desta eleição?\n\nEste participante não receberá código de acesso e não constará no quórum da votação.`)) {
+          return
+        }
+
+        allActiveMembers = allActiveMembers.filter(m => m.id !== memberId)
+        ineligibleMemberIds.delete(memberId)
+        renderMembersGrid()
       }
 
       // Bind search input typing event
@@ -861,7 +974,13 @@
           return
         }
 
+        if (!allActiveMembers.length) {
+          showAlert('page-alert', 'Não há sócios participantes selecionados para a eleição.', 'error')
+          return
+        }
+
         const ineligibleIds = Array.from(ineligibleMemberIds)
+        const participatingIds = allActiveMembers.map(m => m.id)
 
         const btn = document.getElementById('btn-start-session')
         setLoading(btn, true, 'Criar e Gerar Códigos')
@@ -871,6 +990,7 @@
             title,
             roles_to_dispute: checkedRoles,
             ineligible_member_ids: ineligibleIds,
+            participating_member_ids: participatingIds,
           })
           loadScreen()
         } catch (err) {
@@ -1060,6 +1180,40 @@
             closeBtn.className = 'btn btn-danger'
             closeBtn.innerHTML = 'Encerrar Votação'
             closeBtn.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.25)'
+          }
+
+          // Update Quorum & Rules Card
+          const quorumTotalEl = document.getElementById('quorum-total-display')
+          const quorumVotedEl = document.getElementById('quorum-voted-count')
+          const quorumPendingEl = document.getElementById('quorum-pending-count')
+          const ruleLabelEl = document.getElementById('election-rule-label')
+          const votesNeededEl = document.getElementById('votes-needed-display')
+          const votesDetailEl = document.getElementById('votes-needed-detail')
+          const ruleIconWrap = document.getElementById('rule-icon-wrap')
+
+          if (quorumTotalEl) {
+            quorumTotalEl.textContent = stats.total_voters
+            quorumVotedEl.textContent = stats.votes_cast
+            quorumPendingEl.textContent = Math.max(0, stats.total_voters - stats.votes_cast)
+
+            if (stats.current_round === 3) {
+              ruleLabelEl.textContent = '3º Escrutínio (Maioria Simples)'
+              votesNeededEl.textContent = 'Mais Votado'
+              votesNeededEl.style.color = '#2563eb'
+              votesDetailEl.textContent = 'O candidato mais votado entre os 2 finalistas é eleito'
+              ruleIconWrap.style.background = '#eff6ff'
+              ruleIconWrap.style.color = '#2563eb'
+              ruleIconWrap.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>'
+            } else {
+              const majorityNeeded = stats.total_voters > 0 ? (Math.floor(stats.total_voters / 2) + 1) : 0
+              ruleLabelEl.textContent = `${stats.current_round}º Escrutínio (Maioria Absoluta)`
+              votesNeededEl.textContent = stats.total_voters > 0 ? `${majorityNeeded} voto${majorityNeeded !== 1 ? 's' : ''}` : '—'
+              votesNeededEl.style.color = '#15803d'
+              votesDetailEl.textContent = `Mínimo de mais de 50% dos votos do quórum (${majorityNeeded} de ${stats.total_voters})`
+              ruleIconWrap.style.background = '#f0fdf4'
+              ruleIconWrap.style.color = '#16a34a'
+              ruleIconWrap.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>'
+            }
           }
 
           // Render Round 3 Candidates Panel if in Round 3

@@ -30,6 +30,7 @@ class ElectionCreatePayload(BaseModel):
     roles_to_dispute: List[str]
     ineligible_member_ids: List[UUID]
     federation_voters: Optional[List[FederationVoterPayload]] = None
+    participating_member_ids: Optional[List[UUID]] = None
 
 class PublicVotePayload(BaseModel):
     code: str
@@ -165,11 +166,14 @@ def create_election(
         raise HTTPException(status_code=400, detail="Já existe uma sessão eleitoral ativa.")
 
     # Get active members
-    active_members = db.query(Member).filter(
+    query = db.query(Member).filter(
         Member.local_ump_id == current_user.organization_id,
         Member.member_type == MemberType.ativo,
         Member.is_active == True
-    ).all()
+    )
+    if payload.participating_member_ids is not None:
+        query = query.filter(Member.id.in_(payload.participating_member_ids))
+    active_members = query.all()
     if not active_members:
         raise HTTPException(status_code=400, detail="Não há sócios/delegados ativos cadastrados para participar da eleição.")
 
