@@ -16,7 +16,7 @@
   <style>
     .role-checkbox-group {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(195px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(225px, 1fr));
       gap: .65rem;
       margin-bottom: 1.5rem;
     }
@@ -24,18 +24,19 @@
     .role-checkbox-card {
       border: 1.5px solid var(--slate-200);
       border-radius: var(--radius);
-      padding: .55rem .75rem;
+      padding: .5rem .75rem;
       display: flex;
       align-items: center;
-      gap: .5rem;
+      gap: .45rem;
       background: #fff;
       cursor: pointer;
       transition: all .15s;
       white-space: nowrap;
+      min-width: 0;
     }
 
     .role-checkbox-card span {
-      font-size: .83rem;
+      font-size: .81rem;
       font-weight: 600;
       color: var(--slate-800);
       white-space: nowrap;
