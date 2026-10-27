@@ -2762,6 +2762,321 @@ def generate_election_report(
     return buf.getvalue()
 
 
+# ═══════════════════════════════════════════════════════════════
+# ATA OFICIAL DA ELEIÇÃO (ASSEMBLEIA GERAL ORDINÁRIA)
+# ═══════════════════════════════════════════════════════════════
+
+def generate_election_minutes(
+    minutes_data: dict,
+    org_data: dict,
+    logo_bytes: bytes = None,
+    ipb_logo_bytes: bytes = None,
+    theme_color: str = '#1a2a6c',
+) -> bytes:
+    """Gera o PDF da Ata Oficial da Assembleia Geral Ordinária de Eleição."""
+    buf = io.BytesIO()
+    ML = MR = 15 * mm
+    MT = MB = 15 * mm
+    W = A4[0] - ML - MR
+
+    doc = SimpleDocTemplate(buf, pagesize=A4,
+        leftMargin=ML, rightMargin=MR, topMargin=MT, bottomMargin=MB)
+
+    TC = _tc(theme_color)
+    story = []
+
+    # ── Cabeçalho com logos ──────────────────────────────────
+    org_name = (org_data.get('name') or '').upper()
+
+    ipb_cell = Spacer(22 * mm, 22 * mm)
+    if ipb_logo_bytes:
+        try:
+            ipb_cell = Image(io.BytesIO(ipb_logo_bytes), width=22 * mm, height=22 * mm)
+        except Exception:
+            pass
+
+    org_cell = Spacer(22 * mm, 22 * mm)
+    if logo_bytes:
+        try:
+            org_cell = Image(io.BytesIO(logo_bytes), width=22 * mm, height=22 * mm)
+        except Exception:
+            pass
+
+    title_w = W - 44 * mm
+    title_content = Table([
+        [Paragraph('IGREJA PRESBITERIANA DO BRASIL',
+                   _ps(9, BLACK, bold=True, align=TA_CENTER))],
+        [Spacer(1, 1 * mm)],
+        [Paragraph(org_name, _ps(10, BLACK, bold=True, align=TA_CENTER))],
+        [Spacer(1, 1 * mm)],
+        [Paragraph('ATA DA ASSEMBLEIA GERAL ORDINÁRIA DE ELEIÇÃO', _ps(11, TC, bold=True, align=TA_CENTER))],
+    ], colWidths=[title_w])
+    title_content.setStyle(TableStyle([
+        ('TOPPADDING',    (0, 0), (-1, -1), 1),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
+    ]))
+
+    hdr = Table([[ipb_cell, title_content, org_cell]],
+                colWidths=[22 * mm, title_w, 22 * mm])
+    hdr.setStyle(TableStyle([
+        ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+        ('LEFTPADDING',   (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING',  (0, 0), (-1, -1), 0),
+        ('TOPPADDING',    (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+    ]))
+    story.append(hdr)
+    story.append(Spacer(1, 4 * mm))
+    story.append(HRFlowable(width=W, thickness=1.5, color=TC))
+    story.append(Spacer(1, 3 * mm))
+
+    # ── Identificação e Diretoria Eleita no Início (Conforme Solicitado) ──
+    story.append(_section_bar('DIRETORIA ELEITA E DATA DO PLEITO', W, TC))
+    story.append(Spacer(1, 2 * mm))
+
+    date_str = minutes_data.get('date_formatted') or _fd(minutes_data.get('created_at', '—'))
+    ident_rows = [
+        [Paragraph('<b>Processo Eleitoral:</b>', _ps(8.5, BLACK)), Paragraph(minutes_data.get('title', '—'), _ps(8.5, BLACK, bold=True))],
+        [Paragraph('<b>Data de Realização:</b>', _ps(8.5, BLACK)), Paragraph(date_str, _ps(8.5, BLACK, bold=True))],
+    ]
+    ident_table = Table(ident_rows, colWidths=[42 * mm, W - 42 * mm])
+    ident_table.setStyle(TableStyle([
+        ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ('TOPPADDING',    (0, 0), (-1, -1), 3),
+        ('LEFTPADDING',   (0, 0), (-1, -1), 4),
+        ('BACKGROUND',    (0, 0), (-1, -1), colors.HexColor('#f8fafc')),
+        ('BOX',           (0, 0), (-1, -1), 0.5, GRAY_LINE),
+    ]))
+    story.append(ident_table)
+    story.append(Spacer(1, 2 * mm))
+
+    # Tabela da Diretoria Eleita
+    ROLE_LABELS = {
+        'presidente': 'Presidente',
+        'vice_presidente': 'Vice-Presidente',
+        '1_secretario': '1º Secretário(a)',
+        '2_secretario': '2º Secretário(a)',
+        'secretario_executivo': 'Secretário Executivo',
+        'tesoureiro': 'Tesoureiro(a)',
+    }
+    dir_rows = []
+    elected_positions = minutes_data.get('elected_positions') or {}
+    if not elected_positions:
+        dir_rows.append([Paragraph('Nenhum cargo foi concluído ainda.', _ps(9, GRAY_TXT, italic=True))])
+    else:
+        for role_key, name in elected_positions.items():
+            role_label = ROLE_LABELS.get(role_key, role_key.replace('_', ' ').title())
+            dir_rows.append([
+                Paragraph(f'<b>{role_label}:</b>', _ps(9, BLACK)),
+                Paragraph(name or '—', _ps(9, BLACK, bold=True))
+            ])
+            
+    dir_table = Table(dir_rows, colWidths=[48 * mm, W - 48 * mm] if elected_positions else [W])
+    dir_table.setStyle(TableStyle([
+        ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('TOPPADDING',    (0, 0), (-1, -1), 4),
+        ('LEFTPADDING',   (0, 0), (-1, -1), 6),
+        ('BACKGROUND',    (0, 0), (-1, -1), colors.HexColor('#f0fdf4')),
+        ('BOX',           (0, 0), (-1, -1), 0.5, colors.HexColor('#bbf7d0')),
+    ]))
+    story.append(dir_table)
+    story.append(Spacer(1, 5 * mm))
+
+    # ── Quórum e Participação da Assembleia ───────────────────────
+    story.append(_section_bar('QUÓRUM E PARTICIPAÇÃO DA ASSEMBLEIA', W, TC))
+    story.append(Spacer(1, 2 * mm))
+
+    init_voters = minutes_data.get('initial_voters_count', 0)
+    init_votable = minutes_data.get('initial_votable_count', 0)
+    final_voters = minutes_data.get('final_voters_count', 0)
+    final_votable = minutes_data.get('final_votable_count', 0)
+    removed_voters = minutes_data.get('removed_voters') or []
+
+    quorum_rows = [
+        [
+            Paragraph('<b>Quórum Inicial:</b>', _ps(8.5, BLACK)),
+            Paragraph(f'<b>{init_voters}</b> membros votantes credenciados | <b>{init_votable}</b> votáveis (elegíveis)', _ps(8.5, BLACK))
+        ],
+        [
+            Paragraph('<b>Quórum Final:</b>', _ps(8.5, BLACK)),
+            Paragraph(f'<b>{final_voters}</b> membros votantes consolidados | <b>{final_votable}</b> votáveis (elegíveis)', _ps(8.5, BLACK))
+        ],
+        [
+            Paragraph('<b>Critério Regimental:</b>', _ps(8.5, BLACK)),
+            Paragraph('Maioria absoluta dos votos do quórum para 1º e 2º escrutínios; maioria simples para 3º escrutínio.', _ps(8.5, BLACK))
+        ]
+    ]
+
+    if removed_voters:
+        removed_names = ', '.join([r.get('member_name', 'Membro') for r in removed_voters])
+        quorum_rows.append([
+            Paragraph('<b>Eleitores Removidos:</b>', _ps(8.5, colors.HexColor('#b91c1c'), bold=True)),
+            Paragraph(f'Por ausência em plenário (ajuste de quórum): <b>{removed_names}</b> ({len(removed_voters)} membro(s) removido(s)).', _ps(8.5, colors.HexColor('#b91c1c')))
+        ])
+    else:
+        quorum_rows.append([
+            Paragraph('<b>Alterações de Quórum:</b>', _ps(8.5, BLACK)),
+            Paragraph('Não houve remoção de eleitores durante a sessão eleitoral.', _ps(8.5, GRAY_TXT))
+        ])
+
+    quorum_table = Table(quorum_rows, colWidths=[42 * mm, W - 42 * mm])
+    quorum_table.setStyle(TableStyle([
+        ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('TOPPADDING',    (0, 0), (-1, -1), 4),
+        ('LEFTPADDING',   (0, 0), (-1, -1), 6),
+        ('BACKGROUND',    (0, 0), (-1, -1), colors.HexColor('#f8fafc')),
+        ('BOX',           (0, 0), (-1, -1), 0.5, GRAY_LINE),
+    ]))
+    story.append(quorum_table)
+    story.append(Spacer(1, 5 * mm))
+
+    # ── Registro de Declínios de Candidatura ───────────────────────
+    story.append(_section_bar('REGISTRO DE DECLÍNIOS DE CANDIDATURA', W, TC))
+    story.append(Spacer(1, 2 * mm))
+
+    declines = minutes_data.get('declines') or []
+    if declines:
+        dec_rows = [[
+            Paragraph('<b>Membro</b>', _ps(8, BLACK, bold=True)),
+            Paragraph('<b>Cargo</b>', _ps(8, BLACK, bold=True)),
+            Paragraph('<b>Escrutínio</b>', _ps(8, BLACK, bold=True, align=TA_CENTER)),
+            Paragraph('<b>Condição e Desfecho Regimental</b>', _ps(8, BLACK, bold=True))
+        ]]
+        for d in declines:
+            m_name = d.get('member_name', '—')
+            r_label = d.get('role_label', d.get('role', '—'))
+            rnd = d.get('round', 1)
+            was_elected = d.get('was_elected', False)
+            status_text = 'Declinou após eleito(a) (proclamação revogada; seguiu-se para novo escrutínio sem este concorrente, preservando seu direito de voto e elegibilidade futura)' if was_elected else 'Declinou da disputa (retirado da votação deste cargo; manteve direito a voto e elegibilidade nos cargos seguintes)'
+            dec_rows.append([
+                Paragraph(m_name, _ps(8, BLACK, bold=True)),
+                Paragraph(r_label, _ps(8, BLACK)),
+                Paragraph(f'{rnd}º', _ps(8, BLACK, align=TA_CENTER)),
+                Paragraph(status_text, _ps(7.5, BLACK))
+            ])
+        dec_table = Table(dec_rows, colWidths=[38 * mm, 32 * mm, 20 * mm, W - 90 * mm])
+        dec_table.setStyle(TableStyle([
+            ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+            ('GRID',          (0, 0), (-1, -1), 0.5, colors.HexColor('#fecaca')),
+            ('BACKGROUND',    (0, 0), (-1, 0), colors.HexColor('#fee2e2')),
+            ('BACKGROUND',    (0, 1), (-1, -1), colors.HexColor('#fff5f5')),
+            ('TOPPADDING',    (0, 0), (-1, -1), 3),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+            ('LEFTPADDING',   (0, 0), (-1, -1), 4),
+        ]))
+        story.append(dec_table)
+    else:
+        no_dec_table = Table([[Paragraph('Não foram registradas manifestações de declínio de candidatura nesta sessão.', _ps(8.5, GRAY_TXT, italic=True))]], colWidths=[W])
+        no_dec_table.setStyle(TableStyle([
+            ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+            ('BACKGROUND',    (0, 0), (-1, -1), colors.HexColor('#f8fafc')),
+            ('BOX',           (0, 0), (-1, -1), 0.5, GRAY_LINE),
+            ('TOPPADDING',    (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ('LEFTPADDING',   (0, 0), (-1, -1), 6),
+        ]))
+        story.append(no_dec_table)
+    story.append(Spacer(1, 5 * mm))
+
+    # ── Relatório Pormenorizado dos Escrutínios por Cargo ───────────
+    story.append(_section_bar('RELATÓRIO PORMENORIZADO DOS ESCRUTÍNIOS POR CARGO', W, TC))
+    story.append(Spacer(1, 3 * mm))
+
+    roles_disputed = minutes_data.get('roles_disputed') or []
+    for role_item in roles_disputed:
+        role_label = role_item.get('role_label', '')
+        winner_name = role_item.get('winner_name')
+        
+        role_elements = []
+        role_elements.append(Paragraph(f'<b>ELEIÇÃO PARA O CARGO DE {role_label.upper()}</b>', _ps(9.5, TC, bold=True)))
+        role_elements.append(Spacer(1, 1.5 * mm))
+
+        for r_item in role_item.get('rounds', []):
+            round_num = r_item.get('round', 1)
+            total_votes = r_item.get('total_votes', 0)
+            maj_needed = f"{(total_votes // 2) + 1} votos" if round_num in (1, 2) else 'Mais votado'
+            
+            subhead = f'• {round_num}º Escrutínio — Votos Apurados: {total_votes} | Maioria Exigida: {maj_needed}'
+            role_elements.append(Paragraph(subhead, _ps(8.5, BLACK, bold=True)))
+            role_elements.append(Spacer(1, 1 * mm))
+
+            table_data = [[
+                Paragraph('<b>Candidato</b>', _ps(8, BLACK, bold=True)),
+                Paragraph('<b>Votos</b>', _ps(8, BLACK, bold=True, align=TA_CENTER)),
+                Paragraph('<b>Porcentagem</b>', _ps(8, BLACK, bold=True, align=TA_RIGHT))
+            ]]
+
+            for res in r_item.get('results', []):
+                pct_str = f"{res.get('percentage', 0):.1f}%"
+                table_data.append([
+                    Paragraph(res.get('name', ''), _ps(8, BLACK)),
+                    Paragraph(str(res.get('votes', 0)), _ps(8, BLACK, align=TA_CENTER)),
+                    Paragraph(pct_str, _ps(8, BLACK, align=TA_RIGHT))
+                ])
+
+            round_table = Table(table_data, colWidths=[W - 60 * mm, 30 * mm, 30 * mm])
+            round_table.setStyle(TableStyle([
+                ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+                ('GRID',          (0, 0), (-1, -1), 0.5, GRAY_LINE),
+                ('BACKGROUND',    (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
+                ('TOPPADDING',    (0, 0), (-1, -1), 3),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+                ('LEFTPADDING',   (0, 0), (-1, -1), 5),
+                ('RIGHTPADDING',  (0, 0), (-1, -1), 5),
+            ]))
+            role_elements.append(round_table)
+            role_elements.append(Spacer(1, 2.5 * mm))
+
+        if winner_name:
+            role_elements.append(Paragraph(f'<b>Desfecho:</b> <i>{winner_name} foi solenemente proclamado(a) eleito(a) para {role_label}.</i>', _ps(8.5, GREEN)))
+        else:
+            role_elements.append(Paragraph(f'<b>Desfecho:</b> <i>Cargo não concluído ou pendente de finalização.</i>', _ps(8.5, RED_C)))
+            
+        role_elements.append(Spacer(1, 4 * mm))
+        role_elements.append(HRFlowable(width=W, thickness=0.5, color=GRAY_LINE))
+        role_elements.append(Spacer(1, 3 * mm))
+
+        story.append(KeepTogether(role_elements))
+
+    # ── Termo de Encerramento e Assinaturas ────────────────────────
+    story.append(Spacer(1, 4 * mm))
+    story.append(_section_bar('TERMO DE ENCERRAMENTO E ASSINATURAS', W, TC))
+    story.append(Spacer(1, 3 * mm))
+
+    closure_text = (
+        'Esgotada a pauta de votações e apurados todos os cargos da Diretoria, o Presidente proclamou '
+        'oficialmente os eleitos para o exercício regimental. Nada mais havendo a tratar, encerrou-se a assembleia com oração. '
+        'E, para constar, eu, Secretário(a), lavrei a presente ata que, lida e achada conforme por toda a assembleia, '
+        'vai devidamente assinada pelos membros da mesa diretora e comissão eleitoral escrutinadora.'
+    )
+    story.append(Paragraph(closure_text, _ps(8.5, BLACK, leading=11, align=TA_JUSTIFY)))
+    story.append(Spacer(1, 8 * mm))
+
+    sig_data = [
+        [
+            Paragraph('__________________________________________<br/><b>Presidente da Assembleia</b>', _ps(8, BLACK, align=TA_CENTER)),
+            Paragraph('__________________________________________<br/><b>Secretário(a) da Assembleia</b>', _ps(8, BLACK, align=TA_CENTER))
+        ],
+        [
+            Paragraph('__________________________________________<br/><b>1º Escrutinador(a)</b>', _ps(8, BLACK, align=TA_CENTER)),
+            Paragraph('__________________________________________<br/><b>2º Escrutinador(a)</b>', _ps(8, BLACK, align=TA_CENTER))
+        ]
+    ]
+    sig_table = Table(sig_data, colWidths=[W/2, W/2])
+    sig_table.setStyle(TableStyle([
+        ('VALIGN',        (0, 0), (-1, -1), 'TOP'),
+        ('TOPPADDING',    (0, 0), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+    ]))
+    story.append(KeepTogether([sig_table]))
+
+    doc.build(story)
+    return buf.getvalue()
+
+
 def generate_ump_statistics_report(
     org_data: dict,
     fiscal_year: int,

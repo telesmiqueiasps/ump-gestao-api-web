@@ -69,6 +69,10 @@ try:
         conn.execute(text("ALTER TABLE financial_periods ADD COLUMN IF NOT EXISTS congress_data_hash TEXT;"))
         conn.execute(text("ALTER TABLE financial_periods ADD COLUMN IF NOT EXISTS congress_closing_balance NUMERIC(12, 2);"))
         conn.execute(text("ALTER TABLE election_sessions ADD COLUMN IF NOT EXISTS declined_candidates JSON DEFAULT '{}';"))
+        conn.execute(text("ALTER TABLE election_sessions ADD COLUMN IF NOT EXISTS initial_voters_count INTEGER;"))
+        conn.execute(text("ALTER TABLE election_sessions ADD COLUMN IF NOT EXISTS initial_votable_count INTEGER;"))
+        conn.execute(text("ALTER TABLE election_sessions ADD COLUMN IF NOT EXISTS removed_voters JSON DEFAULT '[]';"))
+        conn.execute(text("ALTER TABLE election_sessions ADD COLUMN IF NOT EXISTS decline_history JSON DEFAULT '[]';"))
         conn.execute(text("""
             CREATE TABLE IF NOT EXISTS role_permissions (
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

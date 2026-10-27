@@ -8,6 +8,7 @@ from uuid import UUID
 import secrets
 import io
 import os
+import datetime
 
 from app.db.session import get_db
 from app.models.user import User
@@ -16,7 +17,8 @@ from app.models.local_ump import LocalUmp
 from app.models.enums import MemberType
 from app.models.election import ElectionSession, ElectionVoter, ElectionVote
 from app.core.dependencies import require_local_or_federation
-from app.services.pdf_generator import generate_election_report
+from app.services.pdf_generator import generate_election_report, generate_election_minutes
+from app.services.election_minutes import build_minutes_data, generate_minutes_narrative_text, generate_minutes_doc_html
 
 router = APIRouter()
 
@@ -179,6 +181,9 @@ def create_election(
     if not active_members:
         raise HTTPException(status_code=400, detail="Não há sócios/delegados ativos cadastrados para participar da eleição.")
 
+    initial_voters_count = len(active_members)
+    initial_votable_count = sum(1 for m in active_members if m.id not in payload.ineligible_member_ids)
+
     # Create session
     session = ElectionSession(
         local_ump_id=current_user.organization_id,
@@ -187,7 +192,12 @@ def create_election(
         current_role=payload.roles_to_dispute[0],
         current_round=1,
         roles_to_dispute=payload.roles_to_dispute,
-        elected_positions={}
+        elected_positions={},
+        declined_candidates={},
+        initial_voters_count=initial_voters_count,
+        initial_votable_count=initial_votable_count,
+        removed_voters=[],
+        decline_history=[]
     )
     db.add(session)
     db.flush()
@@ -654,11 +664,41 @@ def decline_candidate(
         declined_data[role] = role_declined
         session.declined_candidates = declined_data
 
+    ROLE_LABELS_MAP = {
+        'presidente': 'Presidente',
+        'vice_presidente': 'Vice-Presidente',
+        '1_secretario': '1º Secretário(a)',
+        '2_secretario': '2º Secretário(a)',
+        'secretario_executivo': 'Secretário Executivo',
+        'tesoureiro': 'Tesoureiro(a)',
+    }
+
     # If this candidate was marked as elected for this role, revoke the election!
+    was_elected = False
     elected_data = dict(session.elected_positions or {})
     if elected_data.get(role) == mid_str:
+        was_elected = True
         elected_data.pop(role, None)
         session.elected_positions = elected_data
+
+    if mid_str not in role_declined:
+        role_declined.append(mid_str)
+        declined_data[role] = role_declined
+        session.declined_candidates = declined_data
+
+        m = db.query(Member).filter(Member.id == payload.member_id).first()
+        m_name = m.full_name if m else "Desconhecido"
+        history = list(session.decline_history or [])
+        history.append({
+            "member_id": mid_str,
+            "member_name": m_name,
+            "role": role,
+            "role_label": ROLE_LABELS_MAP.get(role, role.replace('_', ' ').title()),
+            "round": session.current_round,
+            "was_elected": was_elected,
+            "timestamp": datetime.datetime.now().isoformat()
+        })
+        session.decline_history = history
 
     # If voting is in progress:
     # 1. Round 3 is strictly between 2 candidates, so always reset round 3 votes
@@ -719,6 +759,9 @@ def undecline_candidate(
         role_declined.remove(mid_str)
         declined_data[role] = role_declined
         session.declined_candidates = declined_data
+
+        history = [d for d in (session.decline_history or []) if not (d.get("member_id") == mid_str and d.get("role") == role)]
+        session.decline_history = history
 
     should_reset_round = (
         session.status == 'voting' and (
@@ -1053,6 +1096,140 @@ def get_election_pdf(
     )
 
 
+# ── Election Minutes (Ata de Eleição) Endpoints ─────────────
+
+@router.get("/session/{session_id}/minutes-data")
+def get_election_minutes_data(
+    session_id: UUID,
+    current_user: User = Depends(require_local_or_federation),
+    db: Session = Depends(get_db),
+):
+    session = db.query(ElectionSession).filter(
+        ElectionSession.id == session_id,
+        ElectionSession.local_ump_id == current_user.organization_id
+    ).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Eleição não encontrada.")
+    
+    minutes_data = build_minutes_data(db, session)
+    
+    org_type = current_user.organization_type.value \
+        if hasattr(current_user.organization_type, 'value') \
+        else str(current_user.organization_type)
+    if org_type == 'federation':
+        from app.models.federation import Federation
+        fed = db.query(Federation).filter(Federation.id == current_user.organization_id).first()
+        org_name = fed.name if fed else "Federação"
+    else:
+        local_ump = db.query(LocalUmp).filter(LocalUmp.id == current_user.organization_id).first()
+        org_name = local_ump.name if local_ump else "UMP Local"
+
+    narrative_text = generate_minutes_narrative_text(minutes_data, org_name)
+    return {
+        "minutes_data": minutes_data,
+        "narrative_text": narrative_text,
+        "org_name": org_name
+    }
+
+
+@router.get("/session/{session_id}/minutes-pdf")
+def get_election_minutes_pdf(
+    session_id: UUID,
+    current_user: User = Depends(require_local_or_federation),
+    db: Session = Depends(get_db),
+):
+    session = db.query(ElectionSession).filter(
+        ElectionSession.id == session_id,
+        ElectionSession.local_ump_id == current_user.organization_id
+    ).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Eleição não encontrada.")
+    
+    minutes_data = build_minutes_data(db, session)
+    
+    org_type = current_user.organization_type.value \
+        if hasattr(current_user.organization_type, 'value') \
+        else str(current_user.organization_type)
+    if org_type == 'federation':
+        from app.models.federation import Federation
+        fed = db.query(Federation).filter(Federation.id == current_user.organization_id).first()
+        org_data = {
+            "name": fed.name if fed else "Federação",
+            "theme_color": getattr(fed, 'theme_color', '#1a2a6c') or "#1a2a6c"
+        }
+    else:
+        local_ump = db.query(LocalUmp).filter(LocalUmp.id == current_user.organization_id).first()
+        org_data = {
+            "name": local_ump.name if local_ump else "UMP Local",
+            "theme_color": local_ump.theme_color if local_ump and local_ump.theme_color else "#1a2a6c"
+        }
+    
+    ipb_logo_bytes = None
+    try:
+        ipb_path = os.path.join(os.path.dirname(__file__), '..', 'assets', 'ipb_logo.png')
+        if os.path.exists(ipb_path):
+            with open(ipb_path, 'rb') as f:
+                ipb_logo_bytes = f.read()
+    except Exception:
+        pass
+
+    logo_bytes = None
+    
+    pdf_bytes = generate_election_minutes(
+        minutes_data=minutes_data,
+        org_data=org_data,
+        logo_bytes=logo_bytes,
+        ipb_logo_bytes=ipb_logo_bytes,
+        theme_color=org_data["theme_color"],
+    )
+    
+    safe_title = session.title.replace('/', '-').replace(' ', '_')
+    filename = f"Ata_Eleicao_{safe_title}.pdf"
+    return StreamingResponse(
+        io.BytesIO(pdf_bytes),
+        media_type='application/pdf',
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
+
+
+@router.get("/session/{session_id}/minutes-doc")
+def get_election_minutes_doc(
+    session_id: UUID,
+    current_user: User = Depends(require_local_or_federation),
+    db: Session = Depends(get_db),
+):
+    session = db.query(ElectionSession).filter(
+        ElectionSession.id == session_id,
+        ElectionSession.local_ump_id == current_user.organization_id
+    ).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Eleição não encontrada.")
+    
+    minutes_data = build_minutes_data(db, session)
+    
+    org_type = current_user.organization_type.value \
+        if hasattr(current_user.organization_type, 'value') \
+        else str(current_user.organization_type)
+    if org_type == 'federation':
+        from app.models.federation import Federation
+        fed = db.query(Federation).filter(Federation.id == current_user.organization_id).first()
+        org_name = fed.name if fed else "Federação"
+        theme_color = getattr(fed, 'theme_color', '#1a2a6c') or "#1a2a6c"
+    else:
+        local_ump = db.query(LocalUmp).filter(LocalUmp.id == current_user.organization_id).first()
+        org_name = local_ump.name if local_ump else "UMP Local"
+        theme_color = local_ump.theme_color if local_ump and local_ump.theme_color else "#1a2a6c"
+
+    doc_html = generate_minutes_doc_html(minutes_data, org_name, theme_color)
+    safe_title = session.title.replace('/', '-').replace(' ', '_')
+    filename = f"Ata_Eleicao_{safe_title}.doc"
+    return StreamingResponse(
+        io.BytesIO(doc_html.encode('utf-8')),
+        media_type='application/msword; charset=utf-8',
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
+
+
 @router.delete("/session/{session_id}")
 def delete_election(
     session_id: UUID,
@@ -1286,6 +1463,18 @@ def remove_active_voter(
     ).first()
     if not voter:
         raise HTTPException(status_code=404, detail="Eleitor não encontrado nesta sessão.")
+
+    m = voter.member
+    m_name = m.full_name if m else "Desconhecido"
+    removed_list = list(session.removed_voters or [])
+    removed_list.append({
+        "voter_id": str(voter.id),
+        "member_id": str(voter.member_id),
+        "member_name": m_name,
+        "removed_at": datetime.datetime.now().isoformat(),
+        "reason": "Ausência em plenário (ajuste de quórum)"
+    })
+    session.removed_voters = removed_list
 
     db.delete(voter)
     db.commit()
