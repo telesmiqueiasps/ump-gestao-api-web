@@ -92,8 +92,30 @@ def _get_paragraph_style(size=10, color=BLACK, bold=False, align=TA_LEFT,
     return _STYLE_CACHE[cache_key]
 
 
-def _ps(size=8, color=BLACK, bold=False, align=TA_LEFT):
-    return _get_paragraph_style(size=size, color=color, bold=bold, align=align, space_after=0, space_before=0, leading=size * 1.4)
+def _ps(size=8, color=BLACK, bold=False, align=TA_LEFT, leading=None, italic=False, space_after=0, space_before=0, **kwargs):
+    font_name = kwargs.get('font_name')
+    if font_name is None:
+        if italic and bold:
+            font_name = 'Helvetica-BoldOblique'
+        elif italic:
+            font_name = 'Helvetica-Oblique'
+        elif bold:
+            font_name = 'Helvetica-Bold'
+        else:
+            font_name = 'Helvetica'
+    leading_val = leading if leading is not None else (size * 1.4)
+    return _get_paragraph_style(
+        size=size,
+        color=color,
+        bold=bold,
+        align=align,
+        space_after=space_after,
+        space_before=space_before,
+        leading=leading_val,
+        font_name=font_name,
+        indent=kwargs.get('indent', 0),
+        first_line_indent=kwargs.get('first_line_indent', 0)
+    )
 
 
 def _p(txt, size=10, color=BLACK, bold=False, align=TA_LEFT,
