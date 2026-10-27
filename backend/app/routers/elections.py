@@ -38,6 +38,7 @@ class PublicVotePayload(BaseModel):
 
 class CandidateDeclinePayload(BaseModel):
     member_id: UUID
+    reset_current_round: Optional[bool] = False
 
 # Helper to generate alphanumeric voter access codes
 def generate_voter_codes(db: Session, count: int) -> List[str]:
@@ -55,14 +56,15 @@ def generate_voter_codes(db: Session, count: int) -> List[str]:
 
 # Helper to compute list of eligible candidates
 def get_eligible_candidates(db: Session, session: ElectionSession) -> List[Member]:
-    # 1. Get member IDs of already elected positions
+    # 1. Get member IDs of already elected positions (excluding current role being disputed/redone)
     elected_member_ids = []
     if session.elected_positions:
-        for mid in session.elected_positions.values():
-            try:
-                elected_member_ids.append(UUID(str(mid)))
-            except Exception:
-                pass
+        for role_key, mid in session.elected_positions.items():
+            if role_key != session.current_role:
+                try:
+                    elected_member_ids.append(UUID(str(mid)))
+                except Exception:
+                    pass
     
     # 2. Get member IDs of ineligible voters
     ineligible_voters = db.query(ElectionVoter.member_id).filter(
@@ -377,29 +379,48 @@ def close_round(
     
     results_list.sort(key=lambda x: x["votes"], reverse=True)
 
+    declined_data = session.declined_candidates or {}
+    role_declined = list(declined_data.get(session.current_role, [])) if session.current_role else []
+
     # Determine winner
     elected = False
     winner_name = None
+    winner_id = None
+    winner_declined = False
     next_step = ""
 
+    top_candidate = results_list[0] if results_list else None
+    if top_candidate and top_candidate["candidate_id"] in role_declined:
+        winner_declined = True
+
+    valid_candidates = [
+        r for r in results_list
+        if r["candidate_id"] != "blank" and r["candidate_id"] not in role_declined
+    ]
+    top_valid = valid_candidates[0] if valid_candidates else None
+
+    # Quorum: total registered voters for this election session
+    quorum = db.query(ElectionVoter).filter(
+        ElectionVoter.election_session_id == session.id
+    ).count()
+
+    majority_threshold = quorum / 2 if quorum > 0 else (total_votes / 2)
+
     if total_votes > 0:
-        majority_threshold = total_votes / 2
-        top_candidate = results_list[0]
-        
         # Absolute majority required for round 1 and 2
         if session.current_round in (1, 2):
-            if top_candidate["candidate_id"] != "blank" and top_candidate["votes"] > majority_threshold:
+            if top_valid and top_valid["votes"] > majority_threshold:
                 elected = True
         else: # Round 3: highest votes wins (unless tied)
-            if top_candidate["candidate_id"] != "blank":
-                if len(results_list) > 1 and results_list[0]["votes"] == results_list[1]["votes"]:
+            if top_valid:
+                if len(valid_candidates) > 1 and valid_candidates[0]["votes"] == valid_candidates[1]["votes"]:
                     elected = False
                 else:
                     elected = True
 
         if elected:
-            winner_id = top_candidate["candidate_id"]
-            winner_name = top_candidate["name"]
+            winner_id = top_valid["candidate_id"]
+            winner_name = top_valid["name"]
             
             # Save elected candidate
             new_elected = {**(session.elected_positions or {})}
@@ -416,20 +437,29 @@ def close_round(
                 session.status = "results"
                 next_step = "Eleição concluída"
         else:
-            # Not elected, transition to results state
             session.status = "results"
-            if session.current_round == 1:
-                next_step = "Iniciar 2º Escrutínio (todos os candidatos continuam)"
+            # If an elected person had previously been saved for this role, clear it
+            if session.current_role in (session.elected_positions or {}):
+                new_elected = {**(session.elected_positions or {})}
+                new_elected.pop(session.current_role, None)
+                session.elected_positions = new_elected
+
+            if winner_declined:
+                if session.current_round == 1:
+                    next_step = f"{top_candidate['name']} declinou deste cargo. Avançar para o 2º Escrutínio sem este candidato."
+                elif session.current_round == 2:
+                    next_step = f"{top_candidate['name']} declinou deste cargo. Avançar para o 3º Escrutínio com os 2 mais votados restantes."
+                else:
+                    next_step = f"{top_candidate['name']} declinou deste cargo. Repetir o 3º Escrutínio com o próximo candidato mais votado do 2º escrutínio."
+            elif session.current_round == 1:
+                next_step = "Iniciar 2º Escrutínio (todos os candidatos continuam, exceto os declinados)"
             elif session.current_round == 2:
-                next_step = "Iniciar 3º Escrutínio (apenas os 2 mais votados)"
+                next_step = "Iniciar 3º Escrutínio (apenas os 2 mais votados não declinados)"
             else:
-                next_step = "Empate no 3º Escrutínio. Uma nova votação da rodada 3 foi configurada."
+                next_step = "Empate no 3º Escrutínio. Uma nova votação do 3º escrutínio será realizada."
     else:
         session.status = "results"
         next_step = "Nenhum voto registrado. Repetindo a rodada atual."
-
-    declined_data = session.declined_candidates or {}
-    role_declined = list(declined_data.get(session.current_role, [])) if session.current_role else []
 
     round_3_candidates = []
     if session.current_round == 2 and not elected:
@@ -442,6 +472,7 @@ def close_round(
     round_3_candidate_ids = [c["candidate_id"] for c in round_3_candidates]
     for r in results_list:
         r["is_declined"] = r["candidate_id"] in role_declined
+        r["is_elected"] = (elected and winner_id == r["candidate_id"])
         r["will_advance_round_3"] = r["candidate_id"] in round_3_candidate_ids
 
     db.commit()
@@ -449,6 +480,9 @@ def close_round(
     return {
         "elected": elected,
         "winner_name": winner_name,
+        "winner_id": winner_id,
+        "winner_declined": winner_declined,
+        "declined_winner_name": top_candidate["name"] if (winner_declined and top_candidate) else None,
         "next_step": next_step,
         "results": results_list,
         "total_votes": total_votes,
@@ -500,27 +534,47 @@ def get_current_round_results(
     
     results_list.sort(key=lambda x: x["votes"], reverse=True)
 
-    # Determine if winner is already elected (same logic as close_round)
+    declined_data = session.declined_candidates or {}
+    role_declined = list(declined_data.get(session.current_role, [])) if session.current_role else []
+
+    # Determine if winner is elected
     elected = False
     winner_name = None
+    winner_id = None
+    winner_declined = False
     next_step = ""
 
+    top_candidate = results_list[0] if results_list else None
+    if top_candidate and top_candidate["candidate_id"] in role_declined:
+        winner_declined = True
+
+    valid_candidates = [
+        r for r in results_list
+        if r["candidate_id"] != "blank" and r["candidate_id"] not in role_declined
+    ]
+    top_valid = valid_candidates[0] if valid_candidates else None
+
+    # Quorum: total registered voters for this election session
+    quorum = db.query(ElectionVoter).filter(
+        ElectionVoter.election_session_id == session.id
+    ).count()
+
+    majority_threshold = quorum / 2 if quorum > 0 else (total_votes / 2)
+
     if total_votes > 0:
-        majority_threshold = total_votes / 2
-        top_candidate = results_list[0]
-        
         if session.current_round in (1, 2):
-            if top_candidate["candidate_id"] != "blank" and top_candidate["votes"] > majority_threshold:
+            if top_valid and top_valid["votes"] > majority_threshold:
                 elected = True
         else:
-            if top_candidate["candidate_id"] != "blank":
-                if len(results_list) > 1 and results_list[0]["votes"] == results_list[1]["votes"]:
+            if top_valid:
+                if len(valid_candidates) > 1 and valid_candidates[0]["votes"] == valid_candidates[1]["votes"]:
                     elected = False
                 else:
                     elected = True
 
         if elected:
-            winner_name = top_candidate["name"]
+            winner_id = top_valid["candidate_id"]
+            winner_name = top_valid["name"]
             roles = session.roles_to_dispute
             current_idx = roles.index(session.current_role)
             if current_idx + 1 < len(roles):
@@ -528,17 +582,21 @@ def get_current_round_results(
             else:
                 next_step = "Eleição concluída"
         else:
-            if session.current_round == 1:
-                next_step = "Iniciar 2º Escrutínio (todos os candidatos continuam)"
+            if winner_declined:
+                if session.current_round == 1:
+                    next_step = f"{top_candidate['name']} declinou deste cargo. Avançar para o 2º Escrutínio sem este candidato."
+                elif session.current_round == 2:
+                    next_step = f"{top_candidate['name']} declinou deste cargo. Avançar para o 3º Escrutínio com os 2 mais votados restantes."
+                else:
+                    next_step = f"{top_candidate['name']} declinou deste cargo. Repetir o 3º Escrutínio com o próximo candidato mais votado do 2º escrutínio."
+            elif session.current_round == 1:
+                next_step = "Iniciar 2º Escrutínio (todos os candidatos continuam, exceto os declinados)"
             elif session.current_round == 2:
-                next_step = "Iniciar 3º Escrutínio (apenas os 2 mais votados)"
+                next_step = "Iniciar 3º Escrutínio (apenas os 2 mais votados não declinados)"
             else:
-                next_step = "Empate no 3º Escrutínio. Uma nova votação da rodada 3 foi configurada."
+                next_step = "Empate no 3º Escrutínio. Uma nova votação do 3º escrutínio será realizada."
     else:
         next_step = "Nenhum voto registrado. Repetindo a rodada atual."
-
-    declined_data = session.declined_candidates or {}
-    role_declined = list(declined_data.get(session.current_role, [])) if session.current_role else []
 
     round_3_candidates = []
     if session.current_round == 2 and not elected:
@@ -551,11 +609,15 @@ def get_current_round_results(
     round_3_candidate_ids = [c["candidate_id"] for c in round_3_candidates]
     for r in results_list:
         r["is_declined"] = r["candidate_id"] in role_declined
+        r["is_elected"] = (elected and winner_id == r["candidate_id"])
         r["will_advance_round_3"] = r["candidate_id"] in round_3_candidate_ids
 
     return {
         "elected": elected,
         "winner_name": winner_name,
+        "winner_id": winner_id,
+        "winner_declined": winner_declined,
+        "declined_winner_name": top_candidate["name"] if (winner_declined and top_candidate) else None,
         "next_step": next_step,
         "results": results_list,
         "total_votes": total_votes,
@@ -566,7 +628,7 @@ def get_current_round_results(
     }
 
 
-# Decline Candidate (e.g. candidate opts out of 3rd round)
+# Decline Candidate (available for any role and any round)
 @router.post("/active/decline-candidate")
 def decline_candidate(
     payload: CandidateDeclinePayload,
@@ -592,13 +654,25 @@ def decline_candidate(
         declined_data[role] = role_declined
         session.declined_candidates = declined_data
 
-    # Se estiver no 3º escrutínio com votação em andamento, reinicia os votos da rodada
-    # para que todos votem novamente entre os novos candidatos
-    if session.current_round == 3 and session.status == 'voting':
+    # If this candidate was marked as elected for this role, revoke the election!
+    elected_data = dict(session.elected_positions or {})
+    if elected_data.get(role) == mid_str:
+        elected_data.pop(role, None)
+        session.elected_positions = elected_data
+
+    # If voting is in progress:
+    # 1. Round 3 is strictly between 2 candidates, so always reset round 3 votes
+    # 2. Or if explicitly requested via reset_current_round
+    should_reset_round = (
+        session.status == 'voting' and (
+            session.current_round == 3 or payload.reset_current_round
+        )
+    )
+    if should_reset_round:
         db.query(ElectionVote).filter(
             ElectionVote.election_session_id == session.id,
             ElectionVote.role == role,
-            ElectionVote.round == 3
+            ElectionVote.round == session.current_round
         ).delete()
         db.query(ElectionVoter).filter(
             ElectionVoter.election_session_id == session.id
@@ -616,6 +690,7 @@ def decline_candidate(
         "detail": "Candidato declinado com sucesso.",
         "declined_candidate_ids": role_declined,
         "current_round_candidates": candidates_list,
+        "round_reset": should_reset_round,
     }
 
 
@@ -645,11 +720,16 @@ def undecline_candidate(
         declined_data[role] = role_declined
         session.declined_candidates = declined_data
 
-    if session.current_round == 3 and session.status == 'voting':
+    should_reset_round = (
+        session.status == 'voting' and (
+            session.current_round == 3 or payload.reset_current_round
+        )
+    )
+    if should_reset_round:
         db.query(ElectionVote).filter(
             ElectionVote.election_session_id == session.id,
             ElectionVote.role == role,
-            ElectionVote.round == 3
+            ElectionVote.round == session.current_round
         ).delete()
         db.query(ElectionVoter).filter(
             ElectionVoter.election_session_id == session.id
@@ -667,6 +747,7 @@ def undecline_candidate(
         "detail": "Declínio desfeito com sucesso.",
         "declined_candidate_ids": role_declined,
         "current_round_candidates": candidates_list,
+        "round_reset": should_reset_round,
     }
 
 
@@ -1022,22 +1103,40 @@ def advance_election(
     
     results_list.sort(key=lambda x: x["votes"], reverse=True)
 
+    declined_data = session.declined_candidates or {}
+    role_declined = list(declined_data.get(session.current_role, [])) if session.current_role else []
+
+    # Quorum: total registered voters for this election session
+    quorum = db.query(ElectionVoter).filter(
+        ElectionVoter.election_session_id == session.id
+    ).count()
+
+    majority_threshold = quorum / 2 if quorum > 0 else (total_votes / 2)
+
+    valid_candidates = [
+        r for r in results_list
+        if r["candidate_id"] != "blank" and r["candidate_id"] not in role_declined
+    ]
+    top_valid = valid_candidates[0] if valid_candidates else None
+
     elected = False
-    if total_votes > 0:
-        majority_threshold = total_votes / 2
-        top_candidate = results_list[0]
+    if total_votes > 0 and top_valid:
         if session.current_round in (1, 2):
-            if top_candidate["candidate_id"] != "blank" and top_candidate["votes"] > majority_threshold:
+            if top_valid["votes"] > majority_threshold:
                 elected = True
         else:
-            if top_candidate["candidate_id"] != "blank":
-                if len(results_list) > 1 and results_list[0]["votes"] == results_list[1]["votes"]:
-                    elected = False
-                else:
-                    elected = True
+            if len(valid_candidates) > 1 and valid_candidates[0]["votes"] == valid_candidates[1]["votes"]:
+                elected = False
+            else:
+                elected = True
 
     # 2. Perform the actual transition
     if elected:
+        # Save winner
+        new_elected = {**(session.elected_positions or {})}
+        new_elected[session.current_role] = top_valid["candidate_id"]
+        session.elected_positions = new_elected
+
         # Move to next role
         roles = session.roles_to_dispute
         current_idx = roles.index(session.current_role)
@@ -1050,7 +1149,7 @@ def advance_election(
             session.current_role = None
             session.current_round = 1
     else:
-        # Move to next round
+        # Move to next round for this role (without repeating round 1)
         if session.current_round == 1:
             session.current_round = 2
             session.status = "voting"
@@ -1058,9 +1157,14 @@ def advance_election(
             session.current_round = 3
             session.status = "voting"
         else:
-            # Round 3 tie: stay in round 3
+            # Round 3 tie or winner declined: repeat round 3 with the remaining eligible finalists
             session.current_round = 3
             session.status = "voting"
+            db.query(ElectionVote).filter(
+                ElectionVote.election_session_id == session.id,
+                ElectionVote.role == session.current_role,
+                ElectionVote.round == 3
+            ).delete()
 
     # Reset has_voted_current_round for the next phase
     db.query(ElectionVoter).filter(
@@ -1073,6 +1177,92 @@ def advance_election(
         "status": session.status,
         "current_role": session.current_role,
         "current_round": session.current_round,
+    }
+
+
+# Restart Active Election Role from Round 1 (e.g. after elected candidate declines)
+@router.post("/active/restart-role")
+def restart_role(
+    current_user: User = Depends(require_local_or_federation),
+    db: Session = Depends(get_db),
+):
+    session = db.query(ElectionSession).filter(
+        ElectionSession.local_ump_id == current_user.organization_id,
+        ElectionSession.status.in_(['voting', 'results'])
+    ).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Nenhuma eleição ativa encontrada.")
+    if not session.current_role:
+        raise HTTPException(status_code=400, detail="Nenhum cargo em disputa no momento.")
+
+    # Remove elected status for this role if any
+    elected_data = dict(session.elected_positions or {})
+    elected_data.pop(session.current_role, None)
+    session.elected_positions = elected_data
+
+    # Delete all votes for the current role
+    db.query(ElectionVote).filter(
+        ElectionVote.election_session_id == session.id,
+        ElectionVote.role == session.current_role
+    ).delete()
+
+    # Reset voters for new voting
+    db.query(ElectionVoter).filter(
+        ElectionVoter.election_session_id == session.id
+    ).update({"has_voted_current_round": False}, synchronize_session=False)
+
+    session.current_round = 1
+    session.status = "voting"
+    db.commit()
+
+    return {
+        "status": session.status,
+        "current_role": session.current_role,
+        "current_round": session.current_round,
+        "detail": f"Votação para {session.current_role} reiniciada a partir do 1º escrutínio com sucesso."
+    }
+
+
+# Repeat Current Round of the Active Role
+@router.post("/active/restart-round")
+def restart_round(
+    current_user: User = Depends(require_local_or_federation),
+    db: Session = Depends(get_db),
+):
+    session = db.query(ElectionSession).filter(
+        ElectionSession.local_ump_id == current_user.organization_id,
+        ElectionSession.status.in_(['voting', 'results'])
+    ).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Nenhuma eleição ativa encontrada.")
+    if not session.current_role:
+        raise HTTPException(status_code=400, detail="Nenhum cargo em disputa no momento.")
+
+    # Remove elected status for this role if any
+    elected_data = dict(session.elected_positions or {})
+    elected_data.pop(session.current_role, None)
+    session.elected_positions = elected_data
+
+    # Delete votes only for the current round
+    db.query(ElectionVote).filter(
+        ElectionVote.election_session_id == session.id,
+        ElectionVote.role == session.current_role,
+        ElectionVote.round == session.current_round
+    ).delete()
+
+    # Reset voters for new voting
+    db.query(ElectionVoter).filter(
+        ElectionVoter.election_session_id == session.id
+    ).update({"has_voted_current_round": False}, synchronize_session=False)
+
+    session.status = "voting"
+    db.commit()
+
+    return {
+        "status": session.status,
+        "current_role": session.current_role,
+        "current_round": session.current_round,
+        "detail": f"{session.current_round}º escrutínio reiniciado com sucesso."
     }
 
 
