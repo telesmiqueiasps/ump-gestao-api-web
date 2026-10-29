@@ -891,7 +891,7 @@ def _build_intro_section(report, W, TC, section_bar_num_func):
     return items
 
 
-def _build_activities_list_section(activities, W, TC, section_bar_num_func):
+def _build_activities_list_section(activities, W, TC, section_bar_num_func, fiscal_year: int = None):
     items = [
         section_bar_num_func('II', 'ATIVIDADES REALIZADAS'),
         Spacer(1, 3 * mm),
@@ -902,80 +902,195 @@ def _build_activities_list_section(activities, W, TC, section_bar_num_func):
         'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
     ]
 
-    if activities:
-        HW = (W - 4 * mm) / 2
-        LLW = 18 * mm
-        VW = HW - LLW
+    if not activities:
+        items.append(_p('Nenhuma atividade cadastrada.', 9, GRAY_TXT, align=TA_CENTER))
+        return items
 
-        by_month = {m: [] for m in range(1, 13)}
+    HW = (W - 4 * mm) / 2
+    LLW = 18 * mm
+    VW = HW - LLW
+
+    # Descobre o ano da gestão caso não tenha sido explicitamente fornecido
+    if fiscal_year is None:
+        parsed_years = []
         for act in activities:
-            month_num = int(act['start_date'].split('-')[1])
-            by_month[month_num].append(act)
+            try:
+                parsed_years.append(datetime.date.fromisoformat(act['start_date']).year)
+            except Exception:
+                pass
+        fiscal_year = max(parsed_years) if parsed_years else datetime.date.today().year
 
-        def make_month_block(month_num, acts):
-            m_name = MONTH_NAMES_PT[month_num - 1].upper()
-            m_hdr = Table([[_p(m_name, 8.5, WHITE, bold=True)]], colWidths=[HW])
-            m_hdr.setStyle(TableStyle([
-                ('BACKGROUND',    (0, 0), (-1, -1), TC),
-                ('TOPPADDING',    (0, 0), (-1, -1), 3),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
-                ('LEFTPADDING',   (0, 0), (-1, -1), 6),
-            ]))
+    # Separa as atividades em:
+    # 1. Anos anteriores (ex.: Início da Gestão em Novembro/Dezembro do ano anterior)
+    # 2. Ano da gestão corrente (distribuídos nos 12 meses oficiais de Janeiro a Dezembro)
+    # 3. Anos posteriores (caso existam)
+    prior_activities = []
+    current_activities = []
+    future_activities = []
 
-            col_hdr = Table([[
-                _p('Dia', 7.5, GRAY_TXT, bold=True, align=TA_CENTER),
-                _p('Programação', 7.5, GRAY_TXT, bold=True),
-            ]], colWidths=[LLW, VW])
-            col_hdr.setStyle(TableStyle([
-                ('GRID',          (0, 0), (-1, -1), 0.5, GRAY_LINE),
-                ('TOPPADDING',    (0, 0), (-1, -1), 2),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
-                ('LEFTPADDING',   (0, 0), (-1, -1), 4),
-                ('BACKGROUND',    (0, 0), (-1, -1), GRAY_ROW),
-            ]))
+    for act in activities:
+        try:
+            d = datetime.date.fromisoformat(act['start_date'])
+            act_y = d.year
+        except Exception:
+            act_y = fiscal_year
 
-            act_rows = []
-            for act in acts:
+        if act_y < fiscal_year:
+            prior_activities.append(act)
+        elif act_y > fiscal_year:
+            future_activities.append(act)
+        else:
+            current_activities.append(act)
+
+    def make_activity_block(title, acts, block_w=HW, min_rows=3):
+        llw = 20 * mm if block_w > HW else LLW
+        vw = block_w - llw
+
+        m_hdr = Table([[_p(title, 8.5, WHITE, bold=True)]], colWidths=[block_w])
+        m_hdr.setStyle(TableStyle([
+            ('BACKGROUND',    (0, 0), (-1, -1), TC),
+            ('TOPPADDING',    (0, 0), (-1, -1), 3),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+            ('LEFTPADDING',   (0, 0), (-1, -1), 6),
+        ]))
+
+        col_hdr = Table([[
+            _p('Dia', 7.5, GRAY_TXT, bold=True, align=TA_CENTER),
+            _p('Programação', 7.5, GRAY_TXT, bold=True),
+        ]], colWidths=[llw, vw])
+        col_hdr.setStyle(TableStyle([
+            ('GRID',          (0, 0), (-1, -1), 0.5, GRAY_LINE),
+            ('TOPPADDING',    (0, 0), (-1, -1), 2),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+            ('LEFTPADDING',   (0, 0), (-1, -1), 4),
+            ('BACKGROUND',    (0, 0), (-1, -1), GRAY_ROW),
+        ]))
+
+        act_rows = []
+        for act in acts:
+            try:
                 start = datetime.date.fromisoformat(act['start_date'])
                 end   = datetime.date.fromisoformat(act['end_date']) if act.get('end_date') else None
-                day_str = f"{start.day}/{end.day}" if end and end != start else str(start.day)
-                act_rows.append([
-                    _p(day_str, 7.5, BLACK, align=TA_CENTER),
-                    _p(act['title'], 7.5, BLACK),
-                ])
+                if end and end != start:
+                    if start.month == end.month:
+                        day_str = f"{start.day}/{end.day}"
+                    else:
+                        day_str = f"{start.day}/{start.month:02d} a {end.day}/{end.month:02d}"
+                else:
+                    day_str = str(start.day)
+            except Exception:
+                day_str = str(act.get('start_date', ''))
 
-            while len(act_rows) < 3:
-                act_rows.append([_p('', 7.5), _p('', 7.5)])
+            act_rows.append([
+                _p(day_str, 7.5, BLACK, align=TA_CENTER),
+                _p(act.get('title', ''), 7.5, BLACK),
+            ])
 
-            acts_t = Table(act_rows, colWidths=[LLW, VW])
-            acts_t.setStyle(TableStyle([
-                ('GRID',           (0, 0), (-1, -1), 0.5, GRAY_LINE),
-                ('VALIGN',         (0, 0), (-1, -1), 'MIDDLE'),
-                ('TOPPADDING',     (0, 0), (-1, -1), 3),
-                ('BOTTOMPADDING',  (0, 0), (-1, -1), 3),
-                ('LEFTPADDING',    (0, 0), (-1, -1), 4),
-                ('RIGHTPADDING',   (0, 0), (-1, -1), 4),
-                ('ROWBACKGROUNDS', (0, 0), (-1, -1), [WHITE, GRAY_ROW]),
-            ]))
+        while len(act_rows) < min_rows:
+            act_rows.append([_p('', 7.5), _p('', 7.5)])
 
-            return Table([[m_hdr], [col_hdr], [acts_t]], colWidths=[HW])
+        acts_t = Table(act_rows, colWidths=[llw, vw])
+        acts_t.setStyle(TableStyle([
+            ('GRID',           (0, 0), (-1, -1), 0.5, GRAY_LINE),
+            ('VALIGN',         (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING',     (0, 0), (-1, -1), 3),
+            ('BOTTOMPADDING',  (0, 0), (-1, -1), 3),
+            ('LEFTPADDING',    (0, 0), (-1, -1), 4),
+            ('RIGHTPADDING',   (0, 0), (-1, -1), 4),
+            ('ROWBACKGROUNDS', (0, 0), (-1, -1), [WHITE, GRAY_ROW]),
+        ]))
 
-        for left_m, right_m in zip(range(1, 7), range(7, 13)):
-            left_block  = make_month_block(left_m, by_month[left_m])
-            right_block = make_month_block(right_m, by_month[right_m])
-            pair = Table([[left_block, Spacer(4 * mm, 1), right_block]],
-                         colWidths=[HW, 4 * mm, HW])
-            pair.setStyle(TableStyle([
-                ('VALIGN',        (0, 0), (-1, -1), 'TOP'),
-                ('LEFTPADDING',   (0, 0), (-1, -1), 0),
-                ('RIGHTPADDING',  (0, 0), (-1, -1), 0),
-                ('TOPPADDING',    (0, 0), (-1, -1), 0),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-            ]))
-            items.append(pair)
+        return Table([[m_hdr], [col_hdr], [acts_t]], colWidths=[block_w])
+
+    # ── Bloco(s) de Atividades Anteriores (Início da Gestão) ──
+    if prior_activities:
+        prior_by_month = {}
+        for act in prior_activities:
+            try:
+                d = datetime.date.fromisoformat(act['start_date'])
+                key = (d.year, d.month)
+            except Exception:
+                key = (fiscal_year - 1, 12)
+            if key not in prior_by_month:
+                prior_by_month[key] = []
+            prior_by_month[key].append(act)
+
+        sorted_prior_keys = sorted(prior_by_month.keys())
+
+        i = 0
+        while i < len(sorted_prior_keys):
+            if i + 1 < len(sorted_prior_keys):
+                y1, m1 = sorted_prior_keys[i]
+                y2, m2 = sorted_prior_keys[i + 1]
+                t1 = f"{MONTH_NAMES_PT[m1 - 1].upper()}/{y1} — INÍCIO DA GESTÃO"
+                t2 = f"{MONTH_NAMES_PT[m2 - 1].upper()}/{y2} — INÍCIO DA GESTÃO"
+                b1 = make_activity_block(t1, prior_by_month[(y1, m1)], block_w=HW, min_rows=0)
+                b2 = make_activity_block(t2, prior_by_month[(y2, m2)], block_w=HW, min_rows=0)
+                pair = Table([[b1, Spacer(4 * mm, 1), b2]], colWidths=[HW, 4 * mm, HW])
+                pair.setStyle(TableStyle([
+                    ('VALIGN',        (0, 0), (-1, -1), 'TOP'),
+                    ('LEFTPADDING',   (0, 0), (-1, -1), 0),
+                    ('RIGHTPADDING',  (0, 0), (-1, -1), 0),
+                    ('TOPPADDING',    (0, 0), (-1, -1), 0),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+                ]))
+                items.append(pair)
+                items.append(Spacer(1, 3 * mm))
+                i += 2
+            else:
+                y, m = sorted_prior_keys[i]
+                title = f"{MONTH_NAMES_PT[m - 1].upper()}/{y} — INÍCIO DA GESTÃO"
+                block = make_activity_block(title, prior_by_month[(y, m)], block_w=W, min_rows=0)
+                items.append(block)
+                items.append(Spacer(1, 3 * mm))
+                i += 1
+
+    # ── Grade Oficial dos 12 Meses do Ano da Gestão (Janeiro a Dezembro) ──
+    by_month = {m: [] for m in range(1, 13)}
+    for act in current_activities:
+        try:
+            month_num = int(act['start_date'].split('-')[1])
+            if 1 <= month_num <= 12:
+                by_month[month_num].append(act)
+        except Exception:
+            pass
+
+    for left_m, right_m in zip(range(1, 7), range(7, 13)):
+        left_name  = MONTH_NAMES_PT[left_m - 1].upper()
+        right_name = MONTH_NAMES_PT[right_m - 1].upper()
+        left_block  = make_activity_block(left_name, by_month[left_m], block_w=HW, min_rows=3)
+        right_block = make_activity_block(right_name, by_month[right_m], block_w=HW, min_rows=3)
+        pair = Table([[left_block, Spacer(4 * mm, 1), right_block]],
+                     colWidths=[HW, 4 * mm, HW])
+        pair.setStyle(TableStyle([
+            ('VALIGN',        (0, 0), (-1, -1), 'TOP'),
+            ('LEFTPADDING',   (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING',  (0, 0), (-1, -1), 0),
+            ('TOPPADDING',    (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+        ]))
+        items.append(pair)
+        items.append(Spacer(1, 3 * mm))
+
+    # ── Bloco(s) de Atividades Posteriores (se houver) ──
+    if future_activities:
+        fut_by_month = {}
+        for act in future_activities:
+            try:
+                d = datetime.date.fromisoformat(act['start_date'])
+                key = (d.year, d.month)
+            except Exception:
+                key = (fiscal_year + 1, 1)
+            if key not in fut_by_month:
+                fut_by_month[key] = []
+            fut_by_month[key].append(act)
+
+        sorted_fut_keys = sorted(fut_by_month.keys())
+        for y, m in sorted_fut_keys:
+            title = f"{MONTH_NAMES_PT[m - 1].upper()}/{y}"
+            block = make_activity_block(title, fut_by_month[(y, m)], block_w=W, min_rows=0)
+            items.append(block)
             items.append(Spacer(1, 3 * mm))
-    else:
-        items.append(_p('Nenhuma atividade cadastrada.', 9, GRAY_TXT, align=TA_CENTER))
 
     return items
 
@@ -1311,7 +1426,7 @@ def generate_activity_report(
     story.extend(_build_intro_section(report, W, TC, section_bar_num))
 
     story.append(PageBreak())
-    story.extend(_build_activities_list_section(activities, W, TC, section_bar_num))
+    story.extend(_build_activities_list_section(activities, W, TC, section_bar_num, fiscal_year=fiscal_year))
 
     story.append(PageBreak())
     story.extend(_build_raio_x_section(report, W, TC, section_bar_num))

@@ -391,6 +391,7 @@
       <div class="field">
         <label>Data de Início</label>
         <input class="input" type="date" id="act-start" />
+        <span style="font-size:.7rem;color:var(--slate-400);margin-top:.2rem;display:block">Pode incluir datas do ano anterior (início da gestão).</span>
       </div>
       <div class="field">
         <label>Data de Fim <span style="font-size:.72rem;color:var(--slate-400);font-weight:400">(opcional)</span></label>
@@ -991,13 +992,25 @@
       if (endDate && endDate.toDateString() !== startDate.toDateString())
         dateStr += ` a ${endDate.getDate()} de ${monthNames[endDate.getMonth()]}`
 
+      const isPriorYear = startDate.getFullYear() < arCurrentYear
+      const isFutureYear = startDate.getFullYear() > arCurrentYear
+      if (isPriorYear || isFutureYear) {
+        dateStr += ` de ${startDate.getFullYear()}`
+      }
+
+      const priorBadge = isPriorYear
+        ? `<span class="badge" style="background:#e0e7ff;color:#3730a3;font-size:.68rem;padding:.15rem .5rem;display:inline-flex;align-items:center;gap:.25rem"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Início da Gestão (${startDate.getFullYear()})</span>`
+        : ''
+
       const photoCount = act.photos?.length || 0
       return `
         <div class="activity-card">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
             <div style="flex:1;min-width:0">
-              <div style="font-size:.7rem;color:var(--slate-400);text-transform:uppercase;
-                          letter-spacing:.3px;margin-bottom:.15rem">${dateStr}</div>
+              <div style="display:flex;align-items:center;flex-wrap:wrap;gap:.4rem;margin-bottom:.2rem">
+                <span style="font-size:.7rem;color:var(--slate-400);text-transform:uppercase;letter-spacing:.3px">${dateStr}</span>
+                ${priorBadge}
+              </div>
               <div style="font-weight:600;font-size:.9rem;color:var(--slate-800)">${act.title}</div>
               ${act.description ? `<div style="font-size:.78rem;color:var(--slate-500);margin-top:.2rem;line-height:1.5">
                 ${act.description}</div>` : ''}
