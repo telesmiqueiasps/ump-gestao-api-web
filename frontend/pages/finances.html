@@ -958,6 +958,104 @@
           </select>
         </div>
       </div>
+
+      <!-- Painel dinâmico de vínculo: Mensalidade de Sócio ou ACI (Local ou Federação) -->
+      <div id="tx-link-container" class="mb-4" style="display:none">
+        
+        <!-- Bloco 1: Toggle de Mensalidade de Sócio (apenas para UMP Local quando tipo = outras_receitas) -->
+        <div id="tx-monthly-card" style="display:none;background:var(--slate-50);border:1.5px solid var(--slate-200);border-radius:var(--radius-lg);padding:.75rem 1rem;transition:all .2s ease">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:.55rem">
+              <div style="width:30px;height:30px;border-radius:6px;background:#e0f2fe;color:#0284c7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+              </div>
+              <div>
+                <div style="font-weight:600;font-size:.84rem;color:var(--slate-800)">Mensalidade de Sócio</div>
+                <div style="font-size:.73rem;color:var(--slate-500)">Este lançamento é referente à mensalidade de um sócio?</div>
+              </div>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-toggle-monthly" style="display:inline-flex;align-items:center;gap:.35rem;font-size:.76rem;cursor:pointer">
+              <span id="btn-toggle-monthly-icon" style="display:inline-flex;align-items:center">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="16"></line>
+                  <line x1="8" y1="12" x2="16" y2="12"></line>
+                </svg>
+              </span>
+              <span id="btn-toggle-monthly-text">Vincular Mensalidade</span>
+            </button>
+          </div>
+
+          <!-- Campos do sócio e do mês -->
+          <div id="tx-monthly-details" style="display:none;margin-top:.75rem;padding-top:.75rem;border-top:1px dashed var(--slate-200)">
+            <div class="grid-2">
+              <div class="field">
+                <label style="font-size:.75rem;font-weight:600;color:var(--slate-700)">Sócio Cadastrado</label>
+                <select class="input" id="tx-monthly-member" style="font-size:.85rem">
+                  <option value="">-- Carregando sócios... --</option>
+                </select>
+              </div>
+              <div class="field">
+                <label style="font-size:.75rem;font-weight:600;color:var(--slate-700)">Mês de Referência</label>
+                <select class="input" id="tx-monthly-month" style="font-size:.85rem" disabled>
+                  <option value="">-- Selecione primeiro o sócio --</option>
+                </select>
+              </div>
+            </div>
+            <div id="tx-monthly-hint" style="font-size:.72rem;color:var(--slate-500);margin-top:.4rem;display:flex;align-items:center;gap:.3rem"></div>
+          </div>
+        </div>
+
+        <!-- Bloco 2: ACI Recebida de Sócio (apenas para UMP Local) -->
+        <div id="tx-aci-local-card" style="display:none;background:var(--slate-50);border:1.5px solid var(--slate-200);border-radius:var(--radius-lg);padding:.75rem 1rem">
+          <div style="display:flex;align-items:center;gap:.55rem;margin-bottom:.5rem">
+            <div style="width:30px;height:30px;border-radius:6px;background:#dcfce7;color:#16a34a;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </div>
+            <div>
+              <div style="font-weight:600;font-size:.84rem;color:var(--slate-800)">Vincular Sócio à ACI Recebida</div>
+              <div style="font-size:.73rem;color:var(--slate-500)">Selecione o sócio cadastrado que efetuou esta contribuição de ACI:</div>
+            </div>
+          </div>
+          <div class="field">
+            <select class="input" id="tx-aci-member" style="font-size:.85rem">
+              <option value="">-- Carregando sócios... --</option>
+            </select>
+            <div id="tx-aci-local-hint" style="font-size:.72rem;color:var(--slate-500);margin-top:.4rem;display:none"></div>
+          </div>
+        </div>
+
+        <!-- Bloco 3: ACI Recebida de UMP Local (apenas para Federação) -->
+        <div id="tx-aci-fed-card" style="display:none;background:var(--slate-50);border:1.5px solid var(--slate-200);border-radius:var(--radius-lg);padding:.75rem 1rem">
+          <div style="display:flex;align-items:center;gap:.55rem;margin-bottom:.5rem">
+            <div style="width:30px;height:30px;border-radius:6px;background:#ede9fe;color:#7c3aed;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+              </svg>
+            </div>
+            <div>
+              <div style="font-weight:600;font-size:.84rem;color:var(--slate-800)">Vincular UMP Local à ACI Recebida</div>
+              <div style="font-size:.73rem;color:var(--slate-500)">Selecione a UMP Local vinculada a esta Federação que pagou a ACI:</div>
+            </div>
+          </div>
+          <div class="field">
+            <select class="input" id="tx-aci-local" style="font-size:.85rem">
+              <option value="">-- Carregando UMPs Locais... --</option>
+            </select>
+          </div>
+        </div>
+
+      </div>
+
       <div class="field mb-4">
         <label>Descrição</label>
         <input class="input" type="text" id="tx-desc" placeholder="Descreva o lançamento" />
@@ -1737,6 +1835,7 @@
         document.getElementById('tx-amount').value = t.amount
         document.getElementById('tx-receipt-field').style.display = 'none'
         clearAlert('tx-alert')
+        updateTxLinkUI()
         openModal('modal-tx')
       }
 
@@ -1814,14 +1913,299 @@
     })
 
     // ── Cor do select de tipo ──
+    // ── Vínculo de Mensalidades e ACI no Lançamento ──
+    let cachedMembers = null
+    let cachedLocalUmps = null
+    let cachedFeesConfig = null
+    let isMonthlyFeeActive = false
+
+    async function loadMembersForSelect(selectEl) {
+      if (!cachedMembers) {
+        try {
+          cachedMembers = await api.get('/api/members/?active_only=true')
+          cachedMembers.sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''))
+        } catch {
+          cachedMembers = []
+        }
+      }
+      const currentVal = selectEl.value
+      selectEl.innerHTML = '<option value="">-- Selecione o sócio --</option>' +
+        cachedMembers.map(m => `<option value="${m.id}">${m.full_name}</option>`).join('')
+      if (currentVal) selectEl.value = currentVal
+    }
+
+    async function loadLocalUmpsForSelect(selectEl) {
+      if (!cachedLocalUmps) {
+        try {
+          cachedLocalUmps = await api.get('/api/federations/me/local-umps')
+          cachedLocalUmps.sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+        } catch {
+          cachedLocalUmps = []
+        }
+      }
+      const currentVal = selectEl.value
+      selectEl.innerHTML = '<option value="">-- Selecione a UMP Local --</option>' +
+        cachedLocalUmps.map(u => `<option value="${u.id}">${u.name}</option>`).join('')
+      if (currentVal) selectEl.value = currentVal
+    }
+
+    async function loadFeesConfigCached() {
+      if (!cachedFeesConfig) {
+        try {
+          cachedFeesConfig = await api.get('/api/member-fees/config')
+        } catch {
+          cachedFeesConfig = { monthly_fee_value: 0, aci_year_value: 0 }
+        }
+      }
+      return cachedFeesConfig
+    }
+
+    function updateTxLinkUI() {
+      const txType = document.getElementById('tx-type').value
+      const isLocal = isLocalUmp()
+      const isFed = isFederation()
+      const container = document.getElementById('tx-link-container')
+      const monthlyCard = document.getElementById('tx-monthly-card')
+      const aciLocalCard = document.getElementById('tx-aci-local-card')
+      const aciFedCard = document.getElementById('tx-aci-fed-card')
+
+      if (editId) {
+        container.style.display = 'none'
+        return
+      }
+
+      if (txType === 'outras_receitas') {
+        if (isLocal) {
+          container.style.display = 'block'
+          monthlyCard.style.display = 'block'
+          aciLocalCard.style.display = 'none'
+          aciFedCard.style.display = 'none'
+
+          const toggleBtn = document.getElementById('btn-toggle-monthly')
+          const toggleText = document.getElementById('btn-toggle-monthly-text')
+          const toggleIcon = document.getElementById('btn-toggle-monthly-icon')
+          const details = document.getElementById('tx-monthly-details')
+
+          if (isMonthlyFeeActive) {
+            details.style.display = 'block'
+            monthlyCard.style.borderColor = 'var(--blue-400, #38bdf8)'
+            monthlyCard.style.background = '#f0f9ff'
+            toggleBtn.className = 'btn btn-primary btn-sm'
+            toggleText.textContent = 'Mensalidade Ativa'
+            toggleIcon.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>'
+            loadMembersForSelect(document.getElementById('tx-monthly-member'))
+            loadFeesConfigCached()
+          } else {
+            details.style.display = 'none'
+            monthlyCard.style.borderColor = 'var(--slate-200)'
+            monthlyCard.style.background = 'var(--slate-50)'
+            toggleBtn.className = 'btn btn-secondary btn-sm'
+            toggleText.textContent = 'Vincular Mensalidade'
+            toggleIcon.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>'
+          }
+        } else {
+          container.style.display = 'none'
+        }
+      } else if (txType === 'aci_recebida') {
+        if (isLocal) {
+          container.style.display = 'block'
+          monthlyCard.style.display = 'none'
+          aciLocalCard.style.display = 'block'
+          aciFedCard.style.display = 'none'
+          loadMembersForSelect(document.getElementById('tx-aci-member'))
+          loadFeesConfigCached()
+        } else if (isFed) {
+          container.style.display = 'block'
+          monthlyCard.style.display = 'none'
+          aciLocalCard.style.display = 'none'
+          aciFedCard.style.display = 'block'
+          loadLocalUmpsForSelect(document.getElementById('tx-aci-local'))
+        } else {
+          container.style.display = 'none'
+        }
+      } else {
+        container.style.display = 'none'
+      }
+    }
+
+    // Toggle mensalidade
+    document.getElementById('btn-toggle-monthly').addEventListener('click', () => {
+      isMonthlyFeeActive = !isMonthlyFeeActive
+      if (!isMonthlyFeeActive) {
+        document.getElementById('tx-monthly-member').value = ''
+        document.getElementById('tx-monthly-month').innerHTML = '<option value="">-- Selecione primeiro o sócio --</option>'
+        document.getElementById('tx-monthly-month').disabled = true
+        document.getElementById('tx-monthly-hint').innerHTML = ''
+      }
+      updateTxLinkUI()
+    })
+
+    function onMonthlyMonthChosen(memberName, monthLabel, year) {
+      document.getElementById('tx-desc').value = `Mensalidade ${memberName} - ${monthLabel}/${year}`
+      if (cachedFeesConfig?.monthly_fee_value && !document.getElementById('tx-amount').value) {
+        document.getElementById('tx-amount').value = cachedFeesConfig.monthly_fee_value
+      }
+      document.getElementById('tx-monthly-hint').innerHTML = `
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--green-600);flex-shrink:0"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <span style="color:var(--green-700)">Vinculado a <strong>${memberName}</strong> referente a <strong>${monthLabel}/${year}</strong>.</span>
+      `
+    }
+
+    // Sócio selecionado para mensalidade
+    document.getElementById('tx-monthly-member').addEventListener('change', async () => {
+      const memberSelect = document.getElementById('tx-monthly-member')
+      const memberId = memberSelect.value
+      const monthSelect = document.getElementById('tx-monthly-month')
+      const hintEl = document.getElementById('tx-monthly-hint')
+
+      if (!memberId) {
+        monthSelect.innerHTML = '<option value="">-- Selecione primeiro o sócio --</option>'
+        monthSelect.disabled = true
+        hintEl.innerHTML = ''
+        return
+      }
+
+      monthSelect.disabled = true
+      monthSelect.innerHTML = '<option value="">Carregando meses...</option>'
+      hintEl.innerHTML = '<span class="spinner spinner-sm"></span> Carregando histórico de mensalidades...'
+
+      const selectedDate = document.getElementById('tx-date').value
+      const txYear = selectedDate ? parseInt(selectedDate.split('-')[0]) : currentYear
+
+      try {
+        const months = await api.get(`/api/member-fees/monthly/${memberId}?year=${txYear}`)
+        const memberName = memberSelect.options[memberSelect.selectedIndex].text
+
+        monthSelect.innerHTML = '<option value="">-- Selecione o mês --</option>' +
+          months.map(m => {
+            const statusText = m.is_paid ? `(Já pago em ${formatDate(m.paid_at)})` : `(Pendente)`
+            return `<option value="${m.reference_month}" data-label="${m.month_label}" data-paid="${m.is_paid}" ${m.is_paid ? 'disabled style="color:#94a3b8"' : ''}>${m.month_label} - ${statusText}</option>`
+          }).join('')
+        monthSelect.disabled = false
+
+        // Seleciona o mês correspondente à data do lançamento se pendente, senão o primeiro pendente
+        const targetMonthNum = selectedDate ? parseInt(selectedDate.split('-')[1]) : (currentMonthIndex + 1)
+        const matchMonth = months.find(m => m.month_num === targetMonthNum && !m.is_paid)
+        const firstPending = matchMonth || months.find(m => !m.is_paid)
+
+        if (firstPending) {
+          monthSelect.value = firstPending.reference_month
+          onMonthlyMonthChosen(memberName, firstPending.month_label, txYear)
+        } else {
+          hintEl.innerHTML = '<span style="color:var(--amber-600)">Todos os 12 meses deste ano já constam como pagos para este sócio.</span>'
+        }
+      } catch (err) {
+        monthSelect.innerHTML = '<option value="">Erro ao carregar meses</option>'
+        hintEl.innerHTML = `<span style="color:var(--red-600)">${err.message}</span>`
+      }
+    })
+
+    // Mês selecionado para mensalidade
+    document.getElementById('tx-monthly-month').addEventListener('change', () => {
+      const memberSelect = document.getElementById('tx-monthly-member')
+      const monthSelect = document.getElementById('tx-monthly-month')
+      if (!monthSelect.value || !memberSelect.value) return
+      const memberName = memberSelect.options[memberSelect.selectedIndex].text
+      const opt = monthSelect.options[monthSelect.selectedIndex]
+      const monthLabel = opt.dataset.label || opt.text.split(' - ')[0]
+      const selectedDate = document.getElementById('tx-date').value
+      const txYear = selectedDate ? parseInt(selectedDate.split('-')[0]) : currentYear
+      onMonthlyMonthChosen(memberName, monthLabel, txYear)
+    })
+
+    // Sócio selecionado para ACI (UMP Local)
+    document.getElementById('tx-aci-member').addEventListener('change', async () => {
+      const memberSelect = document.getElementById('tx-aci-member')
+      const memberId = memberSelect.value
+      const hintEl = document.getElementById('tx-aci-local-hint')
+
+      if (!memberId) {
+        hintEl.style.display = 'none'
+        return
+      }
+
+      const memberName = memberSelect.options[memberSelect.selectedIndex].text
+      const selectedDate = document.getElementById('tx-date').value
+      const txYear = selectedDate ? parseInt(selectedDate.split('-')[0]) : currentYear
+
+      document.getElementById('tx-desc').value = `ACI ${txYear} - ${memberName}`
+      hintEl.style.display = 'block'
+      hintEl.innerHTML = '<span class="spinner spinner-sm"></span> Carregando informações da ACI...'
+
+      try {
+        const aciData = await api.get(`/api/member-fees/aci/${memberId}?year=${txYear}`)
+        if (aciData.remaining > 0) {
+          if (!document.getElementById('tx-amount').value) {
+            document.getElementById('tx-amount').value = aciData.remaining
+          }
+          hintEl.innerHTML = `
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--blue-600);flex-shrink:0"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            <span>Meta anual: <strong>${formatCurrency(aciData.aci_year_value)}</strong> · Pago: <strong>${formatCurrency(aciData.total_paid)}</strong> · <strong>Restante: ${formatCurrency(aciData.remaining)}</strong></span>
+          `
+        } else if (aciData.is_complete) {
+          hintEl.innerHTML = `
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--green-600);flex-shrink:0"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span style="color:var(--green-700)">Este sócio já quitou a ACI de ${txYear} (${formatCurrency(aciData.total_paid)}). Você ainda pode registrar contribuição avulsa.</span>
+          `
+        } else {
+          if (cachedFeesConfig?.aci_year_value && !document.getElementById('tx-amount').value) {
+            document.getElementById('tx-amount').value = cachedFeesConfig.aci_year_value
+          }
+          hintEl.innerHTML = `<span>Contribuição de ACI para o ano ${txYear}.</span>`
+        }
+      } catch {
+        hintEl.style.display = 'none'
+      }
+    })
+
+    // UMP Local selecionada para ACI (Federação)
+    document.getElementById('tx-aci-local').addEventListener('change', () => {
+      const localSelect = document.getElementById('tx-aci-local')
+      const localId = localSelect.value
+      if (!localId) return
+      const localName = localSelect.options[localSelect.selectedIndex].text
+      const selectedDate = document.getElementById('tx-date').value
+      const txYear = selectedDate ? parseInt(selectedDate.split('-')[0]) : currentYear
+      document.getElementById('tx-desc').value = `ACI ${txYear} - ${localName}`
+    })
+
+    // Atualiza vínculos ao mudar a data
+    document.getElementById('tx-date').addEventListener('change', () => {
+      const txType = document.getElementById('tx-type').value
+      const txDate = document.getElementById('tx-date').value
+      if (!txDate) return
+
+      if (txType === 'outras_receitas' && isMonthlyFeeActive) {
+        const memberSelect = document.getElementById('tx-monthly-member')
+        if (memberSelect.value) {
+          memberSelect.dispatchEvent(new Event('change'))
+        }
+      } else if (txType === 'aci_recebida' && isLocalUmp()) {
+        const memberSelect = document.getElementById('tx-aci-member')
+        if (memberSelect.value) {
+          memberSelect.dispatchEvent(new Event('change'))
+        }
+      } else if (txType === 'aci_recebida' && isFederation()) {
+        const localSelect = document.getElementById('tx-aci-local')
+        if (localSelect.value) {
+          localSelect.dispatchEvent(new Event('change'))
+        }
+      }
+    })
+
+    // ── Cor do select de tipo ──
     const txTypeColors = { outras_receitas: '#16a34a', aci_recebida: '#16a34a', outras_despesas: '#dc2626', aci_enviada: '#dc2626' }
     const txTypeEl = document.getElementById('tx-type')
     function syncTxTypeColor() { txTypeEl.style.color = txTypeColors[txTypeEl.value] || '' }
-    txTypeEl.addEventListener('change', syncTxTypeColor)
+    txTypeEl.addEventListener('change', () => {
+      syncTxTypeColor()
+      updateTxLinkUI()
+    })
 
     // ── Novo lançamento ──
     document.getElementById('btn-new-tx').addEventListener('click', () => {
       editId = null
+      isMonthlyFeeActive = false
       document.getElementById('modal-tx-title').textContent = 'Novo Lançamento'
       const today = new Date()
       const month = currentMonthIndex + 1
@@ -1849,6 +2233,17 @@
       document.getElementById('tx-amount').value = ''
       document.getElementById('tx-receipt-field').style.display = 'block'
       document.getElementById('tx-receipt').value = ''
+
+      // Reseta campos dinâmicos de vínculo
+      document.getElementById('tx-monthly-member').value = ''
+      document.getElementById('tx-monthly-month').innerHTML = '<option value="">-- Selecione primeiro o sócio --</option>'
+      document.getElementById('tx-monthly-month').disabled = true
+      document.getElementById('tx-monthly-hint').innerHTML = ''
+      document.getElementById('tx-aci-member').value = ''
+      document.getElementById('tx-aci-local-hint').style.display = 'none'
+      document.getElementById('tx-aci-local').value = ''
+      updateTxLinkUI()
+
       clearAlert('tx-alert')
       openModal('modal-tx')
     })
@@ -1859,7 +2254,7 @@
       const payload = {
         transaction_date: document.getElementById('tx-date').value,
         transaction_type: document.getElementById('tx-type').value,
-        description: document.getElementById('tx-desc').value,
+        description: document.getElementById('tx-desc').value.trim(),
         amount: parseFloat(document.getElementById('tx-amount').value),
       }
       const file = document.getElementById('tx-receipt').files[0]
@@ -1870,6 +2265,38 @@
       if (currentPeriod?.is_congress_closed && currentPeriod?.congress_cutoff_date && payload.transaction_date <= currentPeriod.congress_cutoff_date) {
         showAlert('tx-alert', `Não é possível registrar lançamentos em data igual ou anterior ao corte do Congresso (${formatDate(currentPeriod.congress_cutoff_date)}).`, 'error')
         return
+      }
+
+      if (!editId) {
+        if (payload.transaction_type === 'outras_receitas' && isLocalUmp() && isMonthlyFeeActive) {
+          const memberId = document.getElementById('tx-monthly-member').value
+          const refMonth = document.getElementById('tx-monthly-month').value
+          if (!memberId) {
+            showAlert('tx-alert', 'Por favor, selecione o sócio para vincular a mensalidade.', 'error')
+            return
+          }
+          if (!refMonth) {
+            showAlert('tx-alert', 'Por favor, selecione o mês de referência da mensalidade.', 'error')
+            return
+          }
+          payload.is_monthly_fee = true
+          payload.member_id = memberId
+          payload.reference_month = refMonth
+        } else if (payload.transaction_type === 'aci_recebida' && isLocalUmp()) {
+          const aciMemberId = document.getElementById('tx-aci-member').value
+          if (!aciMemberId) {
+            showAlert('tx-alert', 'Por favor, selecione o sócio cadastrado que efetuou a ACI.', 'error')
+            return
+          }
+          payload.aci_member_id = aciMemberId
+        } else if (payload.transaction_type === 'aci_recebida' && isFederation()) {
+          const aciLocalId = document.getElementById('tx-aci-local').value
+          if (!aciLocalId) {
+            showAlert('tx-alert', 'Por favor, selecione a UMP Local de origem da ACI.', 'error')
+            return
+          }
+          payload.local_ump_id = aciLocalId
+        }
       }
 
       setLoading(btn, true, 'Salvar')
@@ -1889,6 +2316,7 @@
         setLoading(btn, false, 'Salvar')
       }
     })
+
 
     // ── Encerramento para Congresso ──
     document.getElementById('btn-confirm-close-congress').addEventListener('click', async () => {

@@ -231,8 +231,15 @@ def register_monthly_fee(
             status_code=404,
             detail=f"Período financeiro {year} não encontrado. Crie o período primeiro no módulo Financeiro."
         )
+    if period.is_locked:
+        raise HTTPException(status_code=400, detail="Período bloqueado — relatório assinado pendente.")
     if period.is_closed:
         raise HTTPException(status_code=400, detail="Período financeiro encerrado")
+    if getattr(period, 'is_congress_closed', False) and period.congress_cutoff_date and payload.paid_at <= period.congress_cutoff_date:
+        raise HTTPException(
+            status_code=400,
+            detail=f"As contas até {period.congress_cutoff_date.strftime('%d/%m/%Y')} já foram encerradas e auditadas para o Congresso."
+        )
 
     desc = payload.description or f"Mensalidade {member.full_name} - {payload.reference_month.strftime('%m/%Y')}"
     tx = _create_transaction(
@@ -454,8 +461,15 @@ def register_aci_contribution(
             status_code=404,
             detail=f"Período financeiro {payload.payment_date.year} não encontrado."
         )
+    if period.is_locked:
+        raise HTTPException(status_code=400, detail="Período bloqueado — relatório assinado pendente.")
     if period.is_closed:
         raise HTTPException(status_code=400, detail="Período financeiro encerrado")
+    if getattr(period, 'is_congress_closed', False) and period.congress_cutoff_date and payload.payment_date <= period.congress_cutoff_date:
+        raise HTTPException(
+            status_code=400,
+            detail=f"As contas até {period.congress_cutoff_date.strftime('%d/%m/%Y')} já foram encerradas e auditadas para o Congresso."
+        )
 
     desc = payload.description or f"ACI {payload.fiscal_year} - {member.full_name}"
     tx = _create_transaction(

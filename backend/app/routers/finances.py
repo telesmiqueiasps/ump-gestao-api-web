@@ -29,6 +29,11 @@ class TransactionCreate(BaseModel):
     transaction_type: TransactionType
     description: str
     amount: float
+    is_monthly_fee: Optional[bool] = False
+    member_id: Optional[UUID] = None
+    reference_month: Optional[datetime.date] = None
+    aci_member_id: Optional[UUID] = None
+    local_ump_id: Optional[UUID] = None
 
 
 class TransactionUpdate(BaseModel):
@@ -159,6 +164,75 @@ def create_transaction(
         created_by=current_user.id,
     )
     db.add(transaction)
+    db.flush()
+
+    # Vínculo automático de Mensalidade de Sócio (UMP Local)
+    if payload.is_monthly_fee and payload.member_id and payload.reference_month:
+        from app.models.member_fees import MemberMonthlyFee
+        from app.models.member import Member
+        member = db.query(Member).filter(
+            Member.id == payload.member_id,
+            Member.local_ump_id == current_user.organization_id,
+        ).first()
+        if not member:
+            raise HTTPException(status_code=404, detail="Sócio não encontrado")
+
+        existing_fee = db.query(MemberMonthlyFee).filter(
+            MemberMonthlyFee.member_id == payload.member_id,
+            MemberMonthlyFee.reference_month == payload.reference_month,
+        ).first()
+        if existing_fee:
+            tx_check = db.query(FinancialTransaction).filter(
+                FinancialTransaction.id == existing_fee.transaction_id
+            ).first() if existing_fee.transaction_id else None
+            if existing_fee.is_paid and tx_check:
+                raise HTTPException(status_code=400, detail="Mensalidade já registrada para este mês deste sócio")
+            else:
+                db.delete(existing_fee)
+                db.flush()
+
+        fee = MemberMonthlyFee(
+            member_id=payload.member_id,
+            local_ump_id=current_user.organization_id,
+            reference_month=payload.reference_month,
+            amount=payload.amount,
+            paid_at=payload.transaction_date,
+            is_paid=True,
+            transaction_id=transaction.id,
+        )
+        db.add(fee)
+
+    # Vínculo automático de ACI de Sócio (UMP Local)
+    elif payload.transaction_type == TransactionType.aci_recebida and payload.aci_member_id:
+        from app.models.member_fees import MemberAciContribution
+        from app.models.member import Member
+        member = db.query(Member).filter(
+            Member.id == payload.aci_member_id,
+            Member.local_ump_id == current_user.organization_id,
+        ).first()
+        if not member:
+            raise HTTPException(status_code=404, detail="Sócio não encontrado")
+
+        contribution = MemberAciContribution(
+            member_id=payload.aci_member_id,
+            local_ump_id=current_user.organization_id,
+            fiscal_year=period.fiscal_year,
+            payment_date=payload.transaction_date,
+            amount=payload.amount,
+            transaction_id=transaction.id,
+        )
+        db.add(contribution)
+
+    # Vínculo com UMP Local na Federação (garante descrição caso vazia)
+    elif payload.transaction_type == TransactionType.aci_recebida and payload.local_ump_id:
+        from app.models.local_ump import LocalUmp
+        local = db.query(LocalUmp).filter(
+            LocalUmp.id == payload.local_ump_id,
+            LocalUmp.federation_id == current_user.organization_id,
+        ).first()
+        if local and not payload.description.strip():
+            transaction.description = f"ACI {period.fiscal_year} - {local.name}"
+
     db.commit()
     db.refresh(transaction)
     return _transaction_out(transaction)
