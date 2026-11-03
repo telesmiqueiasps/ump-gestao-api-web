@@ -1054,10 +1054,6 @@
                 <div class="cred-stat-val" style="color:var(--green-700)" id="stat-submitted">0</div>
               </div>
               <div class="cred-stat-card">
-                <div class="cred-stat-title" style="color:#2563eb">Aprovadas pelo Pastor</div>
-                <div class="cred-stat-val" style="color:#2563eb" id="stat-pastor-approved">0</div>
-              </div>
-              <div class="cred-stat-card">
                 <div class="cred-stat-title" style="color:#b45309">Pendentes / Rascunho</div>
                 <div class="cred-stat-val" style="color:#b45309" id="stat-pending">0</div>
               </div>
@@ -2897,8 +2893,7 @@
       // Preenche KPIs
       document.getElementById('stat-total-locals').textContent = credentialsList.length
       document.getElementById('stat-submitted').textContent = credentialsList.filter(c => c.status === 'enviada' || c.status === 'homologada').length
-      document.getElementById('stat-pastor-approved').textContent = credentialsList.filter(c => c.status === 'aprovado_pastor').length
-      document.getElementById('stat-pending').textContent = credentialsList.filter(c => c.status !== 'enviada' && c.status !== 'homologada' && c.status !== 'aprovado_pastor').length
+      document.getElementById('stat-pending').textContent = credentialsList.filter(c => c.status !== 'enviada' && c.status !== 'homologada').length
       document.getElementById('stat-total-delegates').textContent = credentialsList.reduce((acc, c) => acc + (c.delegates_count || 0), 0)
 
       const tbody = document.getElementById('fed-credentials-tbody')
