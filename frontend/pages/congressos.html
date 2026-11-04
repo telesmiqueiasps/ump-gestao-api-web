@@ -3416,7 +3416,7 @@
     function renderLocalPastorSection() {
       const c = localCredentialData.credential
       const area = document.getElementById('local-pastor-status-area')
-      const isApproved = (c.status === 'aprovado_pastor' || c.status === 'enviada' || c.status === 'homologada') && c.pastor_selfie_url
+      const isApproved = (c.status === 'aprovado_pastor' || c.status === 'enviada' || c.status === 'homologada' || !!c.pastor_approved_at) && !!c.pastor_selfie_url
 
       if (isApproved) {
         const pDate = c.pastor_approved_at ? new Date(c.pastor_approved_at).toLocaleString('pt-BR') : ''
@@ -3492,15 +3492,106 @@
       }
     }
 
+    async function silentSaveLocalCredentialDraft() {
+      if (!localCredentialData || !localCredentialData.congress) return
+      const c = localCredentialData.credential
+      if (c && (c.status === 'enviada' || c.status === 'homologada')) return
+
+      const pastor = document.getElementById('local-input-pastor')?.value.trim() || c?.pastor_name || ''
+      const cleanedDelegates = localDelegatesList
+        .filter(d => d.delegate_name && d.delegate_name.trim())
+        .map(d => ({
+          delegate_name: d.delegate_name.trim(),
+          member_id: d.member_id || null,
+          is_optional: false
+        }))
+
+      try {
+        const res = await api.post(`/api/congresses/${localCredentialData.congress.id}/my-credential`, {
+          delegates: cleanedDelegates,
+          pastor_name: pastor
+        })
+        if (res && res.credential) {
+          localCredentialData.credential = res.credential
+          renderLocalStatusTracker()
+          renderLocalPastorSection()
+          updateLocalActionButtons()
+        }
+      } catch { }
+    }
+
+    let _isSyncingLocalCred = false
+    async function syncLocalCredentialApprovalStatus() {
+      if (_isSyncingLocalCred || !localCredentialData || !localCredentialData.congress) return false
+      const viewEl = document.getElementById('view-local-credential')
+      if (viewEl && viewEl.style.display === 'none') return false
+
+      _isSyncingLocalCred = true
+      try {
+        const url = `/api/congresses/active-for-local?congress_id=${localCredentialData.congress.id}`
+        const freshData = await api.get(url)
+        if (freshData && freshData.credential) {
+          const wasApproved = !!(localCredentialData.credential?.pastor_selfie_url)
+          const freshCred = freshData.credential
+          localCredentialData.credential = freshCred
+          if (freshData.local_president_name) {
+            localCredentialData.local_president_name = freshData.local_president_name
+          }
+
+          // Se não havia delegados preenchidos na tela e o servidor possui, popula
+          const hasScreenDelegates = localDelegatesList.some(d => d.delegate_name && d.delegate_name.trim())
+          if (!hasScreenDelegates && freshCred.delegates && freshCred.delegates.length > 0) {
+            localDelegatesList = freshCred.delegates.map(d => ({
+              delegate_name: d.delegate_name,
+              member_id: d.member_id
+            }))
+            renderLocalDelegatesBuilder()
+          }
+
+          renderLocalStatusTracker()
+          renderLocalPastorSection()
+          updateLocalActionButtons()
+
+          if (!wasApproved && freshCred.pastor_selfie_url) {
+            showToast('Aprovação do Pastor recebida com sucesso!')
+          }
+          return !!(freshCred.pastor_selfie_url)
+        }
+      } catch { } finally {
+        _isSyncingLocalCred = false
+      }
+      return !!(localCredentialData?.credential?.pastor_selfie_url)
+    }
+
+    // Sincroniza automaticamente a aprovação pastoral quando o usuário volta para a aba ou a cada 8s enquanto aguarda
+    window.addEventListener('focus', () => {
+      if (localCredentialData?.credential && !localCredentialData.credential.pastor_selfie_url) {
+        syncLocalCredentialApprovalStatus()
+      }
+    })
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && localCredentialData?.credential && !localCredentialData.credential.pastor_selfie_url) {
+        syncLocalCredentialApprovalStatus()
+      }
+    })
+    setInterval(() => {
+      const viewEl = document.getElementById('view-local-credential')
+      if (viewEl && viewEl.style.display !== 'none' && localCredentialData?.credential && !localCredentialData.credential.pastor_selfie_url) {
+        syncLocalCredentialApprovalStatus()
+      }
+    }, 8000)
+
     window.copyPastorLink = function (link) {
+      silentSaveLocalCredentialDraft()
       navigator.clipboard.writeText(link).then(() => {
-        showToast('Link público copiado para a área de transferência!')
+        showToast('Rascunho salvo e link público copiado para a área de transferência!')
       }).catch(() => {
         showToast('Erro ao copiar link.')
       })
     }
 
     window.sharePastorWhatsApp = function (pastorName, link) {
+      silentSaveLocalCredentialDraft()
       const congTitle = localCredentialData.congress.title || 'Congresso'
       const church = localCredentialData.local_ump.church_name || localCredentialData.local_ump.name || 'nossa igreja'
       const msg = encodeURIComponent(
@@ -3544,9 +3635,8 @@
       }
     }
 
-    window.handleSubmitLocalCredential = function () {
+    window.handleSubmitLocalCredential = async function () {
       if (!localCredentialData) return
-      const c = localCredentialData.credential
       const minD = localCredentialData.congress.min_delegates || 1
       const maxD = localCredentialData.congress.max_delegates || 5
       const count = localDelegatesList.filter(d => d.delegate_name && d.delegate_name.trim()).length
@@ -3566,7 +3656,13 @@
         return
       }
 
-      if (!c.pastor_selfie_url || c.status !== 'aprovado_pastor') {
+      let c = localCredentialData.credential
+      if (!c.pastor_selfie_url || (c.status !== 'aprovado_pastor' && !c.pastor_approved_at)) {
+        await syncLocalCredentialApprovalStatus()
+        c = localCredentialData.credential
+      }
+
+      if (!c.pastor_selfie_url && c.status !== 'aprovado_pastor') {
         showCredentialAlert(
           'Aprovação Pastoral Obrigatória',
           'O Pastor da igreja precisa conferir e aprovar a credencial com uma <b>foto selfie</b> antes do envio oficial à Federação.<br/><br/>Envie o link seguro para o pastor via <b>WhatsApp</b> ou copie o link e aguarde a selfie de confirmação.'
@@ -3611,10 +3707,13 @@
             is_optional: false
           }))
 
-        await api.post(`/api/congresses/${localCredentialData.congress.id}/my-credential`, {
+        const saveRes = await api.post(`/api/congresses/${localCredentialData.congress.id}/my-credential`, {
           delegates: cleanedDelegates,
           pastor_name: pastor
         })
+        if (saveRes && saveRes.credential) {
+          localCredentialData.credential = saveRes.credential
+        }
 
         const res = await api.post(`/api/congresses/credentials/${c.id}/submit`)
         localCredentialData.credential = res.credential
@@ -3630,6 +3729,9 @@
         updateLocalActionButtons()
       } catch (err) {
         closeModal('modal-confirm-submit-cred')
+        renderLocalStatusTracker()
+        renderLocalPastorSection()
+        updateLocalActionButtons()
         showCredentialAlert('Erro no Envio', err.message || 'Falha ao enviar a credencial.', 'error')
       } finally {
         btn.disabled = false

@@ -29,7 +29,8 @@ from app.models.congress import (
     CongressCredential, CongressCredentialDelegate
 )
 from app.services.storage import (
-    get_presigned_url, upload_file, delete_file, delete_folder, extract_key_from_url, resize_image_max_size
+    get_presigned_url, upload_file, delete_file, delete_folder, extract_key_from_url, resize_image_max_size,
+    find_latest_file_in_folder
 )
 from app.services.pdf_generator import generate_commission_report, generate_credential_pdf, generate_convocation_pdf
 from app.core.config import get_settings
@@ -202,6 +203,52 @@ def _get_local_board_president(local_ump_id: Optional[UUID], fiscal_year: Option
     if pres and pres.member_name:
         return pres.member_name.strip()
     return None
+
+
+def _recover_pastor_selfie_if_missing(cred: Optional[CongressCredential], db: Session) -> bool:
+    """
+    Assegura a consistência da aprovação pastoral:
+    1. Se já possui pastor_selfie_url no banco, garante que pastor_approved_at esteja preenchido
+       e que o status não tenha regredido para 'rascunho' ou 'aguardando_pastor'.
+    2. Caso pastor_selfie_url esteja nulo no banco (ex: apagado acidentalmente ao salvar rascunho),
+       verifica no Cloudflare R2 se existe a foto selfie enviada pelo pastor para esta credencial
+       e restaura automaticamente a aprovação.
+    """
+    if not cred or not cred.id or not cred.congress_id:
+        return False
+
+    changed = False
+    if cred.pastor_selfie_url:
+        if not cred.pastor_approved_at:
+            cred.pastor_approved_at = cred.updated_at or datetime.utcnow()
+            changed = True
+        if cred.status in ("rascunho", "aguardando_pastor"):
+            cred.status = "aprovado_pastor"
+            changed = True
+        if changed:
+            db.commit()
+            db.refresh(cred)
+        return True
+
+    # Se não há selfie no banco e a credencial ainda não foi enviada/homologada, verifica se há foto no R2
+    if cred.status in ("rascunho", "aguardando_pastor", "aprovado_pastor"):
+        prefix = f"congresses/{cred.congress_id}/credentials/{cred.id}/pastor_selfie_"
+        recovered_url, last_mod = find_latest_file_in_folder(prefix)
+        if recovered_url:
+            cred.pastor_selfie_url = recovered_url
+            if not cred.pastor_approved_at:
+                if last_mod and hasattr(last_mod, "replace"):
+                    cred.pastor_approved_at = last_mod.replace(tzinfo=None)
+                else:
+                    cred.pastor_approved_at = datetime.utcnow()
+            if cred.status in ("rascunho", "aguardando_pastor"):
+                cred.status = "aprovado_pastor"
+            db.commit()
+            db.refresh(cred)
+            logger.info(f"Aprovação pastoral recuperada do R2 para a credencial {cred.id}: {recovered_url}")
+            return True
+
+    return False
 
 
 def _serialize_credential(
@@ -387,6 +434,8 @@ def get_active_congress_for_local(
             CongressCredential.congress_id == c.id,
             CongressCredential.local_ump_id == local_ump.id
         ).first()
+        if local_c_cred:
+            _recover_pastor_selfie_if_missing(local_c_cred, db)
         congress_summaries.append({
             "id": str(c.id),
             "title": c.title,
@@ -433,6 +482,7 @@ def get_active_congress_for_local(
         db.commit()
         db.refresh(cred)
     else:
+        _recover_pastor_selfie_if_missing(cred, db)
         # Se houver presidente na diretoria, assegura atualização da credencial em rascunho/preparação
         if board_pres_name and (not cred.president_name or cred.status in ("rascunho", "aguardando_pastor", "aprovado_pastor")):
             cred.president_name = board_pres_name
@@ -1753,13 +1803,10 @@ def save_my_credential(
     if cred.status in ("enviada", "homologada"):
         raise HTTPException(status_code=400, detail="Esta credencial já foi enviada à Federação e não pode mais ser alterada.")
 
-    # Se o pastor já havia aprovado, mas a lista de delegados mudou, o status volta para aguardando pastor
-    existing_del_names = [d.delegate_name.strip().upper() for d in cred.delegates]
+    # Garante que se o pastor já aprovou (ou se a selfie está no R2), a aprovação pastoral seja preservada
+    _recover_pastor_selfie_if_missing(cred, db)
+
     new_del_names = [d.delegate_name.strip().upper() for d in payload.delegates if d.delegate_name.strip()]
-    if cred.status == "aprovado_pastor" and existing_del_names != new_del_names:
-        cred.status = "aguardando_pastor"
-        cred.pastor_approved_at = None
-        cred.pastor_selfie_url = None
 
     if payload.pastor_name is not None:
         cred.pastor_name = payload.pastor_name.strip()
@@ -1786,7 +1833,9 @@ def save_my_credential(
         )
         db.add(delegate_obj)
 
-    if cred.status == "rascunho" and new_del_names:
+    if cred.pastor_selfie_url or cred.pastor_approved_at:
+        cred.status = "aprovado_pastor"
+    elif cred.status == "rascunho" and new_del_names:
         cred.status = "aguardando_pastor"
 
     board_pres_name = _get_local_board_president(cred.local_ump_id, cred.congress.fiscal_year if cred.congress else None, db)
@@ -1829,12 +1878,16 @@ def submit_credential_to_federation(
     if not cred:
         raise HTTPException(status_code=404, detail="Credencial não encontrada.")
 
+    _recover_pastor_selfie_if_missing(cred, db)
+
     congress = cred.congress
     if not congress:
         raise HTTPException(status_code=404, detail="Congresso vinculado não encontrado.")
 
     if congress.status == "encerrado":
         raise HTTPException(status_code=400, detail="Este congresso já foi encerrado pela Federação.")
+
+    _recover_pastor_selfie_if_missing(cred, db)
 
     del_count = len(cred.delegates)
     min_d = congress.min_delegates or 1
@@ -1845,7 +1898,7 @@ def submit_credential_to_federation(
     if del_count > max_d:
         raise HTTPException(status_code=400, detail=f"A credencial permite no máximo {max_d} delegados. Atualmente possui {del_count}.")
 
-    if cred.status != "aprovado_pastor" or not cred.pastor_approved_at:
+    if not cred.pastor_selfie_url and (cred.status != "aprovado_pastor" or not cred.pastor_approved_at):
         raise HTTPException(
             status_code=400,
             detail="A credencial precisa ser aprovada pelo Pastor da igreja via foto/selfie antes do envio à Federação."
@@ -2127,6 +2180,8 @@ def get_public_credential(
     if not cred:
         raise HTTPException(status_code=404, detail="Link de credencial inválido ou não encontrado.")
 
+    _recover_pastor_selfie_if_missing(cred, db)
+
     congress = cred.congress
     local_ump = cred.local_ump
     fed = db.query(Federation).filter(Federation.id == congress.federation_id).first() if congress else None
@@ -2239,6 +2294,8 @@ def get_credential_pdf(
 
     if not cred:
         raise HTTPException(status_code=404, detail="Credencial não encontrada.")
+
+    _recover_pastor_selfie_if_missing(cred, db)
 
     congress = cred.congress
     local_ump = cred.local_ump

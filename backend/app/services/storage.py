@@ -104,32 +104,63 @@ def delete_folder(prefix: str) -> bool:
         return False
 
 
+def find_latest_file_in_folder(prefix: str):
+    """Busca o objeto mais recente com o prefixo informado no R2 e retorna (url_publica, last_modified)."""
+    client = _get_client()
+    try:
+        response = client.list_objects_v2(
+            Bucket=settings.r2_bucket_name,
+            Prefix=prefix
+        )
+        objects = response.get("Contents", [])
+        if not objects:
+            return None, None
+        latest_obj = max(objects, key=lambda o: o.get("LastModified").timestamp() if o.get("LastModified") else 0)
+        key = latest_obj.get("Key")
+        if not key:
+            return None, None
+        public_domain = settings.r2_public_domain.rstrip("/")
+        return f"{public_domain}/{key}", latest_obj.get("LastModified")
+    except Exception as e:
+        logger.error(f"Erro ao buscar arquivo no R2 (prefix={prefix}): {e}")
+        return None, None
+
+
 def resize_image_max_size(image_bytes: bytes, max_size: int = 1200) -> bytes:
     try:
-        from PIL import Image
+        from PIL import Image, ImageOps
         import io
         img = Image.open(io.BytesIO(image_bytes))
+        try:
+            img = ImageOps.exif_transpose(img)
+        except Exception:
+            pass
+
         width, height = img.size
-        if width <= max_size and height <= max_size:
-            return image_bytes
+        if width > max_size or height > max_size:
+            if width > height:
+                new_width = max_size
+                new_height = int(height * (max_size / width))
+            else:
+                new_height = max_size
+                new_width = int(width * (max_size / height))
 
-        if width > height:
-            new_width = max_size
-            new_height = int(height * (max_size / width))
-        else:
-            new_height = max_size
-            new_width = int(width * (max_size / height))
+            resample_filter = getattr(Image, "Resampling", None)
+            if resample_filter is not None:
+                filter_type = resample_filter.LANCZOS
+            else:
+                filter_type = getattr(Image, "ANTIALIAS", Image.BICUBIC)
 
-        resample_filter = getattr(Image, "Resampling", None)
-        if resample_filter is not None:
-            filter_type = resample_filter.LANCZOS
-        else:
-            filter_type = getattr(Image, "ANTIALIAS", Image.BICUBIC)
+            img = img.resize((new_width, new_height), filter_type)
 
-        img_resized = img.resize((new_width, new_height), filter_type)
-        fmt = img.format or "JPEG"
+        fmt = (img.format or "JPEG").upper()
+        if fmt not in ("JPEG", "PNG", "WEBP"):
+            fmt = "JPEG"
+        if fmt == "JPEG" and img.mode not in ("RGB", "L"):
+            img = img.convert("RGB")
+
         out_buf = io.BytesIO()
-        img_resized.save(out_buf, format=fmt, quality=85)
+        img.save(out_buf, format=fmt, quality=85)
         return out_buf.getvalue()
     except Exception as e:
         logger.error(f"Erro ao redimensionar imagem: {e}")

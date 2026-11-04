@@ -1076,26 +1076,60 @@
 
       const reader = new FileReader()
       reader.onload = (e) => {
-        capturedBase64 = e.target.result
-        capturedBlob = file
-
-        // Para stream se estiver aberto
-        if (activeStream) {
-          activeStream.getTracks().forEach(t => t.stop())
-          activeStream = null
+        const rawDataUrl = e.target.result
+        const img = new Image()
+        img.onload = () => {
+          try {
+            const canvas = document.getElementById('camera-canvas')
+            const maxDim = 1000
+            let w = img.width || 800
+            let h = img.height || 800
+            if (w > maxDim || h > maxDim) {
+              if (w > h) {
+                h = Math.round(h * (maxDim / w))
+                w = maxDim
+              } else {
+                w = Math.round(w * (maxDim / h))
+                h = maxDim
+              }
+            }
+            canvas.width = w
+            canvas.height = h
+            const ctx = canvas.getContext('2d')
+            ctx.drawImage(img, 0, 0, w, h)
+            capturedBase64 = canvas.toDataURL('image/jpeg', 0.85)
+            capturedBlob = null
+          } catch {
+            capturedBase64 = rawDataUrl
+            capturedBlob = file
+          }
+          finishPhotoSelection(capturedBase64)
         }
-
-        document.getElementById('video-container').style.display = 'none'
-        document.getElementById('preview-container').style.display = 'block'
-        document.getElementById('preview-image').src = capturedBase64
-        document.getElementById('btn-open-camera').style.display = 'none'
-        document.getElementById('btn-capture-photo').style.display = 'none'
-        document.getElementById('btn-retake-photo').style.display = 'inline-flex'
-        document.getElementById('camera-placeholder-text').style.display = 'none'
-
-        validateForm()
+        img.onerror = () => {
+          capturedBase64 = rawDataUrl
+          capturedBlob = file
+          finishPhotoSelection(capturedBase64)
+        }
+        img.src = rawDataUrl
       }
       reader.readAsDataURL(file)
+    }
+
+    function finishPhotoSelection(previewSrc) {
+      if (activeStream) {
+        activeStream.getTracks().forEach(t => t.stop())
+        activeStream = null
+      }
+
+      document.getElementById('video-container').style.display = 'none'
+      document.getElementById('preview-container').style.display = 'block'
+      document.getElementById('preview-image').src = previewSrc
+      document.getElementById('btn-open-camera').style.display = 'none'
+      document.getElementById('btn-capture-photo').style.display = 'none'
+      document.getElementById('btn-retake-photo').style.display = 'inline-flex'
+      document.getElementById('camera-placeholder-text').style.display = 'none'
+
+      validateForm()
     }
 
     function validateForm() {
