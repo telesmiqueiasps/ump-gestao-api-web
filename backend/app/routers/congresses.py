@@ -1994,6 +1994,7 @@ def list_congress_credentials(
         cred = credentials_map.get(lump.id)
         board_pres_name = _get_local_board_president(lump.id, congress.fiscal_year, db)
         if cred:
+            _recover_pastor_selfie_if_missing(cred, db)
             is_submitted = cred.status in ("enviada", "homologada")
             if is_submitted:
                 if board_pres_name and (not cred.president_name or cred.president_name != board_pres_name):
