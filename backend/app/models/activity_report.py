@@ -39,6 +39,7 @@ class Activity(Base):
     description     = Column(Text, nullable=True)
     start_date      = Column(Date, nullable=False)
     end_date        = Column(Date, nullable=True)
+    cunho           = Column(String(50), nullable=True)
     created_at      = Column(DateTime(timezone=True), server_default=func.now())
     updated_at      = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 

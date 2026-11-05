@@ -19,6 +19,7 @@ from app.models.federation import Federation
 from app.models.local_ump import LocalUmp
 from app.models.member import Member
 from app.models.calendar_event import CalendarEvent
+from app.models.activity_report import Activity
 from app.models.member_fees import MemberAciContribution
 from app.models.finance import FinancialPeriod, FinancialTransaction
 from app.models.ump_statistic import (
@@ -393,12 +394,19 @@ def get_ump_statistics_metrics(
             coop_members_count = 0
             responses = []
 
-        # Programações por Cunho: apenas as da própria federação (sem local_ump_id)
-        calendar_events = db.query(CalendarEvent).filter(
-            CalendarEvent.federation_id == current_user.organization_id,
-            CalendarEvent.local_ump_id.is_(None),
-            extract("year", CalendarEvent.start_date) == target_year
+        # Programações/Atividades por Cunho da Federação (aba Presidente - Atividades, com fallback para CalendarEvent)
+        act_events = db.query(Activity).filter(
+            Activity.organization_id == current_user.organization_id,
+            Activity.fiscal_year == target_year
         ).all()
+        if not act_events:
+            calendar_events = db.query(CalendarEvent).filter(
+                CalendarEvent.federation_id == current_user.organization_id,
+                CalendarEvent.local_ump_id.is_(None),
+                extract("year", CalendarEvent.start_date) == target_year
+            ).all()
+        else:
+            calendar_events = act_events
 
         # ACI a repassar na Federação: total de ACI recebida no ano pela federação dividido por 2
         period = db.query(FinancialPeriod).filter(
@@ -496,10 +504,18 @@ def get_ump_statistics_metrics(
             Member.member_type == MemberType.cooperador
         ).count()
 
-        calendar_events = db.query(CalendarEvent).filter(
-            CalendarEvent.local_ump_id == resolved_local_id,
-            extract("year", CalendarEvent.start_date) == target_year
+        # Programações/Atividades por Cunho da UMP Local (aba Presidente - Atividades, com fallback para CalendarEvent)
+        act_events = db.query(Activity).filter(
+            Activity.organization_id == resolved_local_id,
+            Activity.fiscal_year == target_year
         ).all()
+        if not act_events:
+            calendar_events = db.query(CalendarEvent).filter(
+                CalendarEvent.local_ump_id == resolved_local_id,
+                extract("year", CalendarEvent.start_date) == target_year
+            ).all()
+        else:
+            calendar_events = act_events
 
         aci_year_val = float(local_obj.aci_year_value or 0) if local_obj else 0.0
         total_registered_local = active_members_count + coop_members_count
@@ -609,7 +625,7 @@ def get_ump_statistics_metrics(
         else:
             disabilities_general["nao_informado"] += 1
 
-    # 7. Programações da UMP por Cunho (módulo de calendário)
+    # 7. Programações/Atividades por Cunho (módulo Presidente - Atividades)
     VALID_CUNHOS = [
         "Social",
         "Evangelístico/Missional",

@@ -383,9 +383,20 @@
       <button class="modal-close" aria-label="Fechar" style="display:inline-flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     <div class="field mb-4">
-      <label>Título da Atividade</label>
+      <label>Título da Atividade *</label>
       <input class="input" type="text" id="act-title"
         placeholder="Ex: Congresso XVII, DJP 2026" />
+    </div>
+    <div class="field mb-4">
+      <label>Cunho da Atividade *</label>
+      <select class="input" id="act-cunho" style="cursor: pointer;">
+        <option value="" disabled selected>Selecione o cunho...</option>
+        <option value="Social">Social</option>
+        <option value="Evangelístico/Missional">Evangelístico / Missional</option>
+        <option value="Espiritual">Espiritual</option>
+        <option value="Recreativo">Recreativo</option>
+        <option value="Oração/Vigília">Oração / Vigília</option>
+      </select>
     </div>
     <div class="grid-2 mb-4">
       <div class="field">
@@ -724,6 +735,50 @@
   let arCurrentYear = new Date().getFullYear()
   let arReport = null
   let allActivities = []
+
+  const CUNHO_CONFIG = {
+    'Social': {
+      icon: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>',
+      label: 'Social',
+      bg: '#ecfdf5',
+      color: '#065f46',
+      border: '#a7f3d0'
+    },
+    'Evangelístico/Missional': {
+      icon: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>',
+      label: 'Evangelístico/Missional',
+      bg: '#eff6ff',
+      color: '#1e40af',
+      border: '#bfdbfe'
+    },
+    'Espiritual': {
+      icon: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>',
+      label: 'Espiritual',
+      bg: '#f5f3ff',
+      color: '#5b21b6',
+      border: '#ddd6fe'
+    },
+    'Recreativo': {
+      icon: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>',
+      label: 'Recreativo',
+      bg: '#fefce8',
+      color: '#854d0e',
+      border: '#fef08a'
+    },
+    'Oração/Vigília': {
+      icon: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>',
+      label: 'Oração/Vigília',
+      bg: '#fdf2f8',
+      color: '#9d174d',
+      border: '#fbcfe8'
+    }
+  }
+
+  function getCunhoBadgeHtml(cunho) {
+    if (!cunho || !CUNHO_CONFIG[cunho]) return ''
+    const conf = CUNHO_CONFIG[cunho]
+    return `<span style="display:inline-flex;align-items:center;gap:4px;background:${conf.bg};color:${conf.color};border:1px solid ${conf.border};padding:.15rem .5rem;border-radius:99px;font-size:.7rem;font-weight:600;white-space:nowrap;line-height:1.4;">${conf.icon} ${conf.label}</span>`
+  }
   let actEditId = null
   let arAutoSaveTimers = {}
   let arPollingTimeout = null
@@ -1010,6 +1065,7 @@
               <div style="display:flex;align-items:center;flex-wrap:wrap;gap:.4rem;margin-bottom:.2rem">
                 <span style="font-size:.7rem;color:var(--slate-400);text-transform:uppercase;letter-spacing:.3px">${dateStr}</span>
                 ${priorBadge}
+                ${getCunhoBadgeHtml(act.cunho)}
               </div>
               <div style="font-weight:600;font-size:.9rem;color:var(--slate-800)">${act.title}</div>
               ${act.description ? `<div style="font-size:.78rem;color:var(--slate-500);margin-top:.2rem;line-height:1.5">
@@ -1089,6 +1145,7 @@
     actEditId = null
     document.getElementById('modal-activity-title').textContent = 'Nova Atividade'
     document.getElementById('act-title').value = ''
+    document.getElementById('act-cunho').value = ''
     document.getElementById('act-start').value = ''
     document.getElementById('act-end').value   = ''
     document.getElementById('act-desc').value  = ''
@@ -1102,6 +1159,7 @@
     actEditId = id
     document.getElementById('modal-activity-title').textContent = 'Editar Atividade'
     document.getElementById('act-title').value = act.title       || ''
+    document.getElementById('act-cunho').value = act.cunho       || ''
     document.getElementById('act-start').value = act.start_date  || ''
     document.getElementById('act-end').value   = act.end_date    || ''
     document.getElementById('act-desc').value  = act.description || ''
@@ -1112,14 +1170,16 @@
   document.getElementById('btn-save-activity').addEventListener('click', async () => {
     const btn   = document.getElementById('btn-save-activity')
     const title = document.getElementById('act-title').value.trim()
+    const cunho = document.getElementById('act-cunho').value
     const start = document.getElementById('act-start').value
-    if (!title || !start) {
-      showAlert('act-alert', 'Preencha título e data de início.', 'error'); return
+    if (!title || !start || !cunho) {
+      showAlert('act-alert', 'Preencha título, cunho e data de início.', 'error'); return
     }
     setLoading(btn, true, 'Salvar')
     try {
       const payload = {
         title,
+        cunho,
         description: document.getElementById('act-desc').value.trim() || null,
         start_date:  start,
         end_date:    document.getElementById('act-end').value || null,

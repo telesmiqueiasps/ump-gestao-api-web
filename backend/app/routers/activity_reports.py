@@ -38,6 +38,14 @@ ROLE_ORDER = [
     'secretario_presbiterial', 'conselheiro',
 ]
 
+VALID_CUNHOS = [
+    "Social",
+    "Evangelístico/Missional",
+    "Espiritual",
+    "Recreativo",
+    "Oração/Vigília"
+]
+
 
 def _activity_out(a: Activity) -> dict:
     photos_out = []
@@ -57,6 +65,7 @@ def _activity_out(a: Activity) -> dict:
         "organization_id": str(a.organization_id),
         "fiscal_year":     a.fiscal_year,
         "title":           a.title,
+        "cunho":           a.cunho,
         "description":     a.description,
         "start_date":      a.start_date.strftime('%Y-%m-%d') if a.start_date else None,
         "end_date":        a.end_date.strftime('%Y-%m-%d') if a.end_date else None,
@@ -283,6 +292,7 @@ def update_report(
 
 class ActivityCreate(BaseModel):
     title:       str
+    cunho:       Optional[str] = None
     description: Optional[str] = None
     start_date:  str
     end_date:    Optional[str] = None
@@ -291,6 +301,7 @@ class ActivityCreate(BaseModel):
 
 class ActivityUpdate(BaseModel):
     title:       Optional[str] = None
+    cunho:       Optional[str] = None
     description: Optional[str] = None
     start_date:  Optional[str] = None
     end_date:    Optional[str] = None
@@ -315,11 +326,15 @@ def create_activity(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    if payload.cunho and payload.cunho not in VALID_CUNHOS:
+        raise HTTPException(status_code=400, detail=f"Cunho inválido. Opções permitidas: {', '.join(VALID_CUNHOS)}")
+
     year = payload.fiscal_year or datetime.date.today().year
     act = Activity(
         organization_id = current_user.organization_id,
         fiscal_year     = year,
         title           = payload.title,
+        cunho           = payload.cunho or None,
         description     = payload.description,
         start_date      = datetime.date.fromisoformat(payload.start_date),
         end_date        = datetime.date.fromisoformat(payload.end_date) if payload.end_date else None,
@@ -344,6 +359,10 @@ def update_activity(
     if not act:
         raise HTTPException(status_code=404, detail="Atividade não encontrada")
 
+    if payload.cunho is not None:
+        if payload.cunho != "" and payload.cunho not in VALID_CUNHOS:
+            raise HTTPException(status_code=400, detail=f"Cunho inválido. Opções permitidas: {', '.join(VALID_CUNHOS)}")
+        act.cunho = payload.cunho if payload.cunho != "" else None
     if payload.title is not None:
         act.title = payload.title
     if payload.description is not None:

@@ -565,18 +565,6 @@
             maxlength="200" />
         </div>
 
-        <div class="field">
-          <label>Cunho da Programação *</label>
-          <select class="input" id="form-cunho" required style="cursor: pointer;">
-            <option value="" disabled selected>Selecione o cunho...</option>
-            <option value="Social">Social</option>
-            <option value="Evangelístico/Missional">Evangelístico / Missional</option>
-            <option value="Espiritual">Espiritual</option>
-            <option value="Recreativo">Recreativo</option>
-            <option value="Oração/Vigília">Oração / Vigília</option>
-          </select>
-        </div>
-
         <div class="grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
           <div class="field">
             <label>Início *</label>
@@ -1259,7 +1247,6 @@
       document.getElementById('form-modal-title').textContent = 'Nova Programação'
       document.getElementById('form-event-id').value = ''
       document.getElementById('form-title').value = ''
-      document.getElementById('form-cunho').value = ''
       document.getElementById('form-description').value = ''
       document.getElementById('form-location').value = ''
       document.getElementById('form-end-date').value = ''
@@ -1287,7 +1274,6 @@
 
       const eventId = document.getElementById('form-event-id').value
       const title = document.getElementById('form-title').value.trim()
-      const cunho = document.getElementById('form-cunho').value
       const description = document.getElementById('form-description').value.trim()
       const location = document.getElementById('form-location').value.trim()
       const startDateVal = document.getElementById('form-start-date').value
@@ -1296,7 +1282,7 @@
 
       errorEl.classList.add('hidden')
 
-      if (!title || !startDateVal || !cunho) {
+      if (!title || !startDateVal) {
         errorEl.textContent = 'Preencha todos os campos obrigatórios (*)'
         errorEl.classList.remove('hidden')
         return
@@ -1316,7 +1302,6 @@
 
       const payload = {
         title,
-        cunho,
         description: description || null,
         start_date: startDate.toISOString(),
         end_date: endDate ? endDate.toISOString() : null,
@@ -1369,7 +1354,6 @@
       document.getElementById('form-modal-title').textContent = 'Editar Programação'
       document.getElementById('form-event-id').value = activeEventForDetail.id
       document.getElementById('form-title').value = activeEventForDetail.title
-      document.getElementById('form-cunho').value = activeEventForDetail.cunho || ''
       document.getElementById('form-description').value = activeEventForDetail.description || ''
       document.getElementById('form-location').value = activeEventForDetail.location || ''
 
