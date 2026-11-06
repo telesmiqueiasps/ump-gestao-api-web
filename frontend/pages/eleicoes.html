@@ -631,6 +631,31 @@
               </div>
             </div>
 
+            <div class="link-copy-box" style="margin-top: .75rem; background: var(--bg-surface, #fff); border: 1px solid var(--border-color, #e2e8f0);">
+              <div style="flex:1; min-width:200px">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary, #059669);"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                  <strong class="text-sm">Página Pública dos Códigos de Acesso:</strong>
+                </div>
+                <div class="link-copy-text" id="codes-url-text" style="color: var(--text-secondary, #64748b);">http://...</div>
+                <small style="color: var(--text-tertiary, #94a3b8); font-size: 0.75rem;">Compartilhe este link com os eleitores para que cada um localize e copie seu código com facilidade.</small>
+              </div>
+              <div style="display:flex; gap:.4rem; align-items:center; flex-wrap:wrap">
+                <a class="btn btn-secondary btn-sm" id="btn-open-codes-page" href="#" target="_blank" style="display:inline-flex;align-items:center;gap:.4rem;text-decoration:none;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                  <span>Abrir Página</span>
+                </a>
+                <button class="btn btn-secondary btn-sm" id="btn-copy-codes-url" style="display:inline-flex;align-items:center;gap:.4rem;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  <span>Copiar Link</span>
+                </button>
+                <button class="btn btn-secondary btn-sm" id="btn-whatsapp-codes-url" style="display:inline-flex;align-items:center;gap:.4rem;color:#15803d;border-color:#86efac;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                  <span>WhatsApp</span>
+                </button>
+              </div>
+            </div>
+
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .75rem; margin-bottom: 1rem;">
               <h3>Lista de Eleitores e Códigos</h3>
               <div style="display: flex; gap: .5rem; flex-wrap: wrap;">
@@ -1219,7 +1244,14 @@
               </div>
             </div>
             <div style="display: flex; flex-direction: column; align-items: flex-end; gap: .4rem; flex-shrink: 0;">
-              <div class="code-card-code">${v.access_code}</div>
+              <div style="display: flex; align-items: center; gap: .35rem;">
+                <div class="code-card-code">${v.access_code}</div>
+                <button type="button" class="btn btn-ghost btn-sm" title="Copiar código de ${v.full_name}"
+                  style="padding: 3px 6px; min-height: auto; border: 1px solid var(--border-color, #e2e8f0); border-radius: 6px; display: inline-flex; align-items: center; color: var(--text-secondary, #64748b);"
+                  onclick="copySingleVoterCode('${v.access_code}', this)">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                </button>
+              </div>
               ${!v.has_voted ? `
                 <button class="btn btn-ghost danger btn-sm" 
                   style="padding: 3px 8px; min-height: auto; font-size: .7rem; width: auto; font-weight: 500;" 
@@ -1385,6 +1417,29 @@
           // Construct voting URL
           const votingUrl = `${window.location.origin}/votar.html?session=${stats.session_id}`
           document.getElementById('voting-url-text').textContent = votingUrl
+
+          // Construct codes public URL
+          const codesUrl = `${window.location.origin}/codigos.html?session=${stats.session_id}`
+          const codesUrlEl = document.getElementById('codes-url-text')
+          if (codesUrlEl) codesUrlEl.textContent = codesUrl
+          const openCodesBtn = document.getElementById('btn-open-codes-page')
+          if (openCodesBtn) openCodesBtn.href = codesUrl
+
+          const copyCodesUrlBtn = document.getElementById('btn-copy-codes-url')
+          if (copyCodesUrlBtn) {
+            copyCodesUrlBtn.onclick = () => {
+              navigator.clipboard.writeText(codesUrl)
+              alert('Link da página pública de códigos copiado com sucesso!')
+            }
+          }
+
+          const whatsappCodesBtn = document.getElementById('btn-whatsapp-codes-url')
+          if (whatsappCodesBtn) {
+            whatsappCodesBtn.onclick = () => {
+              const text = `Acesse o link abaixo para consultar seu código de eleitor:\n${codesUrl}`
+              window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank')
+            }
+          }
 
           // Save last data and update counts
           lastVotersData = stats.voters
@@ -2024,6 +2079,17 @@
         } catch (err) {
           alert('Erro ao excluir eleição: ' + err.message)
         }
+      }
+
+      window.copySingleVoterCode = (code, btn) => {
+        if (!navigator.clipboard) return
+        navigator.clipboard.writeText(code).then(() => {
+          const original = btn.innerHTML
+          btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`
+          setTimeout(() => { btn.innerHTML = original }, 1500)
+        }).catch(err => {
+          console.error('Falha ao copiar código:', err)
+        })
       }
 
       window.removeAbsentVoter = async (voterId, name) => {

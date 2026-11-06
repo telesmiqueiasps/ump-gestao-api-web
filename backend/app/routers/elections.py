@@ -845,6 +845,54 @@ def get_history(
 
 # ── Public Voting Endpoints ─────────────────────────────────
 
+# Obter lista pública de eleitores e códigos de acesso para consulta dos participantes
+@router.get("/public/session/{session_id}/voters")
+def get_public_session_voters(
+    session_id: UUID,
+    db: Session = Depends(get_db),
+):
+    session = db.query(ElectionSession).filter(
+        ElectionSession.id == session_id
+    ).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Sessão de eleição não encontrada.")
+
+    org = session.local_ump
+    org_name = org.name if org else "UMP Local"
+    church_name = getattr(org, "church_name", "") or ""
+    society_type = getattr(org, "society_type", "UMP") or "UMP"
+
+    voters = db.query(ElectionVoter).filter(
+        ElectionVoter.election_session_id == session.id
+    ).all()
+
+    voters_list = [
+        {
+            "id": str(v.id),
+            "full_name": v.member.full_name if v.member else "Eleitor",
+            "avatar_url": v.member.avatar_url if v.member else None,
+            "access_code": v.access_code,
+            "can_be_voted": v.can_be_voted,
+            "has_voted": v.has_voted_current_round,
+        }
+        for v in voters
+    ]
+    voters_list.sort(key=lambda x: x["full_name"])
+
+    return {
+        "session_id": str(session.id),
+        "title": session.title,
+        "status": session.status,
+        "current_role": session.current_role,
+        "current_round": session.current_round,
+        "total_voters": len(voters_list),
+        "organization_name": org_name,
+        "church_name": church_name,
+        "society_type": society_type,
+        "voters": voters_list,
+    }
+
+
 # Validate Access Code and Get Current Session Info
 @router.get("/public/session")
 def get_public_session(
