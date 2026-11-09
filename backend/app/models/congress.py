@@ -115,7 +115,7 @@ class CongressCredential(Base):
     congress_id = Column(UUID(as_uuid=True), ForeignKey("congresses.id", ondelete="CASCADE"), nullable=False, index=True)
     local_ump_id = Column(UUID(as_uuid=True), ForeignKey("local_umps.id", ondelete="CASCADE"), nullable=False, index=True)
 
-    # Status: rascunho, aguardando_pastor, aprovado_pastor, enviada, homologada
+    # Status: rascunho, aguardando_pastor, aprovado_pastor, em_correcao, enviada, homologada
     status = Column(String(30), nullable=False, default="rascunho")
 
     city = Column(String(100), nullable=True)

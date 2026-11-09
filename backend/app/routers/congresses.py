@@ -231,7 +231,7 @@ def _recover_pastor_selfie_if_missing(cred: Optional[CongressCredential], db: Se
         return True
 
     # Se não há selfie no banco e a credencial ainda não foi enviada/homologada, verifica se há foto no R2
-    if cred.status in ("rascunho", "aguardando_pastor", "aprovado_pastor"):
+    if cred.status in ("rascunho", "aguardando_pastor", "aprovado_pastor", "em_correcao"):
         prefix = f"congresses/{cred.congress_id}/credentials/{cred.id}/pastor_selfie_"
         recovered_url, last_mod = find_latest_file_in_folder(prefix)
         if recovered_url:
@@ -484,7 +484,7 @@ def get_active_congress_for_local(
     else:
         _recover_pastor_selfie_if_missing(cred, db)
         # Se houver presidente na diretoria, assegura atualização da credencial em rascunho/preparação
-        if board_pres_name and (not cred.president_name or cred.status in ("rascunho", "aguardando_pastor", "aprovado_pastor")):
+        if board_pres_name and (not cred.president_name or cred.status in ("rascunho", "aguardando_pastor", "aprovado_pastor", "em_correcao")):
             cred.president_name = board_pres_name
             db.commit()
             db.refresh(cred)
@@ -1833,7 +1833,9 @@ def save_my_credential(
         )
         db.add(delegate_obj)
 
-    if cred.pastor_selfie_url or cred.pastor_approved_at:
+    if cred.status == "em_correcao":
+        pass
+    elif cred.pastor_selfie_url or cred.pastor_approved_at:
         cred.status = "aprovado_pastor"
     elif cred.status == "rascunho" and new_del_names:
         cred.status = "aguardando_pastor"
@@ -1898,7 +1900,7 @@ def submit_credential_to_federation(
     if del_count > max_d:
         raise HTTPException(status_code=400, detail=f"A credencial permite no máximo {max_d} delegados. Atualmente possui {del_count}.")
 
-    if not cred.pastor_selfie_url and (cred.status != "aprovado_pastor" or not cred.pastor_approved_at):
+    if not cred.pastor_selfie_url and (cred.status not in ("aprovado_pastor", "em_correcao") or not cred.pastor_approved_at):
         raise HTTPException(
             status_code=400,
             detail="A credencial precisa ser aprovada pelo Pastor da igreja via foto/selfie antes do envio à Federação."
@@ -1912,6 +1914,8 @@ def submit_credential_to_federation(
     cred.submitted_by = current_user.id
     cred.validation_code = cred.validation_code or f"VAL-CRED-{congress.fiscal_year}-{_uuid.uuid4().hex[:8].upper()}"
     cred.status = "enviada"
+    cred.homologated_at = None
+    cred.homologated_by = None
 
     db.commit()
     db.refresh(cred)
@@ -2004,6 +2008,12 @@ def list_congress_credentials(
                 delegates_count = len(cred.delegates)
                 total_delegates += delegates_count
                 total_submitted += 1
+            elif cred.status == "em_correcao":
+                if board_pres_name and (not cred.president_name or cred.president_name != board_pres_name):
+                    cred.president_name = board_pres_name
+                    db.commit()
+                serialized = _serialize_credential(cred, include_token=False, override_president_name=board_pres_name)
+                total_pending += 1
             else:
                 # Informações da credencial (inclusive foto do pastor e lista de delegados)
                 # só devem aparecer para a federação quando a credencial for definitivamente enviada pela local.
@@ -2163,6 +2173,63 @@ def homologate_credential(
     return {
         "message": "Credencial homologada com sucesso e delegados cadastrados na aba Delegados!",
         "credential": _serialize_credential(cred, include_token=False)
+    }
+
+
+@router.post("/credentials/{credential_id}/enable-correction")
+def enable_credential_correction(
+    credential_id: UUID,
+    current_user: User = Depends(require_federation),
+    db: Session = Depends(get_db)
+):
+    """
+    Habilita a correção da credencial pela UMP Local:
+    - Permite que a UMP Local altere delegados e reenvie a credencial.
+    - Preserva a aprovação pastoral e selfie já existente.
+    - Se a credencial já havia sido homologada, remove os delegados cadastrados na Federação até novo envio e homologação.
+    """
+    cred = db.query(CongressCredential).join(Congress).filter(
+        CongressCredential.id == credential_id,
+        Congress.federation_id == current_user.organization_id
+    ).first()
+
+    if not cred:
+        raise HTTPException(status_code=404, detail="Credencial não encontrada.")
+
+    congress = cred.congress
+    if not congress or congress.status == "encerrado":
+        raise HTTPException(status_code=400, detail="Este congresso já foi encerrado e não permite alterações.")
+
+    if cred.status not in ("enviada", "homologada"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Apenas credenciais enviadas ou homologadas podem ter a correção habilitada."
+        )
+
+    # Se já estava homologada, limpa os delegados cadastrados na Federação pela homologação anterior
+    if cred.status == "homologada" and cred.local_ump:
+        lump_name = cred.local_ump.name
+        db.query(Member).filter(
+            Member.local_ump_id == current_user.organization_id,
+            Member.local_society == lump_name
+        ).delete(synchronize_session=False)
+
+    _recover_pastor_selfie_if_missing(cred, db)
+
+    cred.status = "em_correcao"
+    cred.submitted_at = None
+    cred.submitted_by = None
+    cred.homologated_at = None
+    cred.homologated_by = None
+
+    db.commit()
+    db.refresh(cred)
+
+    board_pres_name = _get_local_board_president(cred.local_ump_id, congress.fiscal_year, db)
+
+    return {
+        "message": f"Correção habilitada com sucesso para a credencial da {cred.local_ump.name if cred.local_ump else 'UMP Local'}. A organização local já pode alterar e reenviar.",
+        "credential": _serialize_credential(cred, include_token=False, override_president_name=board_pres_name)
     }
 
 

@@ -1416,6 +1416,19 @@
             </div>
           </div>
 
+          <!-- Alerta se em Correção Habilitada -->
+          <div id="local-correction-notice" style="display:none; background:#fffbeb; border:1px solid #fcd34d; border-radius:var(--radius); padding:1rem 1.25rem; margin-bottom:1.25rem; align-items:flex-start; gap:12px;">
+            <div style="color:#d97706; flex-shrink:0; margin-top:2px;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            </div>
+            <div style="flex:1;">
+              <strong style="color:#92400e; font-size:.95rem;">Correção Habilitada pela Federação!</strong>
+              <div style="font-size:.84rem; color:#78350f; margin-top:.2rem; line-height:1.45;">
+                A Federação liberou esta credencial para correção. Você pode atualizar a lista de delegados abaixo e clicar em <b>Reenviar à Federação</b>. A aprovação pastoral com foto selfie permanece válida.
+              </div>
+            </div>
+          </div>
+
           <!-- Card 1: Lista de Delegados -->
           <div class="cred-builder-card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:.75rem;">
@@ -1752,6 +1765,43 @@
         <button type="button" class="btn btn-primary" id="btn-do-homologate" onclick="executeHomologateAction()" style="display:inline-flex; align-items:center; gap:6px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
           <span>Confirmar Homologação</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODAL: HABILITAR CORREÇÃO DA CREDENCIAL (FEDERAÇÃO) ── -->
+  <div class="modal-overlay" id="modal-confirm-enable-correction" style="display:none;">
+    <div class="modal-box" style="max-width: 490px;">
+      <div class="modal-box-header">
+        <div style="display:flex; align-items:center; gap:.5rem;">
+          <div style="width:34px; height:34px; border-radius:50%; background:#fffbeb; color:#d97706; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          </div>
+          <h3 style="font-weight:700; font-size:1.05rem; color:var(--slate-800)">Habilitar Correção de Credencial</h3>
+        </div>
+        <button type="button" class="modal-close" onclick="closeModal('modal-confirm-enable-correction')" aria-label="Fechar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="modal-box-body">
+        <p style="font-size:.92rem; color:var(--slate-700); line-height:1.5;">
+          Deseja liberar a correção da credencial da <b id="enable-correction-modal-lump-name" style="color:var(--slate-900)"></b>?
+        </p>
+        <div style="background:#fffbeb; border:1px solid #fcd34d; border-radius:var(--radius); padding:.85rem 1rem; margin-top:.85rem; font-size:.82rem; color:#78350f; line-height:1.45;">
+          <div style="font-weight:700; color:#92400e; margin-bottom:.35rem; display:flex; align-items:center; gap:5px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            <span>Como funciona a correção:</span>
+          </div>
+          • A UMP Local terá o formulário reaberto para editar delegados e reenviar a credencial.<br/>
+          • <b>A aprovação pastoral já realizada continua válida</b> (não será necessário o pastor tirar uma nova foto selfie).
+        </div>
+      </div>
+      <div class="modal-box-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-confirm-enable-correction')">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-do-enable-correction" onclick="executeEnableCorrectionAction()" style="background:#d97706; border-color:#d97706; display:inline-flex; align-items:center; gap:6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          <span>Habilitar Correção</span>
         </button>
       </div>
     </div>
@@ -2910,6 +2960,8 @@
           statusBadge = '<span class="badge badge-green">Homologada</span>'
         } else if (c.status === 'enviada') {
           statusBadge = '<span class="badge badge-green">Enviada</span>'
+        } else if (c.status === 'em_correcao') {
+          statusBadge = '<span class="badge" style="background:#fffbeb;color:#92400e;border:1px solid #fcd34d;font-weight:700;">Em Correção</span>'
         } else if (c.status === 'aprovado_pastor') {
           statusBadge = '<span class="badge badge-blue">Aprovado Pastor</span>'
         } else if (c.status === 'aguardando_pastor') {
@@ -2924,13 +2976,15 @@
         let delegatesCell = ''
         if (isSubmitted) {
           delegatesCell = `<strong style="color:var(--slate-900)">${c.delegates_count || 0}</strong> delegado(s)`
+        } else if (c.status === 'em_correcao') {
+          delegatesCell = `<span style="font-size:.82rem; color:var(--amber-700); font-weight:600;"><strong style="color:var(--slate-900)">${c.delegates_count || 0}</strong> delegado(s) (em correção)</span>`
         } else {
           delegatesCell = `<span style="font-size:.82rem; color:var(--slate-400); font-style:italic;">Aguardando envio</span>`
         }
 
         // Selfie e Pastor
         let pastorCell = '—'
-        if (isSubmitted) {
+        if (isSubmitted || c.status === 'em_correcao') {
           if (c.pastor_selfie_url) {
             pastorCell = `
               <div style="display:flex; align-items:center; gap:.5rem;">
@@ -2950,7 +3004,7 @@
 
         // Presidência
         let presCell = '—'
-        if (isSubmitted && c.president_name) {
+        if ((isSubmitted || c.status === 'em_correcao') && c.president_name) {
           const sDate = (c.submitted_at || c.president_signed_at)
             ? new Date(c.submitted_at || c.president_signed_at).toLocaleDateString('pt-BR')
             : ''
@@ -2982,9 +3036,26 @@
             `
           }
           actionsHtml += `
+            <button type="button" class="btn btn-secondary btn-sm" onclick="enableCorrectionCredentialByIndex(${idx})" title="Habilitar correção para esta UMP Local" style="padding:.35rem .65rem; font-size:.78rem; margin-left:.35rem; display:inline-flex; align-items:center; gap:4px; color:var(--amber-700); border-color:var(--amber-300);">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+              <span>Habilitar Correção</span>
+            </button>
+          `
+          actionsHtml += `
             <a href="${API_BASE}/api/congresses/credentials/${c.id}/pdf" target="_blank" class="btn btn-secondary btn-sm" title="Baixar PDF Oficial" style="padding:.35rem .55rem; font-size:.78rem; margin-left:.35rem; display:inline-flex; align-items:center;">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
             </a>
+          `
+        } else if (c.status === 'em_correcao' && c.id) {
+          actionsHtml = `
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openCredentialDocPreview('${c.id}')" title="Visualizar documento atual" style="padding:.35rem .65rem; font-size:.78rem; display:inline-flex; align-items:center; gap:4px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="3"></circle></svg>
+              <span>Ver Doc</span>
+            </button>
+            <span style="display:inline-flex; align-items:center; gap:4px; font-size:.78rem; color:var(--amber-700); font-weight:600; background:#fffbeb; padding:.3rem .6rem; border-radius:4px; border:1px solid #fcd34d; margin-left:.35rem;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+              <span>Em Correção</span>
+            </span>
           `
         } else {
           actionsHtml = `<span style="font-size:.78rem; color:var(--slate-400); font-style:italic;">Aguardando envio local</span>`
@@ -3009,7 +3080,7 @@
     window.openFedSelfieByIndex = function (idx) {
       const c = currentFedCredentialsList[idx]
       if (!c) return
-      const isSubmitted = c.status === 'enviada' || c.status === 'homologada'
+      const isSubmitted = c.status === 'enviada' || c.status === 'homologada' || c.status === 'em_correcao'
       if (!isSubmitted) {
         showCredentialAlert('Envio Pendente', 'A foto selfie do pastor só estará disponível para a Federação após o envio definitivo da credencial pela UMP Local.', 'warning')
         return
@@ -3105,6 +3176,45 @@
       }
     }
 
+    let pendingCorrectionCredId = null
+    let pendingCorrectionLumpName = ''
+
+    window.enableCorrectionCredentialByIndex = function (idx) {
+      const c = currentFedCredentialsList[idx]
+      if (!c || !c.id) return
+
+      pendingCorrectionCredId = c.id
+      pendingCorrectionLumpName = c.local_ump_name || 'UMP Local'
+
+      document.getElementById('enable-correction-modal-lump-name').textContent = pendingCorrectionLumpName
+      openModal('modal-confirm-enable-correction')
+    }
+
+    window.executeEnableCorrectionAction = async function () {
+      if (!pendingCorrectionCredId) return
+      const btn = document.getElementById('btn-do-enable-correction')
+      const origHtml = btn.innerHTML
+      btn.disabled = true
+      btn.innerHTML = `<span style="width:13px;height:13px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;display:inline-block;animation:spin .8s linear infinite;"></span> <span>Habilitando...</span>`
+
+      try {
+        const res = await api.post(`/api/congresses/credentials/${pendingCorrectionCredId}/enable-correction`)
+        closeModal('modal-confirm-enable-correction')
+        showToast(res.message || `Correção habilitada para a UMP ${pendingCorrectionLumpName}!`)
+        if (activeCongress) {
+          await loadFederationCredentials(activeCongress.id)
+        }
+      } catch (err) {
+        closeModal('modal-confirm-enable-correction')
+        showCredentialAlert('Erro ao Habilitar Correção', err.message || 'Falha ao habilitar correção.', 'error')
+      } finally {
+        btn.disabled = false
+        btn.innerHTML = origHtml
+        pendingCorrectionCredId = null
+        pendingCorrectionLumpName = ''
+      }
+    }
+
     // ── VISÃO DA ORGANIZAÇÃO LOCAL (PRESIDENTE & VICE) ──
     async function initLocalUmpCredentialView() {
       // Ajusta cabeçalho
@@ -3158,6 +3268,9 @@
         } else if (c.credential_status === 'enviada') {
           statusBadgeClass = 'badge-blue'
           statusText = 'Enviada à Federação'
+        } else if (c.credential_status === 'em_correcao') {
+          statusBadgeClass = 'badge-amber'
+          statusText = 'Correção Solicitada'
         } else if (c.credential_status === 'aprovado_pastor') {
           statusBadgeClass = 'badge-green'
           statusText = 'Aprovada pelo Pastor'
@@ -3206,7 +3319,7 @@
                 <span>Ler Convocação</span>
               </button>
               <button class="btn btn-primary btn-sm" style="width:100%; justify-content:center; display:inline-flex; align-items:center; gap:6px; font-weight:600;" onclick="openLocalCredentialForm('${c.id}')">
-                <span>${isSubmitted ? 'Ver Credencial Enviada' : 'Preencher e Enviar Credenciais'}</span>
+                <span>${c.credential_status === 'em_correcao' ? 'Corrigir e Reenviar Credencial' : (isSubmitted ? 'Ver Credencial Enviada' : 'Preencher e Enviar Credenciais')}</span>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
               </button>
             </div>
@@ -3284,7 +3397,8 @@
       const c = localCredentialData.credential
       const tracker = document.getElementById('local-status-tracker')
       const isSent = c.status === 'enviada' || c.status === 'homologada'
-      const isPastorApp = c.status === 'aprovado_pastor' || isSent
+      const isCorrection = c.status === 'em_correcao'
+      const isPastorApp = c.status === 'aprovado_pastor' || isCorrection || isSent
       const isWaitingPastor = c.status === 'aguardando_pastor' || isPastorApp
       const isDraft = true
 
@@ -3299,21 +3413,24 @@
           <span>Aprovação do Pastor</span>
         </div>
         <div class="tracker-arrow">→</div>
-        <div class="tracker-step ${isSent ? 'completed' : ''}">
+        <div class="tracker-step ${isSent ? 'completed' : (isCorrection ? 'active' : '')}">
           <div class="tracker-step-icon">3</div>
-          <span>Enviada à Federação</span>
+          <span>${isCorrection ? 'Aguardando Reenvio' : 'Enviada à Federação'}</span>
         </div>
       `
 
-      // Alerta de enviado
+      // Alertas de enviado e correção
       const submittedNotice = document.getElementById('local-submitted-notice')
+      const correctionNotice = document.getElementById('local-correction-notice')
       if (isSent) {
         submittedNotice.style.display = 'flex'
+        if (correctionNotice) correctionNotice.style.display = 'none'
         const sDate = c.submitted_at ? new Date(c.submitted_at).toLocaleString('pt-BR') : ''
         document.getElementById('local-submitted-date-meta').textContent = `Credencial enviada e assinada por ${c.president_name || 'Presidente'} em ${sDate}. As edições estão bloqueadas.`
         document.getElementById('local-input-pastor').disabled = true
       } else {
         submittedNotice.style.display = 'none'
+        if (correctionNotice) correctionNotice.style.display = isCorrection ? 'flex' : 'none'
         document.getElementById('local-input-pastor').disabled = false
       }
     }
@@ -3416,7 +3533,7 @@
     function renderLocalPastorSection() {
       const c = localCredentialData.credential
       const area = document.getElementById('local-pastor-status-area')
-      const isApproved = (c.status === 'aprovado_pastor' || c.status === 'enviada' || c.status === 'homologada' || !!c.pastor_approved_at) && !!c.pastor_selfie_url
+      const isApproved = (c.status === 'aprovado_pastor' || c.status === 'em_correcao' || c.status === 'enviada' || c.status === 'homologada' || !!c.pastor_approved_at) && !!c.pastor_selfie_url
 
       if (isApproved) {
         const pDate = c.pastor_approved_at ? new Date(c.pastor_approved_at).toLocaleString('pt-BR') : ''
@@ -3471,6 +3588,7 @@
     function updateLocalActionButtons() {
       const c = localCredentialData.credential
       const isSent = c.status === 'enviada' || c.status === 'homologada'
+      const isCorrection = c.status === 'em_correcao'
 
       const btnSave = document.getElementById('btn-save-local-draft')
       const btnSubmit = document.getElementById('btn-submit-local-cred')
@@ -3478,7 +3596,10 @@
       if (btnSave) btnSave.style.display = isSent ? 'none' : 'inline-flex'
       if (btnSubmit) {
         btnSubmit.style.display = isSent ? 'none' : 'inline-flex'
-        // Botão permanece clicável para que ao clicar o usuário receba avisos orientativos se algo faltar
+        const spanText = btnSubmit.querySelector('span')
+        if (spanText) {
+          spanText.textContent = isCorrection ? 'Reenviar Credencial à Federação' : 'Enviar Credencial à Federação'
+        }
       }
 
       // Badge de assinatura da presidência
@@ -3486,6 +3607,8 @@
       if (signBadge) {
         if (isSent) {
           signBadge.innerHTML = `<span class="badge badge-green">Assinada & Enviada</span>`
+        } else if (isCorrection) {
+          signBadge.innerHTML = `<span class="badge badge-amber">Será reassinada no reenvio</span>`
         } else {
           signBadge.innerHTML = `<span class="badge badge-amber">Será assinada no envio</span>`
         }
@@ -3662,7 +3785,7 @@
         c = localCredentialData.credential
       }
 
-      if (!c.pastor_selfie_url && c.status !== 'aprovado_pastor') {
+      if (!c.pastor_selfie_url && c.status !== 'aprovado_pastor' && c.status !== 'em_correcao') {
         showCredentialAlert(
           'Aprovação Pastoral Obrigatória',
           'O Pastor da igreja precisa conferir e aprovar a credencial com uma <b>foto selfie</b> antes do envio oficial à Federação.<br/><br/>Envie o link seguro para o pastor via <b>WhatsApp</b> ou copie o link e aguarde a selfie de confirmação.'

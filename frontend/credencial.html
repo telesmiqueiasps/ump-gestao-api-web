@@ -940,7 +940,7 @@
       document.getElementById('input-pastor-name').value = c.pastor_name || lump.pastor_name || ''
 
       // 6. Estado de Aprovação
-      const isApproved = (c.status === 'aprovado_pastor' || c.status === 'enviada' || c.status === 'homologada') && c.pastor_selfie_url
+      const isApproved = (c.status === 'aprovado_pastor' || c.status === 'em_correcao' || c.status === 'enviada' || c.status === 'homologada') && c.pastor_selfie_url
 
       if (isApproved) {
         // Tag no documento
