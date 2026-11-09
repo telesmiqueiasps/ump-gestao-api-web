@@ -4,6 +4,7 @@ import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
@@ -41,8 +42,9 @@ ROLE_LABELS_FULL = {
 }
 
 ROLE_ORDER = [
-    'presidente', 'vice_presidente', '1_secretario', '2_secretario',
-    'tesoureiro', 'secretario_executivo', 'secretario_presbiterial', 'conselheiro',
+    'presidente', 'vice_presidente', 'secretario_executivo',
+    '1_secretario', '2_secretario', 'tesoureiro',
+    'secretario_presbiterial', 'conselheiro',
 ]
 
 SPECIAL_ROLES_FED   = {'secretario_presbiterial'}
@@ -53,6 +55,50 @@ ROLE_LABELS = ROLE_LABELS_FULL
 
 
 # ── Helpers ───────────────────────────────────────────────────
+
+def _board_role_priority(name: str) -> int:
+    nl = (name or "").lower()
+    if "presidente" in nl and "vice" not in nl:
+        return 1
+    if "vice" in nl:
+        return 2
+    if "executivo" in nl:
+        return 3
+    if "1" in nl and ("secret" in nl or "secretário" in nl):
+        return 4
+    if "2" in nl and ("secret" in nl or "secretário" in nl):
+        return 5
+    if "tesour" in nl:
+        return 6
+    if "presbiterial" in nl:
+        return 7
+    if "conselh" in nl:
+        return 8
+    return 99
+
+
+ATTENDEE_TYPE_ORDER = {
+    'board': 1,
+    'presbyterial': 2,
+    'activity_secretary': 3,
+    'delegate': 4,
+    'member': 5,
+    'visitor': 6,
+}
+
+
+def _sort_attendee_key(a):
+    tp = a.attendee_type if hasattr(a, 'attendee_type') else (a.get('attendee_type') if isinstance(a, dict) else '')
+    name = a.name if hasattr(a, 'name') else (a.get('name') if isinstance(a, dict) else '')
+    loc = a.local_name if hasattr(a, 'local_name') else (a.get('local_name') if isinstance(a, dict) else '')
+    type_priority = ATTENDEE_TYPE_ORDER.get(tp, 99)
+    if tp == 'board':
+        return (type_priority, _board_role_priority(name), (name or "").lower())
+    elif tp == 'delegate':
+        return (type_priority, (loc or 'ZZZ').lower(), (name or "").lower())
+    else:
+        return (type_priority, 0, (name or "").lower())
+
 
 def _parse_dt(dt_str: Optional[str]) -> Optional[datetime.datetime]:
     """Parse ISO string sem timezone para evitar conversão UTC."""
@@ -129,7 +175,7 @@ def _meeting_out(m: Meeting) -> dict:
                 "is_present":    a.is_present,
                 "source_id":     str(a.source_id) if a.source_id else None,
             }
-            for a in sorted(attendees, key=lambda x: (x.attendee_type, x.name))
+            for a in sorted(attendees, key=_sort_attendee_key)
         ],
     }
 
@@ -407,6 +453,16 @@ def load_default_attendees(
             BoardMember.is_active == True,
         ).all()
         org_type_str = m.organization_type
+
+        def _board_order(b):
+            role_val = b.role.value if hasattr(b.role, 'value') else str(b.role)
+            try:
+                return ROLE_ORDER.index(role_val)
+            except ValueError:
+                return 99
+
+        board_members = sorted(board_members, key=_board_order)
+
         for b in board_members:
             role_val   = b.role.value if hasattr(b.role, 'value') else str(b.role)
             role_label = ROLE_LABELS_FULL.get(role_val, role_val)
@@ -464,13 +520,16 @@ def load_default_attendees(
             db.add(a)
             added.append(a)
 
-    # Para Federação: carrega delegados
+    # Para Federação: carrega delegados agrupados por Local e ordenados por nome
     if 'delegate' not in existing_types and m.organization_type == 'federation':
         delegates = db.query(Member).filter(
             Member.local_ump_id == current_user.organization_id,
             Member.is_active == True,
             (Member.local_society.is_(None)) | (Member.local_society != 'Diretoria')
-        ).order_by(Member.full_name).all()
+        ).order_by(
+            func.coalesce(Member.local_society, 'ZZZ').asc(),
+            Member.full_name.asc()
+        ).all()
         for dg in delegates:
             a = MeetingAttendee(
                 meeting_id    = m.id,
@@ -692,7 +751,7 @@ def generate_meeting_pdf(
                 "observation":   a.observation,
                 "is_present":    a.is_present,
             }
-            for a in m.attendees
+            for a in sorted(m.attendees, key=_sort_attendee_key)
         ],
         "counts": {},
     }

@@ -386,9 +386,22 @@ def generate_meeting_report(
         fontSize=8.5, textColor=BLACK, fontName='Helvetica', leading=13)))
     story.append(Spacer(1, 3 * mm))
 
+    def _board_role_sort_key(item):
+        nl = (item.get('name') or '').lower()
+        if 'presidente' in nl and 'vice' not in nl: return 1
+        if 'vice' in nl: return 2
+        if 'executivo' in nl: return 3
+        if '1' in nl and ('secret' in nl or 'secretário' in nl): return 4
+        if '2' in nl and ('secret' in nl or 'secretário' in nl): return 5
+        if 'tesour' in nl: return 6
+        if 'presbiterial' in nl: return 7
+        if 'conselh' in nl: return 8
+        return 99
+
     # Diretoria
     board_p = [a for a in present if a.get('attendee_type') == 'board']
     if board_p:
+        board_p.sort(key=lambda a: (_board_role_sort_key(a), (a.get('name') or '').lower()))
         story.append(_bold('Diretoria:'))
         for a in board_p:
             story.append(_item(f'• {a["name"]}'))
@@ -419,6 +432,7 @@ def generate_meeting_report(
             key = a.get('local_name') or 'Outros'
             by_local.setdefault(key, []).append(a)
         for local_name, dels in sorted(by_local.items()):
+            dels.sort(key=lambda x: (x.get('name') or '').lower())
             story.append(Paragraph(f'<b>{local_name}:</b>',
                 ParagraphStyle('_loc', fontSize=8.5, textColor=BLACK,
                     fontName='Helvetica-Bold', leading=12, leftIndent=4 * mm)))
