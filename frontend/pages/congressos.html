@@ -1771,7 +1771,7 @@
   </div>
 
   <!-- ── MODAL: HABILITAR CORREÇÃO DA CREDENCIAL (FEDERAÇÃO) ── -->
-  <div class="modal-overlay" id="modal-confirm-enable-correction" style="display:none;">
+  <div class="modal-overlay" id="modal-confirm-enable-correction">
     <div class="modal-box" style="max-width: 490px;">
       <div class="modal-box-header">
         <div style="display:flex; align-items:center; gap:.5rem;">
@@ -2849,10 +2849,18 @@
 
     // Modal Helpers
     window.openModal = function (id) {
-      document.getElementById(id).classList.add('open')
+      const el = document.getElementById(id)
+      if (el) {
+        el.style.display = 'flex'
+        el.classList.add('open')
+      }
     }
     window.closeModal = function (id) {
-      document.getElementById(id).classList.remove('open')
+      const el = document.getElementById(id)
+      if (el) {
+        el.classList.remove('open')
+        el.style.display = 'none'
+      }
     }
 
     // ── PRÉVIA E APROVAÇÃO OFICIAL DO PARECER ──
