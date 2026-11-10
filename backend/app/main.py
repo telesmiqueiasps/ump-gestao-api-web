@@ -26,6 +26,7 @@ try:
         conn.execute(text("ALTER TABLE members ADD COLUMN IF NOT EXISTS latitude FLOAT;"))
         conn.execute(text("ALTER TABLE members ADD COLUMN IF NOT EXISTS longitude FLOAT;"))
         conn.execute(text("ALTER TABLE members ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(500);"))
+        conn.execute(text("ALTER TABLE board_members ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(500);"))
 
         conn.execute(text("ALTER TABLE local_umps ADD COLUMN IF NOT EXISTS cep VARCHAR(9);"))
         conn.execute(text("ALTER TABLE local_umps ADD COLUMN IF NOT EXISTS logradouro VARCHAR(150);"))

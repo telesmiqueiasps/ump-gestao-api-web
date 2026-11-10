@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
@@ -9,6 +9,7 @@ from app.models.board import BoardMember
 from app.models.user import User, UserRole
 from app.models.enums import BoardRole, OrgType
 from app.core.dependencies import get_current_user
+from app.services.storage import upload_file, delete_file, extract_key_from_url, resize_image_max_size
 
 router = APIRouter()
 
@@ -28,8 +29,10 @@ class BoardMemberCreate(BaseModel):
 class BoardMemberUpdate(BaseModel):
     member_name: Optional[str] = None
     role: Optional[BoardRole] = None
+    fiscal_year: Optional[int] = None
     user_id: Optional[UUID] = None
     contact: Optional[str] = None
+    remove_avatar: Optional[bool] = None
 
 
 def _validate_role_for_org(role: BoardRole, org_type: OrgType):
@@ -110,6 +113,14 @@ def add_board_member(
     return _to_out(board_member)
 
 
+def _delete_board_avatar_from_bucket(avatar_url: Optional[str]):
+    if not avatar_url:
+        return
+    key = extract_key_from_url(avatar_url)
+    if key:
+        delete_file(key)
+
+
 # Atualizar membro da diretoria
 @router.put("/{board_member_id}")
 def update_board_member(
@@ -128,10 +139,25 @@ def update_board_member(
     if payload.role:
         _validate_role_for_org(payload.role, current_user.organization_type)
 
-    for field, value in payload.model_dump(exclude_none=True).items():
+    data = payload.model_dump(exclude_none=True)
+    remove_avatar = data.pop("remove_avatar", False)
+
+    old_avatar = None
+    if remove_avatar and member.avatar_url:
+        old_avatar = member.avatar_url
+        member.avatar_url = None
+
+    for field, value in data.items():
+        if field == "role" and hasattr(value, "value"):
+            value = value.value
         setattr(member, field, value)
+
     db.commit()
     db.refresh(member)
+
+    if old_avatar:
+        _delete_board_avatar_from_bucket(old_avatar)
+
     return _to_out(member)
 
 
@@ -148,8 +174,88 @@ def remove_board_member(
     ).first()
     if not member:
         raise HTTPException(status_code=404, detail="Membro não encontrado")
+
+    avatar_to_delete = member.avatar_url
+    member.avatar_url = None
     member.is_active = False
     db.commit()
+
+    if avatar_to_delete:
+        _delete_board_avatar_from_bucket(avatar_to_delete)
+
+
+# Upload de foto do membro da diretoria (para organizações do tipo Federação)
+@router.post("/{board_member_id}/avatar")
+async def upload_board_member_avatar(
+    board_member_id: UUID,
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if current_user.organization_type != OrgType.federation:
+        raise HTTPException(
+            status_code=403,
+            detail="Foto de membro da diretoria está disponível apenas para Federações",
+        )
+
+    member = db.query(BoardMember).filter(
+        BoardMember.id == board_member_id,
+        BoardMember.organization_id == current_user.organization_id,
+    ).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Membro não encontrado")
+
+    contents = await file.read()
+    if len(contents) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="A foto deve ter no máximo 10MB")
+
+    ext = "jpg"
+    if file.filename and "." in file.filename:
+        ext = file.filename.split(".")[-1].lower()
+    if ext not in ["jpg", "jpeg", "png", "webp"]:
+        ext = "jpg"
+
+    contents = resize_image_max_size(contents, max_size=800)
+    content_type = file.content_type or f"image/{'jpeg' if ext == 'jpg' else ext}"
+    timestamp = int(datetime.datetime.now().timestamp())
+    key = f"board/avatars/{board_member_id}_{timestamp}.{ext}"
+
+    old_avatar = member.avatar_url
+    public_url = upload_file(contents, key, content_type)
+
+    member.avatar_url = public_url
+    db.commit()
+    db.refresh(member)
+
+    if old_avatar:
+        _delete_board_avatar_from_bucket(old_avatar)
+
+    return _to_out(member)
+
+
+# Remover foto do membro da diretoria do bucket e do banco
+@router.delete("/{board_member_id}/avatar")
+def delete_board_member_avatar(
+    board_member_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    member = db.query(BoardMember).filter(
+        BoardMember.id == board_member_id,
+        BoardMember.organization_id == current_user.organization_id,
+    ).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Membro não encontrado")
+
+    old_avatar = member.avatar_url
+    member.avatar_url = None
+    db.commit()
+    db.refresh(member)
+
+    if old_avatar:
+        _delete_board_avatar_from_bucket(old_avatar)
+
+    return _to_out(member)
 
 
 from app.models.activity_secretary import ActivitySecretary
@@ -265,5 +371,6 @@ def _to_out(b: BoardMember) -> dict:
         "fiscal_year": b.fiscal_year,
         "user_id": str(b.user_id) if b.user_id else None,
         "contact": b.contact,
+        "avatar_url": b.avatar_url,
         "is_active": b.is_active,
     }

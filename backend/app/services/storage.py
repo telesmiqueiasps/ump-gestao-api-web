@@ -171,7 +171,7 @@ def get_file_base64(url: str) -> str:
     if not url:
         return None
     match = re.search(
-        r'(?:/file/[^/]+/|/|^)(activity-reports/.+|activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+|congresses/.+)$',
+        r'(?:/file/[^/]+/|/|^)(board/.+|activity-reports/.+|activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+|congresses/.+)$',
         url
     )
     key = match.group(1) if match else url
@@ -195,7 +195,7 @@ def extract_key_from_url(url: str) -> str | None:
     if url.startswith(public_domain):
         return url.replace(f"{public_domain}/", "")
     match = re.search(
-        r'(?:members/.+|activity-reports/.+|activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+|congresses/.+)$',
+        r'(?:members/.+|board/.+|activity-reports/.+|activities/.+|receipts/.+|logos/.+|reports/.+|pix-qr/.+|signatures/.+|congresses/.+)$',
         url
     )
     if match:
