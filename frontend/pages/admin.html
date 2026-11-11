@@ -351,6 +351,24 @@
           <div class="loading-center"><div class="spinner"></div></div>
         </div>
       </div>
+
+      <!-- Seção: Relatórios Estatísticos (UMP) -->
+      <div style="background:var(--slate-50); border:1.5px solid var(--slate-200); border-radius:var(--radius-lg); padding:1rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.75rem; flex-wrap:wrap; gap:.5rem;">
+          <div>
+            <h3 style="font-size:0.92rem; font-weight:700; color:var(--slate-800); margin:0; display:flex; align-items:center; gap:0.4rem;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--blue-600);"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+              <span>Relatórios Estatísticos Anuais (UMP)</span>
+            </h3>
+            <p style="font-size:0.75rem; color:var(--slate-500); margin-top:.15rem; margin-bottom:0;">
+              Levantamento estatístico dos sócios e despublicação de relatório oficial
+            </p>
+          </div>
+        </div>
+        <div id="table-statistic-reports-container">
+          <div class="loading-center"><div class="spinner"></div></div>
+        </div>
+      </div>
     </div>
 
     <div class="modal-footer" style="justify-content:flex-end;">
@@ -927,8 +945,10 @@
   async function loadOrgPeriods(orgId) {
     const finContainer = document.getElementById('table-financial-periods-container')
     const actContainer = document.getElementById('table-activity-reports-container')
+    const statContainer = document.getElementById('table-statistic-reports-container')
     finContainer.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>'
     actContainer.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>'
+    if (statContainer) statContainer.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>'
 
     try {
       const data = await api.get(`/api/admin/organizations/${orgId}/periods`)
@@ -1039,10 +1059,67 @@
         `
       }
 
+      // Renderiza Relatórios Estatísticos (UMP)
+      if (statContainer) {
+        if (!data.statistic_reports || data.statistic_reports.length === 0) {
+          statContainer.innerHTML = '<div style="text-align:center;padding:1.5rem;color:var(--slate-400);font-size:.82rem;">Nenhum relatório estatístico criado para esta organização.</div>'
+        } else {
+          const rows = data.statistic_reports.map(s => {
+            let statusBadge
+            if (s.status === 'published' || s.status === 'publicado') {
+              statusBadge = '<span class="badge badge-blue" style="display:inline-flex;align-items:center;gap:.3rem;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Publicado</span>'
+            } else if (s.status === 'generating') {
+              statusBadge = '<span class="badge badge-blue">Gerando...</span>'
+            } else if (s.status === 'failed') {
+              statusBadge = '<span class="badge badge-red">Erro ao Gerar</span>'
+            } else {
+              statusBadge = '<span class="badge badge-slate">Rascunho</span>'
+            }
+
+            const pubDate = s.published_at
+              ? new Date(s.published_at).toLocaleDateString('pt-BR')
+              : (s.updated_at ? new Date(s.updated_at).toLocaleDateString('pt-BR') : '-')
+
+            const actionBtn = (s.status === 'published' || s.status === 'publicado')
+              ? `<button class="btn btn-warning btn-sm" onclick="confirmReopenStatisticReport('${s.id}', ${s.fiscal_year})" style="display:inline-flex;align-items:center;gap:.35rem;padding:.25rem .55rem;font-size:.78rem;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+                  <span>Despublicar Relatório</span>
+                </button>`
+              : '<span style="font-size:.76rem;color:var(--slate-400);font-style:italic">Em rascunho</span>'
+
+            return `
+              <tr>
+                <td style="font-weight:700;font-size:.88rem;color:var(--slate-800);">${s.fiscal_year}</td>
+                <td>${statusBadge}</td>
+                <td style="font-size:.8rem;color:var(--slate-500);">${pubDate}</td>
+                <td style="text-align:right;">${actionBtn}</td>
+              </tr>
+            `
+          }).join('')
+
+          statContainer.innerHTML = `
+            <div style="overflow-x:auto;">
+              <table class="table" style="width:100%;font-size:.85rem;margin:0;">
+                <thead>
+                  <tr>
+                    <th style="text-align:left;">Ano</th>
+                    <th style="text-align:left;">Status</th>
+                    <th style="text-align:left;">Publicação / Atualização</th>
+                    <th style="text-align:right;">Ação</th>
+                  </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+              </table>
+            </div>
+          `
+        }
+      }
+
     } catch (err) {
       showAlert('manage-periods-alert', err.message || 'Erro ao carregar períodos.', 'error')
       finContainer.innerHTML = '<div class="alert alert-error">Erro ao carregar dados.</div>'
       actContainer.innerHTML = '<div class="alert alert-error">Erro ao carregar dados.</div>'
+      if (statContainer) statContainer.innerHTML = '<div class="alert alert-error">Erro ao carregar dados.</div>'
     }
   }
 
@@ -1080,6 +1157,24 @@
       await loadOrgPeriods(currentPeriodsOrg.id)
     } catch (err) {
       showAlert('manage-periods-alert', err.message || 'Erro ao reabrir relatório.', 'error')
+    }
+  }
+
+  window.confirmReopenStatisticReport = async (collectorId, year) => {
+    const confirmed = confirm(
+      `Despublicar o Relatório Estatístico de ${year}?\n\n` +
+      `• O relatório voltará para o status "Rascunho", reabrindo a coleta de respostas e edições.\n` +
+      `• O código de validação e o PDF publicado anteriormente serão invalidados.`
+    )
+    if (!confirmed) return
+
+    clearAlert('manage-periods-alert')
+    try {
+      const res = await api.post(`/api/admin/ump-statistics/${collectorId}/reopen`)
+      showAlert('manage-periods-alert', res.detail || `Relatório estatístico de ${year} despublicado com sucesso!`, 'success')
+      await loadOrgPeriods(currentPeriodsOrg.id)
+    } catch (err) {
+      showAlert('manage-periods-alert', err.message || 'Erro ao despublicar relatório estatístico.', 'error')
     }
   }
 

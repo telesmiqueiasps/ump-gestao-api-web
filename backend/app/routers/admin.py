@@ -13,6 +13,7 @@ from app.models.local_ump import LocalUmp
 from app.models.enums import OrgType
 from app.models.finance import FinancialPeriod
 from app.models.activity_report import ActivityReport
+from app.models.ump_statistic import UmpStatisticCollector
 from app.core.admin import require_admin
 from app.core.security import hash_password
 
@@ -357,6 +358,16 @@ def get_organization_periods(
         ActivityReport.organization_id == org_id
     ).order_by(ActivityReport.fiscal_year.desc()).all()
 
+    # Busca relatórios estatísticos (UMP)
+    if fed:
+        stat_collectors = db.query(UmpStatisticCollector).filter(
+            UmpStatisticCollector.federation_id == org_id
+        ).order_by(UmpStatisticCollector.fiscal_year.desc()).all()
+    else:
+        stat_collectors = db.query(UmpStatisticCollector).filter(
+            UmpStatisticCollector.local_ump_id == org_id
+        ).order_by(UmpStatisticCollector.fiscal_year.desc()).all()
+
     fin_out = [
         {
             "id": str(p.id),
@@ -386,12 +397,26 @@ def get_organization_periods(
         for r in act_reports
     ]
 
+    stat_out = [
+        {
+            "id": str(s.id),
+            "fiscal_year": s.fiscal_year,
+            "status": s.status,
+            "published_at": s.published_at.isoformat() if s.published_at else None,
+            "updated_at": s.updated_at.isoformat() if s.updated_at else None,
+            "has_report_url": bool(s.report_url),
+            "validation_code": s.validation_code,
+        }
+        for s in stat_collectors
+    ]
+
     return {
         "org_id": str(org_id),
         "org_name": org_name,
         "org_type": org_type,
         "financial_periods": fin_out,
         "activity_reports": act_out,
+        "statistic_reports": stat_out,
     }
 
 
@@ -472,6 +497,37 @@ def reopen_activity_report(
         "detail": f"Relatório de atividades de {report.fiscal_year} reaberto para rascunho com sucesso.",
         "fiscal_year": report.fiscal_year,
         "report_id": str(report.id),
+    }
+
+
+@router.post("/ump-statistics/{collector_id}/reopen")
+def reopen_ump_statistic_report(
+    collector_id: UUID,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    collector = db.query(UmpStatisticCollector).filter(
+        UmpStatisticCollector.id == collector_id
+    ).first()
+    if not collector:
+        raise HTTPException(status_code=404, detail="Relatório estatístico não encontrado")
+
+    if collector.status not in ('published', 'publicado'):
+        raise HTTPException(
+            status_code=400,
+            detail=f"O relatório estatístico de {collector.fiscal_year} não está com status 'Publicado' (status atual: {collector.status})."
+        )
+
+    collector.status = 'draft'
+    collector.report_url = None
+    collector.published_at = None
+    collector.validation_code = None
+    db.commit()
+
+    return {
+        "detail": f"Relatório estatístico de {collector.fiscal_year} despublicado e reaberto para rascunho com sucesso.",
+        "fiscal_year": collector.fiscal_year,
+        "collector_id": str(collector.id),
     }
 
 

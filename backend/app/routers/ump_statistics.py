@@ -28,6 +28,7 @@ from app.models.ump_statistic import (
     generate_unique_token
 )
 from app.core.dependencies import require_local_or_federation, get_current_user
+from app.core.admin import require_admin
 
 logger = logging.getLogger(__name__)
 
@@ -1002,6 +1003,35 @@ def publish_ump_statistics_report(
         collector = _get_or_create_collector_with_sync(resolved_local_id, target_year, db, current_user.id)
         target_org_id = resolved_local_id
 
+        # Trava de validação: nas UMPs Locais, somente permite publicar se 100% dos sócios responderam
+        active_member_ids = [
+            m_id for (m_id,) in db.query(Member.id).filter(
+                Member.local_ump_id == resolved_local_id,
+                Member.is_active == True,
+                Member.member_type.in_([MemberType.ativo, MemberType.cooperador]),
+            ).all()
+        ]
+        total_members = len(active_member_ids)
+        if total_members == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="Não é possível publicar o relatório estatístico sem sócios ativos ou cooperadores cadastrados."
+            )
+
+        responded_count = db.query(UmpStatisticResponse).filter(
+            UmpStatisticResponse.collector_id == collector.id,
+            UmpStatisticResponse.member_id.in_(active_member_ids),
+            UmpStatisticResponse.has_responded == True,
+        ).count()
+
+        if responded_count < total_members:
+            missing = total_members - responded_count
+            raise HTTPException(
+                status_code=400,
+                detail=f"Envio bloqueado: todos os sócios devem responder ao levantamento estatístico (100% de resposta exigido). "
+                       f"Atual: {responded_count} de {total_members} responderam (faltam {missing})."
+            )
+
     if collector.status == 'generating':
         return {"detail": "O relatório estatístico já está sendo gerado em background", "status": "generating"}
 
@@ -1024,20 +1054,19 @@ def publish_ump_statistics_report(
 def unpublish_ump_statistics_report(
     year: int,
     local_ump_id: Optional[UUID] = Query(default=None),
-    current_user: User = Depends(require_local_or_federation),
+    current_user: User = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
     target_year = year
 
-    if current_user.organization_type == OrgType.federation and not local_ump_id:
+    if local_ump_id:
         collector = db.query(UmpStatisticCollector).filter(
-            UmpStatisticCollector.federation_id == current_user.organization_id,
+            UmpStatisticCollector.local_ump_id == local_ump_id,
             UmpStatisticCollector.fiscal_year == target_year
         ).first()
     else:
-        resolved_local_id = _resolve_local_ump_id(current_user, db, local_ump_id)
         collector = db.query(UmpStatisticCollector).filter(
-            UmpStatisticCollector.local_ump_id == resolved_local_id,
+            UmpStatisticCollector.federation_id == current_user.organization_id,
             UmpStatisticCollector.fiscal_year == target_year
         ).first()
 
