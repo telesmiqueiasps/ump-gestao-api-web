@@ -487,19 +487,14 @@
       <button class="modal-close" aria-label="Fechar" style="display:inline-flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
     </div>
     
-    <!-- Valores das Contribuições -->
+    <!-- Valor da Mensalidade -->
     <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--slate-400);margin-bottom:.75rem">
-      Valores das Contribuições
+      Valor da Contribuição
     </div>
-    <div class="grid-2 mb-4">
-      <div class="field">
-        <label>Valor da Mensalidade Mensal (R$)</label>
-        <input class="input" type="number" step="0.01" id="config-monthly-value" placeholder="0,00" />
-      </div>
-      <div class="field">
-        <label>Valor da ACI do Ano (R$)</label>
-        <input class="input" type="number" step="0.01" id="config-aci-value" placeholder="0,00" />
-      </div>
+    <div class="field mb-4">
+      <label>Valor da Mensalidade Mensal (R$)</label>
+      <input class="input" type="number" step="0.01" id="config-monthly-value" placeholder="0,00" />
+      <p style="font-size:.72rem;color:var(--slate-400);margin-top:.25rem">O valor da ACI do ano agora é configurado na aba Financeiro.</p>
     </div>
 
     <!-- Portal do Sócio -->
@@ -647,7 +642,6 @@
       try {
         feesConfig = await api.get('/api/member-fees/config')
         document.getElementById('config-monthly-value').value = feesConfig.monthly_fee_value
-        document.getElementById('config-aci-value').value     = feesConfig.aci_year_value
 
         const localData = await api.get('/api/local-umps/me')
         document.getElementById('p-pix-key').value            = localData.pix_key || ''
@@ -674,7 +668,6 @@
       try {
         feesConfig = await api.put('/api/member-fees/config', {
           monthly_fee_value: parseFloat(document.getElementById('config-monthly-value').value || 0),
-          aci_year_value:    parseFloat(document.getElementById('config-aci-value').value || 0),
         })
 
         const payload = {

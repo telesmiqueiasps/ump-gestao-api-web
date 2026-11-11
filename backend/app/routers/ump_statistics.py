@@ -298,6 +298,22 @@ def sync_collector_members(
     return {"message": "Sócios sincronizados com sucesso."}
 
 
+def _sum_aci_received_transactions(db: Session, org_id: UUID, target_year: int) -> float:
+    """Soma os lançamentos financeiros do tipo ACI Recebida de uma organização no ano."""
+    period = db.query(FinancialPeriod).filter(
+        FinancialPeriod.organization_id == org_id,
+        FinancialPeriod.fiscal_year == target_year,
+    ).first()
+    if not period:
+        return 0.0
+    return float(db.query(
+        func.coalesce(func.sum(FinancialTransaction.amount), 0)
+    ).filter(
+        FinancialTransaction.period_id == period.id,
+        FinancialTransaction.transaction_type == TransactionType.aci_recebida,
+    ).scalar() or 0)
+
+
 @router.get("/metrics")
 def get_ump_statistics_metrics(
     year: int = Query(default=None),
@@ -408,33 +424,14 @@ def get_ump_statistics_metrics(
         else:
             calendar_events = act_events
 
-        # ACI a repassar na Federação: total de ACI recebida no ano pela federação dividido por 2
-        period = db.query(FinancialPeriod).filter(
-            FinancialPeriod.organization_id == current_user.organization_id,
-            FinancialPeriod.fiscal_year == target_year
-        ).first()
+        # ACI na Federação: valor por sócio configurado no financeiro x total de sócios; arrecadado = soma de ACI Recebida no financeiro
+        fed_obj = db.query(Federation).filter(Federation.id == current_user.organization_id).first()
+        aci_year_val = float(getattr(fed_obj, 'aci_year_value', 0) or 0) if fed_obj else 0.0
+        total_registered_fed = active_members_count + coop_members_count
+        total_aci_to_collect = round(aci_year_val * total_registered_fed, 2)
 
-        if period:
-            total_aci_recebida = float(db.query(
-                func.coalesce(func.sum(FinancialTransaction.amount), 0)
-            ).filter(
-                FinancialTransaction.period_id == period.id,
-                FinancialTransaction.transaction_type == TransactionType.aci_recebida
-            ).scalar() or 0)
-
-            total_aci_enviada = float(db.query(
-                func.coalesce(func.sum(FinancialTransaction.amount), 0)
-            ).filter(
-                FinancialTransaction.period_id == period.id,
-                FinancialTransaction.transaction_type == TransactionType.aci_enviada
-            ).scalar() or 0)
-        else:
-            total_aci_recebida = 0.0
-            total_aci_enviada = 0.0
-
-        total_aci_to_collect = round(total_aci_recebida / 2, 2)
-        total_aci_collected = total_aci_enviada
-        aci_year_val = 0.0
+        total_aci_recebida = _sum_aci_received_transactions(db, current_user.organization_id, target_year)
+        total_aci_collected = total_aci_recebida
 
     else:
         is_consolidated = False
@@ -521,12 +518,7 @@ def get_ump_statistics_metrics(
         total_registered_local = active_members_count + coop_members_count
         total_aci_to_collect = round(aci_year_val * total_registered_local, 2)
 
-        total_aci_collected = float(db.query(
-            func.coalesce(func.sum(MemberAciContribution.amount), 0)
-        ).filter(
-            MemberAciContribution.local_ump_id == resolved_local_id,
-            MemberAciContribution.fiscal_year == target_year
-        ).scalar() or 0)
+        total_aci_collected = _sum_aci_received_transactions(db, resolved_local_id, target_year)
 
     total_registered = active_members_count + coop_members_count
     responded_list = [r for r in responses if r.has_responded]

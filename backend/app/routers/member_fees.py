@@ -604,12 +604,16 @@ def get_aci_summary(
 
     total_to_collect = aci_year_value * total_members
 
-    total_collected = float(db.query(
-        func.coalesce(func.sum(MemberAciContribution.amount), 0)
-    ).filter(
-        MemberAciContribution.local_ump_id == current_user.organization_id,
-        MemberAciContribution.fiscal_year == year,
-    ).scalar())
+    period = _get_period(db, current_user.organization_id, year)
+    if period:
+        total_collected = float(db.query(
+            func.coalesce(func.sum(FinancialTransaction.amount), 0)
+        ).filter(
+            FinancialTransaction.period_id == period.id,
+            FinancialTransaction.transaction_type == TransactionType.aci_recebida,
+        ).scalar() or 0)
+    else:
+        total_collected = 0.0
 
     remaining = max(0, total_to_collect - total_collected)
     progress = (total_collected / total_to_collect * 100) if total_to_collect > 0 else 0

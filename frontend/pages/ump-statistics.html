@@ -861,7 +861,7 @@
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="2"></circle><path d="M6 12h.01M18 12h.01"></path></svg>
               </div>
               <div style="flex:1; min-width:0">
-                <div class="stat-label">Total ACI a Repassar</div>
+                <div class="stat-label">Total ACI a Arrecadar</div>
                 <div class="stat-value" id="stat-aci-total" style="color: #0f766e; font-size: 1.15rem;">R$ 0,00</div>
                 <div class="stat-sub" id="stat-aci-sub"
                   style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">0 sócios × R$ 0,00</div>
@@ -869,6 +869,8 @@
                   <div class="stat-bar-fill" id="stat-aci-bar" style="width: 0%; background: var(--green-600, #16a34a)">
                   </div>
                 </div>
+                <div class="stat-sub" id="stat-aci-collected"
+                  style="margin-top: .25rem; font-size: .72rem; color: #0f766e; font-weight: 600;">Arrecadado: R$ 0,00 (0%)</div>
               </div>
             </div>
           </div>
@@ -1571,18 +1573,15 @@
         ? `${data.age_metrics.average_age} anos`
         : '—'
 
-      // Card: Total ACI a Repassar
+      // Card: Total ACI a Arrecadar
       const aci = data.aci_metrics || {}
       document.getElementById('stat-aci-total').textContent = formatCurrency(aci.total_to_collect || 0)
-      if (data.is_federation && data.is_consolidated) {
-        const received = aci.total_received ?? (aci.total_to_collect * 2)
-        document.getElementById('stat-aci-sub').textContent = `50% de ${formatCurrency(received)} (ACI recebida)`
-        document.getElementById('stat-aci-bar').style.width = `${Math.min(100, aci.progress_percent || 0)}%`
-        document.getElementById('stat-aci-bar').title = `Repassado à Sinodal: ${formatCurrency(aci.total_collected || 0)} (${aci.progress_percent || 0}%)`
-      } else {
-        document.getElementById('stat-aci-sub').textContent = `${data.total_registered || 0} sócios × ${formatCurrency(aci.aci_year_value || 0)}`
-        document.getElementById('stat-aci-bar').style.width = `${Math.min(100, aci.progress_percent || 0)}%`
-        document.getElementById('stat-aci-bar').title = `Arrecadado: ${formatCurrency(aci.total_collected || 0)} (${aci.progress_percent || 0}%)`
+      document.getElementById('stat-aci-sub').textContent = `${data.total_registered || 0} sócios × ${formatCurrency(aci.aci_year_value || 0)}`
+      document.getElementById('stat-aci-bar').style.width = `${Math.min(100, aci.progress_percent || 0)}%`
+      document.getElementById('stat-aci-bar').title = `Arrecadado: ${formatCurrency(aci.total_collected || 0)} (${aci.progress_percent || 0}%)`
+      const aciColEl = document.getElementById('stat-aci-collected')
+      if (aciColEl) {
+        aciColEl.textContent = `Arrecadado: ${formatCurrency(aci.total_collected || 0)} (${aci.progress_percent || 0}%)`
       }
 
       const totalResp = data.total_responded || 1

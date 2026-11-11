@@ -51,6 +51,10 @@ class CongressClosePayload(BaseModel):
     cutoff_date: Optional[datetime.date] = None
 
 
+class AciConfigUpdate(BaseModel):
+    aci_year_value: float
+
+
 INCOME_TYPES = {TransactionType.outras_receitas, TransactionType.aci_recebida}
 EXPENSE_TYPES = {TransactionType.outras_despesas, TransactionType.aci_enviada}
 
@@ -80,6 +84,45 @@ def _calc_balance(db, period_id, initial_balance):
         )), 0).label("total_out"),
     ).filter(FinancialTransaction.period_id == period_id).one()
     return float(initial_balance) + float(row.total_in) - float(row.total_out)
+
+
+def _get_org_for_aci_config(db: Session, current_user: User):
+    if current_user.organization_type == OrgType.federation:
+        from app.models.federation import Federation
+        org = db.query(Federation).filter(Federation.id == current_user.organization_id).first()
+        if not org:
+            raise HTTPException(status_code=404, detail="Federação não encontrada")
+        return org
+    from app.models.local_ump import LocalUmp
+    org = db.query(LocalUmp).filter(LocalUmp.id == current_user.organization_id).first()
+    if not org:
+        raise HTTPException(status_code=404, detail="UMP Local não encontrada")
+    return org
+
+
+# Obter valor configurado da ACI do ano (Federação ou UMP Local)
+@router.get("/aci-config")
+def get_aci_config(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    org = _get_org_for_aci_config(db, current_user)
+    return {"aci_year_value": float(getattr(org, "aci_year_value", 0) or 0)}
+
+
+# Atualizar valor configurado da ACI do ano (Federação ou UMP Local)
+@router.put("/aci-config")
+def update_aci_config(
+    payload: AciConfigUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if payload.aci_year_value < 0:
+        raise HTTPException(status_code=400, detail="O valor da ACI não pode ser negativo")
+    org = _get_org_for_aci_config(db, current_user)
+    org.aci_year_value = payload.aci_year_value
+    db.commit()
+    return {"aci_year_value": float(org.aci_year_value or 0)}
 
 
 # Criar ou abrir período financeiro

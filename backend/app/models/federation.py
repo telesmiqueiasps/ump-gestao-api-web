@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean, Text, DateTime
+from sqlalchemy import Column, String, Boolean, Text, DateTime, Numeric
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func, text
 from sqlalchemy.orm import relationship
@@ -16,6 +16,7 @@ class Federation(Base):
     address = Column(Text)
     theme_color = Column(String(7), nullable=True, default='#1a2a6c')
     society_type = Column(String(10), nullable=True, default='UMP')
+    aci_year_value = Column(Numeric(10, 2), default=0)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
